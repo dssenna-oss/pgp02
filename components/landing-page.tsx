@@ -220,14 +220,14 @@ export default function LandingPage() {
             {/* Vídeo de Apresentação */}
             <div className="w-full max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl bg-black mb-12">
               <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
-                <video 
-                  className="absolute inset-0 w-full h-full object-cover"
-                  controls
-                  preload="metadata"
-                >
-                  <source src="/videos/capa-lgpd.mp4" type="video/mp4" />
-                  Seu navegador não suporta a reprodução de vídeos.
-                </video>
+                <iframe
+                  className="absolute inset-0 w-full h-full"
+                  src="https://www.youtube.com/embed/1j_cWrHrEAw?modestbranding=1&rel=0"
+                  title="PGP - Apresentação"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               </div>
             </div>
 

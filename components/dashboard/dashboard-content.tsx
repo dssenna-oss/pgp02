@@ -110,14 +110,14 @@ export default function DashboardContent({ session }: DashboardContentProps) {
         {/* Vídeo de Apresentação */}
         <div className="w-full rounded-lg overflow-hidden shadow-lg bg-black">
           <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
-            <video 
-              className="absolute inset-0 w-full h-full object-cover"
-              controls
-              preload="metadata"
-            >
-              <source src="/videos/capa-pgp-dashboard.mp4" type="video/mp4" />
-              Seu navegador não suporta a reprodução de vídeos.
-            </video>
+            <iframe
+              className="absolute inset-0 w-full h-full"
+              src="https://www.youtube.com/embed/dyFafhGG9u0?modestbranding=1&rel=0"
+              title="PGP - Dashboard"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
         </div>
 
