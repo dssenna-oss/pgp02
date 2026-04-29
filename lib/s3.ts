@@ -37,17 +37,23 @@ export async function uploadLogo(buffer: Buffer, fileName: string, mimeType: str
 
 // Sobrecarga para manter compatibilidade com chamadas existentes
 export async function getFileUrl(key: string, isPublicOrExpiresIn?: boolean | number, expiresIn?: number): Promise<string> {
+  // Arquivos hospedados localmente em public/ (ex: "/phase-documents/foo.pdf")
+  // são servidos diretamente pelo CDN do Vercel — não passam por S3.
+  if (key.startsWith("/")) {
+    return key;
+  }
+
   // Detectar se o segundo parâmetro é um número (expiresIn) ou boolean (isPublic)
   let isPublic = false;
   let expiry = 3600;
-  
+
   if (typeof isPublicOrExpiresIn === "boolean") {
     isPublic = isPublicOrExpiresIn;
     expiry = expiresIn || 3600;
   } else if (typeof isPublicOrExpiresIn === "number") {
     expiry = isPublicOrExpiresIn;
   }
-  
+
   // Para arquivos públicos, retornar URL direta
   if (isPublic) {
     const region = process.env.AWS_REGION || "us-east-1";
