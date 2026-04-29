@@ -1,0 +1,39 @@
+# Dependências
+node_modules/
+
+# Build
+.next/
+.build/
+dist/
+build/
+out/
+
+# Cache
+.cache/
+*.tsbuildinfo
+.next/cache/
+
+# Sessões / artefatos de teste local
+cookies.txt
+
+# Ambiente
+.env
+.env.local
+.env.production
+.env.staging
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Outros
+*.pyc
+__pycache__/
+.pytest_cache/

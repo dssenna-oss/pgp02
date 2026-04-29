@@ -1,0 +1,568 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("user") // "admin" ou "user"
+  isActive      Boolean   @default(false) // Novo usuário precisa ser ativado pelo admin
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Relacionamento com empresa
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id])
+  
+  // Recuperação de senha
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  
+  // Progresso do checklist RIPD
+  ripdChecklistProgress RipdChecklistProgress?
+  
+  // Conversas do chatbot
+  chatConversations ChatConversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Company {
+  id                String   @id @default(cuid())
+  companyName       String
+  tradeName         String?
+  cnpj              String?  @unique
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  phone             String?
+  email             String?
+  website           String?
+  logoUrl           String?
+  legalRepresentative String?
+  dpoName           String?  // Data Protection Officer/Encarregado
+  dpoEmail          String?
+  dpoPhone          String?
+  businessSector    String?
+  employeesCount    Int?
+  ripdEbookUrl      String?  // URL do ebook Heyzine para RIPD
+  
+  // Usuários da empresa
+  users             User[]
+  
+  // Documentos e inventários relacionados
+  dataInventories   DataInventory[]
+  riskAssessments   RiskAssessment[]
+  gapAnalyses       GapAnalysis[]
+  actionPlans       ActionPlan[]
+  ripds            RIPD[]
+  documents        Document[]
+  incidents        Incident[]
+  phaseDocuments   PhaseDocument[]
+  phaseInfos       PhaseInfo[]
+  phaseEbooks      PhaseEbook[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("companies")
+}
+
+model DataInventory {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  serviceName     String
+  dataCategory    String   // Categorias como "dados pessoais sensíveis", "dados pessoais", etc.
+  personalData    String   // Tipos de dados coletados
+  legalBasis      String   // Base legal para tratamento
+  purpose         String   // Finalidade do tratamento
+  dataSubjects    String   // Titulares dos dados
+  retention       String   // Período de retenção
+  storage         String   // Local de armazenamento
+  sharing         String?  // Compartilhamento com terceiros
+  security        String   // Medidas de segurança
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("data_inventories")
+}
+
+model RiskAssessment {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  processName     String
+  riskDescription String
+  likelihood      String   // "Baixo", "Médio", "Alto"
+  impact          String   // "Baixo", "Médio", "Alto"
+  riskLevel       String   // "Baixo", "Médio", "Alto", "Crítico"
+  controls        String   // Controles existentes
+  recommendations String   // Recomendações de melhoria
+  responsibleArea String
+  deadline        DateTime?
+  status          String   @default("Pendente")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("risk_assessments")
+}
+
+model GapAnalysis {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  requirement     String   // Requisito da LGPD
+  currentStatus   String   // Status atual: "Implementado", "Parcialmente Implementado", "Não Implementado"
+  evidence        String?  // Evidências
+  gap             String?  // Lacuna identificada
+  recommendation  String?  // Recomendação
+  priority        String   // "Alta", "Média", "Baixa"
+  responsibleArea String
+  deadline        DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gap_analyses")
+}
+
+model ActionPlan {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  action          String
+  description     String
+  objective       String
+  responsibleArea String
+  responsible     String
+  startDate       DateTime
+  endDate         DateTime
+  priority        String   // "Alta", "Média", "Baixa"
+  status          String   @default("Não Iniciado")
+  progress        Int      @default(0)
+  resources       String?
+  budget          Float?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("action_plans")
+}
+
+model RIPD {
+  id                    String   @id @default(cuid())
+  companyId             String
+  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  processName           String
+  processDescription    String
+  dataTypes             String   // Tipos de dados pessoais
+  dataSubjects          String   // Categorias de titulares
+  purpose               String   // Finalidades do tratamento
+  legalBasis            String   // Base legal
+  necessityAssessment   String   // Avaliação de necessidade
+  proportionalityAssessment String // Avaliação de proporcionalidade
+  riskIdentification    String   // Identificação de riscos
+  riskMitigation        String   // Medidas de mitigação
+  safeguards            String   // Salvaguardas
+  consultationDetails   String?  // Detalhes de consulta aos titulares
+  monitoring            String   // Monitoramento
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("ripds")
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  title           String
+  type            String   // "privacy_policy", "terms_of_use", "cookie_notice", etc.
+  content         String   @db.Text
+  version         String   @default("1.0")
+  status          String   @default("Draft")
+  language        String   @default("pt-BR")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("documents")
+}
+
+model Incident {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String
+  incidentType    String   // "Vazamento", "Acesso não autorizado", "Perda de dados", etc.
+  severity        String   // "Baixa", "Média", "Alta", "Crítica"
+  affectedData    String   // Dados afetados
+  affectedSubjects Int?    // Número de titulares afetados
+  cause           String?  // Causa do incidente
+  detectionDate   DateTime
+  reportDate      DateTime @default(now())
+  containmentActions String? // Ações de contenção
+  correctiveActions String?  // Ações corretivas
+  preventiveActions String? // Ações preventivas
+  status          String   @default("Aberto")
+  reportedToAnpd  Boolean  @default(false)
+  anpdReportDate  DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("incidents")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+model PhaseDocument {
+  id              String   @id @default(cuid())
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  phase           String   // "preliminar", "fase-1", "fase-2", etc.
+  title           String
+  description     String?
+  
+  // Para arquivos enviados
+  fileName        String?
+  fileType        String?  // "pdf", "doc", "video", etc.
+  fileSize        Int?     // Tamanho em bytes
+  mimeType        String?
+  cloud_storage_path String? // Caminho do arquivo no S3
+  
+  // Para vídeos via URL
+  videoUrl        String?  // URL do vídeo (YouTube, Vimeo, etc.)
+  isVideoUrl      Boolean  @default(false) // Indica se é um vídeo via URL
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("phase_documents")
+}
+
+model PhaseInfo {
+  id              String   @id @default(cuid())
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  phase           String   // "preliminar", "fase-1", "fase-2", etc.
+  section         String   @default("description") // "description", "consideracoes", etc.
+  
+  // E-book Heyzine (antes da descrição) - SOMENTE ADMIN PODE EDITAR
+  heyzineEmbedUrl String?  @db.Text // URL de embed do Heyzine
+  
+  // Descrição da Fase - SOMENTE ADMIN PODE EDITAR
+  description     String?  @db.Text // Conteúdo HTML da descrição da fase
+  
+  // Checklist de Implementação (depois da descrição) - SOMENTE ADMIN PODE EDITAR  
+  howToProceed    String?  @db.Text // Passo-a-passo em formato texto/HTML
+  
+  // Conteúdo HTML editável do Checklist de implementação - SOMENTE ADMIN PODE EDITAR
+  checklistHtml   String?  @db.Text // HTML personalizado para o checklist
+  
+  // Estado dos checkboxes do checklist (JSON) - USUÁRIOS PODEM SALVAR SEU PROGRESSO
+  checklistState  Json?    // { "item-id": true/false }
+  
+  // URLs "Na prática" - links para aplicativos externos - SOMENTE ADMIN PODE EDITAR
+  practicalUrls   Json?    // Array de objetos: [{ title: string, url: string, description?: string, displayMode?: "new-tab" | "embed" }]
+  
+  // Indica se é um e-book global (criado pelo admin) ou específico da empresa
+  isGlobal        Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, phase])
+  @@map("phase_infos")
+}
+
+model GlobalSettings {
+  id String @id @default(cuid())
+  
+  // URL do e-book do RIPD (compartilhado por todas as empresas)
+  ripdEbookUrl String? @db.Text
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("global_settings")
+}
+
+model RipdChecklistProgress {
+  id     String @id @default(cuid())
+  userId String
+  
+  // Estado do checklist (JSON com os IDs dos itens marcados)
+  completedItems Json @default("[]")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId])
+  @@map("ripd_checklist_progress")
+}
+
+model SystemSettings {
+  id String @id @default(cuid())
+  companyId String @unique
+  
+  // Configurações de Email
+  smtpServer String?
+  smtpPort String?
+  smtpUser String?
+  smtpPassword String?
+  
+  // Notificações
+  emailNotifications Boolean @default(true)
+  pushNotifications Boolean @default(true)
+  deadlineReminders Boolean @default(true)
+  incidentAlerts Boolean @default(true)
+  
+  // Segurança
+  twoFactorAuth Boolean @default(false)
+  sessionTimeout Boolean @default(true)
+  sessionTimeoutMinutes Int @default(30)
+  
+  // Sistema
+  autoBackup Boolean @default(true)
+  backupTime String @default("02:00")
+  autoDarkMode Boolean @default(false)
+  language String @default("pt-BR")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+model ContentCategory {
+  id          String   @id @default(cuid())
+  name        String   // Nome da categoria, ex: "LGPD - Artigos comentados"
+  description String?  @db.Text // Descrição da categoria
+  imageUrl    String?  // URL da imagem representativa
+  order       Int      @default(0) // Ordem de exibição
+  
+  // Relacionamento com conteúdos
+  contentItems ContentItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("content_categories")
+}
+
+model ContentItem {
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  title       String   // Título do conteúdo
+  description String?  @db.Text // Descrição do conteúdo
+  type        String   // "ebook", "word", "pdf", "excel", "url", "video"
+  order       Int      @default(0) // Ordem de exibição
+  
+  // Para arquivos (word, pdf, excel)
+  fileName        String?
+  fileSize        Int?     // Tamanho em bytes
+  mimeType        String?
+  cloud_storage_path String? // Caminho do arquivo no S3
+  
+  // Para e-books Heyzine e embeds de URL/vídeo
+  embedUrl    String?  @db.Text // URL de embed (Heyzine, YouTube, páginas web, etc.)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("content_items")
+}
+
+model PhaseEbook {
+  id              String   @id @default(cuid())
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  phase           String   // "fase-6", etc.
+  title           String   // Título do e-book
+  embedUrl        String   @db.Text // URL de embed do Heyzine ou outro
+  order           Int      @default(0) // Ordem de exibição
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("phase_ebooks")
+  @@index([companyId, phase])
+}
+
+// ========== CHATBOT DETETIVE DA PRIVACIDADE ==========
+
+model ChatConversation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title           String?  // Título da conversa (gerado a partir da primeira mensagem)
+  lastPageContext String?  // Última página onde o usuário estava
+  mode            String   @default("simple") // "simple" ou "technical"
+  
+  messages        ChatMessage[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("chat_conversations")
+  @@index([userId])
+}
+
+model ChatMessage {
+  id              String   @id @default(cuid())
+  conversationId  String
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  role            String   // "user" ou "assistant"
+  content         String   @db.Text
+  pageContext     String?  // Página onde a mensagem foi enviada (ex: "fase-1", "dashboard")
+  
+  // Detecção de sentimento (apenas para mensagens do usuário)
+  sentiment       String?  // "positive", "neutral", "negative", "frustrated", "confused"
+  sentimentScore  Float?   // Score de confiança (0-1)
+  
+  // Arquivo anexado
+  hasAttachment   Boolean  @default(false)
+  
+  feedback        ChatFeedback?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("chat_messages")
+  @@index([conversationId])
+}
+
+model ChatFeedback {
+  id              String   @id @default(cuid())
+  messageId       String   @unique
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  rating          String   // "like" ou "dislike"
+  comment         String?  @db.Text // Comentário opcional do usuário
+  
+  createdAt DateTime @default(now())
+  
+  @@map("chat_feedbacks")
+}
+
+// Arquivos anexados ao chat
+model ChatFile {
+  id              String   @id @default(cuid())
+  messageId       String?
+  conversationId  String
+  
+  fileName        String
+  fileType        String   // "pdf", "doc", "docx", "txt", "xlsx"
+  fileSize        Int      // Tamanho em bytes
+  mimeType        String
+  cloud_storage_path String // Caminho no S3
+  
+  // Conteúdo extraído do arquivo (para análise)
+  extractedText   String?  @db.Text
+  
+  createdAt DateTime @default(now())
+  
+  @@map("chat_files")
+  @@index([conversationId])
+}
+
+// Sistema de cotas de uso do chatbot
+model ChatQuota {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // Limites diários
+  dailyMessages   Int      @default(0)      // Mensagens enviadas hoje
+  dailyFiles      Int      @default(0)      // Arquivos enviados hoje
+  lastResetDate   DateTime @default(now())  // Data do último reset
+  
+  // Limites mensais
+  monthlyMessages Int      @default(0)      // Mensagens enviadas este mês
+  monthlyFiles    Int      @default(0)      // Arquivos enviados este mês
+  lastMonthReset  DateTime @default(now())  // Data do último reset mensal
+  
+  // Configurações de limite (podem ser customizadas por usuário)
+  maxDailyMessages   Int   @default(50)     // Limite diário de mensagens
+  maxDailyFiles      Int   @default(10)     // Limite diário de arquivos
+  maxMonthlyMessages Int   @default(500)    // Limite mensal de mensagens
+  maxMonthlyFiles    Int   @default(50)     // Limite mensal de arquivos
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("chat_quotas")
+}

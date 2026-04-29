@@ -1,0 +1,363 @@
+
+
+
+"use client";
+
+import PhaseDocumentsUpload from "./phase-documents-upload";
+import PhaseInfoManager from "./phase-info-manager";
+import PhaseChecklist from "./phase-checklist";
+import PhaseDescriptionManager from "./phase-description-manager";
+
+export default function Fase6Content() {
+  // Definir o checklist da Fase 6
+  const checklistSections = [
+    {
+      id: "planejamento-treinamento",
+      title: "1. Planejamento do Programa de Treinamento",
+      items: [
+        {
+          id: "mapear-publicos",
+          label: "Mapeie os diferentes públicos-alvo (geral, específico, gestão, DPO)",
+          checked: false
+        },
+        {
+          id: "definir-conteudos",
+          label: "Defina conteúdos específicos para cada público",
+          checked: false
+        },
+        {
+          id: "escolher-metodologias",
+          label: "Escolha metodologias de treinamento (presencial, online, híbrido)",
+          checked: false
+        },
+        {
+          id: "definir-carga-horaria",
+          label: "Defina carga horária adequada para cada tipo de treinamento",
+          checked: false
+        },
+        {
+          id: "estabelecer-cronograma",
+          label: "Estabeleça cronograma de treinamentos para o ano",
+          checked: false
+        },
+        {
+          id: "alocar-orcamento",
+          label: "Aloque orçamento para treinamentos (instrutores, materiais, plataformas)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "desenvolvimento-materiais",
+      title: "2. Desenvolvimento de Materiais",
+      items: [
+        {
+          id: "criar-apresentacoes",
+          label: "Crie apresentações sobre LGPD e proteção de dados",
+          checked: false
+        },
+        {
+          id: "elaborar-cartilhas",
+          label: "Elabore cartilhas e guias de referência rápida",
+          checked: false
+        },
+        {
+          id: "produzir-videos",
+          label: "Produza vídeos educativos curtos",
+          checked: false
+        },
+        {
+          id: "criar-casos-praticos",
+          label: "Crie casos práticos e exemplos do dia a dia da empresa",
+          checked: false
+        },
+        {
+          id: "desenvolver-avaliacoes",
+          label: "Desenvolva avaliações de aprendizado",
+          checked: false
+        },
+        {
+          id: "criar-infograficos",
+          label: "Crie infográficos e materiais visuais",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "treinamento-geral",
+      title: "3. Treinamento Geral (Todos os Colaboradores)",
+      items: [
+        {
+          id: "fundamentos-lgpd",
+          label: "Treine sobre fundamentos da LGPD",
+          checked: false
+        },
+        {
+          id: "conceitos-basicos",
+          label: "Explique conceitos básicos (dados pessoais, sensíveis, tratamento)",
+          checked: false
+        },
+        {
+          id: "direitos-titulares",
+          label: "Ensine sobre direitos dos titulares",
+          checked: false
+        },
+        {
+          id: "boas-praticas-diarias",
+          label: "Treine boas práticas de segurança no dia a dia",
+          checked: false
+        },
+        {
+          id: "como-reportar-incidentes",
+          label: "Ensine como identificar e reportar incidentes",
+          checked: false
+        },
+        {
+          id: "consequencias-nao-conformidade",
+          label: "Explique consequências de não conformidade",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "treinamento-especifico",
+      title: "4. Treinamento Específico por Área",
+      items: [
+        {
+          id: "treinar-ti",
+          label: "Treine equipe de TI sobre segurança técnica e gestão de acessos",
+          checked: false
+        },
+        {
+          id: "treinar-rh",
+          label: "Treine RH sobre tratamento de dados de funcionários e candidatos",
+          checked: false
+        },
+        {
+          id: "treinar-marketing",
+          label: "Treine Marketing sobre consentimento e comunicações",
+          checked: false
+        },
+        {
+          id: "treinar-comercial",
+          label: "Treine área Comercial sobre coleta e uso de dados de clientes",
+          checked: false
+        },
+        {
+          id: "treinar-atendimento",
+          label: "Treine Atendimento sobre direitos dos titulares",
+          checked: false
+        },
+        {
+          id: "treinar-juridico",
+          label: "Treine Jurídico sobre aspectos legais e contratuais",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "treinamento-gestao",
+      title: "5. Treinamento para Gestão e Liderança",
+      items: [
+        {
+          id: "treinar-aspectos-estrategicos",
+          label: "Treine sobre aspectos estratégicos da conformidade",
+          checked: false
+        },
+        {
+          id: "treinar-responsabilidade-gestao",
+          label: "Explique responsabilidades da gestão (accountability)",
+          checked: false
+        },
+        {
+          id: "treinar-gestao-riscos",
+          label: "Treine sobre gestão de riscos de privacidade",
+          checked: false
+        },
+        {
+          id: "treinar-tomada-decisao",
+          label: "Treine tomada de decisão considerando privacidade",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "capacitacao-dpo",
+      title: "6. Capacitação Avançada para DPO e Equipe de Privacidade",
+      items: [
+        {
+          id: "curso-dpo",
+          label: "Promova curso de formação de DPO",
+          checked: false
+        },
+        {
+          id: "treinamento-dpia",
+          label: "Treine sobre realização de DPIAs",
+          checked: false
+        },
+        {
+          id: "capacitar-gestao-incidentes",
+          label: "Capacite em gestão de incidentes de segurança",
+          checked: false
+        },
+        {
+          id: "atualizar-legislacao",
+          label: "Mantenha atualização constante sobre legislação e jurisprudência",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "conscientizacao-continua",
+      title: "7. Programa de Conscientização Contínua",
+      items: [
+        {
+          id: "criar-campanhas-internas",
+          label: "Crie campanhas internas de conscientização",
+          checked: false
+        },
+        {
+          id: "enviar-newsletters",
+          label: "Envie newsletters periódicas sobre proteção de dados",
+          checked: false
+        },
+        {
+          id: "realizar-workshops",
+          label: "Realize workshops temáticos periódicos",
+          checked: false
+        },
+        {
+          id: "compartilhar-casos",
+          label: "Compartilhe casos e notícias relevantes",
+          checked: false
+        },
+        {
+          id: "reconhecer-boas-praticas",
+          label: "Reconheça e premie boas práticas",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "registro-evidencias",
+      title: "8. Registro e Evidências",
+      items: [
+        {
+          id: "registrar-participantes",
+          label: "Registre lista de presença em todos os treinamentos",
+          checked: false
+        },
+        {
+          id: "documentar-conteudo",
+          label: "Documente conteúdo ministrado",
+          checked: false
+        },
+        {
+          id: "arquivar-avaliacoes",
+          label: "Arquive avaliações de aprendizado",
+          checked: false
+        },
+        {
+          id: "obter-feedback",
+          label: "Obtenha feedback dos participantes",
+          checked: false
+        },
+        {
+          id: "medir-efetividade",
+          label: "Meça efetividade do treinamento",
+          checked: false
+        },
+        {
+          id: "manter-historico",
+          label: "Mantenha histórico de treinamentos por colaborador",
+          checked: false
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          🚩 Fase 6 - Treinamento e Conscientização
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Capacitação dos colaboradores e disseminação da cultura de proteção de dados
+        </p>
+      </div>
+
+      {/* E-book Heyzine */}
+      <PhaseInfoManager phase="fase-6" section="heyzine" />
+
+      {/* Descrição da Fase */}
+      <PhaseDescriptionManager 
+        phase="fase-6" 
+        defaultContent={`
+<p class="text-gray-700 dark:text-gray-300">
+            A conformidade com a LGPD depende fundamentalmente das pessoas. Esta fase é dedicada a 
+            treinar e conscientizar todos os colaboradores sobre proteção de dados e suas responsabilidades.
+          </p>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">Públicos-Alvo:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>
+              <strong>Geral:</strong> Todos os colaboradores devem receber treinamento básico sobre 
+              LGPD e boas práticas
+            </li>
+            <li>
+              <strong>Específico:</strong> Equipes que lidam diretamente com dados (RH, TI, Marketing, 
+              Vendas) precisam de treinamento aprofundado
+            </li>
+            <li>
+              <strong>Alta Gestão:</strong> Diretores e gerentes devem compreender as implicações 
+              estratégicas e legais
+            </li>
+            <li>
+              <strong>DPO e Equipe de Privacidade:</strong> Capacitação técnica avançada
+            </li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4 mb-2">Conteúdo dos Treinamentos:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Fundamentos da LGPD e conceitos básicos</li>
+            <li>Direitos dos titulares de dados</li>
+            <li>Bases legais para tratamento</li>
+            <li>Princípios da proteção de dados</li>
+            <li>Segurança da informação e boas práticas</li>
+            <li>Procedimentos internos da empresa</li>
+            <li>Como identificar e reportar incidentes</li>
+            <li>Consequências de não conformidade</li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4 mb-2">Formatos Sugeridos:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Workshops presenciais ou online</li>
+            <li>E-learning e vídeos</li>
+            <li>Cartilhas e materiais de referência</li>
+            <li>Simulações e casos práticos</li>
+            <li>Campanhas de conscientização periódicas</li>
+          </ul>
+
+          <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg mt-4">
+            <p class="text-sm text-purple-800 dark:text-purple-200">
+              <strong>🎯 Dica:</strong> Registre todos os treinamentos realizados (data, participantes, 
+              conteúdo, avaliação). Este registro é evidência de compliance e demonstra o compromisso 
+              da empresa com a proteção de dados.
+            </p>
+          </div>
+        `}
+      />
+
+      {/* Orientações sobre a fase */}
+      <PhaseInfoManager phase="fase-6" section="howto" />
+
+      {/* Considerações sobre a fase */}
+      <PhaseChecklist phase="fase-6" sections={checklistSections} />
+
+      {/* Documentação da Fase */}
+      <PhaseDocumentsUpload phase="fase-6" />
+    </div>
+  );
+}
+

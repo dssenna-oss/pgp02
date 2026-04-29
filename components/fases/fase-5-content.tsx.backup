@@ -1,0 +1,288 @@
+
+
+
+"use client";
+
+import PhaseDocumentsUpload from "./phase-documents-upload";
+import PhaseInfoManager from "./phase-info-manager";
+import PhaseChecklist from "./phase-checklist";
+import PhaseDescriptionManager from "./phase-description-manager";
+
+export default function Fase5Content() {
+  // Definir o checklist da Fase 5
+  const checklistSections = [
+    {
+      id: "politicas-externas",
+      title: "1. Políticas Externas (Para Titulares)",
+      items: [
+        {
+          id: "elaborar-politica-privacidade",
+          label: "Elabore Política de Privacidade completa e transparente",
+          checked: false
+        },
+        {
+          id: "criar-avisos-coleta",
+          label: "Crie avisos de privacidade específicos para cada ponto de coleta",
+          checked: false
+        },
+        {
+          id: "elaborar-termos-consentimento",
+          label: "Elabore termos de consentimento claros e específicos",
+          checked: false
+        },
+        {
+          id: "publicar-politicas",
+          label: "Publique as políticas no site e canais de comunicação",
+          checked: false
+        },
+        {
+          id: "facilitar-acesso",
+          label: "Facilite o acesso às políticas (links visíveis, linguagem clara)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "politicas-internas",
+      title: "2. Políticas Internas (Para Colaboradores)",
+      items: [
+        {
+          id: "criar-politica-interna-dados",
+          label: "Crie Política Interna de Proteção de Dados",
+          checked: false
+        },
+        {
+          id: "elaborar-politica-seguranca",
+          label: "Elabore Política de Segurança da Informação",
+          checked: false
+        },
+        {
+          id: "criar-politica-uso-aceitavel",
+          label: "Crie Política de Uso Aceitável de Recursos de TI",
+          checked: false
+        },
+        {
+          id: "definir-politica-mesa-limpa",
+          label: "Defina Política de Mesa Limpa (Clear Desk) e Tela Limpa (Clear Screen)",
+          checked: false
+        },
+        {
+          id: "criar-codigo-conduta",
+          label: "Crie Código de Conduta sobre privacidade e proteção de dados",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "procedimentos-operacionais",
+      title: "3. Procedimentos Operacionais Padrão (POPs)",
+      items: [
+        {
+          id: "pop-direitos-titulares",
+          label: "Crie POP para atendimento aos direitos dos titulares",
+          checked: false
+        },
+        {
+          id: "pop-gestao-incidentes",
+          label: "Crie POP para gestão de incidentes de segurança",
+          checked: false
+        },
+        {
+          id: "pop-gestao-consentimento",
+          label: "Crie POP para gestão de consentimentos",
+          checked: false
+        },
+        {
+          id: "pop-avaliacao-fornecedores",
+          label: "Crie POP para avaliação e homologação de fornecedores",
+          checked: false
+        },
+        {
+          id: "pop-retencao-descarte",
+          label: "Crie POP para retenção e descarte de dados",
+          checked: false
+        },
+        {
+          id: "pop-dpia",
+          label: "Crie POP para realização de DPIA (Relatório de Impacto)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "documentos-contratuais",
+      title: "4. Documentos Contratuais",
+      items: [
+        {
+          id: "clausulas-fornecedores",
+          label: "Elabore cláusulas de proteção de dados para contratos com fornecedores",
+          checked: false
+        },
+        {
+          id: "acordo-controlador-operador",
+          label: "Crie modelo de Acordo de Controlador-Operador",
+          checked: false
+        },
+        {
+          id: "termo-confidencialidade",
+          label: "Elabore Termo de Confidencialidade para colaboradores",
+          checked: false
+        },
+        {
+          id: "acordo-compartilhamento",
+          label: "Crie modelo de Acordo de Compartilhamento de Dados",
+          checked: false
+        },
+        {
+          id: "revisar-contratos-trabalho",
+          label: "Revise contratos de trabalho com cláusulas de proteção de dados",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "registro-atividades",
+      title: "5. Registros e Controles",
+      items: [
+        {
+          id: "manter-inventario-atualizado",
+          label: "Mantenha inventário de dados atualizado",
+          checked: false
+        },
+        {
+          id: "criar-registro-tratamentos",
+          label: "Crie registro de atividades de tratamento (ROPA)",
+          checked: false
+        },
+        {
+          id: "documentar-avaliacoes-impacto",
+          label: "Documente avaliações de impacto realizadas (DPIAs)",
+          checked: false
+        },
+        {
+          id: "criar-registro-incidentes",
+          label: "Crie registro de incidentes de segurança",
+          checked: false
+        },
+        {
+          id: "documentar-solicitacoes-titulares",
+          label: "Documente solicitações de titulares e respostas",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "gestao-documentacao",
+      title: "6. Gestão da Documentação",
+      items: [
+        {
+          id: "versionar-documentos",
+          label: "Implemente versionamento de todos os documentos",
+          checked: false
+        },
+        {
+          id: "aprovar-formalmente",
+          label: "Obtenha aprovação formal da diretoria para as políticas",
+          checked: false
+        },
+        {
+          id: "distribuir-documentos",
+          label: "Distribua documentos para todas as áreas relevantes",
+          checked: false
+        },
+        {
+          id: "criar-repositorio",
+          label: "Crie repositório centralizado de documentação",
+          checked: false
+        },
+        {
+          id: "definir-revisao-periodica",
+          label: "Defina periodicidade de revisão (recomendado: anual)",
+          checked: false
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          🚩 Fase 5 - Documentação e Políticas
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Criação e formalização da documentação de governança de dados
+        </p>
+      </div>
+
+      {/* E-book Heyzine */}
+      <PhaseInfoManager phase="fase-5" section="heyzine" />
+
+      {/* Descrição da Fase */}
+      <PhaseDescriptionManager 
+        phase="fase-5" 
+        defaultContent={`
+<p class="text-gray-700 dark:text-gray-300">
+            Esta fase é dedicada à criação, revisão e formalização de toda a documentação necessária 
+            para demonstrar conformidade com a LGPD e estabelecer uma governança adequada de dados pessoais.
+          </p>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">Documentos Essenciais:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>
+              <strong>Política de Privacidade:</strong> Documento público que informa aos titulares 
+              como seus dados são tratados
+            </li>
+            <li>
+              <strong>Política Interna de Proteção de Dados:</strong> Diretrizes internas para 
+              colaboradores sobre tratamento de dados
+            </li>
+            <li>
+              <strong>Política de Segurança da Informação:</strong> Medidas técnicas e organizacionais 
+              de proteção
+            </li>
+            <li>
+              <strong>Termos de Uso e Consentimento:</strong> Documentos para coleta de consentimento 
+              quando necessário
+            </li>
+            <li>
+              <strong>Contratos com Fornecedores:</strong> Cláusulas de proteção de dados em contratos 
+              com operadores
+            </li>
+            <li>
+              <strong>Procedimentos Operacionais:</strong> Processos para atendimento de direitos dos 
+              titulares, gestão de incidentes, etc.
+            </li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4 mb-2">Boas Práticas:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Linguagem clara e acessível</li>
+            <li>Documentação versionada e datada</li>
+            <li>Aprovação formal pela diretoria</li>
+            <li>Disponibilização para os colaboradores</li>
+            <li>Revisão periódica (pelo menos anual)</li>
+          </ul>
+
+          <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mt-4">
+            <p class="text-sm text-blue-800 dark:text-blue-200">
+              <strong>💡 Importante:</strong> A documentação não é apenas uma formalidade - ela deve 
+              refletir fielmente as práticas reais da empresa. Certifique-se de que o que está 
+              documentado é realmente implementado no dia a dia.
+            </p>
+          </div>
+        `}
+      />
+
+      {/* Orientações sobre a fase */}
+      <PhaseInfoManager phase="fase-5" section="howto" />
+
+      {/* Considerações sobre a fase */}
+      <PhaseChecklist phase="fase-5" sections={checklistSections} />
+
+      {/* Documentação da Fase */}
+      <PhaseDocumentsUpload phase="fase-5" />
+    </div>
+  );
+}
+

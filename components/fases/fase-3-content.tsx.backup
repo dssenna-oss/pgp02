@@ -1,0 +1,249 @@
+
+
+
+"use client";
+
+import PhaseDocumentsUpload from "./phase-documents-upload";
+import PhaseInfoManager from "./phase-info-manager";
+import PhaseChecklist from "./phase-checklist";
+import PhaseDescriptionManager from "./phase-description-manager";
+
+export default function Fase3Content() {
+  // Definir o checklist da Fase 3
+  const checklistSections = [
+    {
+      id: "preparacao-analise",
+      title: "1. Preparação para Análise de Riscos",
+      items: [
+        {
+          id: "revisar-inventario",
+          label: "Revise o inventário de dados mapeado na Fase 2",
+          checked: false
+        },
+        {
+          id: "definir-metodologia-risco",
+          label: "Defina a metodologia de análise de riscos (ex: matriz de probabilidade x impacto)",
+          checked: false
+        },
+        {
+          id: "formar-equipe-analise",
+          label: "Forme equipe multidisciplinar para análise (TI, Jurídico, Segurança)",
+          checked: false
+        },
+        {
+          id: "preparar-templates",
+          label: "Prepare templates para documentação de riscos e gaps",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "analise-riscos-seguranca",
+      title: "2. Análise de Riscos de Segurança",
+      items: [
+        {
+          id: "avaliar-controles-acesso",
+          label: "Avalie os controles de acesso aos dados (físico e lógico)",
+          checked: false
+        },
+        {
+          id: "verificar-criptografia",
+          label: "Verifique se dados sensíveis estão criptografados",
+          checked: false
+        },
+        {
+          id: "analisar-backup",
+          label: "Analise procedimentos de backup e recuperação",
+          checked: false
+        },
+        {
+          id: "avaliar-vulnerabilidades",
+          label: "Identifique vulnerabilidades técnicas nos sistemas",
+          checked: false
+        },
+        {
+          id: "revisar-seguranca-fisica",
+          label: "Revise a segurança física dos locais de armazenamento",
+          checked: false
+        },
+        {
+          id: "classificar-riscos-seguranca",
+          label: "Classifique os riscos de segurança por criticidade (alto, médio, baixo)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "gap-analysis",
+      title: "3. GAP Analysis - Identificação de Lacunas",
+      items: [
+        {
+          id: "verificar-bases-legais",
+          label: "Verifique se todos os tratamentos possuem base legal adequada",
+          checked: false
+        },
+        {
+          id: "avaliar-consentimentos",
+          label: "Avalie se os consentimentos são coletados de forma válida",
+          checked: false
+        },
+        {
+          id: "revisar-politicas",
+          label: "Identifique lacunas nas políticas de privacidade existentes",
+          checked: false
+        },
+        {
+          id: "verificar-contratos",
+          label: "Verifique se contratos com fornecedores têm cláusulas de proteção de dados",
+          checked: false
+        },
+        {
+          id: "avaliar-direitos-titulares",
+          label: "Avalie se há processos para atender direitos dos titulares",
+          checked: false
+        },
+        {
+          id: "verificar-transparencia",
+          label: "Verifique a transparência na comunicação sobre tratamento de dados",
+          checked: false
+        },
+        {
+          id: "avaliar-retencao",
+          label: "Avalie se os períodos de retenção estão adequados e documentados",
+          checked: false
+        },
+        {
+          id: "verificar-transferencias",
+          label: "Verifique conformidade nas transferências internacionais de dados (se houver)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "avaliacao-impacto",
+      title: "4. Avaliação de Impacto",
+      items: [
+        {
+          id: "identificar-tratamentos-alto-risco",
+          label: "Identifique tratamentos de alto risco que requerem DPIA (Relatório de Impacto)",
+          checked: false
+        },
+        {
+          id: "avaliar-impacto-titulares",
+          label: "Avalie o impacto potencial sobre os direitos dos titulares",
+          checked: false
+        },
+        {
+          id: "estimar-impacto-reputacional",
+          label: "Estime o impacto reputacional de possíveis incidentes",
+          checked: false
+        },
+        {
+          id: "calcular-impacto-financeiro",
+          label: "Calcule o impacto financeiro de multas e sanções potenciais",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "consolidacao-relatorio",
+      title: "5. Consolidação e Relatório",
+      items: [
+        {
+          id: "consolidar-riscos",
+          label: "Consolide todos os riscos identificados em um relatório",
+          checked: false
+        },
+        {
+          id: "priorizar-riscos",
+          label: "Priorize os riscos por criticidade e urgência",
+          checked: false
+        },
+        {
+          id: "documentar-gaps",
+          label: "Documente todas as lacunas (gaps) identificadas",
+          checked: false
+        },
+        {
+          id: "recomendar-acoes",
+          label: "Recomende ações corretivas para cada risco/gap identificado",
+          checked: false
+        },
+        {
+          id: "apresentar-resultados",
+          label: "Apresente os resultados para a alta direção e comitê de governança",
+          checked: false
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          🚩 Fase 3 - Análise de Riscos e GAP Analysis
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Avaliação de riscos e identificação de lacunas na conformidade com a LGPD
+        </p>
+      </div>
+
+      {/* E-book Heyzine */}
+      <PhaseInfoManager phase="fase-3" section="heyzine" />
+
+      {/* Descrição da Fase */}
+      <PhaseDescriptionManager 
+        phase="fase-3" 
+        defaultContent={`
+<p class="text-gray-700 dark:text-gray-300">
+            Com base no mapeamento realizado na Fase 2, esta etapa consiste em avaliar os riscos 
+            associados ao tratamento de dados pessoais e identificar as lacunas (gaps) entre o 
+            estado atual da empresa e os requisitos da LGPD.
+          </p>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">Análise de Riscos:</h4>
+          <p class="text-gray-700 dark:text-gray-300">
+            Avalie os riscos de segurança, privacidade e conformidade para cada processo mapeado:
+          </p>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Quais são os riscos de vazamento ou acesso não autorizado?</li>
+            <li>Os dados estão adequadamente protegidos?</li>
+            <li>Existem medidas de segurança técnicas e organizacionais?</li>
+            <li>Qual o impacto potencial em caso de incidente?</li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4 mb-2">GAP Analysis (Análise de Lacunas):</h4>
+          <p class="text-gray-700 dark:text-gray-300">
+            Identifique o que está faltando para estar em conformidade:
+          </p>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Falta de políticas e procedimentos formalizados</li>
+            <li>Ausência de bases legais adequadas para tratamento</li>
+            <li>Contratos de fornecedores sem cláusulas de proteção de dados</li>
+            <li>Falta de mecanismos para atender direitos dos titulares</li>
+            <li>Ausência de treinamento para colaboradores</li>
+          </ul>
+
+          <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg mt-4">
+            <p class="text-sm text-red-800 dark:text-red-200">
+              <strong>🚨 Atenção:</strong> Esta análise é fundamental para priorizar as ações corretivas 
+              e preventivas que serão implementadas na próxima fase. Documente todos os riscos e gaps 
+              identificados de forma detalhada.
+            </p>
+          </div>
+        `}
+      />
+
+      {/* Orientações sobre a fase */}
+      <PhaseInfoManager phase="fase-3" section="howto" />
+
+      {/* Considerações sobre a fase */}
+      <PhaseChecklist phase="fase-3" sections={checklistSections} />
+
+      {/* Documentação da Fase */}
+      <PhaseDocumentsUpload phase="fase-3" />
+    </div>
+  );
+}
+

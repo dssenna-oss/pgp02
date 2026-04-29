@@ -1,0 +1,220 @@
+
+
+"use client";
+
+import PhaseDocumentsUpload from "./phase-documents-upload";
+import PhaseInfoManager from "./phase-info-manager";
+import PhaseChecklist from "./phase-checklist";
+import PhaseDescriptionManager from "./phase-description-manager";
+
+export default function Fase2Content() {
+  // Definir o checklist da Fase 2
+  const checklistSections = [
+    {
+      id: "preparacao-mapeamento",
+      title: "1. Preparação para o Mapeamento",
+      items: [
+        {
+          id: "identificar-departamentos",
+          label: "Identifique todos os departamentos que coletam/tratam dados pessoais",
+          checked: false
+        },
+        {
+          id: "agendar-entrevistas",
+          label: "Agende entrevistas com gestores de cada área",
+          checked: false
+        },
+        {
+          id: "preparar-questionarios",
+          label: "Prepare questionários de mapeamento para cada departamento",
+          checked: false
+        },
+        {
+          id: "definir-metodologia",
+          label: "Defina a metodologia de documentação (planilhas, software específico, etc.)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "mapeamento-por-area",
+      title: "2. Mapeamento por Área da Empresa",
+      items: [
+        {
+          id: "mapear-rh",
+          label: "Mapeie tratamentos de dados do RH (funcionários, candidatos)",
+          checked: false
+        },
+        {
+          id: "mapear-comercial",
+          label: "Mapeie tratamentos do Comercial/Vendas (clientes, prospects)",
+          checked: false
+        },
+        {
+          id: "mapear-marketing",
+          label: "Mapeie tratamentos do Marketing (leads, newsletters, campanhas)",
+          checked: false
+        },
+        {
+          id: "mapear-ti",
+          label: "Mapeie sistemas e bancos de dados da TI",
+          checked: false
+        },
+        {
+          id: "mapear-financeiro",
+          label: "Mapeie tratamentos do Financeiro (dados bancários, transações)",
+          checked: false
+        },
+        {
+          id: "mapear-outras-areas",
+          label: "Mapeie outras áreas relevantes (atendimento, logística, etc.)",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "detalhamento-processos",
+      title: "3. Detalhamento de Cada Processo",
+      items: [
+        {
+          id: "listar-dados-coletados",
+          label: "Liste todos os dados pessoais coletados em cada processo",
+          checked: false
+        },
+        {
+          id: "identificar-fontes",
+          label: "Identifique as fontes de coleta (formulários, contratos, sistemas)",
+          checked: false
+        },
+        {
+          id: "definir-finalidades",
+          label: "Defina claramente a finalidade de cada tratamento",
+          checked: false
+        },
+        {
+          id: "identificar-base-legal",
+          label: "Identifique a base legal para cada tratamento",
+          checked: false
+        },
+        {
+          id: "mapear-armazenamento",
+          label: "Mapeie onde e como os dados são armazenados",
+          checked: false
+        },
+        {
+          id: "identificar-acessos",
+          label: "Identifique quem tem acesso aos dados (pessoas e sistemas)",
+          checked: false
+        },
+        {
+          id: "definir-retencao",
+          label: "Defina o período de retenção de cada categoria de dados",
+          checked: false
+        },
+        {
+          id: "mapear-compartilhamento",
+          label: "Mapeie com quem os dados são compartilhados (fornecedores, parceiros)",
+          checked: false
+        },
+        {
+          id: "documentar-descarte",
+          label: "Documente como os dados são descartados ao final do ciclo",
+          checked: false
+        }
+      ]
+    },
+    {
+      id: "consolidacao-inventario",
+      title: "4. Consolidação do Inventário de Dados",
+      items: [
+        {
+          id: "compilar-informacoes",
+          label: "Compile todas as informações coletadas em um inventário centralizado",
+          checked: false
+        },
+        {
+          id: "classificar-dados",
+          label: "Classifique os dados por sensibilidade (dados comuns vs. sensíveis)",
+          checked: false
+        },
+        {
+          id: "criar-fluxogramas",
+          label: "Crie fluxogramas dos principais fluxos de dados",
+          checked: false
+        },
+        {
+          id: "validar-informacoes",
+          label: "Valide as informações com os responsáveis de cada área",
+          checked: false
+        },
+        {
+          id: "apresentar-diretoria",
+          label: "Apresente o inventário consolidado para a diretoria",
+          checked: false
+        }
+      ]
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          🚩 Fase 2 - Mapeamento dos Processos de Dados
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Identificação e documentação de todos os processos que envolvem dados pessoais
+        </p>
+      </div>
+
+      {/* E-book Heyzine */}
+      <PhaseInfoManager phase="fase-2" section="heyzine" />
+
+      {/* Descrição da Fase */}
+      <PhaseDescriptionManager 
+        phase="fase-2" 
+        defaultContent={`
+<p class="text-gray-700 dark:text-gray-300">
+            Esta fase se caracteriza pelo mapeamento de todos os processos e tratamentos 
+            de dados pessoais da empresa. É necessário identificar:
+          </p>
+          
+          <h4 class="text-lg font-semibold mt-4 mb-2">Pontos de Atenção:</h4>
+          <ul class="list-disc pl-6 space-y-2 text-gray-700 dark:text-gray-300">
+            <li>Quais dados pessoais são coletados</li>
+            <li>Como são coletados (formulários, contratos, sistemas)</li>
+            <li>Para que finalidade são utilizados</li>
+            <li>Onde são armazenados</li>
+            <li>Quem tem acesso a esses dados</li>
+            <li>Por quanto tempo são mantidos</li>
+            <li>Com quem são compartilhados</li>
+            <li>Como são descartados</li>
+          </ul>
+
+          <div class="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg mt-4">
+            <p class="text-sm text-amber-800 dark:text-amber-200">
+              <strong>⚠️ Importante:</strong> O mapeamento deve incluir TODOS os departamentos da empresa, 
+              desde RH até vendas, TI, marketing, financeiro, etc. Cada área trata dados de forma diferente 
+              e todas devem estar em conformidade.
+            </p>
+          </div>
+
+          <h4 class="text-lg font-semibold mt-4 mb-2">Resultado Esperado:</h4>
+          <p class="text-gray-700 dark:text-gray-300">
+            Ao final desta fase, a empresa deve ter um <strong>Inventário de Dados</strong> completo, 
+            documentando todo o ciclo de vida dos dados pessoais dentro da organização.
+          </p>
+        `}
+      />
+
+      {/* Orientações sobre a fase */}
+      <PhaseInfoManager phase="fase-2" section="howto" />
+
+      {/* Considerações sobre a fase */}
+      <PhaseChecklist phase="fase-2" sections={checklistSections} />
+
+      {/* Documentação da Fase */}
+      <PhaseDocumentsUpload phase="fase-2" />
+    </div>
+  );
+}
