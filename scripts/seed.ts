@@ -7,8 +7,12 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...')
 
-  // Hash da senha para o usuário de teste
-  const hashedPassword = await bcrypt.hash('johndoe123', 12)
+  // Hash da senha para o usuário admin (lida de env var; fallback só pra dev)
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'changeme-dev-only'
+  if (!process.env.SEED_ADMIN_PASSWORD) {
+    console.warn('⚠️  SEED_ADMIN_PASSWORD não definida; usando senha padrão de dev. NÃO use em produção.')
+  }
+  const hashedPassword = await bcrypt.hash(adminPassword, 12)
 
   // Criar empresa de teste
   const company = await prisma.company.upsert({
@@ -34,13 +38,13 @@ async function main() {
     },
   })
 
-  // Criar usuário de teste (admin ativo para uso local)
+  // Criar usuário admin
   const user = await prisma.user.upsert({
-    where: { email: 'john@doe.com' },
-    update: { isActive: true, role: 'admin' },
+    where: { email: process.env.SEED_ADMIN_EMAIL || 'admin@example.com' },
+    update: { isActive: true, role: 'admin', password: hashedPassword },
     create: {
-      name: 'John Doe',
-      email: 'john@doe.com',
+      name: 'Admin',
+      email: process.env.SEED_ADMIN_EMAIL || 'admin@example.com',
       password: hashedPassword,
       companyId: company.id,
       isActive: true,
