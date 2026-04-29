@@ -126,13 +126,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       {/* Logo */}
       <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         {companyLogo ? (
-          <div className="relative h-8 w-8 flex-shrink-0">
-            <Image
+          <div className="relative h-8 w-8 flex-shrink-0 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={companyLogo}
               alt="Logo da empresa"
-              fill
-              className="object-contain"
-              priority
+              className="max-w-full max-h-full object-contain"
             />
           </div>
         ) : (
@@ -248,13 +247,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 ml-12">
               {companyLogo ? (
-                <div className="relative h-6 w-6 flex-shrink-0">
-                  <Image
+                <div className="relative h-6 w-6 flex-shrink-0 flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={companyLogo}
                     alt="Logo da empresa"
-                    fill
-                    className="object-contain"
-                    priority
+                    className="max-w-full max-h-full object-contain"
                   />
                 </div>
               ) : (

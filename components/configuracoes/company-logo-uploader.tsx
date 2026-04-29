@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Image as ImageIcon, Upload, Trash2, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
-import Image from "next/image";
 
 export default function CompanyLogoUploader() {
   const { data: session } = useSession() || {};
@@ -52,9 +51,9 @@ export default function CompanyLogoUploader() {
       return;
     }
 
-    // Valida o tamanho (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Tamanho máximo: 5MB");
+    // Valida o tamanho (max 2MB — alinhado com a API)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Tamanho máximo: 2MB");
       return;
     }
 
@@ -149,13 +148,12 @@ export default function CompanyLogoUploader() {
               <span>Carregando...</span>
             </div>
           ) : logoUrl ? (
-            <div className="relative w-48 h-48">
-              <Image
+            <div className="relative w-48 h-48 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={logoUrl}
                 alt="Logo da empresa"
-                fill
-                className="object-contain"
-                priority
+                className="max-w-full max-h-full object-contain"
               />
             </div>
           ) : (
@@ -210,7 +208,7 @@ export default function CompanyLogoUploader() {
         {/* Informações sobre o arquivo */}
         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
           <p>• Formatos aceitos: JPG, PNG, GIF, WebP</p>
-          <p>• Tamanho máximo: 5MB</p>
+          <p>• Tamanho máximo: 2MB</p>
           <p>• Recomendado: imagem quadrada com fundo transparente</p>
         </div>
       </CardContent>

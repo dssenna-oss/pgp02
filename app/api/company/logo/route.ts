@@ -1,10 +1,10 @@
-
-
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { uploadLogo, deleteFile, getFileUrl } from "@/lib/s3";
+
+const VALID_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB (base64 incha ~33%, fica ~2.7 MB no DB)
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    // Verifica se o usuário é admin
     if (session.user.role !== "admin") {
       return NextResponse.json(
         { error: "Apenas administradores podem alterar o logo" },
@@ -37,55 +36,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Arquivo não fornecido" }, { status: 400 });
     }
 
-    // Valida o tipo de arquivo
-    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
-    if (!validTypes.includes(file.type)) {
+    if (!VALID_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Tipo de arquivo inválido. Use JPG, PNG, GIF ou WebP" },
         { status: 400 }
       );
     }
 
-    // Valida o tamanho (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_SIZE_BYTES) {
       return NextResponse.json(
-        { error: "Arquivo muito grande. Tamanho máximo: 5MB" },
+        { error: "Arquivo muito grande. Tamanho máximo: 2MB" },
         { status: 400 }
       );
     }
 
-    // Busca a empresa para obter o logo antigo
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { logoUrl: true },
-    });
-
-    // Converte para Buffer e faz upload
+    // Codifica o arquivo como data URL (base64) e salva direto no banco.
+    // Logos são pequenos (1 por empresa) — não justifica S3/Vercel Blob.
     const buffer = Buffer.from(await file.arrayBuffer());
-    const cloud_storage_path = await uploadLogo(buffer, file.name, file.type);
+    const dataUrl = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // Atualiza o logo no banco
     await prisma.company.update({
       where: { id: companyId },
-      data: { logoUrl: cloud_storage_path },
+      data: { logoUrl: dataUrl },
     });
-
-    // Remove o logo antigo do S3 (se existir)
-    if (company?.logoUrl) {
-      try {
-        await deleteFile(company.logoUrl);
-      } catch (error) {
-        console.error("Erro ao deletar logo antigo:", error);
-      }
-    }
-
-    // Gera URL assinada para o novo logo
-    const logoUrl = await getFileUrl(cloud_storage_path, 7 * 24 * 60 * 60); // 7 dias
 
     return NextResponse.json({
       message: "Logo atualizado com sucesso",
-      logoUrl,
-      cloud_storage_path,
+      logoUrl: dataUrl,
     });
   } catch (error) {
     console.error("Erro ao fazer upload do logo:", error);
@@ -96,7 +73,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -117,14 +94,7 @@ export async function GET(request: NextRequest) {
       select: { logoUrl: true },
     });
 
-    if (!company?.logoUrl) {
-      return NextResponse.json({ logoUrl: null });
-    }
-
-    // Gera URL assinada
-    const logoUrl = await getFileUrl(company.logoUrl, 7 * 24 * 60 * 60); // 7 dias
-
-    return NextResponse.json({ logoUrl, cloud_storage_path: company.logoUrl });
+    return NextResponse.json({ logoUrl: company?.logoUrl ?? null });
   } catch (error) {
     console.error("Erro ao buscar logo:", error);
     return NextResponse.json(
@@ -134,7 +104,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -142,7 +112,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    // Verifica se o usuário é admin
     if (session.user.role !== "admin") {
       return NextResponse.json(
         { error: "Apenas administradores podem remover o logo" },
@@ -158,27 +127,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Busca o logo atual
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: { logoUrl: true },
-    });
-
-    if (!company?.logoUrl) {
-      return NextResponse.json(
-        { message: "Nenhum logo para remover" },
-        { status: 200 }
-      );
-    }
-
-    // Remove do S3
-    try {
-      await deleteFile(company.logoUrl);
-    } catch (error) {
-      console.error("Erro ao deletar logo do S3:", error);
-    }
-
-    // Remove do banco
     await prisma.company.update({
       where: { id: companyId },
       data: { logoUrl: null },
