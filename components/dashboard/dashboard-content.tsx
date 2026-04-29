@@ -112,7 +112,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
           <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
             <iframe
               className="absolute inset-0 w-full h-full"
-              src="https://www.youtube.com/embed/dyFafhGG9u0?modestbranding=1&rel=0"
+              src="https://www.youtube.com/embed/1j_cWrHrEAw?modestbranding=1&rel=0"
               title="PGP - Dashboard"
               loading="lazy"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
