@@ -34,15 +34,17 @@ async function main() {
     },
   })
 
-  // Criar usuário de teste
+  // Criar usuário de teste (admin ativo para uso local)
   const user = await prisma.user.upsert({
     where: { email: 'john@doe.com' },
-    update: {},
+    update: { isActive: true, role: 'admin' },
     create: {
       name: 'John Doe',
       email: 'john@doe.com',
       password: hashedPassword,
       companyId: company.id,
+      isActive: true,
+      role: 'admin',
     },
   })
 

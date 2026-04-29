@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "regions": ["gru1"],
+  "functions": {
+    "app/api/chat/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/chat/analyze-file/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
