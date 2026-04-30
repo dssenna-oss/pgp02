@@ -195,7 +195,7 @@ export default function LandingPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">PGP</span>
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">LGPD - PGP</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/login">
@@ -390,7 +390,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Shield className="h-6 w-6 text-blue-400" />
-                <span className="text-xl font-bold">PGP</span>
+                <span className="text-xl font-bold">LGPD - PGP</span>
               </div>
               <p className="text-gray-400">
                 Sistema completo para conformidade com LGPD e governança em privacidade.

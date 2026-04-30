@@ -46,20 +46,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="w-full max-w-md">
-        {/* Vídeo de Apresentação */}
-        <div className="w-full rounded-lg overflow-hidden shadow-lg bg-black mb-8">
-          <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
-            <video 
-              className="absolute inset-0 w-full h-full object-cover"
-              controls
-              preload="metadata"
-            >
-              <source src="/videos/capa-lgpd.mp4" type="video/mp4" />
-              Seu navegador não suporta a reprodução de vídeos.
-            </video>
-          </div>
-        </div>
-
         {/* Logo e título */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
