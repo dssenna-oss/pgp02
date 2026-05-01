@@ -46,13 +46,23 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Sua conta está inativa. Entre em contato com o administrador para ativá-la.");
         }
 
+        // Remove o logoUrl da empresa — base64 incha o JWT e estoura
+        // o limite de tamanho de header da Vercel (~16KB). O frontend
+        // busca o logo separadamente via /api/company/logo.
+        const companyForSession = user.company
+          ? (() => {
+              const { logoUrl: _omit, ...rest } = user.company;
+              return rest;
+            })()
+          : null;
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
           companyId: user.companyId,
-          company: user.company
+          company: companyForSession,
         };
       }
     })
