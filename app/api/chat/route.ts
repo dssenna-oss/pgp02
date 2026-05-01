@@ -4,6 +4,50 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { anonymizeText, detectSentiment } from "@/lib/chat-utils";
 import { streamChat, type ChatMessage } from "@/lib/llm";
+import { embedText, toVectorLiteral } from "@/lib/embeddings";
+
+/**
+ * RAG: busca os chunks mais semanticamente próximos da pergunta do usuário
+ * usando pgvector. Se a tabela document_chunks não existir, ou não houver
+ * chunks (ex.: ambiente local sem indexação), retorna [] silenciosamente
+ * e o chat segue sem grounding.
+ */
+async function retrieveRagContext(
+  query: string,
+  pageContext: string | null | undefined,
+  topK = 5
+): Promise<Array<{ text: string; sourceTitle: string; source: string; phase: string | null }>> {
+  try {
+    const queryVec = await embedText(query, "RETRIEVAL_QUERY");
+    const vecLiteral = toVectorLiteral(queryVec);
+
+    // Distância cosseno: <=> menor = mais similar.
+    // Privilegia a fase atual (se houver) misturando 70/30 com global.
+    const phaseFilter = pageContext && pageContext !== "dashboard" ? pageContext : null;
+
+    const rows = await prisma.$queryRawUnsafe<
+      Array<{ text: string; sourceTitle: string; source: string; phase: string | null; distance: number }>
+    >(
+      `
+      SELECT text, "sourceTitle", source, phase,
+             embedding <=> $1::vector AS distance
+      FROM document_chunks
+      WHERE embedding IS NOT NULL
+        ${phaseFilter ? `AND (phase = $2 OR phase IS NULL)` : ""}
+      ORDER BY embedding <=> $1::vector ASC
+      LIMIT ${topK}
+      `,
+      vecLiteral,
+      ...(phaseFilter ? [phaseFilter] : [])
+    );
+
+    return rows;
+  } catch (e) {
+    // tabela ausente ou pgvector indisponível (dev local sem extension)
+    console.warn("RAG retrieval skipped:", (e as Error).message);
+    return [];
+  }
+}
 
 // Mapeamento de contexto de página para descrição amigável
 const PAGE_CONTEXT_MAP: Record<string, string> = {
@@ -187,6 +231,19 @@ export async function POST(request: NextRequest) {
     // Adicionar contexto de sentimento ao prompt se detectado frustração ou confusão
     if (sentiment === "frustrated" || sentiment === "confused") {
       systemPrompt += `\n\n## Observação sobre o usuário:\nO usuário parece estar ${sentiment === "frustrated" ? "frustrado" : "confuso"}. Seja extra paciente, use linguagem ainda mais clara e ofereça exemplos práticos.`;
+    }
+
+    // RAG: buscar trechos relevantes da base de conhecimento (PDFs/DOCXs
+    // indexados) e injetar no system prompt.
+    const ragChunks = await retrieveRagContext(anonymizedMessage, pageContext, 5);
+    if (ragChunks.length > 0) {
+      const grounded = ragChunks
+        .map(
+          (c, i) =>
+            `[Fonte ${i + 1}] ${c.sourceTitle}${c.phase ? ` (${c.phase})` : ""}\n${c.text}`
+        )
+        .join("\n\n---\n\n");
+      systemPrompt += `\n\n## Base de conhecimento (use como referência primária; cite quando relevante):\n\n${grounded}\n\n## Diretriz adicional:\nQuando usar informação de uma fonte acima, mencione o título no texto (ex.: "Conforme o Guia da ANPD..."). Se a pergunta não tiver relação com nenhuma fonte, responda normalmente.`;
     }
 
     // Adicionar contexto de arquivo se houver
