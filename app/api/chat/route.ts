@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { anonymizeText, detectSentiment } from "@/lib/chat-utils";
+import { streamChat, type ChatMessage } from "@/lib/llm";
 
 // Mapeamento de contexto de página para descrição amigável
 const PAGE_CONTEXT_MAP: Record<string, string> = {
@@ -204,12 +205,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Construir mensagens para a API (usar mensagem anonimizada)
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...history.slice(-10), // Últimas 10 mensagens do histórico
-      { role: "user", content: anonymizedMessage }
-    ];
+    // Histórico anterior (sem mensagem atual e sem o system prompt)
+    const llmHistory: ChatMessage[] = (history as ChatMessage[]).slice(-10);
 
     // Salvar mensagem do usuário no banco (se autenticado)
     let userMessageId: string | null = null;
@@ -264,104 +261,69 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Chamar a API do RouteLLM
-    const response = await fetch("https://apps.abacus.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.ABACUSAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: messages,
-        max_tokens: 1500,
-        temperature: 0.7,
-        stream: true
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Erro na API LLM:", errorText);
-      return NextResponse.json(
-        { error: "Erro ao processar sua pergunta. Tente novamente." },
-        { status: 500 }
-      );
-    }
-
-    // Stream da resposta
+    // Stream da resposta do LLM (Gemini) — convertido pro mesmo formato SSE
+    // que o frontend já espera: data: {"content": "..."} + data: [DONE]
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = response.body?.getReader();
-        const decoder = new TextDecoder();
         const encoder = new TextEncoder();
-        let partialRead = "";
-        let fullResponse = ""; // Acumular resposta completa
+        let fullResponse = "";
 
-        // Enviar IDs de conversa e mensagem no início
         if (dbConversationId) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-            type: "init", 
-            conversationId: dbConversationId 
-          })}\n\n`));
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ type: "init", conversationId: dbConversationId })}\n\n`
+            )
+          );
         }
 
         try {
-          while (true) {
-            const { done, value } = await reader!.read();
-            if (done) break;
+          for await (const chunk of streamChat({
+            systemPrompt,
+            history: llmHistory,
+            userMessage: anonymizedMessage,
+            temperature: 0.7,
+            maxOutputTokens: 1500,
+          })) {
+            fullResponse += chunk;
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ content: chunk })}\n\n`)
+            );
+          }
 
-            partialRead += decoder.decode(value, { stream: true });
-            const lines = partialRead.split("\n");
-            partialRead = lines.pop() || "";
-
-            for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6);
-                if (data === "[DONE]") {
-                  // Salvar resposta completa do assistente no banco
-                  if (userId && dbConversationId && fullResponse) {
-                    try {
-                      const assistantMessage = await prisma.chatMessage.create({
-                        data: {
-                          conversationId: dbConversationId,
-                          role: "assistant",
-                          content: fullResponse,
-                          pageContext,
-                        },
-                      });
-                      // Enviar ID da mensagem do assistente
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
-                        type: "messageId", 
-                        messageId: assistantMessage.id 
-                      })}\n\n`));
-                    } catch (dbError) {
-                      console.error("Erro ao salvar resposta:", dbError);
-                    }
-                  }
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                  return;
-                }
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content || "";
-                  if (content) {
-                    fullResponse += content; // Acumular resposta
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
-                  }
-                } catch (e) {
-                  // Skip invalid JSON
-                }
-              }
+          // Persistir resposta do assistant
+          if (userId && dbConversationId && fullResponse) {
+            try {
+              const assistantMessage = await prisma.chatMessage.create({
+                data: {
+                  conversationId: dbConversationId,
+                  role: "assistant",
+                  content: fullResponse,
+                  pageContext,
+                },
+              });
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({ type: "messageId", messageId: assistantMessage.id })}\n\n`
+                )
+              );
+            } catch (dbError) {
+              console.error("Erro ao salvar resposta:", dbError);
             }
           }
+
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         } catch (error) {
           console.error("Stream error:", error);
-          controller.error(error);
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ content: "\n\n⚠️ Erro ao processar sua pergunta. Tente novamente." })}\n\n`
+            )
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         } finally {
           controller.close();
         }
-      }
+      },
     });
 
     return new Response(stream, {

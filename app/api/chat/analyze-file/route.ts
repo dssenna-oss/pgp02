@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getFileUrl } from "@/lib/s3";
+import { generateText } from "@/lib/llm";
 
 // Extrair texto do arquivo usando LLM (para PDFs e documentos)
 export async function POST(request: NextRequest) {
@@ -84,33 +85,26 @@ Por favor, forneça um resumo estruturado do conteúdo do documento, incluindo:
 
 URL do arquivo para análise: ${fileUrl}`;
 
-    const llmResponse = await fetch("https://apps.abacus.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.ABACUSAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        messages: [
-          { role: "system", content: "Você é um assistente especializado em extrair e resumir conteúdo de documentos. Responda sempre em português brasileiro." },
-          { role: "user", content: extractionPrompt }
-        ],
-        max_tokens: 2000,
+    let extractedText: string;
+    try {
+      extractedText = await generateText({
+        systemPrompt:
+          "Você é um assistente especializado em extrair e resumir conteúdo de documentos. Responda sempre em português brasileiro.",
+        history: [],
+        userMessage: extractionPrompt,
         temperature: 0.3,
-      })
-    });
-
-    if (!llmResponse.ok) {
-      console.error("Erro na API LLM para extração:", await llmResponse.text());
+        maxOutputTokens: 2000,
+      });
+      if (!extractedText) {
+        extractedText = "Não foi possível extrair o conteúdo.";
+      }
+    } catch (e) {
+      console.error("Erro na API LLM para extração:", e);
       return NextResponse.json(
         { error: "Erro ao processar arquivo" },
         { status: 500 }
       );
     }
-
-    const llmData = await llmResponse.json();
-    const extractedText = llmData.choices?.[0]?.message?.content || "Não foi possível extrair o conteúdo.";
 
     // Salvar texto extraído
     await prisma.chatFile.update({
