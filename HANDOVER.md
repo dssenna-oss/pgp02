@@ -1,6 +1,6 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-02 · **Último commit:** `6fe45b7` · **Branch:** `main` (sincronizado com `origin/main`).
+> **Última sessão:** 2026-05-02 (continuação) · **Branch:** `claude/nice-mclean-d12b88` (worktree).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -11,39 +11,30 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 - Frontend Next.js + Postgres (Neon) + auto-deploy via push em `main`
 - Login: `clubedoservidor@protonmail.com` / `741963PgP@*#$`
-- Conteúdos didáticos, e-books de fase, documentos de fase (71 arquivos em `public/phase-documents/`, ~85 MB)
+- Conteúdos didáticos, e-books de fase, documentos de fase (71 arquivos em `public/phase-documents/`, ~85 MB) + 20 arquivos no Vercel Blob (fase-6/7)
 - Logo da empresa via base64 no DB (sem S3)
 - Uploads de novos documentos via Vercel Blob (público)
 - Vídeos de capa: YouTube embed (não há binários no repo)
 - Chatbot **independente da Abacus** rodando Gemini 2.5 Flash (`@google/genai`)
-- RAG com pgvector no Neon: **687 chunks** indexados (preliminar, fase-1, fase-2, fase-3, global)
+- **Gemini API em paid tier** (billing linkado a "conta de teste do Cloud" — sem cartão, mas com créditos trial)
+- **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — **100% dos `phase_documents` cobertos** (todas as fases: preliminar, fase-1 a fase-7, entendendo-pgp, global)
+- **Indexador suporta Vercel Blob**: arquivos com `cloud_storage_path` HTTPS são baixados via fetch
 
 ---
 
 ## ⏳ Pendências
 
-### 1. Indexar fases 4-7 + Entendendo PGP (RAG)
-A quota gratuita Gemini (1.000 embeds/dia) acabou. Re-rodar amanhã:
-
-```powershell
-cd E:\_________PGP
-$env:DATABASE_URL="postgresql://neondb_owner:npg_Se1HYgvrba3E@ep-mute-hill-ams507ms-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require&connect_timeout=60&pool_timeout=30"
-npx tsx --require dotenv/config scripts/index-knowledge-base.ts
-```
-
-Idempotente — só processa o que falta. Resultado fica em `document_chunks` no Neon.
-Pode conferir com:
-```powershell
-npx tsx --require dotenv/config scripts/rag-stats.ts
-```
-
-### 2. Revogar Personal Access Token do GitHub
-PAT `pgp-push-temp` foi usado durante a sessão pra pushes. **Revogar** em:
+### 1. Revogar Personal Access Token do GitHub
+PAT `pgp-push-temp` foi usado durante a sessão anterior pra pushes. **Revogar** em:
 https://github.com/settings/tokens
 
-### 3. Reativar logo (opcional)
+### 2. Reativar logo (opcional)
 Logo da empresa foi limpado no Neon como medida defensiva. Pra subir de novo:
 - Settings → Logo da Empresa → Upload (qualquer imagem ≤ 2 MB)
+
+<!-- (Pendência de docs não indexáveis foi resolvida em 2026-05-02:
+     usuário converteu os 3 .doc → .pdf e rodou OCR no PDF da Cartilha
+     LGPD. Indexação 100% completa, todos 86 sources contíguos.) -->
 
 ---
 
@@ -91,7 +82,10 @@ Não há AWS/S3 configurado — `lib/s3.ts` agora usa Vercel Blob por padrão. C
 | `lib/auth.ts` | NextAuth. Strip de `logoUrl` no JWT (cuidado: não voltar a colocar — incha cookie). |
 | `app/api/chat/route.ts` | Chat com retrieval RAG silencioso (degrada em dev sem pgvector) |
 | `prisma/schema.prisma` | `extensions = [vector]` + model `DocumentChunk` |
-| `scripts/index-knowledge-base.ts` | Indexador idempotente PDF/DOCX/XLSX → chunks vetorizados |
+| `scripts/index-knowledge-base.ts` | Indexador idempotente PDF/DOCX/XLSX → chunks vetorizados (suporta arquivo local + URL Vercel Blob) |
+| `scripts/find-partial-sources.ts` | Diagnóstico: lista sources com gap no chunkIndex (cobertura quebrada) e docs do `phase_documents` sem chunks |
+| `scripts/clean-partial-sources.ts` | Apaga chunks de sources parciais (recovery após indexação corrompida) |
+| `scripts/rag-stats.ts` | Stats rápidas do RAG (total / com embedding / por fase) |
 | `scripts/import-abacus-export.ts` | Importador one-off do JSON da Abacus (não rodar de novo) |
 | `scripts/update-admin.ts` | Renomear admin / rotacionar senha (env vars) |
 | `public/phase-documents/` | 71 arquivos importados da Abacus (commitados) |
@@ -105,7 +99,9 @@ Não há AWS/S3 configurado — `lib/s3.ts` agora usa Vercel Blob por padrão. C
 2. **Postgres local sem pgvector** — `prisma db push` falha ao tentar criar `document_chunks` localmente. Push só pra Neon.
 3. **PAT do GitHub** — credenciais cacheadas no Windows são de outra conta (`automatizeaihoje-ui`). Pra pushar precisa de PAT explícito ou rodar do PowerShell com Credential Manager.
 4. **Pdf-parse** — o pacote npm `pdf-parse` tem bug de side-effect no entry point. **Não usar.** Usamos `pdfjs-dist` (Mozilla) em `scripts/index-knowledge-base.ts`.
-5. **Gemini quota** — 1.000 embeds/dia no free tier. Indexar em batch grande estoura; rodar de novo no dia seguinte ou ativar billing.
+5. **Re-rodar indexador é seguro** — `index-knowledge-base.ts` agora pula sources que já têm chunks (verificação explícita por `count > 0`). Pra reindexar um documento do zero, deletar manualmente seus chunks: `DELETE FROM document_chunks WHERE source = '...'`.
+6. **Null bytes em PDF/DOCX** — extratores às vezes injetam `\x00` no texto, e Postgres rejeita em colunas TEXT. O indexador sanitiza com `text.replace(/\x00/g, "")`. Se algum extractor novo for adicionado, lembrar de aplicar a mesma limpeza.
+7. **TaskStop não mata processo filho no MSYS/Git Bash (Windows)** — ao parar um background bash via TaskStop, o `node` filho continua rodando. Pra matar de verdade: `ps -ef | grep tsx` → `kill -9 <PID>`.
 
 ---
 
@@ -114,4 +110,3 @@ Não há AWS/S3 configurado — `lib/s3.ts` agora usa Vercel Blob por padrão. C
 - Estender módulo de Inventário do app pra ter os 21 campos do `mapa-processos.html`
 - Criar importador de XLSX → `data_inventories` (popula a partir da planilha modelo)
 - Configurar AWS S3 ou aumentar Vercel Blob (caso queira mais espaço pra uploads)
-- Abrir billing no Gemini pra terminar a indexação na hora

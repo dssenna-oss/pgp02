@@ -19,8 +19,10 @@
  *   4. Quebra em chunks de ~1500 caracteres com 200 de sobreposição
  *   5. Gera embedding por chunk, salva via SQL bruto
  *
- * É IDEMPOTENTE — apaga chunks antigos pra cada arquivo antes de
- * regerar.
+ * IDEMPOTENTE — pula arquivos que já têm chunks indexados.
+ * Pra reindexar um arquivo do zero: deletar manualmente seus chunks
+ * (DELETE FROM document_chunks WHERE source = '/phase-documents/...')
+ * e rodar de novo.
  */
 import fs from "fs";
 import path from "path";
@@ -58,9 +60,10 @@ const prisma = new PrismaClient();
 
 interface ResolvedDoc {
   filename: string;
-  source: string; // "/phase-documents/..."
+  source: string; // "/phase-documents/..." (local) ou URL completa (Blob)
   title: string;
   phase: string | null;
+  blobUrl?: string; // se presente, baixar via fetch ao invés de ler do disco
 }
 
 async function listFiles(): Promise<string[]> {
@@ -101,8 +104,7 @@ async function resolveDocs(filenames: string[]): Promise<ResolvedDoc[]> {
   return out;
 }
 
-async function extractText(filepath: string, ext: string): Promise<string> {
-  const buf = fs.readFileSync(filepath);
+async function extractText(buf: Buffer, ext: string): Promise<string> {
   const e = ext.toLowerCase();
 
   if (e === ".pdf") {
@@ -165,16 +167,46 @@ function chunkText(text: string, size = CHUNK_SIZE, overlap = CHUNK_OVERLAP): st
 }
 
 async function indexDoc(doc: ResolvedDoc) {
-  const filepath = path.join(PUBLIC_DIR, doc.filename);
+  // Idempotência real: se já existem chunks pra esse source, pula.
+  // (Re-executar só processa arquivos faltantes, sem queimar quota
+  // de embeddings re-embedando o que já foi indexado.)
+  const existing = await prisma.documentChunk.count({ where: { source: doc.source } });
+  if (existing > 0) {
+    console.log(`   ✅ ${doc.filename}: já indexado (${existing} chunks), pulando`);
+    return { chunks: 0, skipped: true, alreadyIndexed: true };
+  }
+
   const ext = path.extname(doc.filename);
+
+  let buf: Buffer;
+  try {
+    if (doc.blobUrl) {
+      const r = await fetch(doc.blobUrl);
+      if (!r.ok) {
+        console.warn(`   ⚠️  fetch ${doc.filename} status ${r.status}`);
+        return { chunks: 0, skipped: true };
+      }
+      buf = Buffer.from(await r.arrayBuffer());
+    } else {
+      const filepath = path.join(PUBLIC_DIR, doc.filename);
+      buf = fs.readFileSync(filepath);
+    }
+  } catch (e: any) {
+    console.warn(`   ⚠️  falha lendo ${doc.filename}: ${e.message}`);
+    return { chunks: 0, skipped: true };
+  }
 
   let text = "";
   try {
-    text = await extractText(filepath, ext);
+    text = await extractText(buf, ext);
   } catch (e: any) {
     console.warn(`   ⚠️  falha extraindo ${doc.filename}: ${e.message}`);
     return { chunks: 0, skipped: true };
   }
+
+  // Sanitiza null bytes (0x00) — Postgres rejeita em colunas TEXT/UTF8.
+  // PDFs/DOCX às vezes injetam isso ao extrair.
+  text = text.replace(/\x00/g, "");
 
   if (!text || text.length < 100) {
     console.log(`   ⏭️  ${doc.filename}: pouco texto extraído (${text.length} chars), pulando`);
@@ -189,8 +221,7 @@ async function indexDoc(doc: ResolvedDoc) {
   const chunks = chunkText(text);
   console.log(`   📄 ${doc.filename}: ${text.length} chars, ${chunks.length} chunks`);
 
-  // Apaga chunks antigos desse documento
-  await prisma.documentChunk.deleteMany({ where: { source: doc.source } });
+  // (Não há chunks antigos pra apagar — checamos acima.)
 
   // Insere cada chunk com embedding
   for (let i = 0; i < chunks.length; i++) {
@@ -219,12 +250,44 @@ async function indexDoc(doc: ResolvedDoc) {
   return { chunks: chunks.length, skipped: false };
 }
 
+/**
+ * Lista phase_documents cujo cloud_storage_path é uma URL HTTPS
+ * (uploads novos via Vercel Blob não ficam na pasta local).
+ * O `source` desses chunks é a URL completa, distinta de
+ * "/phase-documents/..." dos arquivos locais.
+ */
+async function listBlobDocs(localSources: Set<string>): Promise<ResolvedDoc[]> {
+  const rows = await prisma.phaseDocument.findMany({
+    where: { cloud_storage_path: { startsWith: "http" } },
+    select: { phase: true, title: true, cloud_storage_path: true, fileName: true },
+  });
+  const out: ResolvedDoc[] = [];
+  for (const d of rows) {
+    if (!d.cloud_storage_path) continue;
+    if (localSources.has(d.cloud_storage_path)) continue; // já tratado como local
+    const filenameFromPath = decodeURIComponent(d.cloud_storage_path.split("/").pop() ?? "");
+    out.push({
+      filename: d.fileName ?? filenameFromPath,
+      source: d.cloud_storage_path,
+      title: d.title,
+      phase: d.phase,
+      blobUrl: d.cloud_storage_path,
+    });
+  }
+  return out;
+}
+
 async function main() {
   console.log(`📂 Pasta: ${PUBLIC_DIR}`);
   const filenames = await listFiles();
-  console.log(`   ${filenames.length} arquivos elegíveis\n`);
+  console.log(`   ${filenames.length} arquivos locais elegíveis`);
 
-  const docs = await resolveDocs(filenames);
+  const localDocs = await resolveDocs(filenames);
+  const localSources = new Set(localDocs.map((d) => d.source));
+  const blobDocs = await listBlobDocs(localSources);
+  console.log(`   ${blobDocs.length} docs no Vercel Blob\n`);
+
+  const docs = [...localDocs, ...blobDocs];
 
   let totalChunks = 0;
   let totalDocs = 0;
