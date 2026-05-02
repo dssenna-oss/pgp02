@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mapa de Processos — Inventário de Dados Pessoais (LGPD)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif; }
+  .field-help { color: #6b7280; font-size: 0.8rem; margin-top: 0.25rem; }
+  .section-title {
+    border-left: 4px solid #2563eb;
+    padding-left: 0.75rem;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  /* radio yes/no */
+  .yes-no input[type="radio"] { accent-color: #2563eb; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen py-8">
+<div class="max-w-4xl mx-auto px-4">
+
+  <header class="mb-8">
+    <p class="text-sm text-blue-600 font-semibold uppercase tracking-wide">LGPD — Fase 3</p>
+    <h1 class="text-3xl font-bold text-slate-900 mt-1">Mapa de Processos</h1>
+    <p class="text-slate-600 mt-2">Cadastro de processos de tratamento de dados pessoais — Inventário de Dados.</p>
+  </header>
+
+  <form id="mp-form" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8">
+
+    <!-- 1. IDENTIFICAÇÃO ============================================== -->
+    <section>
+      <h2 class="section-title text-lg font-semibold mb-4">1. Identificação</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="id_processo">ID do Processo <span class="text-red-500">*</span></label>
+          <input id="id_processo" name="id_processo" type="text" required
+                 placeholder="Ex.: ID-01"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="data_registro">Data do Registro <span class="text-red-500">*</span></label>
+          <input id="data_registro" name="data_registro" type="date" required
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="nome">Nome do Processo <span class="text-red-500">*</span></label>
+          <input id="nome" name="nome" type="text" required
+                 placeholder="Ex.: Admissão de colaboradores"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="area_gestor">Área Responsável e Gestor</label>
+          <input id="area_gestor" name="area_gestor" type="text"
+                 placeholder="Ex.: RH — João Pires"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="descricao">Descrição do Processo</label>
+          <textarea id="descricao" name="descricao"
+                    placeholder="O que esse processo faz, quando é executado, por quem, etc."
+                    class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DADOS TRATADOS ============================================ -->
+    <section>
+      <h2 class="section-title text-lg font-semibold mb-4">2. Dados Tratados</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <span class="block text-sm font-medium mb-2">Possui Dado Pessoal Sensível? <span class="text-red-500">*</span></span>
+          <div class="yes-no flex gap-6">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="dado_sensivel" value="SIM" required /> Sim</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="dado_sensivel" value="NAO" /> Não</label>
+          </div>
+          <p class="field-help">Origem racial/étnica, religião, opinião política, dado de saúde, biométrico etc. (LGPD art. 5º, II)</p>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="dados_coletados">Dados pessoais coletados</label>
+          <textarea id="dados_coletados" name="dados_coletados"
+                    placeholder="Ex.: Nome, CPF, e-mail, telefone, endereço…"
+                    class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="fonte">Fonte</label>
+          <input id="fonte" name="fonte" type="text"
+                 placeholder="Ex.: Formulário online, contrato físico"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="proposito">Propósito</label>
+          <input id="proposito" name="proposito" type="text"
+                 placeholder="Ex.: Folha de pagamento, contato comercial"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="base_legal">Base Legal</label>
+          <select id="base_legal" name="base_legal"
+                  class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white">
+            <option value="">— selecione —</option>
+            <option>Consentimento (art. 7º, I)</option>
+            <option>Cumprimento de obrigação legal (art. 7º, II)</option>
+            <option>Execução de políticas públicas (art. 7º, III)</option>
+            <option>Estudos por órgão de pesquisa (art. 7º, IV)</option>
+            <option>Execução de contrato (art. 7º, V)</option>
+            <option>Exercício regular de direitos (art. 7º, VI)</option>
+            <option>Proteção da vida (art. 7º, VII)</option>
+            <option>Tutela da saúde (art. 7º, VIII)</option>
+            <option>Legítimo interesse (art. 7º, IX)</option>
+            <option>Proteção do crédito (art. 7º, X)</option>
+          </select>
+          <p class="field-help">Selecione a hipótese legal que autoriza esse tratamento.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CICLO DE VIDA & SEGURANÇA ================================== -->
+    <section>
+      <h2 class="section-title text-lg font-semibold mb-4">3. Ciclo de Vida & Segurança</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="cronograma">Cronograma / Retenção</label>
+          <input id="cronograma" name="cronograma" type="text"
+                 placeholder="Ex.: 5 anos após o vínculo"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="direitos">Direitos do Titular</label>
+          <input id="direitos" name="direitos" type="text"
+                 placeholder="Ex.: acesso, correção, exclusão"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="transferencia">Transferência</label>
+          <input id="transferencia" name="transferencia" type="text"
+                 placeholder="Ex.: Compartilhado com fornecedor X"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="armazenamento">Armazenamento</label>
+          <input id="armazenamento" name="armazenamento" type="text"
+                 placeholder="Ex.: AWS São Paulo, banco interno"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="sistemas">Sistemas envolvidos</label>
+          <input id="sistemas" name="sistemas" type="text"
+                 placeholder="Ex.: SAP, Salesforce, sistema interno X"
+                 class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="seguranca">Medidas de Segurança</label>
+          <textarea id="seguranca" name="seguranca"
+                    placeholder="Ex.: Criptografia AES-256, controle de acesso por perfil, MFA, backup diário…"
+                    class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1" for="procedimento">Procedimento / controle associado</label>
+          <textarea id="procedimento" name="procedimento"
+                    placeholder="Documento/processo formal que rege esse tratamento"
+                    class="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. CONTROLES E GOVERNANÇA ===================================== -->
+    <section>
+      <h2 class="section-title text-lg font-semibold mb-4">4. Controles e Governança</h2>
+      <div class="grid md:grid-cols-2 gap-4 yes-no">
+        <fieldset class="border border-slate-200 rounded-md p-4">
+          <legend class="text-sm font-medium px-2">É possível minimizar?</legend>
+          <div class="flex gap-6 mt-1">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="minimizar" value="SIM" /> Sim</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="minimizar" value="NAO" /> Não</label>
+          </div>
+          <p class="field-help">Princípio da necessidade — coletar só o essencial.</p>
+        </fieldset>
+        <fieldset class="border border-slate-200 rounded-md p-4">
+          <legend class="text-sm font-medium px-2">Possui mapeamento?</legend>
+          <div class="flex gap-6 mt-1">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="mapeamento" value="SIM" /> Sim</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="mapeamento" value="NAO" /> Não</label>
+          </div>
+        </fieldset>
+        <fieldset class="border border-slate-200 rounded-md p-4">
+          <legend class="text-sm font-medium px-2">Possui controle de qualidade / auditoria?</legend>
+          <div class="flex gap-6 mt-1">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="auditoria" value="SIM" /> Sim</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="auditoria" value="NAO" /> Não</label>
+          </div>
+        </fieldset>
+        <fieldset class="border border-slate-200 rounded-md p-4">
+          <legend class="text-sm font-medium px-2">Foi aplicado o LGPD Model Canvas?</legend>
+          <div class="flex gap-6 mt-1">
+            <label class="inline-flex items-center gap-2"><input type="radio" name="canvas" value="SIM" /> Sim</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="canvas" value="NAO" /> Não</label>
+          </div>
+        </fieldset>
+      </div>
+    </section>
+
+    <!-- AÇÕES ======================================================== -->
+    <div class="flex flex-wrap gap-3 pt-4 border-t border-slate-200">
+      <button type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-md transition">
+        Salvar processo
+      </button>
+      <button type="button" id="btn-export"
+              class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-medium px-5 py-2.5 rounded-md transition">
+        Exportar JSON
+      </button>
+      <button type="reset"
+              class="text-slate-600 hover:text-slate-800 px-5 py-2.5 rounded-md transition">
+        Limpar
+      </button>
+    </div>
+  </form>
+
+  <!-- PREVIEW SAÍDA ---------------------------------------------------- -->
+  <section id="preview-wrap" class="mt-6 hidden">
+    <h2 class="text-lg font-semibold mb-2">Saída (JSON)</h2>
+    <pre id="preview" class="bg-slate-900 text-slate-100 p-4 rounded-md overflow-auto text-xs"></pre>
+  </section>
+
+  <footer class="text-xs text-slate-500 text-center mt-8">
+    Modelo derivado de "Inventário de Dados — Modelo (Buddha Bank)"; gerado a partir do Excel da Fase 3.
+  </footer>
+</div>
+
+<script>
+const form = document.getElementById("mp-form");
+const preview = document.getElementById("preview");
+const previewWrap = document.getElementById("preview-wrap");
+const btnExport = document.getElementById("btn-export");
+
+function collect() {
+  const fd = new FormData(form);
+  const data = {};
+  for (const [k, v] of fd.entries()) {
+    data[k] = v;
+  }
+  return data;
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const data = collect();
+  preview.textContent = JSON.stringify(data, null, 2);
+  previewWrap.classList.remove("hidden");
+  preview.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+btnExport.addEventListener("click", () => {
+  const data = collect();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `processo-${data.id_processo || Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
