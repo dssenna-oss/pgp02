@@ -2,15 +2,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { FileText, Download, Plus, Search, Edit, Trash2, FileEdit } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 // @ts-ignore
 import * as XLSX from "xlsx";
-import InventarioFormModal from "./inventario-form-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,10 @@ interface InventarioContentProps {
 }
 
 export default function InventarioContent({ session }: InventarioContentProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [inventarios, setInventarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedInventario, setSelectedInventario] = useState<any>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,14 +154,11 @@ export default function InventarioContent({ session }: InventarioContentProps) {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button
-            onClick={() => {
-              setSelectedInventario(null);
-              setIsModalOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Inventário
+          <Button asChild>
+            <Link href="/dashboard/inventario/novo">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Mapeamento
+            </Link>
           </Button>
           <Button variant="outline" onClick={exportToExcel}>
             <Download className="h-4 w-4 mr-2" />
@@ -300,15 +297,24 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 ml-4">
+                    {item.isDraft && (
+                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20">
+                        Rascunho
+                      </Badge>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setSelectedInventario(item);
-                        setIsModalOpen(true);
-                      }}
+                      asChild
+                      title={item.isDraft ? "Continuar mapeamento" : "Editar"}
                     >
-                      <Edit className="h-4 w-4" />
+                      <Link href={`/dashboard/inventario/${item.id}/editar`}>
+                        {item.isDraft ? (
+                          <FileEdit className="h-4 w-4" />
+                        ) : (
+                          <Edit className="h-4 w-4" />
+                        )}
+                      </Link>
                     </Button>
                     <Button
                       variant="outline"
@@ -325,17 +331,6 @@ export default function InventarioContent({ session }: InventarioContentProps) {
           )}
         </CardContent>
       </Card>
-
-      {/* Modal de Formulário */}
-      <InventarioFormModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedInventario(null);
-        }}
-        onSuccess={loadInventarios}
-        inventario={selectedInventario}
-      />
 
       {/* Dialog de Confirmação de Exclusão */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

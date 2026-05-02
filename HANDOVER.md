@@ -107,6 +107,124 @@ Não há AWS/S3 configurado — `lib/s3.ts` agora usa Vercel Blob por padrão. C
 
 ## 💡 Próximos passos sugeridos (escolha do user)
 
-- Estender módulo de Inventário do app pra ter os 21 campos do `mapa-processos.html`
-- Criar importador de XLSX → `data_inventories` (popula a partir da planilha modelo)
 - Configurar AWS S3 ou aumentar Vercel Blob (caso queira mais espaço pra uploads)
+
+---
+
+## 🚧 Feature em andamento — Mini-apps de governança LGPD
+
+Início da implementação em 2026-05-02. **Mini-app #2 (Inventário/form base) 100% concluído.** Próximo: #3 Análise de Riscos.
+
+### Decisões de design já tomadas
+
+1. **Rename "Empresa" → "Organização"** — só UI labels (signup `app/signup/page.tsx:149`, dashboard, etc.). **NÃO** renomear o modelo Prisma `Company` (é refator separado, pesado e arriscado).
+2. **Storage do form base no `DataInventory`** — adicionar coluna `formAnswers Json?` ao modelo. Os 10 campos String existentes continuam como "resumo" derivado do JSON. Migration mínima.
+3. **Granularidade**: 1 registro `DataInventory` = 1 processo de tratamento (cada respondente preenche o form várias vezes, uma por processo).
+4. **Identificação do respondente**: pré-preencher Nome + Email com dados do user logado (NextAuth session); user só preenche Cargo + Departamento.
+5. **Onboarding**: textos introdutórios do form (Instruções / Atenção / Glossário LGPD) viram a 1ª tela do wizard.
+
+### Form base — fonte de verdade
+
+Google Form: https://docs.google.com/forms/d/e/1FAIpQLSfvASokeVLEBQH1bmsQxterGmiYsmmIWyFDPA3niojVBs8gwA/viewform
+
+Estrutura parseada (12 seções, ~69 itens, ~50 perguntas reais):
+- **Sec 1**: Identificação do Respondente (4 campos)
+- **Sec 2**: Processos sob responsabilidade (3 campos)
+- **Sec 3**: Tipificação dos Dados (17 grupos checkbox — Nomes, Características, Filiação, Identificação Oficial, Residencial, Escolaridade, Profissional, Financeira, Jurídica, Crianças, Adolescentes, Preferências, Dispositivos Móveis, Saúde, Sensíveis Art.5º LGPD)
+- **Sec 4**: Uso dos Dados (9 campos — finalidade, decisão automatizada, marketing)
+- **Sec 5**: Coleta (5 campos — origem, política, consentimento, antecedentes)
+- **Sec 6**: Transferência e Compartilhamento (9 campos — internos, terceiros, gov, internacional)
+- **Sec 7**: Armazenamento, Retenção, Descarte (12 campos — formato, segurança física, retenção, backup)
+
+### Ordem de implementação dos 13 mini-apps
+
+| # | Mini-app | Output | Notas |
+|---|---|---|---|
+| 1 | Rename UI "Empresa" → "Organização" | UI | trivial, desbloqueia |
+| 2 | **Form Base = Inventário de Dados** (wizard 12 telas) | Excel | coração — alimenta todos abaixo |
+| 3 | Análise de Riscos | Excel | deriva do Inventário |
+| 4 | GAP Analysis | Excel | |
+| 5 | Diagnóstico de Privacidade (consolida 1-4) | Word | nova seção, conteúdo do user |
+| 6 | Plano de Ação | Excel | deriva do GAP |
+| 7 | Política de Privacidade interna + Aviso externo | Word | par |
+| 8 | Termos de Uso + Aviso de Cookies | Word | |
+| 9 | Política de Segurança da Informação | Word | usa Sec 7 do form |
+| 10 | Adequação de Contratos | Word | usa Sec 6 |
+| 11 | Plano de Incidentes (código Abacus) | Word | user vai importar |
+| 12 | RIPD (código Abacus) | Word | user vai importar |
+| 13 | Modelo PGP (Entendendo PGP) | Word | descritivo |
+
+### Libs faltantes pra geração
+
+- `docx` (gerar Word)
+- `pdf-lib` ou `puppeteer` (gerar PDF, se necessário)
+- `exceljs` (gerar Excel formatado — `xlsx` já está instalado mas o atual basta pra exportação simples)
+
+### Hardening pendente (cookie 494)
+
+User reportou 494 REQUEST_HEADER_TOO_LARGE no celular Android Chrome (regular). Causa: cookie de sessão antigo, criado antes do strip de `logoUrl`. Fix imediato: limpar dados do site no browser. Hardening: stripar `company` inteira do JWT, manter só `id`/`role`/`companyId`, fetch via novo `GET /api/company/me`. Não urgente — só preventivo. Estimar 1 sessão.
+
+---
+
+## 🛠️ Estado atual da implementação do Inventário (form base)
+
+### ✅ Mini-app #2 (Inventário) — TODOS os 7 checkpoints concluídos
+
+| # | Checkpoint | Arquivos chave |
+|---|---|---|
+| Pré | Rename "Empresa" → "Organização" no signup | `app/signup/page.tsx` (label + placeholder) |
+| 1 | Migration: `formAnswers Json?` + `isDraft Boolean` em `DataInventory` | `prisma/schema.prisma` (push em Neon e em local via SQL bruto pois pgvector indisponível local) |
+| 2 | Schema do form 100% literal ao Google Form (auditor: 0 divergências) | `lib/inventario-form-schema.ts` (~870 linhas) — 58 perguntas em 7 seções + onboarding |
+| 3 | Wizard skeleton: navegação, drafts, onboarding com ícones | `app/dashboard/inventario/novo/page.tsx`, `components/inventario/inventario-wizard.tsx` |
+| 4 | `<FormFieldRenderer>` (4 tipos) + `<SectionStep>` + integração Sec 1 (autoFill, validação required, dependsOn) | `components/inventario/form-field-renderer.tsx`, `components/inventario/section-step.tsx` |
+| 5 | Sec 2 + Sec 3 com **accordion** (`collapseFields`) — cada grupo colapsável + ícone status | (mesmos arquivos) |
+| 6 | Sec 4-7 (renderer universal cobre tudo); dependsOn condicional validado | (mesmos arquivos) |
+| 7 | Auto-derive 10 campos legados + tela de Revisão visualmente rica + integração com lista + remoção do form simples + rota `/[id]/editar` (hidrata draft) | `lib/inventario-derive.ts`, `components/inventario/inventario-content.tsx`, `app/dashboard/inventario/[id]/editar/page.tsx`, **deletado** `inventario-form-modal.tsx` |
+
+### ✅ Tela de Revisão e Conclusão (10 melhorias visuais aplicadas)
+
+1. Ícones temáticos por seção (User/FileText/Database/Activity/Inbox/Share2/Server)
+2. Negrito nas perguntas com ícone HelpCircle (azul) ou AlertTriangle (amarelo se atenção)
+3. Multi-choice como chips/badges
+4. Badge de completude por seção (verde "Completo" / âmbar "X de Y")
+5. Card-resumo no topo com stats agregados
+6. Sticky CTA no rodapé (Imprimir / Salvar / Concluir)
+7. Divisores visuais entre seções (border-l-4 colorido)
+8. **Botão Imprimir → PDF completo** com TODAS as 58 perguntas (mesmo as não respondidas), visual idêntico à Revisão (ver `components/inventario/printable-inventory.tsx`)
+9. TOC lateral sticky com clique-pra-rolar
+10. Highlight amarelo em respostas críticas (transferência internacional, dados sensíveis, decisão automatizada, marketing, papéis externos)
+
+### 🐞 Bugs/notas encontrados durante implementação (importante pros próximos mini-apps)
+
+1. **React StrictMode em dev invoca setters funcionais 2x** — `setStepIndex(i => i + 1)` causa pulo duplo. Use **valor literal**: `setStepIndex(stepIndex + 1)`. Padrão pra todos os próximos componentes.
+2. **Worktrees Git não compartilham `.env`** (gitignored). Na 1ª vez do worktree: `cp ../../../.env ./.env`.
+3. **`prisma db push` falha local** por causa do pgvector. Workaround pra colunas novas: aplicar via SQL bruto direto no Postgres local. No Neon `prisma db push` funciona normal.
+4. **Migração de tipo single→multi quebra drafts antigos** — campos que mudam de `single-choice` pra `multi-choice` em schema têm valores string salvos antes; `<MultiChoiceField>` espera array. Já existe `normalizeMultiValue()` defensivo em `form-field-renderer.tsx`. Padrão pra futuras mudanças de tipo.
+5. **Hydration mismatch com `new Date()`** — server render vs client têm timestamps diferentes. Sempre fazer datas client-only via `useState`+`useEffect`.
+6. **CSS de print `header { display: none }`** esconde também `<header>` em componentes próprios! Use `<div>` em vez de `<header>`/`<footer>` em conteúdo printable. Bloco `@media print` em `app/globals.css` cuida do resto.
+
+### 📋 Como retomar tecnicamente
+
+```powershell
+# 1. Inicia Postgres local (se ainda não está):
+& "E:\postgres\pgsql2\pgsql\bin\pg_ctl.exe" -D E:\postgres\data -l E:\postgres\logs\server.log start
+
+# 2. Worktree atual (onde estão as mudanças da feature, ainda não commitadas):
+cd E:\_________PGP\.claude\worktrees\nice-mclean-d12b88
+
+# 3. Garantir .env (se for primeira vez):
+test-path .env || cp ../../../.env .env
+
+# 4. Iniciar dev:
+npm run dev
+
+# 5. Acessar:
+# http://localhost:3000/dashboard/inventario/novo
+# Login: clubedoservidor@protonmail.com / 741963PgP@*#$
+```
+
+Há **2 commits pendentes de push** pra `main`:
+- `00be94d` — RAG full indexing + Blob support (do dia anterior)
+- (atual descommitado) — rename signup + checkpoints 1-3 do Inventário
+
+Push falhou por auth dual-account no Windows Credential Manager (`automatizeaihoje-ui` vs `dssenna-oss`). User vai resolver fora da sessão.

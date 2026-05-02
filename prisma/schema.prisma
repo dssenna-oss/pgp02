@@ -99,7 +99,15 @@ model DataInventory {
   storage         String   // Local de armazenamento
   sharing         String?  // Compartilhamento com terceiros
   security        String   // Medidas de segurança
-  
+
+  // Respostas completas do wizard de mapeamento (formato JSON tipado por
+  // lib/inventario-form-schema.ts). Quando preenchido, é a fonte de
+  // verdade — os campos String acima são derivados como resumo.
+  // Estrutura: { respondent: {...}, sections: { sec2: {...}, ..., sec7: {...} } }
+  formAnswers     Json?
+  // Marca se o registro ainda é rascunho (wizard não concluído).
+  isDraft         Boolean  @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

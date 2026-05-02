@@ -45,19 +45,26 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json();
 
+    const isDraft = data.isDraft ?? false;
+    // Drafts (do wizard) podem ainda não ter os campos resumo preenchidos.
+    // Usamos placeholders enquanto não derivamos do formAnswers (checkpoint 7).
+    const placeholder = isDraft ? "[Em preenchimento]" : "";
+
     const inventario = await prisma.dataInventory.create({
       data: {
         companyId: user.companyId,
-        serviceName: data.serviceName,
-        dataCategory: data.dataCategory,
-        personalData: data.personalData,
-        legalBasis: data.legalBasis,
-        purpose: data.purpose,
-        dataSubjects: data.dataSubjects,
-        retention: data.retention,
-        storage: data.storage,
-        sharing: data.sharing || "",
-        security: data.security
+        serviceName: data.serviceName ?? placeholder,
+        dataCategory: data.dataCategory ?? placeholder,
+        personalData: data.personalData ?? placeholder,
+        legalBasis: data.legalBasis ?? placeholder,
+        purpose: data.purpose ?? placeholder,
+        dataSubjects: data.dataSubjects ?? placeholder,
+        retention: data.retention ?? placeholder,
+        storage: data.storage ?? placeholder,
+        sharing: data.sharing ?? "",
+        security: data.security ?? placeholder,
+        formAnswers: data.formAnswers ?? undefined,
+        isDraft,
       }
     });
 

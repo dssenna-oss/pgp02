@@ -144,15 +144,15 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Nome da empresa */}
+              {/* Nome da organização */}
               <div className="space-y-2">
-                <Label htmlFor="companyName">Nome da Empresa</Label>
+                <Label htmlFor="companyName">Nome da Organização</Label>
                 <div className="relative">
                   <Input
                     id="companyName"
                     name="companyName"
                     type="text"
-                    placeholder="Nome da sua empresa"
+                    placeholder="Nome da sua organização"
                     value={formData.companyName}
                     onChange={handleInputChange}
                     required

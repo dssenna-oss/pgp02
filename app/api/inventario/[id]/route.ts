@@ -68,23 +68,25 @@ export async function PUT(
 
     const data = await request.json();
 
+    // Apenas inclui campos que vieram no body — wizard pode mandar só
+    // formAnswers + isDraft sem mexer nos resumos legados.
+    const update: any = {};
+    const fields = [
+      "serviceName", "dataCategory", "personalData", "legalBasis",
+      "purpose", "dataSubjects", "retention", "storage", "sharing", "security",
+    ];
+    for (const f of fields) {
+      if (data[f] !== undefined) update[f] = data[f];
+    }
+    if (data.formAnswers !== undefined) update.formAnswers = data.formAnswers;
+    if (data.isDraft !== undefined) update.isDraft = data.isDraft;
+
     const inventario = await prisma.dataInventory.updateMany({
       where: {
         id: params.id,
         companyId: user.companyId
       },
-      data: {
-        serviceName: data.serviceName,
-        dataCategory: data.dataCategory,
-        personalData: data.personalData,
-        legalBasis: data.legalBasis,
-        purpose: data.purpose,
-        dataSubjects: data.dataSubjects,
-        retention: data.retention,
-        storage: data.storage,
-        sharing: data.sharing || "",
-        security: data.security
-      }
+      data: update
     });
 
     if (inventario.count === 0) {

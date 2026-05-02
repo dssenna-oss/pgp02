@@ -155,3 +155,90 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-500 dark:bg-gray-500;
 }
+
+/* ============================================================
+ * Impressão / Export PDF
+ * Esconde a chrome do dashboard (sidebar, header) e usa toda
+ * a largura da página. Componentes específicos podem usar
+ * `print:hidden` (Tailwind) pra esconder elementos extras.
+ * ============================================================ */
+@media print {
+  /* Reset global: força altura auto + overflow visible (dashboard usa
+     h-screen + overflow-auto que recortam o conteúdo no print). */
+  html, body {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+  }
+  /* Esconde chrome do dashboard */
+  aside,
+  nav,
+  header,
+  .sidebar,
+  [data-print-hide],
+  .print\:hidden,
+  .lg\:hidden {                                 /* mobile header */
+    display: none !important;
+  }
+  /* Sidebar do dashboard (div, não aside) */
+  div.hidden.lg\:block.bg-white,
+  div.hidden.lg\:block.dark\:bg-gray-800 {
+    display: none !important;
+  }
+  /* Container flex h-screen → vira block + altura auto */
+  div.flex.h-screen,
+  .flex.h-screen,
+  .h-screen {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  /* Main e wrappers: full width, sem overflow */
+  main,
+  [role="main"],
+  .min-h-screen,
+  .max-w-7xl,
+  .max-w-6xl,
+  .max-w-4xl {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+  .overflow-auto, .overflow-hidden, .overflow-y-auto {
+    overflow: visible !important;
+  }
+  /* Cards sem sombra */
+  .shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+    box-shadow: none !important;
+  }
+  /* Quebra de página */
+  .print-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+  /* Links sem decoração */
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  /* PRESERVA cores de fundo (Tailwind/print drops by default) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  /* Margens da folha */
+  @page {
+    margin: 1.2cm;
+  }
+}
