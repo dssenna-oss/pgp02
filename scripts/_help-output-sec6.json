@@ -1,0 +1,206 @@
+{
+  "share_targets": {
+    "why": "Saber com quem você compartilha ou transfere dados é crucial pra garantir que todos os envolvidos sigam a LGPD. Isso afeta a responsabilidade, a base legal e a segurança dos dados do titular.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "contratos",
+      "politica-privacidade",
+      "ripd",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 7º, § 7º",
+      "resumo": "O tratamento de dados pessoais por pessoa jurídica de direito público deve atender à sua finalidade pública, com base legal e informações claras sobre o compartilhamento."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Compartilhamento de dados de saúde de pacientes entre uma Secretaria Municipal de Saúde e o SUS.",
+      "Transferência de dados de servidores para uma empresa terceirizada que gerencia a folha de pagamento.",
+      "Compartilhamento de dados de contribuintes entre a Secretaria de Finanças e a Receita Federal para fiscalização.",
+      "Compartilhamento de dados de alunos entre a Secretaria de Educação e o Ministério da Educação para programas federais."
+    ]
+  },
+  "share_with_whom": {
+    "why": "É fundamental saber com quem seus dados são compartilhados para garantir que eles continuem protegidos e para cumprir o princípio da responsabilização. Você precisa saber quem tem acesso aos dados que você coleta.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "contratos",
+      "incidentes",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, X",
+      "resumo": "O princípio da responsabilização e prestação de contas exige que o controlador demonstre o cumprimento das normas de proteção de dados."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Secretaria Municipal de Saúde (compartilhando dados de vacinação com a Secretaria de Educação para campanhas escolares)",
+      "Empresa terceirizada de folha de pagamento (compartilhando dados de servidores)",
+      "Tribunal de Contas do Estado (compartilhando dados de licitações e contratos)",
+      "Plataforma de gestão de processos judiciais (compartilhando dados de partes envolvidas)"
+    ]
+  },
+  "share_purpose": {
+    "why": "Você precisa justificar o porquê de compartilhar dados pessoais. Isso garante que o compartilhamento é legítimo, transparente e alinhado com a finalidade original da coleta, protegendo os direitos do titular.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "contratos",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, I e V; Art. 7º",
+      "resumo": "O tratamento e compartilhamento de dados devem ter finalidade legítima e ser transparentes, sempre embasados em uma das hipóteses legais."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Para responder a uma requisição judicial de dados de um servidor.",
+      "Para compartilhar dados de saúde de pacientes com um hospital parceiro para continuidade do tratamento.",
+      "Para enviar dados de contribuintes para a Receita Federal para fiscalização tributária.",
+      "Para divulgar resultados de concursos públicos, incluindo nomes e notas dos aprovados."
+    ]
+  },
+  "share_data": {
+    "why": "Você precisa saber exatamente quais dados pessoais são compartilhados pra garantir que apenas o essencial seja transferido e que o titular seja informado. Isso ajuda a controlar os riscos e a cumprir o princípio da minimização de dados.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "contratos",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, III e VI",
+      "resumo": "O tratamento de dados deve ser limitado ao mínimo necessário para sua finalidade (necessidade) e com informações claras aos titulares (transparência)."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Nome completo, CPF, endereço e telefone (para empresa de logística que entrega correspondências)",
+      "Apenas o número de matrícula do servidor (para sistema de folha de pagamento externo)",
+      "Dados de saúde anonimizados (para pesquisa estatística com universidade)",
+      "Nenhum dado pessoal, apenas dados agregados (se o compartilhamento for apenas de estatísticas sem identificação)"
+    ]
+  },
+  "share_medium": {
+    "why": "Identificar o meio de compartilhamento é vital pra avaliar a segurança dos dados durante a transferência. Ajuda a garantir que você usa métodos seguros e evita vazamentos ou acessos não autorizados.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "politica-seguranca",
+      "contratos",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Mídia portátil (Drive USB, CD, DVD): Exige criptografia forte e controle rigoroso de quem acessa e manuseia.",
+      "E-mail: Deve ser via e-mail corporativo seguro, com criptografia e autenticação. E-mails pessoais são de alto risco.",
+      "Comunicação entre aplicações externas: Exige contratos, APIs seguras e protocolos de transferência de dados criptografados (ex: SFTP, VPN).",
+      "N/A: Se não há compartilhamento externo ou interno, significa que o dado fica apenas dentro do seu sistema principal."
+    ]
+  },
+  "share_security": {
+    "why": "Garantir que os dados pessoais estejam protegidos mesmo quando são compartilhados com outras entidades. Isso evita vazamentos, uso indevido e responsabiliza sua organização.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "plano-acao",
+      "politica-seguranca",
+      "contratos",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança, técnicas e administrativas aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Possuir uma política interna de compartilhamento de dados aprovada.",
+      "Exigir cláusulas contratuais específicas de segurança com os parceiros.",
+      "Realizar anonimização ou pseudonimização dos dados antes do envio.",
+      "Utilizar criptografia para o transporte dos dados."
+    ]
+  },
+  "share_subject_aware": {
+    "why": "O titular precisa saber com quem seus dados são compartilhados para poder exercer seus direitos e entender o fluxo das informações. A transparência é um pilar fundamental da LGPD.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "contratos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, V e Art. 9º",
+      "resumo": "O tratamento deve garantir aos titulares informações claras e precisas sobre o tratamento de seus dados, incluindo o compartilhamento com terceiros."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Sim, via Política de Privacidade publicada no site da prefeitura.",
+      "Sim, via termo de consentimento específico assinado pelo titular.",
+      "Não, mas o compartilhamento é obrigatório por lei e a informação é pública.",
+      "Não, o titular não é informado sobre este compartilhamento."
+    ]
+  },
+  "share_international": {
+    "why": "A transferência de dados pessoais para outros países tem regras mais rígidas na LGPD. Você precisa saber se o dado sai do Brasil, mesmo que seja por um serviço de nuvem (cloud) que armazena dados em servidores estrangeiros.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "contratos",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 33",
+      "resumo": "A LGPD estabelece condições específicas para a transferência internacional de dados pessoais, exigindo um nível adequado de proteção."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Uso de e-mail corporativo (Outlook, Gmail) com servidores fora do Brasil",
+      "Armazenamento de documentos em nuvem (OneDrive, Google Drive) com data centers internacionais",
+      "Uso de plataformas de comunicação (WhatsApp, Zoom) que processam dados fora do país",
+      "Hospedagem de sites ou sistemas em provedores com servidores no exterior (Amazon AWS, Google Cloud)"
+    ]
+  },
+  "share_international_countries": {
+    "why": "Compartilhar dados com outros países tem regras específicas e mais rigorosas na LGPD. Você precisa saber para onde os dados estão indo para garantir a conformidade e proteger os titulares.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "ripd",
+      "contratos",
+      "politica-privacidade",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 33",
+      "resumo": "A transferência internacional de dados pessoais só é permitida em situações específicas, como para países com nível de proteção adequado ou mediante cláusulas contratuais específicas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Estados Unidos (para serviços de nuvem ou software)",
+      "Países da União Europeia (para cooperação internacional ou pesquisa)",
+      "Países do Mercosul (para intercâmbio de informações governamentais)"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "collect_source": {
+    "why": "Saber a origem dos dados é fundamental para garantir a transparência com o titular e verificar se a coleta foi feita de forma legítima. Ajuda a identificar responsabilidades e riscos na cadeia de tratamento.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-privacidade",
+      "contratos",
+      "diagnostico"
+    ],
+    "lgpd": {
+      "artigo": "Art. 9º, V",
+      "resumo": "O titular tem direito a informações claras e acessíveis sobre a origem dos seus dados pessoais."
+    },
+    "criticidade": "alta"
+  },
+  "collect_source_desc": {
+    "why": "É essencial mapear como os dados pessoais chegam até você e quem mais está envolvido. Isso ajuda a garantir a transparência com o titular e a controlar os riscos de segurança e compartilhamento indevido.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "contratos",
+      "incidentes",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, V, VI, X e Art. 37",
+      "resumo": "Os princípios da LGPD exigem transparência e prestação de contas, e o controlador deve manter registro das operações de tratamento, incluindo a origem dos dados."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Recebemos dados de cadastro de servidores via sistema de RH do governo estadual (ex: SIGRH).",
+      "Coletamos dados de cidadãos via formulário físico na recepção para agendamento de serviços.",
+      "Dados de saúde são coletados diretamente do paciente em prontuário eletrônico no posto de saúde.",
+      "Compartilhamos dados de alunos com o Ministério da Educação via sistema e-MEC para censo escolar."
+    ]
+  },
+  "collect_policy_shown": {
+    "why": "É fundamental que o titular saiba como seus dados serão usados. Isso garante transparência e permite que ele exerça seus direitos, como o de revogar um consentimento ou questionar o uso.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "termos-cookies",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 9º e Art. 23, § 1º",
+      "resumo": "O titular tem direito a informações claras sobre o tratamento de seus dados, e o Poder Público deve dar publicidade e transparência às suas operações."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Política de Privacidade no site da prefeitura",
+      "Termo de Consentimento específico para um serviço",
+      "Aviso de Privacidade em edital de concurso público",
+      "Informações claras em formulários de inscrição para programas sociais"
+    ]
+  },
+  "collect_consent": {
+    "why": "Saber se você pede consentimento ao titular é fundamental para verificar se o tratamento de dados tem uma base legal válida. Se você usa consentimento, ele precisa ser livre, informado e específico.",
+    "feedsInto": [
+      "inventario",
+      "politica-privacidade",
+      "diagnostico",
+      "gap",
+      "plano-acao",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 7º, I e Art. 8º",
+      "resumo": "O consentimento é uma das bases legais para o tratamento de dados, e precisa ser livre, informado e inequívoco."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Sim: Para enviar e-mails de marketing sobre novos programas sociais não obrigatórios.",
+      "Sim: Para coletar dados de localização de cidadãos para um aplicativo de turismo opcional.",
+      "Não: Para processar pagamentos de impostos, pois é uma obrigação legal.",
+      "Não: Para fornecer dados para o SUS, pois é execução de política pública."
+    ]
+  },
+  "collect_background_check": {
+    "why": "Buscas de antecedentes criminais, trabalhistas ou score de crédito envolvem dados de alto risco. Você precisa ter uma base legal muito clara e uma justificativa forte para coletar e usar essas informações, evitando discriminação.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca",
+      "contratos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 11",
+      "resumo": "O tratamento de dados pessoais sensíveis só pode ocorrer em situações específicas, como cumprimento de obrigação legal ou execução de políticas públicas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Permitido: Concurso público para cargos que exigem idoneidade, com previsão em lei específica para a busca de antecedentes criminais.",
+      "Permitido: Avaliação de crédito para concessão de empréstimos habitacionais por órgão público, se houver previsão legal e finalidade clara.",
+      "Não permitido: Busca de antecedentes criminais para contratação de estagiários sem previsão legal específica ou justificativa de risco.",
+      "Não permitido: Consulta de score de crédito para seleção de beneficiários de programas sociais sem base legal."
+    ]
+  }
+}

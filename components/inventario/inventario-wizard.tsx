@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   Compass,
+  ClipboardList,
   BookOpen,
   AlertTriangle,
   BookMarked,
@@ -45,6 +46,8 @@ import {
 import { deriveLegacyFields } from "@/lib/inventario-derive";
 import { SectionStep } from "./section-step";
 import { PrintableInventory } from "./printable-inventory";
+import { MiniAppsMap } from "./mini-apps-map";
+import { CompletionDialog } from "./completion-dialog";
 
 interface InventarioWizardProps {
   userName: string;
@@ -69,6 +72,8 @@ export default function InventarioWizard({
   const [draftId, setDraftId] = useState<string | null>(initialDraft?.id ?? null);
   const [saving, setSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  /** Exibe o dialog de conclusão (Próximos passos) ao terminar. */
+  const [showCompletion, setShowCompletion] = useState(false);
   /** Erros por seção: { sec1: { fieldId: msg }, ... } */
   const [errorsBySection, setErrorsBySection] = useState<
     Record<string, Record<string, string>>
@@ -269,7 +274,9 @@ export default function InventarioWizard({
       });
       if (!res.ok) throw new Error("Falha ao concluir mapeamento");
       toast.success("Mapeamento concluído!");
-      router.push("/dashboard/inventario");
+      // Em vez de navegar direto, abre dialog "Próximos passos" que mostra
+      // os mini-apps alimentados + opções (mapear outro processo / voltar).
+      setShowCompletion(true);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao concluir — tente salvar como rascunho e revisar");
@@ -288,11 +295,16 @@ export default function InventarioWizard({
     <div className={containerClass}>
       {/* Header */}
       <div className="flex items-start justify-between gap-4 print:hidden">
-        <div>
-          <h1 className="text-3xl font-bold">Mapeamento Completo</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Questionário detalhado — alimenta o Inventário e demais documentos.
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2.5 mt-1">
+            <ClipboardList className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">Mapeamento Completo</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Questionário detalhado — alimenta o Inventário e demais documentos.
+            </p>
+          </div>
         </div>
         <Button variant="ghost" size="sm" onClick={handleCancel}>
           <X className="h-4 w-4 mr-1" /> Sair
@@ -398,6 +410,16 @@ export default function InventarioWizard({
           Renderiza TODAS as perguntas (mesmo as não respondidas) com
           header da org/respondente/data e rodapé do sistema. */}
       <PrintableInventory answers={answers} printedBy={userName} />
+
+      {/* Dialog "Próximos passos" — abre depois do Concluir bem-sucedido */}
+      <CompletionDialog
+        open={showCompletion}
+        answers={answers}
+        onClose={() => {
+          setShowCompletion(false);
+          router.push("/dashboard/inventario");
+        }}
+      />
     </div>
   );
 }
@@ -435,7 +457,11 @@ function OnboardingStepView({ step }: { step: Extract<WizardStep, { kind: "onboa
           Leia as orientações antes de prosseguir. Cada processo da sua área deve ter um formulário separado.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
+        {/* Mapa visual dos 12 mini-apps que serão alimentados — orientação
+            antes do user investir tempo nas 58 perguntas. */}
+        <MiniAppsMap />
+
         {step.blocks.map((b, idx) => {
           const isOpen = expanded.has(idx);
           const { Icon, color } = blockIcon(b.title);

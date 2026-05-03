@@ -1,0 +1,222 @@
+{
+  "store_format": {
+    "why": "O formato de armazenamento impacta diretamente a segurança dos dados. Saber onde e como os dados estão guardados ajuda a identificar vulnerabilidades e aplicar as medidas de proteção adequadas.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "politica-seguranca",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança, técnicas e administrativas aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta"
+  },
+  "store_location": {
+    "why": "Saber onde os dados eletrônicos estão salvos é fundamental para controlar o acesso, aplicar medidas de segurança e garantir a proteção contra perdas ou vazamentos. Ajuda a identificar vulnerabilidades.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "politica-seguranca",
+      "incidentes",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46, caput",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança técnicas e administrativas para proteger os dados pessoais."
+    },
+    "criticidade": "media"
+  },
+  "store_paper_secure": {
+    "why": "Proteger dados pessoais em papel é tão importante quanto proteger dados digitais. A falta de segurança física pode levar a vazamentos, roubo de identidade e multas para a organização.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "plano-acao",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 49",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança, técnicas e administrativas para proteger os dados pessoais de acessos não autorizados e de incidentes."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Armários com chave controlada para prontuários de pacientes ou dossiês de servidores.",
+      "Salas de arquivo com acesso restrito por crachá ou senha.",
+      "Procedimentos claros para descarte seguro de documentos (fragmentação, incineração).",
+      "Evitar deixar documentos com dados pessoais em mesas desprotegidas ou áreas de livre acesso."
+    ]
+  },
+  "store_paper_external": {
+    "why": "Quando dados pessoais em papel são guardados fora da sua organização, você perde parte do controle direto. Isso aumenta o risco de acessos não autorizados ou perdas, e exige que você garanta a segurança mesmo com terceiros.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "contratos",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 47",
+      "resumo": "O controlador ou operador que, em razão de sua atividade, realizar tratamento de dados pessoais para terceiros, deve fornecer informações sobre as medidas de segurança."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Empresas de guarda de documentos e arquivos mortos",
+      "Cartórios que arquivam documentos físicos",
+      "Escritórios de contabilidade que guardam comprovantes de servidores"
+    ]
+  },
+  "store_paper_external_desc": {
+    "why": "É fundamental saber onde e como os dados são guardados para garantir sua segurança e conformidade com a LGPD. Isso ajuda a identificar responsabilidades e vulnerabilidades.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "contratos",
+      "incidentes",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança, técnicas e administrativas aptas a proteger os dados pessoais."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Local: Servidor próprio no datacenter da prefeitura, Nuvem AWS (região São Paulo), Arquivo físico na sala X do prédio Y.",
+      "Fornecedor: Amazon Web Services (AWS), Empresa de guarda de documentos 'Guarda Segura Ltda'.",
+      "Procedimentos de envio: Upload via SFTP com criptografia TLS, Transporte de documentos físicos em malote lacrado por empresa de segurança contratada."
+    ]
+  },
+  "store_mobile_protected": {
+    "why": "Dispositivos móveis são fáceis de perder ou roubar. Proteger os dados neles é crucial pra evitar vazamentos e garantir a segurança das informações dos titulares.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Uso de criptografia nos pendrives ou discos externos.",
+      "Proteção por senha forte nos dispositivos móveis.",
+      "Restrição do uso de dispositivos móveis pessoais para dados de trabalho.",
+      "Treinamento para servidores sobre manuseio seguro de dados em dispositivos móveis."
+    ]
+  },
+  "store_mobile_measures": {
+    "why": "Detalhar as medidas de segurança no armazenamento e descarte é crucial pra proteger os dados pessoais contra acessos não autorizados ou perdas. Isso demonstra sua responsabilidade e conformidade com a LGPD.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "plano-acao",
+      "ripd",
+      "diagnostico"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46 e Art. 6º, VII",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança aptas a proteger os dados pessoais de acessos não autorizados e situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Criptografia de dados armazenados em servidores da prefeitura",
+      "Controles de acesso físico e lógico aos arquivos e sistemas",
+      "Destruição física de documentos em papel por fragmentação",
+      "Eliminação segura de dados digitais por sobrescrita ou desmagnetização"
+    ]
+  },
+  "store_retention": {
+    "why": "Manter dados pessoais por mais tempo do que o necessário aumenta o risco de incidentes e viola a LGPD. Você precisa ter um prazo definido para cada tipo de dado, baseado na finalidade e em leis específicas.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "politica-seguranca",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 16",
+      "resumo": "Os dados pessoais devem ser eliminados após o término do tratamento, salvo exceções como cumprimento de obrigação legal ou regulatória."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de prontuários médicos são retidos por 20 anos, conforme legislação específica da saúde.",
+      "Dados de candidatos a concursos públicos são eliminados após 5 anos do resultado final, salvo se o candidato for aprovado e nomeado.",
+      "Dados de visitantes do prédio são deletados após 30 dias, a menos que haja um incidente de segurança que exija retenção para investigação.",
+      "Dados de cadastro de usuários de um serviço online são mantidos enquanto a conta estiver ativa e por mais 6 meses após o cancelamento, para fins de auditoria."
+    ]
+  },
+  "store_periodic_review": {
+    "why": "A revisão periódica garante que os dados pessoais estejam sempre atualizados, corretos e que você não esteja guardando informações desnecessárias ou por mais tempo do que o permitido, reduzindo riscos de vazamento e multas.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-seguranca",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, IV",
+      "resumo": "Princípio da qualidade dos dados — os dados pessoais devem ser exatos, claros, relevantes e atualizados, de acordo com a necessidade e para o cumprimento da finalidade de seu tratamento."
+    },
+    "criticidade": "media"
+  },
+  "store_extra_retention_reason": {
+    "why": "Manter dados pessoais por mais tempo do que o necessário aumenta os riscos de segurança e privacidade. Você precisa justificar bem qualquer prazo extra para evitar multas e provar conformidade com a LGPD.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "politica-seguranca",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 16",
+      "resumo": "O tratamento de dados pessoais deve ser encerrado quando atingida a finalidade, mas há exceções para sua conservação, como cumprimento de obrigação legal ou defesa em processo."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Manutenção para cumprimento de obrigação legal ou regulatória (ex: dados fiscais por 5 anos, prontuários de saúde por 20 anos).",
+      "Transferência a terceiro, desde que respeitados os requisitos de tratamento de dados.",
+      "Uso exclusivo do controlador, vedado acesso de terceiro, e desde que anonimizados os dados.",
+      "Para defesa em processo judicial, administrativo ou arbitral."
+    ]
+  },
+  "store_local_backup": {
+    "why": "Saber onde e como os dados pessoais são armazenados, incluindo backups, é fundamental pra garantir a segurança e a integridade. Backups não controlados pela TI podem ser um grande risco de vazamento ou perda de dados.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "gap",
+      "plano-acao",
+      "politica-seguranca",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 46",
+      "resumo": "Os agentes de tratamento devem adotar medidas de segurança aptas a proteger os dados pessoais de acessos não autorizados e de situações acidentais ou ilícitas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Backup em HD externo sem criptografia, guardado na gaveta do servidor.",
+      "Cópia de planilhas com dados de servidores em pendrive pessoal.",
+      "Servidor de arquivos local com cópias de documentos de usuários, sem controle de acesso.",
+      "Cópia de segurança de banco de dados em máquina de uso comum."
+    ]
+  }
+}

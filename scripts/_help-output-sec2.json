@@ -1,0 +1,53 @@
+{
+  "process_name": {
+    "why": "Dar um nome claro ao processo ajuda a organizar seu inventário de dados e a identificar rapidamente onde e como os dados são tratados na sua organização. É a sua referência principal.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 37",
+      "resumo": "O controlador deve manter registro das operações de tratamento de dados pessoais."
+    }
+  },
+  "process_purpose": {
+    "why": "Detalhar a finalidade, a forma de coleta e o uso dos dados é fundamental pra demonstrar que você sabe o que faz com as informações dos titulares. Isso garante transparência e conformidade com a LGPD, evitando desvios de finalidade.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "plano-acao"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, I e VI",
+      "resumo": "Princípios da finalidade (propósitos legítimos e específicos) e da transparência (informações claras sobre o tratamento)."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Bom: 'Coleta de dados de servidores (nome, CPF, cargo) via formulário de admissão para processamento da folha de pagamento e cumprimento de obrigações fiscais e previdenciárias.'",
+      "Bom: 'Coleta de dados de munícipes (nome, endereço, telefone) via sistema de agendamento online para marcação de consultas em Unidades Básicas de Saúde, visando a prestação de serviços de saúde pública.'",
+      "Ruim: 'Coleta de dados de visitantes na portaria para controle de acesso, mas depois usa os telefones para enviar mensagens de campanhas políticas.' (Desvio de finalidade)",
+      "Ruim: 'Coleta de dados de crianças em evento escolar para 'fins educacionais', sem detalhar quais dados, como são coletados e para que uso específico.' (Vago, falta transparência)"
+    ]
+  },
+  "process_volume": {
+    "why": "Saber o volume de titulares ajuda a avaliar o risco e o impacto potencial de um incidente. É um fator chave para determinar se o tratamento é de alto risco e exige medidas adicionais de conformidade.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 38",
+      "resumo": "O controlador deve elaborar Relatório de Impacto à Proteção de Dados Pessoais (RIPD) quando o tratamento puder gerar riscos às liberdades civis e aos direitos fundamentais, sendo a escala do tratamento um fator relevante."
+    },
+    "criticidade": "alta"
+  }
+}

@@ -9,8 +9,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import { FormFieldRenderer } from "./form-field-renderer";
+import { FieldHelp } from "./field-help";
+import { getSectionMeta } from "./section-meta";
 import {
   type FormField,
   type FormSection,
@@ -51,10 +53,18 @@ export function SectionStep({
     [errors]
   );
 
+  const meta = getSectionMeta(section.id);
+  const SectionIcon = meta.Icon;
+
   return (
     <>
       <CardHeader>
-        <CardTitle>{section.title}</CardTitle>
+        <CardTitle className="flex items-center gap-2.5">
+          <span className={cn("rounded-md p-1.5", meta.bg)}>
+            <SectionIcon className={cn("h-5 w-5", meta.color)} />
+          </span>
+          {section.title}
+        </CardTitle>
         {section.description && (
           <CardDescription>{section.description}</CardDescription>
         )}
@@ -123,6 +133,7 @@ function FieldAccordionItem({
     >
       <AccordionTrigger className="hover:no-underline py-3 text-left">
         <div className="flex items-center gap-3 flex-1">
+          {/* Indicador de status (preenchido / erro / pendente) */}
           {error ? (
             <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
           ) : filled ? (
@@ -130,7 +141,10 @@ function FieldAccordionItem({
           ) : (
             <span className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-gray-600 shrink-0" />
           )}
-          <span className="font-medium text-sm">
+          {/* Ícone "pergunta" + label em negrito — match com o padrão visual
+              das perguntas das demais seções (não-accordion). */}
+          <HelpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
             {field.label}
             {field.required && <span className="ml-1 text-red-500">*</span>}
           </span>
@@ -143,6 +157,22 @@ function FieldAccordionItem({
       </AccordionTrigger>
       <AccordionContent>
         <div className="pt-2 pb-2">
+          {field.help && (
+            // Em sections com accordion (collapseFields), o label é escondido
+            // dentro do FormFieldRenderer (`hideLabel`) e por consequência
+            // o botão "?" também sumiria. Renderizamos aqui no topo do
+            // conteúdo do accordion pra manter a ajuda acessível.
+            <div className="flex items-center gap-2 mb-2">
+              <FieldHelp
+                help={field.help}
+                fieldLabel={field.label}
+                fieldId={field.id}
+              />
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Dúvida sobre esta pergunta?
+              </span>
+            </div>
+          )}
           {field.description && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               {field.description}

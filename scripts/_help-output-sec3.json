@@ -1,0 +1,343 @@
+{
+  "data_names": {
+    "why": "Nomes e iniciais são dados pessoais básicos que permitem identificar o titular. Saber quais partes do nome você coleta ajuda a entender o nível de identificação e o risco associado.",
+    "feedsInto": [
+      "inventario",
+      "politica-privacidade",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, I",
+      "resumo": "Define 'dado pessoal' como informação que identifica ou torna identificável uma pessoa natural."
+    },
+    "criticidade": "media"
+  },
+  "data_personal": {
+    "why": "Identificar quais características dos titulares você trata ajuda a saber se são dados sensíveis, que exigem mais cuidado e justificativas específicas pela LGPD. Isso é essencial para avaliar os riscos e a conformidade do tratamento.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, II",
+      "resumo": "Define 'dado pessoal sensível' como aquele sobre origem racial ou étnica, convicção religiosa, opinião política, filiação a sindicato ou a organização de caráter religioso, filosófico ou político, dado referente à saúde ou à vida sexual, dado genético ou biométrico."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Informações de raça/etnia para programas de cotas em concursos públicos.",
+      "Dados biométricos (digitais) para controle de ponto de servidores.",
+      "Informações sobre saúde para licenças médicas de servidores.",
+      "Dados de gênero e idade para estatísticas demográficas em pesquisas."
+    ]
+  },
+  "data_filiation": {
+    "why": "Saber se você coleta a filiação (nome da mãe/pai) ajuda a entender o nível de detalhe da identificação do titular. É um dado pessoal que, combinado com outros, pode ser crucial para a identificação unívoca de uma pessoa.",
+    "feedsInto": [
+      "inventario",
+      "politica-privacidade",
+      "riscos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, I",
+      "resumo": "Define 'dado pessoal' como qualquer informação que identifique ou torne identificável uma pessoa natural."
+    },
+    "criticidade": "media"
+  },
+  "data_official_ids": {
+    "why": "Identificar quais dados oficiais você coleta ajuda a entender o escopo do tratamento e os riscos envolvidos. São informações que, se vazadas, podem causar sérios danos ao titular, como fraude de identidade.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, I e Art. 7º, II e III",
+      "resumo": "Define dado pessoal e estabelece as bases legais para o tratamento, incluindo cumprimento de obrigação legal e execução de políticas públicas pela administração."
+    },
+    "criticidade": "alta"
+  },
+  "data_residential": {
+    "why": "Identificar informações residenciais ajuda a mapear o tipo de dados pessoais que sua organização coleta e trata. Isso é essencial para entender o impacto na privacidade do titular e os riscos envolvidos.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "politica-privacidade",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, I",
+      "resumo": "Define 'dado pessoal' como qualquer informação que identifique ou torne identificável uma pessoa natural."
+    },
+    "criticidade": "media"
+  },
+  "data_education": {
+    "why": "Identificar o tipo de informação sobre escolaridade ajuda a entender o perfil do titular e a verificar se esse dado é realmente necessário para a finalidade do processo, seguindo o princípio da minimização.",
+    "feedsInto": [
+      "inventario",
+      "politica-privacidade",
+      "diagnostico",
+      "riscos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, III",
+      "resumo": "Princípio da necessidade — o tratamento deve ser limitado ao mínimo necessário para a realização de suas finalidades."
+    },
+    "criticidade": "media"
+  },
+  "data_professional": {
+    "why": "Você precisa saber quais dados profissionais são coletados pra garantir que são necessários e pra identificar dados sensíveis, como exames médicos, que exigem maior cuidado e base legal específica.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "contratos",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 11",
+      "resumo": "O tratamento de dados pessoais sensíveis exige condições específicas e bases legais mais restritas."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Exames médicos admissionais/periódicos (dado sensível).",
+      "Número de matrícula do servidor (identificador).",
+      "Histórico de cargos e funções (informação profissional comum).",
+      "Reclamações internas de funcionário (pode conter dados sensíveis ou exigir cuidado extra)."
+    ]
+  },
+  "data_financial": {
+    "why": "Coletar informações financeiras aumenta o risco de fraude e vazamento. Você precisa de uma base legal clara e medidas de segurança robustas para proteger esses dados, evitando prejuízos aos titulares e à sua organização.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca",
+      "contratos",
+      "incidentes"
+    ],
+    "lgpd": {
+      "artigo": "Art. 7º",
+      "resumo": "O tratamento de dados pessoais somente pode ser realizado mediante as bases legais previstas na lei."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados bancários de servidores para pagamento de salários.",
+      "Informações de renda para programas sociais ou bolsas de estudo.",
+      "Dados de cartão de crédito para pagamento de taxas ou serviços públicos (ex: multas, emissão de documentos).",
+      "Histórico de transações para investigação de fraudes em órgãos de controle."
+    ]
+  },
+  "data_legal": {
+    "why": "Identificar se o processo trata dados pessoais relacionados a finanças ou histórico jurídico. Essas informações podem ser sensíveis ou de alto risco, exigindo maior proteção e bases legais específicas da LGPD.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca",
+      "contratos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 11",
+      "resumo": "O tratamento de dados pessoais sensíveis exige condições específicas e mais rigorosas, como consentimento explícito ou cumprimento de obrigação legal."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de renda familiar mensal e patrimônio: Cadastro Único para programas sociais, declaração de bens de servidores públicos, análise de isenção de taxas.",
+      "Processos em andamento / concluídos envolvendo o titular: Certidões de antecedentes criminais para concursos, processos administrativos disciplinares de servidores, processos judiciais de desapropriação."
+    ]
+  },
+  "data_children": {
+    "why": "Dados de crianças e adolescentes têm proteção especial pela LGPD. Você precisa identificar quais dados são coletados para garantir que o tratamento segue as regras específicas, como a necessidade de consentimento dos pais ou responsáveis.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade"
+    ],
+    "lgpd": {
+      "artigo": "Art. 14",
+      "resumo": "O tratamento de dados pessoais de crianças e adolescentes deve ser realizado no seu melhor interesse e com consentimento específico e em destaque dado por pelo menos um dos pais ou responsável legal."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Nome e idade de alunos em escolas municipais",
+      "Informações de saúde de crianças atendidas em postos de saúde",
+      "Dados de contato de adolescentes em programas sociais",
+      "Registro de participação em atividades esportivas ou culturais para menores"
+    ]
+  },
+  "data_children_consent": {
+    "why": "Você precisa saber se o consentimento para tratar dados de crianças e adolescentes foi dado pelos pais ou responsáveis. A LGPD exige proteção especial e consentimento específico para esses dados.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 14, § 1º",
+      "resumo": "O tratamento de dados pessoais de crianças e adolescentes deve ser realizado com consentimento específico e em destaque dado por pelo menos um dos pais ou responsável legal."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Inscrição de alunos em escolas municipais.",
+      "Cadastro em programas sociais voltados para menores de idade.",
+      "Atendimento em unidades de saúde pediátricas.",
+      "Participação em atividades culturais ou esportivas promovidas pelo órgão."
+    ]
+  },
+  "data_teens": {
+    "why": "A LGPD dá proteção especial aos dados de crianças e adolescentes. Saber se você trata esses dados é crucial pra garantir que as regras específicas (como o melhor interesse deles) sejam seguidas e pra evitar multas.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 14",
+      "resumo": "O tratamento de dados pessoais de crianças e adolescentes deve ser realizado em seu melhor interesse e com consentimento específico dos pais ou responsável legal, exceto em algumas situações."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de alunos em escolas municipais",
+      "Dados de adolescentes em programas sociais da prefeitura",
+      "Dados de jovens em centros esportivos ou culturais públicos"
+    ]
+  },
+  "data_preferences": {
+    "why": "Muitas preferências são consideradas dados sensíveis pela LGPD (religião, política, sexualidade, filiação). Identificar quais você coleta é crucial para aplicar as regras mais rigorosas de tratamento e garantir a base legal correta.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "politica-seguranca"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, II e Art. 11",
+      "resumo": "Define dado pessoal sensível e estabelece condições específicas para o seu tratamento, exigindo maior cuidado e base legal robusta."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Crenças religiosas ou filosóficas: Coleta de dados de servidores para atender a pedidos de dispensa de ponto em datas religiosas específicas.",
+      "Filiação sindical: Desconto de mensalidade sindical em folha de pagamento de servidores públicos.",
+      "Orientação sexual: Informações coletadas em pesquisas de diversidade e inclusão, com consentimento específico.",
+      "Preferência de compra: Não se aplica diretamente a órgãos públicos, mas pode surgir em parcerias ou convênios."
+    ]
+  },
+  "data_mobile": {
+    "why": "Informações de dispositivos móveis podem identificar o titular, rastrear seu comportamento e até revelar dados sensíveis. Saber quais você coleta ajuda a avaliar riscos e garantir a proteção necessária.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "politica-privacidade",
+      "politica-seguranca",
+      "incidentes",
+      "ripd",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, I e II",
+      "resumo": "Define 'dado pessoal' como informação que identifica ou torna identificável uma pessoa, e 'dado pessoal sensível' para categorias específicas de alto risco."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Geolocalização: Monitoramento de frota de veículos oficiais, apps de fiscalização de obras.",
+      "Áudio/Vídeo: Câmeras de segurança em prédios públicos, gravações de atendimento ao cidadão.",
+      "Identificador único de dispositivo (IMEI): Controle de patrimônio de celulares funcionais.",
+      "Endereço de IP/Clickstream: Logs de acesso a sistemas internos ou portais de serviços públicos."
+    ]
+  },
+  "data_health": {
+    "why": "Dados de saúde são considerados dados sensíveis pela LGPD. Exigem proteção extra e só podem ser tratados em situações muito específicas, como para cumprir obrigação legal ou proteger a vida do titular.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "politica-seguranca",
+      "incidentes",
+      "ripd",
+      "modelo-pgp"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, II e Art. 11",
+      "resumo": "Define dados sensíveis (incluindo dados de saúde) e estabelece condições mais rigorosas para seu tratamento."
+    },
+    "criticidade": "alta"
+  },
+  "data_sensitive_yn": {
+    "why": "Dados pessoais sensíveis têm proteção especial pela LGPD, pois seu tratamento indevido pode gerar discriminação. Identificá-los é crucial para aplicar as regras mais rigorosas de segurança e base legal.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "politica-seguranca",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, II e Art. 11",
+      "resumo": "Define o que são dados pessoais sensíveis e estabelece condições específicas e mais restritivas para seu tratamento."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de saúde (prontuários médicos em hospitais públicos, atestados em RH)",
+      "Origem racial ou étnica (cotas em concursos, programas sociais)",
+      "Filiação sindical (servidores públicos)",
+      "Dados biométricos (controle de ponto, acesso a sistemas)",
+      "Convicção religiosa (atendimento a minorias)"
+    ]
+  },
+  "data_sensitive_list": {
+    "why": "Dados sensíveis têm proteção extra pela LGPD por seu alto potencial discriminatório. Identificá-los é crucial para aplicar as salvaguardas corretas e evitar multas.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "gap",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade",
+      "politica-seguranca",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 5º, II e Art. 11",
+      "resumo": "Define o que são dados pessoais sensíveis e estabelece condições mais rigorosas para seu tratamento."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de saúde: prontuários médicos de servidores ou usuários de serviços de saúde pública.",
+      "Biometria: digital para controle de ponto de servidores ou reconhecimento facial em sistemas de segurança.",
+      "Origem racial ou étnica: informações coletadas em pesquisas para políticas de inclusão ou cotas."
+    ]
+  }
+}

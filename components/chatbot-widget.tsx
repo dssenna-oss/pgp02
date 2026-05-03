@@ -117,6 +117,27 @@ export default function ChatbotWidget() {
     }
   }, [position]);
 
+  // Listener pra abertura externa via custom event ("chat:open-with").
+  // Usado por <FieldHelp> no wizard de Inventário (botão "Quer aprofundar
+  // com IA?") — abre o chat já com a pergunta pré-preenchida.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { seed?: string; source?: string }
+        | undefined;
+      if (!detail?.seed) return;
+      setIsOpen(true);
+      setIsMinimized(false);
+      setInput(detail.seed);
+      // Vinda de field-help (LGPD) → modo técnico faz sentido
+      if (detail.source === "field-help") setMode("technical");
+      // Foca o input na próxima task — depois do widget renderizar
+      setTimeout(() => inputRef.current?.focus(), 200);
+    };
+    window.addEventListener("chat:open-with", handler);
+    return () => window.removeEventListener("chat:open-with", handler);
+  }, []);
+
   // Handlers para drag
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (buttonRef.current) {

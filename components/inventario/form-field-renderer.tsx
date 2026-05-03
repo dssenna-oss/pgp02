@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HelpCircle } from "lucide-react";
 import type { FormField } from "@/lib/inventario-form-schema";
 import { cn } from "@/lib/utils";
+import { FieldHelp } from "./field-help";
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -47,16 +48,26 @@ export function FormFieldRenderer({
 
   // Pergunta = label do campo. Destaque visual: ícone + negrito + cor de
   // acento, pra distinguir das labels das opções (checkbox/radio).
+  // Quando há `field.help`, aparece também o botão "?" do FieldHelp ao lado.
   const labelEl = (
     <div className="flex items-start gap-2 pt-1 pb-1 border-l-4 border-blue-500 dark:border-blue-400 pl-3 bg-blue-50/50 dark:bg-blue-950/30 rounded-r-md">
       <HelpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
       <Label
         htmlFor={fieldId}
-        className="block text-sm font-bold leading-snug text-gray-900 dark:text-gray-100"
+        className="block text-sm font-bold leading-snug text-gray-900 dark:text-gray-100 flex-1"
       >
         {field.label}
         {field.required && <span className="ml-1 text-red-500">*</span>}
       </Label>
+      {field.help && (
+        <div className="mt-0.5">
+          <FieldHelp
+            help={field.help}
+            fieldLabel={field.label}
+            fieldId={field.id}
+          />
+        </div>
+      )}
     </div>
   );
 

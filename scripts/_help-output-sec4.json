@@ -1,0 +1,189 @@
+{
+  "use_subjects": {
+    "why": "Ajuda a entender quem são os titulares dos dados que sua organização trata. Isso é fundamental pra aplicar os direitos da LGPD e informar corretamente cada grupo de pessoas.",
+    "feedsInto": [
+      "inventario",
+      "politica-privacidade",
+      "diagnostico",
+      "ripd",
+      "riscos"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, V",
+      "resumo": "Princípio da transparência — o tratamento deve garantir informações claras e acessíveis aos titulares sobre o tratamento de seus dados."
+    },
+    "criticidade": "media"
+  },
+  "use_diff_purpose": {
+    "why": "Usar dados para uma finalidade diferente da informada ao titular é uma violação grave da LGPD. Isso quebra a confiança e expõe a organização a riscos legais e de reputação.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "plano-acao"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, I e VI",
+      "resumo": "O tratamento deve ter propósitos legítimos, específicos, explícitos e informados ao titular (Finalidade) e garantir clareza sobre o tratamento dos dados (Transparência)."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados coletados para matrícula em escola municipal são usados para enviar propaganda de cursos particulares.",
+      "Informações de contato de um cidadão que solicitou um serviço são usadas para pesquisa de satisfação sem aviso prévio.",
+      "Dados de saúde de servidores para perícia médica são usados para criar um ranking de produtividade."
+    ]
+  },
+  "use_diff_purpose_desc": {
+    "why": "Se você usa dados para algo diferente do que foi informado ao titular, isso é um risco sério de descumprimento da LGPD. A finalidade inicial precisa ser respeitada e, se houver uma nova, ela precisa de uma nova base legal e ser comunicada.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "ripd",
+      "politica-privacidade",
+      "plano-acao"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, I",
+      "resumo": "O tratamento posterior de dados pessoais não pode ser incompatível com as finalidades originais informadas ao titular."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Dados de inscritos em concurso público usados para enviar e-mails de marketing de eventos da prefeitura sem aviso.",
+      "Informações de saúde coletadas para atendimento médico usadas para pesquisa acadêmica sem anonimização ou consentimento.",
+      "Dados de contato de cidadãos que solicitaram um serviço usados para formar uma lista de e-mails para campanhas políticas."
+    ]
+  },
+  "use_unnecessary_access": {
+    "why": "Essa pergunta ajuda a identificar se você está acessando dados pessoais além do estritamente necessário para sua atividade. A LGPD exige que você colete e use apenas os dados essenciais, minimizando riscos.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "politica-seguranca",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, III",
+      "resumo": "Princípio da necessidade — o tratamento de dados deve se limitar ao mínimo necessário para a realização de suas finalidades."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Acessar o histórico médico completo de um servidor quando só precisa confirmar se ele tem direito a um benefício específico.",
+      "Ter acesso à base de dados completa de cidadãos cadastrados na prefeitura, quando sua função exige apenas consultar dados de contribuintes de um bairro específico.",
+      "Um funcionário do RH que acessa dados financeiros detalhados de todos os servidores, mas sua função só exige informações de folha de pagamento."
+    ]
+  },
+  "use_received_external": {
+    "why": "Quando você recebe dados de outra instituição, precisa garantir que ela tinha o direito de compartilhar e que você tem uma base legal pra recebê-los. Isso define responsabilidades e evita problemas de conformidade.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "contratos",
+      "politica-privacidade",
+      "ripd",
+      "diagnostico"
+    ],
+    "lgpd": {
+      "artigo": "Art. 7º",
+      "resumo": "O tratamento de dados pessoais só pode ser realizado mediante uma das bases legais previstas na LGPD."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Recebimento de dados de saúde de hospitais para programas de assistência social do município.",
+      "Dados de cadastro de eleitores do TRE para serviços municipais (ex: programas de cidadania).",
+      "Dados de alunos de escolas estaduais para programas educacionais complementares do município.",
+      "Dados de inadimplentes de concessionárias de serviços públicos para programas de renegociação de dívidas."
+    ]
+  },
+  "use_received_external_desc": {
+    "why": "Descrever como e com quem os dados são compartilhados ou transferidos é essencial pra garantir a transparência com o titular e a conformidade com a LGPD. Você precisa saber o destino do dado pra gerenciar riscos e responsabilidades.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-privacidade",
+      "politica-seguranca",
+      "contratos",
+      "incidentes",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, VI e IX",
+      "resumo": "O tratamento de dados deve ser transparente e o controlador deve informar sobre o compartilhamento de dados com terceiros."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Compartilhamento com a Secretaria de Saúde Municipal para campanhas de vacinação, conforme Lei X/2020.",
+      "Transferência para empresa terceirizada de gestão de folha de pagamento (Operador), conforme contrato de prestação de serviços.",
+      "Compartilhamento com outros órgãos públicos para fins de fiscalização e controle, conforme convênio Y.",
+      "Transferência internacional de dados para servidor de e-mail localizado nos EUA, com cláusulas contratuais padrão."
+    ]
+  },
+  "use_automated_decision": {
+    "why": "Decisões automatizadas podem ter grande impacto na vida dos titulares, como acesso a serviços ou benefícios. A LGPD exige transparência e o direito do titular de pedir revisão dessas decisões.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "diagnostico",
+      "plano-acao",
+      "ripd",
+      "politica-privacidade"
+    ],
+    "lgpd": {
+      "artigo": "Art. 20",
+      "resumo": "O titular tem direito a solicitar revisão de decisões tomadas unicamente com base em tratamento automatizado de dados pessoais."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Classificação automática de pedidos de auxílio social por sistema.",
+      "Análise de elegibilidade para vagas em creches municipais por algoritmo.",
+      "Avaliação de desempenho de servidores públicos por software.",
+      "Seleção de candidatos para cursos técnicos com base em notas e critérios automatizados."
+    ]
+  },
+  "use_automated_decision_desc": {
+    "why": "Decisões automatizadas podem ter grande impacto na vida do titular, como negar um benefício ou serviço. A LGPD exige transparência e o direito de o titular pedir revisão humana dessas decisões.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "ripd",
+      "diagnostico",
+      "plano-acao",
+      "politica-privacidade"
+    ],
+    "lgpd": {
+      "artigo": "Art. 20",
+      "resumo": "O titular tem direito a solicitar revisão de decisões tomadas unicamente com base em tratamento automatizado de dados pessoais que afetem seus interesses."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Sistema que avalia automaticamente a elegibilidade de cidadãos para um programa social com base em dados de renda e cadastro único.",
+      "Algoritmo que classifica automaticamente pedidos de licença ou alvará, aprovando ou negando sem intervenção humana.",
+      "Uso de inteligência artificial para ranquear candidatos em concursos públicos, gerando uma lista final sem revisão manual."
+    ]
+  },
+  "use_marketing": {
+    "why": "Saber se os dados são usados em campanhas ajuda a garantir que o uso está alinhado com a finalidade original e a base legal. É crucial para a transparência com o titular e para evitar uso indevido, especialmente em órgãos públicos.",
+    "feedsInto": [
+      "inventario",
+      "riscos",
+      "politica-privacidade",
+      "diagnostico",
+      "ripd"
+    ],
+    "lgpd": {
+      "artigo": "Art. 6º, I e Art. 9º",
+      "resumo": "O tratamento deve ter finalidade legítima e ser transparente, informando o titular sobre o uso de seus dados."
+    },
+    "criticidade": "alta",
+    "exemplos": [
+      "Sim, para campanhas de vacinação da Secretaria de Saúde (base legal: execução de políticas públicas).",
+      "Sim, para divulgar eventos culturais da prefeitura (base legal: interesse público, com aviso claro ao titular).",
+      "Não, não usamos dados pessoais para marketing ou campanhas sociais.",
+      "Cuidado: usar dados de cidadãos para campanhas políticas de partidos ou candidatos é proibido."
+    ]
+  }
+}
