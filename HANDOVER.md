@@ -1,6 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-02 (continuação) · **Branch:** `claude/nice-mclean-d12b88` (worktree).
+> **Última sessão:** 2026-05-03 · **Branch atual:** `claude/compassionate-blackwell-f643ea` (worktree, 1 commit à frente da `main`).
+>
+> **Último commit local (não-pushed):** `f7c4843` — feat(usuarios+inventario): sistema multi-papel + fluxo de aprovação + bases legais.
+> **Último commit em produção (origin/main):** `7f0d8eb` — feat(inventario): ajuda contextual LGPD em todas as 58 perguntas.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -19,6 +22,100 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - **Gemini API em paid tier** (billing linkado a "conta de teste do Cloud" — sem cartão, mas com créditos trial)
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — **100% dos `phase_documents` cobertos** (todas as fases: preliminar, fase-1 a fase-7, entendendo-pgp, global)
 - **Indexador suporta Vercel Blob**: arquivos com `cloud_storage_path` HTTPS são baixados via fetch
+
+---
+
+## 🔥 Sessão 2026-05-03 — Sistema multi-tenant entregue (commit `f7c4843`)
+
+Trabalho extenso desde o último push pra produção. Tudo está commitado **localmente** mas **NÃO foi pushed pra main** (deploy quebraria — ver "Migração Neon pendente" abaixo).
+
+### Plano dos 13 mini-apps (ordem revisada)
+
+| # | Etapa | Status |
+|---|---|---|
+| 1 | ✅ Inventário (wizard com ajuda contextual + onboarding visual) | feito antes (commit `7f0d8eb`) |
+| 2 | ✅ Sistema de usuários + papéis (6 checkpoints) | **feito nessa sessão** |
+| 3.1 | ✅ Painel do Encarregado (fluxo de aprovação) | **feito nessa sessão** |
+| 4 | ✅ Bases Legais (sub-tela do DPO) | **feito nessa sessão** |
+| 5 | ⏳ Análise de Riscos (mini-app 3) — Sim/Não pros 13 tipos por processo | **PRÓXIMO** |
+| 6 | ⏳ Detalhamento de Riscos (impacto, probabilidade, plano de ação) | depois |
+| 7 | ⏳ Visão de Riscos consolidada (dashboard) | depois |
+| 8 | ⏳ Exportação Excel consolidada (3 abas igual o modelo) | depois |
+| 9 | ⏳ GAP Analysis (mini-app 4) | depois |
+| 10 | ⏳ Diagnóstico de Privacidade (consolidador) | depois |
+| 11–13 | ⏳ Plano de Ação · Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
+
+### Decisões importantes tomadas (não negociar de novo)
+
+1. **Multi-tenant SaaS**: o app suporta N organizações públicas, com 1 banco compartilhado, separado por `companyId`.
+
+2. **4 papéis hierárquicos**:
+   - **DPO Principal** (1 por org): encarregado titular, todas as permissões
+   - **DPO Substituto** (1 por org): mesmas permissões do principal
+   - **DPO Auxiliar** (N por org, opcional): vê tudo, aprova, mas não cria/exclui contribuidor
+   - **Contribuidor** (N): cria processos do próprio setor, vê só os próprios
+   - **`role: "admin"` legado** = atalho equivalente a DPO Principal + Super Admin (só o usuário inicial pré-migração)
+
+3. **Onboarding manual** (N1.1):
+   - Você (super admin) cria Organização + DPO Principal via `/sysadmin`
+   - DPO cria Contribuidores via `/dashboard/contribuidores` (Opção A — repassa senha temporária)
+   - **Sem email automático** (sem Resend/SendGrid)
+
+4. **Fluxo de aprovação** (state machine validada server-side):
+   ```
+   RASCUNHO → SUBMETIDO/APROVADO
+   SUBMETIDO → EM_REVISAO/APROVADO/DEVOLVIDO
+   EM_REVISAO → APROVADO/DEVOLVIDO
+   DEVOLVIDO → SUBMETIDO (re-submissão)
+   APROVADO → terminal
+   ```
+   - Contribuidor "Concluir" → SUBMETIDO
+   - DPO "Concluir" → APROVADO direto (atalho)
+   - DEVOLVIDO exige comentário do DPO
+
+5. **Branding**: `LGPD - PGP` é o brand fixo. Cada org tem identificação própria (ex: "PGP PM Vila Velha"). Org atual = "LGPD - PGP AUTOMATIZADO".
+
+### Arquivos importantes (criados nessa sessão)
+
+| Onde | O quê |
+|---|---|
+| `lib/auth-helpers.ts` | Centraliza `isDPO`, `canManageContributors`, `isSuperAdmin`, `inventoryAccessFilter`, `INVENTORY_STATUS`, `roleLabel`, `inventoryStatusColor` |
+| `app/sysadmin/page.tsx` + `components/sysadmin/sysadmin-content.tsx` | Tela do super admin (você) pra criar orgs+DPOs |
+| `app/api/sysadmin/orgs/route.ts` + `[id]/reset-password/route.ts` | API restrita por `SUPER_ADMIN_EMAIL` |
+| `app/dashboard/contribuidores/page.tsx` + `components/contribuidores/contribuidores-content.tsx` | Tela do DPO pra gerenciar contribuidores |
+| `app/api/dpo/contribuidores/*` | API restrita a DPOs (Principal/Substituto têm mutations) |
+| `app/api/inventario/[id]/status/route.ts` | State machine do fluxo de aprovação |
+| `app/dashboard/inventario/[id]/bases-legais/page.tsx` + `components/inventario/bases-legais-content.tsx` | Sub-tela das Bases Legais (Art. 7º + Art. 11) |
+| `app/api/inventario/[id]/bases-legais/route.ts` | API restrita a DPOs |
+| `scripts/_excel-mapping-analysis.md` | **Doc-chave**: mapa entre 58 perguntas do form e 84 colunas do Excel modelo. Base pro próximo checkpoint (Análise de Riscos = colunas BR-CD) |
+| `scripts/_video-transcript*.txt` | Transcrição dos vídeos da Denise (instrutora LGPD) explicando metodologia |
+| `scripts/_excel-modelo-raw-v2.json` | Excel modelo serializado pra leitura programática |
+| `scripts/_migrate-users-roles.sql` | Migração SQL local (já aplicada) — Etapa 2.1 |
+| `scripts/_migrate-bases-legais.sql` | Migração SQL local (já aplicada) — Etapa 4 |
+
+### ⚠ Migração Neon pendente (BLOQUEADOR pra próximo push em main)
+
+O banco local já tem todos os campos novos. O **Neon (prod)** NÃO tem. Se push pra main agora, o deploy do Vercel quebra porque o código novo (`lib/auth.ts`, APIs) espera campos que não existem no Neon.
+
+**Antes do próximo `git push origin HEAD:main`, rodar contra Neon:**
+```bash
+# Pegar a Neon URL do dashboard Vercel (DATABASE_URL em prod)
+psql "<neon-url>" -f scripts/_migrate-users-roles.sql
+psql "<neon-url>" -f scripts/_migrate-bases-legais.sql
+```
+
+Os 2 SQLs são idempotentes (`IF NOT EXISTS`). Depois fazer push normal.
+
+### Próximo checkpoint sugerido (5 — Análise de Riscos)
+
+Implementar mini-app pro DPO marcar Sim/Não pros 13 tipos de risco em cada processo APROVADO:
+- 13 tipos: Ausência de legitimação · Crianças/Adolescentes · Utilização excessiva · Falta de transparência · Transferência internacional · Compartilhamento com terceiro · Armazenagem indeterminada · Finalidade diversa · Compartilhamento com grupo · Compra de base de dados · Decisão automatizada · Profilling · Background check
+- Cada risco marcado pode ter texto descritivo curto (ex: BV5 "Estados Unidos" no exemplo do Excel)
+- Tela `/dashboard/inventario/[id]/analise-riscos` (DPO only)
+- API `PATCH /api/inventario/[id]/riscos`
+- Schema: novo campo JSON `riskMarks` em DataInventory (ou tabela separada `Risk` se for evoluir pro detalhamento depois)
+
+Depois disso, mini-app 6 = detalhamento de risco com Impacto/Probabilidade/Plano de Ação (igual aba RISCOS do Excel).
 
 ---
 
@@ -44,14 +141,30 @@ Logo da empresa foi limpado no Neon como medida defensiva. Pra subir de novo:
 # 1. Iniciar Postgres portátil (caso não esteja rodando)
 & "E:\postgres\pgsql2\pgsql\bin\pg_ctl.exe" -D E:\postgres\data -l E:\postgres\logs\server.log start
 
-# 2. Iniciar dev server
-cd E:\_________PGP
+# 2. Ir pro worktree atual (onde está o trabalho da sessão 2026-05-03)
+cd E:\_________PGP\.claude\worktrees\compassionate-blackwell-f643ea
+
+# 3. Garantir .env (worktrees não compartilham — copiar da pasta-mãe se for 1ª vez)
+test-path .env || cp ../../../.env .env
+
+# 4. Iniciar dev
 npm run dev
 ```
 
-Local roda em http://localhost:3000 — login mesmas credenciais.
+Local roda em http://localhost:3000.
+- Login DPO Principal: `clubedoservidor@protonmail.com` / `741963PgP@*#$`
+- `SUPER_ADMIN_EMAIL` já está no `.env` (mesmo email) → te dá acesso ao `/sysadmin`
+- Local **não tem pgvector** → RAG fica desligado em dev (chatbot funciona, só sem grounding). Em produção tudo está completo.
 
-> Local **não tem pgvector**, então o RAG fica desligado em dev (chatbot funciona, só sem grounding nos PDFs). Em produção tudo está completo.
+### Início rápido pra próxima sessão de Claude
+
+Diga **"retomar do HANDOVER + memória"** e o assistente lê:
+1. Este `HANDOVER.md` (estado da sessão 2026-05-03)
+2. `~/.claude/projects/E-----------PGP/memory/MEMORY.md` (decisões persistentes)
+3. `git log --oneline -5` (últimos commits)
+4. `scripts/_excel-mapping-analysis.md` (referência pro Excel)
+
+Depois é só dizer "vamos pro Checkpoint 5" e seguir.
 
 ---
 
