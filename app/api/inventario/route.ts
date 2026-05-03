@@ -34,10 +34,37 @@ export async function GET(request: NextRequest) {
         createdBy: {
           select: { id: true, name: true, email: true, setor: true },
         },
+        // Necessário pro card mostrar contagem de riscos identificados.
+        // Selecionamos só `riskCode` (não o registro inteiro) — leve.
+        processRisks: {
+          select: { riskCode: true },
+        },
       },
     });
 
-    return NextResponse.json(inventarios);
+    // Contagem de tarefas pessoais do user atual vinculadas a cada
+    // processo. Não vaza tarefas de outros users (cada um vê só as suas).
+    const taskGroups = await prisma.task.groupBy({
+      by: ["dataInventoryId"],
+      where: {
+        userId: user.id,
+        dataInventoryId: { not: null },
+        status: { not: "CONCLUIDA" },
+      },
+      _count: { _all: true },
+    });
+    const taskCountByProcess = new Map<string, number>();
+    for (const g of taskGroups) {
+      if (g.dataInventoryId) {
+        taskCountByProcess.set(g.dataInventoryId, g._count._all);
+      }
+    }
+    const enriched = inventarios.map((inv) => ({
+      ...inv,
+      myOpenTasksCount: taskCountByProcess.get(inv.id) ?? 0,
+    }));
+
+    return NextResponse.json(enriched);
   } catch (error) {
     console.error("Erro ao buscar inventários:", error);
     return NextResponse.json(

@@ -100,12 +100,12 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
   const HeyzineSection = () => (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
-            E-book Interativo
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
+            <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            <span>E-book Interativo</span>
             {!isAdmin && heyzineEmbedUrl && (
-              <span className="text-xs text-gray-500 ml-2 font-normal">
+              <span className="text-xs text-gray-500 font-normal inline-flex items-center">
                 <Lock className="h-3 w-3 inline mr-1" />
                 Gerenciado pelo Administrador
               </span>
@@ -116,6 +116,7 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
               variant="outline"
               size="sm"
               onClick={() => setEditingHeyzine(true)}
+              className="self-start sm:self-auto"
             >
               <Edit2 className="h-4 w-4 mr-2" />
               {heyzineEmbedUrl ? "Editar" : "Adicionar"}
@@ -215,12 +216,12 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
   const HowToProceedSection = () => (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ListChecks className="h-5 w-5 text-green-600" />
-            Considerações sobre a fase
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
+            <ListChecks className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <span>Considerações sobre a fase</span>
             {!isAdmin && howToProceed && (
-              <span className="text-xs text-gray-500 ml-2 font-normal">
+              <span className="text-xs text-gray-500 font-normal inline-flex items-center">
                 <Lock className="h-3 w-3 inline mr-1" />
                 Gerenciado pelo Administrador
               </span>
@@ -231,6 +232,7 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
               variant="outline"
               size="sm"
               onClick={() => setEditingHowTo(true)}
+              className="self-start sm:self-auto"
             >
               <Edit2 className="h-4 w-4 mr-2" />
               {howToProceed ? "Editar" : "Adicionar"}

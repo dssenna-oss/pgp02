@@ -60,6 +60,20 @@ model User {
   reviewedInventories DataInventory[] @relation("InventoryReviewedBy")
   legalReviewedInventories DataInventory[] @relation("LegalReviewedBy")
 
+  // Riscos identificados/revisados por este usuário (Análise de Riscos)
+  identifiedRisks ProcessRisk[] @relation("RiskIdentifiedBy")
+  reviewedRisks   ProcessRisk[] @relation("RiskReviewedBy")
+
+  // Tarefas pessoais (caderno individual de cada usuário)
+  tasks         Task[]
+  taskMarkers   TaskMarker[]
+
+  // Fórum + Mensagens (visibilidade compartilhada da org)
+  authoredForumPosts  ForumPost[] @relation("ForumPostAuthor")
+  receivedForumPosts  ForumPost[] @relation("ForumPostRecipient") // só DMs
+  authoredForumReplies ForumReply[]
+  forumReads          ForumPostRead[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -92,6 +106,10 @@ model Company {
   
   // Documentos e inventários relacionados
   dataInventories   DataInventory[]
+  processRisks      ProcessRisk[]
+  tasks             Task[]
+  taskMarkers       TaskMarker[]
+  forumPosts        ForumPost[]
   riskAssessments   RiskAssessment[]
   gapAnalyses       GapAnalysis[]
   actionPlans       ActionPlan[]
@@ -172,12 +190,245 @@ model DataInventory {
   legalReviewedBy     User?    @relation("LegalReviewedBy", fields: [legalReviewedById], references: [id], onDelete: SetNull)
   legalReviewedAt     DateTime?
 
+  // ---------- Análise de Riscos (Checkpoint 5) ----------
+  // 1 processo aprovado pode ter de 0 a 13 riscos identificados.
+  // Cada ProcessRisk corresponde a uma "x" das colunas BR-CD do Excel modelo.
+  // Campos detalhados (severityLevel, mitigationPlan) ficam null até o
+  // Checkpoint 6 — Detalhamento de Riscos.
+  processRisks ProcessRisk[]
+
+  // Tarefas pessoais opcionalmente vinculadas a este processo
+  // ("Atualizar política do Sistema X", "Conferir compartilhamento Y").
+  tasks Task[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("data_inventories")
   @@index([companyId, status])
   @@index([companyId, setor])
+}
+
+/// Risco identificado num processo de tratamento específico (DataInventory).
+///
+/// 1 linha aqui = 1 marcação "x" do consultor numa coluna BR-CD do Excel
+/// modelo de Mapeamento. Usado pela tela de Análise de Riscos (DPO-only).
+///
+/// Estrutura preparada pro Checkpoint 6 (Detalhamento): os campos
+/// `severityLevel`, `description`, `mitigationPlan` e `legalBasisRef`
+/// ficam null no Checkpoint 5 e serão preenchidos depois pelo DPO numa
+/// tela de detalhe (1 risco por vez), conforme metodologia da Denise:
+/// FATO → FUNDAMENTO LEGAL → RISCO IDENTIFICADO → RECOMENDAÇÕES.
+model ProcessRisk {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  dataInventoryId String
+  dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+
+  /// Código do risco — 1 dos 13 tipos da metodologia LGPD PRO. Mapeia
+  /// 1-pra-1 com as colunas BR-CD do Excel:
+  ///   BR=ausencia_legitimacao · BS=criancas_adolescentes
+  ///   BT=excessivo · BU=falta_transparencia · BV=transferencia_internacional
+  ///   BW=compartilhamento_terceiro · BX=armazenagem_indeterminada
+  ///   BY=finalidade_diversa · BZ=compartilhamento_grupo
+  ///   CA=aquisicao_indireta · CB=decisao_automatizada · CC=profiling
+  ///   CD=background_check
+  riskCode        String
+
+  /// Estado do ciclo de vida do risco:
+  ///   - "IDENTIFICADO"  — DPO marcou; ainda sem plano (default)
+  ///   - "EM_MITIGACAO"  — Plano de ação em execução
+  ///   - "ACEITO"        — Empresa decidiu seguir mesmo com o risco
+  ///   - "ELIMINADO"     — Mitigação aplicada e confirmada
+  status          String   @default("IDENTIFICADO")
+
+  /// Observação curta livre — equivalente ao texto inline na coluna BR-CD do
+  /// Excel (ex: BV "Estados Unidos" pra transferência internacional).
+  description     String?  @db.Text
+
+  /// Indica se a marcação foi sugerida automaticamente pelo sistema (com
+  /// base nas respostas do wizard) e depois confirmada pelo DPO.
+  /// Usado pra trilha de auditoria — mostra o que foi humano vs automático.
+  autoSuggested   Boolean  @default(false)
+
+  // ---------- Campos pro Checkpoint 6 (Detalhamento) ----------
+  // Ficam null no Checkpoint 5; preenchidos depois.
+  /// Classificação combinada Severidade × Probabilidade: "BAIXO" | "MEDIO" | "ALTO"
+  severityLevel   String?
+  /// Plano de mitigação detalhado (texto livre + medidas marcadas)
+  mitigationPlan  String?  @db.Text
+  /// Referência legal específica (artigo/inciso da LGPD aplicável)
+  legalBasisRef   String?
+
+  // ---------- Auditoria ----------
+  identifiedById  String?
+  identifiedBy    User?    @relation("RiskIdentifiedBy", fields: [identifiedById], references: [id], onDelete: SetNull)
+  identifiedAt    DateTime @default(now())
+  reviewedById    String?
+  reviewedBy      User?    @relation("RiskReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([dataInventoryId, riskCode])
+  @@index([companyId, status])
+  @@index([dataInventoryId])
+  @@map("process_risks")
+}
+
+/// Tarefa pessoal de um usuário (caderno individual de planejamento).
+///
+/// Origem: inspirada no `TarefaValidador` do RADAR PNTP. Aqui ficou bem
+/// mais enxuta — sem KPIs semanais, sem drag-and-drop, sem cron de e-mail
+/// (notificação é só visual no app).
+///
+/// Visibilidade: PRIVADA — só o dono vê e edita as próprias tarefas.
+/// `companyId` está aqui só pra isolamento multi-tenant na cascade
+/// (se a org for excluída, as tarefas dos seus membros somem junto).
+model Task {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title           String   @db.VarChar(200)
+  description     String?  @db.Text
+
+  /// "A_FAZER" | "EM_ANDAMENTO" | "CONCLUIDA"
+  status          String   @default("A_FAZER")
+  /// "BAIXA" | "MEDIA" | "ALTA"
+  priority        String   @default("MEDIA")
+
+  /// Data de prazo (sem horário — Date only). Tarefas sem prazo ficam null.
+  dueDate         DateTime?
+
+  /// Marcadores aplicados a esta tarefa: JSON com array de nomes
+  /// (ex: '["Urgente","Reunião"]'). Os nomes referenciam TaskMarker do
+  /// próprio dono. Limite prático: 10 por tarefa.
+  markers         String?  @db.Text
+
+  /// Vínculo opcional com um processo aprovado do Inventário
+  /// (ex: "Atualizar retenção do Sistema de CRM"). Se o processo for
+  /// excluído, o vínculo é zerado mas a tarefa permanece.
+  dataInventoryId String?
+  dataInventory   DataInventory? @relation(fields: [dataInventoryId], references: [id], onDelete: SetNull)
+
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@index([companyId])
+  @@map("tasks")
+}
+
+/// Marcador (tag) personalizado pra organizar tarefas. Cada usuário tem
+/// o próprio conjunto, com nome único. Cor é uma das 6 da paleta.
+model TaskMarker {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name      String   @db.VarChar(60)
+  /// "slate" | "indigo" | "amber" | "red" | "emerald" | "fuchsia"
+  color     String   @default("slate")
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("task_markers")
+}
+
+/// Posts do fórum + mensagens diretas (1 modelo só pros 2 conceitos —
+/// igual ao RADAR PNTP, mais elegante que duplicar).
+///
+/// `recipientId` distingue:
+///   - null         → post PÚBLICO visível pra toda a organização
+///   - preenchido   → mensagem direta 1-pra-1 (só autor + recipient veem)
+///
+/// `type`:
+///   - "DISCUSSION"   → post comum (todos os papéis criam)
+///   - "ANNOUNCEMENT" → comunicado oficial (só DPO cria; pode fixar)
+///
+/// `category` (só pros públicos): "GERAL" | "INVENTARIO" | "RISCOS" |
+/// "BASES_LEGAIS" | "DUVIDA".
+///
+/// `active` é soft-delete: ao "excluir", marca como false. Posts inativos
+/// não aparecem nas listas mas ficam pra auditoria.
+model ForumPost {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  authorId     String
+  author       User     @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// Mensagem direta: id do destinatário. Null = post público.
+  recipientId  String?
+  recipient    User?    @relation("ForumPostRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+
+  /// "DISCUSSION" | "ANNOUNCEMENT"
+  type         String   @default("DISCUSSION")
+  /// "GERAL" | "INVENTARIO" | "RISCOS" | "BASES_LEGAIS" | "DUVIDA"
+  /// Null em mensagens diretas (não fazem sentido categorizadas).
+  category     String?
+  title        String   @db.VarChar(200)
+  content      String   @db.Text
+
+  /// Apenas DPO pode fixar/desafixar. Posts fixados aparecem no topo.
+  pinned       Boolean  @default(false)
+  /// Soft delete — false = oculto da UI mas mantido no banco.
+  active       Boolean  @default(true)
+
+  replies      ForumReply[]
+  reads        ForumPostRead[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId, recipientId])
+  @@index([companyId, pinned, createdAt])
+  @@index([companyId, category])
+  @@index([authorId])
+  @@index([recipientId])
+  @@map("forum_posts")
+}
+
+/// Resposta a um ForumPost (1 nível — sem threads aninhadas).
+model ForumReply {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("forum_replies")
+}
+
+/// Marca quando cada usuário leu cada post (pra contagem de não-lidos).
+model ForumPostRead {
+  id      String   @id @default(cuid())
+  postId  String
+  post    ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt  DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([userId])
+  @@map("forum_post_reads")
 }
 
 model RiskAssessment {

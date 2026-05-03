@@ -1,20 +1,32 @@
-
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
-import RiscosContent from "@/components/riscos/riscos-content";
+import RiscosDashboardContent from "@/components/riscos/riscos-dashboard-content";
 
-export default async function RiscosPage() {
+/**
+ * Painel consolidado da Análise de Riscos (DPO-only).
+ *
+ * Tem 2 abas:
+ *   - "Riscos por processo" — lista todos os processos APROVADOS com
+ *     contagem de riscos identificados em cada um.
+ *   - "Riscos da organização" — placeholder. Será implementado no
+ *     Checkpoint 9 (GAP Analysis) com riscos macro que não pertencem
+ *     a uma área específica (não ter DPO, política, conscientização).
+ */
+export default async function RiscosDashboardPage() {
   const session = await getServerSession(authOptions);
-
-  if (!session) {
+  if (!session?.user?.email) {
     redirect("/login");
+  }
+  if (!isDPO(session.user?.role)) {
+    redirect("/dashboard");
   }
 
   return (
     <DashboardLayout session={session}>
-      <RiscosContent session={session} />
+      <RiscosDashboardContent session={session} />
     </DashboardLayout>
   );
 }

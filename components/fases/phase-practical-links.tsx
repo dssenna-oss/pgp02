@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ExternalLink, Edit2, Save, X, Loader2, Plus, Trash2, Lock, Monitor } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
+import PhaseNativeTools, { phaseHasNativeTools } from "./phase-native-tools";
 
 interface PracticalLink {
   title: string;
@@ -109,7 +110,7 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <ExternalLink className="h-5 w-5 text-purple-600" />
-            Na prática
+            Coloque em prática
             {!isAdmin && links.length > 0 && (
               <span className="text-xs text-gray-500 ml-2 font-normal">
                 <Lock className="h-3 w-3 inline mr-1" />
@@ -129,7 +130,12 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        {/* Mini-apps nativos da fase (Inventário, Análise de Riscos, etc.).
+            Aparecem antes dos links externos em fases que tenham ferramentas
+            nativas (hoje só Fase 3). Em outras fases, não renderiza nada. */}
+        {!editing && <PhaseNativeTools phase={phase} />}
+
         {editing ? (
           <div className="space-y-6">
             {links.map((link, index) => (
@@ -325,9 +331,18 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
               );
             })}
           </div>
+        ) : phaseHasNativeTools(phase) ? (
+          // Fase tem mini-apps nativos: o card já tem conteúdo.
+          // Só mostra os links externos se houver — sem mensagem vazia.
+          isAdmin && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 italic text-center pt-2 border-t border-dashed border-gray-200 dark:border-gray-800">
+              Você pode adicionar links externos extras (planilhas, formulários,
+              outros aplicativos) clicando em "Adicionar" acima.
+            </p>
+          )
         ) : (
           <p className="text-gray-500 dark:text-gray-400 text-center py-8">
-            {isAdmin 
+            {isAdmin
               ? "Nenhum link adicionado ainda. Clique em 'Adicionar' para inserir links de aplicativos práticos."
               : "Nenhum link prático disponível para esta fase. Entre em contato com o administrador."}
           </p>

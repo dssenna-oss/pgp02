@@ -1,5 +1,5 @@
 -- ============================================================
--- Migração consolidada PROD (Neon) — Etapas 2 + 4
+-- Migração consolidada PROD (Neon) — Etapas 2 + 4 + 5
 -- ============================================================
 -- Aplicar contra o Neon URL ANTES do próximo push pra main.
 -- O DATABASE_URL de prod está no painel Vercel (env vars).
@@ -11,6 +11,9 @@
 -- Combina:
 --   * scripts/_migrate-users-roles.sql (Etapa 2.1)
 --   * scripts/_migrate-bases-legais.sql (Etapa 4)
+--   * scripts/_migrate-process-risks.sql (Etapa 5 — Análise de Riscos)
+--   * scripts/_migrate-tasks.sql (Etapa 6 — Tarefas pessoais + Marcadores)
+--   * scripts/_migrate-forum.sql (Etapa 7 — Fórum + Mensagens diretas)
 -- ============================================================
 
 BEGIN;
@@ -99,6 +102,233 @@ BEGIN
   END IF;
 END $$;
 
+-- ====================================================================
+-- ETAPA 5 — Análise de Riscos (process_risks)
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "process_risks" (
+  "id"               TEXT PRIMARY KEY,
+  "companyId"        TEXT NOT NULL,
+  "dataInventoryId"  TEXT NOT NULL,
+  "riskCode"         TEXT NOT NULL,
+  "status"           TEXT NOT NULL DEFAULT 'IDENTIFICADO',
+  "description"      TEXT,
+  "autoSuggested"    BOOLEAN NOT NULL DEFAULT false,
+  "severityLevel"    TEXT,
+  "mitigationPlan"   TEXT,
+  "legalBasisRef"    TEXT,
+  "identifiedById"   TEXT,
+  "identifiedAt"     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "reviewedById"     TEXT,
+  "reviewedAt"       TIMESTAMP(3),
+  "createdAt"        TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"        TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'process_risks_companyId_fkey') THEN
+    ALTER TABLE "process_risks"
+      ADD CONSTRAINT "process_risks_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'process_risks_dataInventoryId_fkey') THEN
+    ALTER TABLE "process_risks"
+      ADD CONSTRAINT "process_risks_dataInventoryId_fkey"
+      FOREIGN KEY ("dataInventoryId") REFERENCES "data_inventories"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'process_risks_identifiedById_fkey') THEN
+    ALTER TABLE "process_risks"
+      ADD CONSTRAINT "process_risks_identifiedById_fkey"
+      FOREIGN KEY ("identifiedById") REFERENCES "users"("id") ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'process_risks_reviewedById_fkey') THEN
+    ALTER TABLE "process_risks"
+      ADD CONSTRAINT "process_risks_reviewedById_fkey"
+      FOREIGN KEY ("reviewedById") REFERENCES "users"("id") ON DELETE SET NULL;
+  END IF;
+END
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "process_risks_dataInventoryId_riskCode_key"
+  ON "process_risks"("dataInventoryId", "riskCode");
+CREATE INDEX IF NOT EXISTS "process_risks_companyId_status_idx"
+  ON "process_risks"("companyId", "status");
+CREATE INDEX IF NOT EXISTS "process_risks_dataInventoryId_idx"
+  ON "process_risks"("dataInventoryId");
+
+-- ====================================================================
+-- ETAPA 6 — Tarefas pessoais + Marcadores
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "task_markers" (
+  "id"        TEXT PRIMARY KEY,
+  "userId"    TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "name"      VARCHAR(60) NOT NULL,
+  "color"     TEXT NOT NULL DEFAULT 'slate',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_markers_userId_fkey') THEN
+    ALTER TABLE "task_markers"
+      ADD CONSTRAINT "task_markers_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'task_markers_companyId_fkey') THEN
+    ALTER TABLE "task_markers"
+      ADD CONSTRAINT "task_markers_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+END
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "task_markers_userId_name_key"
+  ON "task_markers"("userId", "name");
+CREATE INDEX IF NOT EXISTS "task_markers_userId_idx"
+  ON "task_markers"("userId");
+
+CREATE TABLE IF NOT EXISTS "tasks" (
+  "id"              TEXT PRIMARY KEY,
+  "userId"          TEXT NOT NULL,
+  "companyId"       TEXT NOT NULL,
+  "title"           VARCHAR(200) NOT NULL,
+  "description"     TEXT,
+  "status"          TEXT NOT NULL DEFAULT 'A_FAZER',
+  "priority"        TEXT NOT NULL DEFAULT 'MEDIA',
+  "dueDate"         TIMESTAMP(3),
+  "markers"         TEXT,
+  "dataInventoryId" TEXT,
+  "completedAt"     TIMESTAMP(3),
+  "createdAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tasks_userId_fkey') THEN
+    ALTER TABLE "tasks"
+      ADD CONSTRAINT "tasks_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tasks_companyId_fkey') THEN
+    ALTER TABLE "tasks"
+      ADD CONSTRAINT "tasks_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'tasks_dataInventoryId_fkey') THEN
+    ALTER TABLE "tasks"
+      ADD CONSTRAINT "tasks_dataInventoryId_fkey"
+      FOREIGN KEY ("dataInventoryId") REFERENCES "data_inventories"("id") ON DELETE SET NULL;
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS "tasks_userId_status_idx"
+  ON "tasks"("userId", "status");
+CREATE INDEX IF NOT EXISTS "tasks_userId_dueDate_idx"
+  ON "tasks"("userId", "dueDate");
+CREATE INDEX IF NOT EXISTS "tasks_companyId_idx"
+  ON "tasks"("companyId");
+
+-- ====================================================================
+-- ETAPA 7 — Fórum + Mensagens diretas
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "forum_posts" (
+  "id"           TEXT PRIMARY KEY,
+  "companyId"    TEXT NOT NULL,
+  "authorId"     TEXT NOT NULL,
+  "recipientId"  TEXT,
+  "type"         TEXT NOT NULL DEFAULT 'DISCUSSION',
+  "category"     TEXT,
+  "title"        VARCHAR(200) NOT NULL,
+  "content"      TEXT NOT NULL,
+  "pinned"       BOOLEAN NOT NULL DEFAULT false,
+  "active"       BOOLEAN NOT NULL DEFAULT true,
+  "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_posts_companyId_fkey') THEN
+    ALTER TABLE "forum_posts" ADD CONSTRAINT "forum_posts_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_posts_authorId_fkey') THEN
+    ALTER TABLE "forum_posts" ADD CONSTRAINT "forum_posts_authorId_fkey"
+      FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_posts_recipientId_fkey') THEN
+    ALTER TABLE "forum_posts" ADD CONSTRAINT "forum_posts_recipientId_fkey"
+      FOREIGN KEY ("recipientId") REFERENCES "users"("id") ON DELETE SET NULL;
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS "forum_posts_companyId_recipientId_idx"
+  ON "forum_posts"("companyId", "recipientId");
+CREATE INDEX IF NOT EXISTS "forum_posts_companyId_pinned_createdAt_idx"
+  ON "forum_posts"("companyId", "pinned", "createdAt");
+CREATE INDEX IF NOT EXISTS "forum_posts_companyId_category_idx"
+  ON "forum_posts"("companyId", "category");
+CREATE INDEX IF NOT EXISTS "forum_posts_authorId_idx"
+  ON "forum_posts"("authorId");
+CREATE INDEX IF NOT EXISTS "forum_posts_recipientId_idx"
+  ON "forum_posts"("recipientId");
+
+CREATE TABLE IF NOT EXISTS "forum_replies" (
+  "id"        TEXT PRIMARY KEY,
+  "postId"    TEXT NOT NULL,
+  "authorId"  TEXT NOT NULL,
+  "content"   TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_replies_postId_fkey') THEN
+    ALTER TABLE "forum_replies" ADD CONSTRAINT "forum_replies_postId_fkey"
+      FOREIGN KEY ("postId") REFERENCES "forum_posts"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_replies_authorId_fkey') THEN
+    ALTER TABLE "forum_replies" ADD CONSTRAINT "forum_replies_authorId_fkey"
+      FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS "forum_replies_postId_idx" ON "forum_replies"("postId");
+CREATE INDEX IF NOT EXISTS "forum_replies_authorId_idx" ON "forum_replies"("authorId");
+
+CREATE TABLE IF NOT EXISTS "forum_post_reads" (
+  "id"     TEXT PRIMARY KEY,
+  "postId" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "readAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_post_reads_postId_fkey') THEN
+    ALTER TABLE "forum_post_reads" ADD CONSTRAINT "forum_post_reads_postId_fkey"
+      FOREIGN KEY ("postId") REFERENCES "forum_posts"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'forum_post_reads_userId_fkey') THEN
+    ALTER TABLE "forum_post_reads" ADD CONSTRAINT "forum_post_reads_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+END
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "forum_post_reads_postId_userId_key"
+  ON "forum_post_reads"("postId", "userId");
+CREATE INDEX IF NOT EXISTS "forum_post_reads_userId_idx"
+  ON "forum_post_reads"("userId");
+
 COMMIT;
 
 -- ====================================================================
@@ -117,6 +347,18 @@ SELECT 'data_inventories.previsaoLegal', EXISTS (SELECT 1 FROM information_schem
   WHERE table_name='data_inventories' AND column_name='previsaoLegal');
 SELECT 'data_inventories.legalBasisSensitive', EXISTS (SELECT 1 FROM information_schema.columns
   WHERE table_name='data_inventories' AND column_name='legalBasisSensitive');
+SELECT 'process_risks (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='process_risks');
+SELECT 'tasks (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='tasks');
+SELECT 'task_markers (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='task_markers');
+SELECT 'forum_posts (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='forum_posts');
+SELECT 'forum_replies (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='forum_replies');
+SELECT 'forum_post_reads (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='forum_post_reads');
 
 \echo ''
 \echo '=== Inventários por status ==='

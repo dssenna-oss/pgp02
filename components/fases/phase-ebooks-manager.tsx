@@ -225,13 +225,13 @@ export default function PhaseEbooksManager({ phase }: PhaseEbooksManagerProps) {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
             <CardTitle>E-books Interativos</CardTitle>
           </div>
           {isAdmin && (
-            <Button onClick={() => handleOpenDialog()} size="sm">
+            <Button onClick={() => handleOpenDialog()} size="sm" className="self-start sm:self-auto">
               <Plus className="h-4 w-4 mr-2" />
               Adicionar E-book
             </Button>
@@ -252,17 +252,17 @@ export default function PhaseEbooksManager({ phase }: PhaseEbooksManagerProps) {
             <div className="space-y-4">
               {ebooks.map((ebook, index) => (
                 <Card key={ebook.id} className="overflow-hidden">
-                  <CardHeader className="flex flex-row items-center justify-between pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm">
+                  <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm flex-shrink-0">
                         {index + 1}
                       </div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-semibold text-gray-900 break-words min-w-0">
                         {ebook.title}
                       </h3>
                     </div>
                     {isAdmin && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 flex-wrap">
                         <Button
                           variant="ghost"
                           size="sm"

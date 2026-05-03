@@ -78,33 +78,39 @@ export default function ChatbotWidget() {
     return path || "landing";
   }, [pathname]);
 
-  // Inicializar posição no canto inferior direito
+  // Inicializar posição no canto inferior direito.
+  // Em mobile (< 640px) deixa mais espaço embaixo (130px) pra não cobrir
+  // footers sticky de telas como Tarefas e Análise de Riscos.
   useEffect(() => {
     setMounted(true);
     if (typeof window !== "undefined") {
+      const isMobile = window.innerWidth < 640;
+      const fabSize = isMobile ? 48 : 64;
+      const offsetX = isMobile ? 64 : 80;
+      const offsetY = isMobile ? 130 : 80;
       const saved = localStorage.getItem("chatbot-position");
       if (saved) {
         try {
           const parsedPosition = JSON.parse(saved);
-          if (parsedPosition.x >= 0 && parsedPosition.x <= window.innerWidth - 64 &&
-              parsedPosition.y >= 0 && parsedPosition.y <= window.innerHeight - 64) {
+          if (parsedPosition.x >= 0 && parsedPosition.x <= window.innerWidth - fabSize &&
+              parsedPosition.y >= 0 && parsedPosition.y <= window.innerHeight - fabSize) {
             setPosition(parsedPosition);
           } else {
             setPosition({
-              x: window.innerWidth - 80,
-              y: window.innerHeight - 80
+              x: window.innerWidth - offsetX,
+              y: window.innerHeight - offsetY
             });
           }
         } catch {
           setPosition({
-            x: window.innerWidth - 80,
-            y: window.innerHeight - 80
+            x: window.innerWidth - offsetX,
+            y: window.innerHeight - offsetY
           });
         }
       } else {
         setPosition({
-          x: window.innerWidth - 80,
-          y: window.innerHeight - 80
+          x: window.innerWidth - offsetX,
+          y: window.innerHeight - offsetY
         });
       }
     }
@@ -153,8 +159,9 @@ export default function ChatbotWidget() {
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
-      const newX = Math.max(0, Math.min(window.innerWidth - 64, e.clientX - dragOffset.x));
-      const newY = Math.max(0, Math.min(window.innerHeight - 64, e.clientY - dragOffset.y));
+      const fabSize = window.innerWidth < 640 ? 48 : 64;
+      const newX = Math.max(0, Math.min(window.innerWidth - fabSize, e.clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - fabSize, e.clientY - dragOffset.y));
       setPosition({ x: newX, y: newY });
       setHasMoved(true);
     }
@@ -181,8 +188,9 @@ export default function ChatbotWidget() {
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (isDragging && e.touches.length === 1) {
       const touch = e.touches[0];
-      const newX = Math.max(0, Math.min(window.innerWidth - 64, touch.clientX - dragOffset.x));
-      const newY = Math.max(0, Math.min(window.innerHeight - 64, touch.clientY - dragOffset.y));
+      const fabSize = window.innerWidth < 640 ? 48 : 64;
+      const newX = Math.max(0, Math.min(window.innerWidth - fabSize, touch.clientX - dragOffset.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - fabSize, touch.clientY - dragOffset.y));
       setPosition({ x: newX, y: newY });
       setHasMoved(true);
     }
@@ -627,7 +635,7 @@ export default function ChatbotWidget() {
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           className={cn(
-            "fixed z-[9999] w-16 h-16 rounded-full shadow-lg overflow-hidden border-2 border-blue-500 bg-white select-none",
+            "fixed z-[9999] w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg overflow-hidden border-2 border-blue-500 bg-white select-none",
             isDragging ? "cursor-grabbing scale-110 shadow-xl" : "cursor-grab hover:scale-105 hover:shadow-xl transition-all duration-200"
           )}
           style={{ 

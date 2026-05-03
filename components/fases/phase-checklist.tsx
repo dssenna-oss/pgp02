@@ -323,13 +323,13 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ListChecks className="h-5 w-5 text-green-600" />
-              Checklist de implementação
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex items-center gap-2 flex-wrap">
+              <ListChecks className="h-5 w-5 text-green-600 flex-shrink-0" />
+              <span>Checklist de implementação</span>
               {!isAdmin && editableContent && (
-                <span className="text-xs text-gray-500 ml-2 font-normal">
+                <span className="text-xs text-gray-500 font-normal inline-flex items-center">
                   <Lock className="h-3 w-3 inline mr-1" />
                   Gerenciado pelo Administrador
                 </span>
@@ -341,7 +341,7 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {!editing && isAdmin && (
               <>
                 <Button

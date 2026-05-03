@@ -290,11 +290,11 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
               <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-blue-600" />
-                Documentação da Fase
+                <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <span>Documentação da Fase</span>
               </CardTitle>
               <CardDescription>
                 E-books, textos, PDFs e vídeos relacionados a esta fase
@@ -307,7 +307,7 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
               </CardDescription>
             </div>
             {isAdmin && (
-              <Button onClick={() => setShowUploadDialog(true)}>
+              <Button onClick={() => setShowUploadDialog(true)} className="self-start sm:self-auto">
                 <Upload className="h-4 w-4 mr-2" />
                 Fazer Upload
               </Button>
@@ -338,12 +338,12 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
           ) : (
             <>
               {/* Barra de ordenação */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="h-4 w-4 text-gray-500" />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
                   <Label htmlFor="sort" className="text-sm font-medium">Ordenar por:</Label>
                   <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                    <SelectTrigger id="sort" className="w-[180px]">
+                    <SelectTrigger id="sort" className="w-[180px] max-w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

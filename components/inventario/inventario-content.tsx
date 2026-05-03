@@ -23,6 +23,8 @@ import {
   PlayCircle,
   ArrowDownUp,
   AlignLeft,
+  ShieldAlert,
+  ListChecks,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -397,8 +399,8 @@ export default function InventarioContent({ session }: InventarioContentProps) {
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button asChild size="lg" className="shadow-md">
+          <div className="flex gap-2 sm:gap-3 flex-wrap">
+            <Button asChild size="lg" className="shadow-md flex-1 sm:flex-initial">
               <Link href="/dashboard/inventario/novo">
                 <Plus className="h-4 w-4 mr-2" />
                 Novo Mapeamento
@@ -408,7 +410,7 @@ export default function InventarioContent({ session }: InventarioContentProps) {
               variant="outline"
               size="lg"
               onClick={exportToExcel}
-              className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30"
+              className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
             >
               <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
               Exportar Excel
@@ -443,8 +445,9 @@ export default function InventarioContent({ session }: InventarioContentProps) {
               if (v === "advanced") return; // visual-only — usar Select
               setStatusFilter(v as StatusFilter);
             }}
+            className="max-w-full overflow-x-auto -mx-1 px-1"
           >
-            <TabsList>
+            <TabsList className="w-max">
               <TabsTrigger value="all">
                 Todos
                 <Badge variant="secondary" className="ml-2">
@@ -803,6 +806,25 @@ function InventarioRow({
   const setor = item.setor ?? item.createdBy?.setor ?? "";
   const creatorName = item.createdBy?.name ?? null;
 
+  // Nome de exibição: se o user já preencheu o nome do processo, usa.
+  // Senão, monta um label útil tipo "Rascunho do RH · 03/05" pra
+  // distinguir múltiplos rascunhos sem nome no mesmo dia/setor.
+  const displayName = serviceName
+    ? serviceName
+    : (() => {
+        const baseLabel =
+          status === "RASCUNHO" ? "Rascunho" : "Mapeamento";
+        const setorPart = setor ? ` do ${setor}` : "";
+        const dateSrc = item.updatedAt ?? item.createdAt;
+        const datePart = dateSrc
+          ? ` · ${new Date(dateSrc).toLocaleDateString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+            })}`
+          : "";
+        return `${baseLabel}${setorPart}${datePart}`;
+      })();
+
   const statusColor = inventoryStatusColor(status);
 
   // Progresso só pra drafts (concluídos = 100% por definição)
@@ -828,7 +850,7 @@ function InventarioRow({
         leftBorderClass[status] ?? "border-l-gray-400"
       )}
     >
-      <div className="flex items-start gap-4 flex-wrap md:flex-nowrap">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
         {/* Bloco esquerdo — info principal */}
         <div className="flex-1 min-w-0">
           {/* Título + badge de status */}
@@ -845,10 +867,10 @@ function InventarioRow({
                 "font-semibold text-lg truncate",
                 serviceName
                   ? "text-gray-900 dark:text-white"
-                  : "italic text-gray-400 dark:text-gray-500"
+                  : "italic text-gray-500 dark:text-gray-400"
               )}
             >
-              {serviceName || "Mapeamento sem nome ainda"}
+              {displayName}
             </h3>
             {/* Badge de status — sempre visível, com cores do helper */}
             <Badge
@@ -912,7 +934,7 @@ function InventarioRow({
                     <TooltipTrigger asChild>
                       <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
                         <Tags className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="truncate max-w-[180px]">
+                        <span className="truncate max-w-[140px] sm:max-w-[180px]">
                           {dataCategory}
                         </span>
                       </span>
@@ -925,7 +947,7 @@ function InventarioRow({
                     <TooltipTrigger asChild>
                       <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
                         <Scale className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                        <span className="truncate max-w-[180px]">
+                        <span className="truncate max-w-[140px] sm:max-w-[180px]">
                           {legalBasis}
                         </span>
                       </span>
@@ -938,7 +960,7 @@ function InventarioRow({
                     <TooltipTrigger asChild>
                       <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
                         <Target className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                        <span className="truncate max-w-[260px]">
+                        <span className="truncate max-w-[200px] sm:max-w-[260px]">
                           {purpose}
                         </span>
                       </span>
@@ -952,7 +974,7 @@ function InventarioRow({
         </div>
 
         {/* Bloco direito — ações (variam conforme status + papel) */}
-        <div className="flex items-center gap-2 shrink-0 ml-7 md:ml-0 flex-wrap">
+        <div className="flex items-center gap-2 ml-7 md:ml-0 md:shrink-0 flex-wrap">
           {/* DPO vê ações de aprovação pra processos pendentes */}
           {isUserDPO && status === "SUBMETIDO" && (
             <>
@@ -1077,6 +1099,68 @@ function InventarioRow({
                 {item.legalReviewedAt
                   ? "Bases Legais preenchidas — clique pra revisar"
                   : "Preencher Bases Legais"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Tarefas vinculadas — botão pra ver SUAS tarefas (do user atual)
+              que estão linkadas a este processo. Aparece em qualquer status
+              (não só APROVADO) — qualquer user pode planejar tarefas. */}
+          {!isDraft && (item.myOpenTasksCount ?? 0) > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 dark:border-blue-800 dark:text-blue-300 dark:bg-blue-950/30"
+                >
+                  <Link href={`/dashboard/tarefas?processId=${item.id}`}>
+                    <ListChecks className="h-4 w-4" />
+                    <span className="ml-1 text-xs font-bold">
+                      {item.myOpenTasksCount}
+                    </span>
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {item.myOpenTasksCount === 1
+                  ? "Você tem 1 tarefa aberta vinculada a esse processo"
+                  : `Você tem ${item.myOpenTasksCount} tarefas abertas vinculadas a esse processo`}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Análise de Riscos — só pra processos APROVADOS, DPO-only.
+              Borda vermelha cheia se há ≥1 risco identificado, vazia se ainda
+              não foi feita análise (zero ProcessRisk). */}
+          {isUserDPO && isApproved && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    (item.processRisks?.length ?? 0) > 0
+                      ? "border-red-300 text-red-700 bg-red-50 hover:bg-red-100 dark:border-red-800 dark:text-red-300 dark:bg-red-950/30"
+                      : "border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/20"
+                  )}
+                >
+                  <Link href={`/dashboard/inventario/${item.id}/analise-riscos`}>
+                    <ShieldAlert className="h-4 w-4" />
+                    {(item.processRisks?.length ?? 0) > 0 && (
+                      <span className="ml-1 text-xs font-bold">
+                        {item.processRisks.length}
+                      </span>
+                    )}
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {(item.processRisks?.length ?? 0) > 0
+                  ? `${item.processRisks.length} risco(s) identificado(s) — clique pra revisar`
+                  : "Analisar Riscos"}
               </TooltipContent>
             </Tooltip>
           )}

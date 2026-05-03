@@ -7,14 +7,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { 
-  Shield, 
-  Menu, 
-  FileText, 
-  AlertTriangle, 
-  BarChart3, 
-  CheckCircle2, 
-  Users, 
+import {
+  Shield,
+  ShieldAlert,
+  Menu,
+  FileText,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
+  Users,
   Settings,
   Building2,
   ClipboardList,
@@ -22,11 +23,15 @@ import {
   Bell,
   LogOut,
   Home,
-  Library
+  Library,
+  ListChecks,
+  MessagesSquare,
+  Scale
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { roleLabel, isDPO } from "@/lib/auth-helpers";
+import { onSidebarRefresh } from "@/lib/sidebar-events";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
 const APP_BRAND = "LGPD - PGP";
@@ -40,6 +45,18 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  /**
+   * Quantidade de tarefas atrasadas + vencendo hoje. Alimenta o badge
+   * do link "Minhas Tarefas" na sidebar. Atualiza a cada 60s pra refletir
+   * mudanças sem o user precisar recarregar.
+   */
+  const [taskAlerts, setTaskAlerts] = useState<number | null>(null);
+  /**
+   * Quantidade total de itens não-lidos no Fórum (posts públicos + DMs).
+   * Atualiza a cada 30s — tempo de tolerância pra "tempo real" sem
+   * sobrecarregar o servidor.
+   */
+  const [forumUnread, setForumUnread] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -56,6 +73,51 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     };
 
     fetchLogo();
+  }, []);
+
+  // Polling dos contadores (tarefas urgentes + fórum não-lidos).
+  // Cada um tem seu próprio intervalo, mas ambos são re-buscados também
+  // quando as telas filhas disparam `notifySidebarRefresh()` (ex: ao
+  // criar/excluir uma tarefa ou post, o badge atualiza imediatamente).
+  useEffect(() => {
+    let active = true;
+    const fetchAlerts = async () => {
+      try {
+        const r = await fetch("/api/tarefas/contadores", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setTaskAlerts((j.atrasadas ?? 0) + (j.vencendoHoje ?? 0));
+      } catch {
+        // silencioso — badge fica oculto
+      }
+    };
+    const fetchForumUnread = async () => {
+      try {
+        const r = await fetch("/api/forum", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setForumUnread(j.stats?.totalUnread ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    const refreshAll = () => {
+      void fetchAlerts();
+      void fetchForumUnread();
+    };
+
+    refreshAll();
+    const taskId = setInterval(fetchAlerts, 60000);
+    const forumId = setInterval(fetchForumUnread, 30000);
+    const offEvent = onSidebarRefresh(refreshAll);
+    return () => {
+      active = false;
+      clearInterval(taskId);
+      clearInterval(forumId);
+      offEvent();
+    };
   }, []);
 
   const navigation = [
@@ -122,6 +184,32 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: Bell
     },
     { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
+    {
+      name: "Fórum e Mensagens",
+      description: "Comunicação entre todos da organização",
+      href: "/dashboard/forum",
+      icon: MessagesSquare,
+    },
+    {
+      name: "Minhas Tarefas",
+      description: "Caderno pessoal de planejamento",
+      href: "/dashboard/tarefas",
+      icon: ListChecks,
+    },
+    {
+      name: "Análise de Riscos",
+      description: "Riscos LGPD por processo",
+      href: "/dashboard/riscos",
+      icon: ShieldAlert,
+      dpoOnly: true,
+    },
+    {
+      name: "Bases Legais",
+      description: "Visão consolidada por processo",
+      href: "/dashboard/bases-legais",
+      icon: Scale,
+      dpoOnly: true,
+    },
     {
       name: "Contribuidores",
       description: "Gerenciar usuários da organização",
@@ -221,12 +309,31 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
             >
               <item.icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="truncate">{item.name}</span>
+                <span className="truncate flex items-center gap-1.5">
+                  {item.name}
+                  {/* Badge de tarefas urgentes (atrasadas + vencendo hoje).
+                      Só aparece em "Minhas Tarefas" quando há ≥1 alerta. */}
+                  {item.href === "/dashboard/tarefas" &&
+                    taskAlerts !== null &&
+                    taskAlerts > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {taskAlerts}
+                      </span>
+                    )}
+                  {/* Badge de não-lidos do Fórum (posts públicos + DMs). */}
+                  {item.href === "/dashboard/forum" &&
+                    forumUnread !== null &&
+                    forumUnread > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {forumUnread}
+                      </span>
+                    )}
+                </span>
                 {item.description && (
                   <span className={cn(
                     "text-xs truncate mt-0.5",
-                    isActive 
-                      ? "text-blue-600 dark:text-blue-400" 
+                    isActive
+                      ? "text-blue-600 dark:text-blue-400"
                       : "text-gray-500 dark:text-gray-400"
                   )}>
                     {item.description}
