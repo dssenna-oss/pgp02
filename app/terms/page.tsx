@@ -60,7 +60,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Aceitação dos Termos</h2>
             <p className="text-gray-700 leading-relaxed">
-              Ao acessar e usar o PGP System, você aceita e concorda em ficar vinculado pelos 
+              Ao acessar e usar o LGPD - PGP, você aceita e concorda em ficar vinculado pelos 
               termos e condições deste acordo. Se você não concordar com todos os termos e 
               condições deste acordo, então você não pode acessar o site ou usar qualquer serviço.
             </p>
@@ -69,7 +69,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Descrição do Serviço</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              O PGP System é uma plataforma web que oferece ferramentas para auxiliar organizações 
+              O LGPD - PGP é uma plataforma web que oferece ferramentas para auxiliar organizações 
               na implementação de Programas de Governança em Privacidade de acordo com a Lei Geral 
               de Proteção de Dados (LGPD).
             </p>
@@ -82,7 +82,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Uso Aceitável</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Você concorda em usar o PGP System apenas para fins legais e de acordo com estes Termos de Uso. 
+              Você concorda em usar o LGPD - PGP apenas para fins legais e de acordo com estes Termos de Uso. 
               Especificamente, você concorda em não:
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
@@ -97,7 +97,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Conta do Usuário</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Para usar certas funcionalidades do PGP System, você deve criar uma conta. 
+              Para usar certas funcionalidades do LGPD - PGP, você deve criar uma conta. 
               Você é responsável por:
             </p>
             <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
@@ -121,7 +121,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Limitação de Responsabilidade</h2>
             <p className="text-gray-700 leading-relaxed">
-              O PGP System é fornecido "como está" sem garantias de qualquer tipo. Não nos 
+              O LGPD - PGP é fornecido "como está" sem garantias de qualquer tipo. Não nos 
               responsabilizamos por quaisquer danos diretos, indiretos, incidentais, consequenciais 
               ou punitivos decorrentes do uso ou incapacidade de usar nosso serviço.
             </p>

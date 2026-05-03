@@ -26,6 +26,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { roleLabel, isDPO } from "@/lib/auth-helpers";
+
+/** Nome do produto (brand fixo, igual em todas as organizações). */
+const APP_BRAND = "LGPD - PGP";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -118,31 +122,45 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: Bell
     },
     { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
+    {
+      name: "Contribuidores",
+      description: "Gerenciar usuários da organização",
+      href: "/dashboard/contribuidores",
+      icon: Users,
+      dpoOnly: true,
+    },
     { name: "Painel Chatbot", href: "/dashboard/admin/chatbot", icon: BarChart3, adminOnly: true },
   ];
 
   const Sidebar = ({ mobile = false }) => (
     <div className={cn("flex flex-col h-full bg-white dark:bg-gray-800", mobile ? "w-full" : "w-64")}>
-      {/* Logo */}
+      {/* Brand (fixo) + nome da organização (dinâmico) */}
       <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         {companyLogo ? (
           <div className="relative h-8 w-8 flex-shrink-0 flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={companyLogo}
-              alt="Logo da empresa"
+              alt="Logo da organização"
               className="max-w-full max-h-full object-contain"
             />
           </div>
         ) : (
           <Shield className="h-8 w-8 text-blue-600 flex-shrink-0" />
         )}
-        <span className="text-xl font-bold text-gray-900 dark:text-white truncate">
-          {session?.user?.company?.companyName || "PGP System"}
-        </span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">
+            {APP_BRAND}
+          </span>
+          {session?.user?.company?.companyName && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate leading-tight">
+              {session.user.company.companyName}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* User info */}
+      {/* User info — nome do usuário + papel (em vez do nome da org duplicado) */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
@@ -153,20 +171,37 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
               {session?.user?.name || "Usuário"}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {session?.user?.company?.companyName || "Empresa"}
+              {roleLabel(session?.user?.role)}
             </p>
           </div>
         </div>
+        {/* Atalho pro painel super admin. Flag `isSuperAdmin` é calculada
+            server-side no JWT callback (lib/auth.ts) — usar via session
+            evita mismatch de hidratação (process.env só existe no server). */}
+        {session?.user?.isSuperAdmin && (
+          <Link
+            href="/sysadmin"
+            className="mt-3 flex items-center gap-2 px-3 py-2 rounded-md bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-950/50 border border-amber-200 dark:border-amber-900/40 text-xs font-medium text-amber-800 dark:text-amber-300 transition-colors"
+            onClick={() => mobile && setSidebarOpen(false)}
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Painel Super Admin
+          </Link>
+        )}
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-1 bg-white dark:bg-gray-800 overflow-y-auto">
         {navigation
           .filter((item) => {
-            // Filtrar itens admin
+            // Filtrar itens admin (sistema CMS — só super admin antigo)
             if ((item as any).adminOnly) {
               const adminEmails = ["admin@pgp.com", "alexandrekassis@gmail.com"];
               return adminEmails.includes(session?.user?.email || "");
+            }
+            // Itens dpoOnly: visíveis pra qualquer DPO da org
+            if ((item as any).dpoOnly) {
+              return isDPO(session?.user?.role);
             }
             return true;
           })
@@ -251,16 +286,23 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={companyLogo}
-                    alt="Logo da empresa"
+                    alt="Logo da organização"
                     className="max-w-full max-h-full object-contain"
                   />
                 </div>
               ) : (
                 <Shield className="h-6 w-6 text-blue-600 flex-shrink-0" />
               )}
-              <span className="font-bold text-gray-900 dark:text-white truncate">
-                {session?.user?.company?.companyName || "PGP System"}
-              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-bold text-gray-900 dark:text-white truncate leading-tight">
+                  {APP_BRAND}
+                </span>
+                {session?.user?.company?.companyName && (
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                    {session.user.company.companyName}
+                  </span>
+                )}
+              </div>
             </div>
             <Button
               variant="ghost"

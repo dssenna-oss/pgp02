@@ -7,10 +7,10 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PGP - Programa de Governança em Privacidade",
+  title: "LGPD - PGP — Programa de Governança em Privacidade",
   description: "Sistema completo para gestão de conformidade com a LGPD",
   keywords: ["LGPD", "privacidade", "proteção de dados", "governança", "compliance"],
-  authors: [{ name: "PGP System" }],
+  authors: [{ name: "LGPD - PGP" }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

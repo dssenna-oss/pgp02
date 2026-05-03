@@ -59,14 +59,14 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${resendApiKey}`,
           },
           body: JSON.stringify({
-            from: "PGP System <noreply@pgp.com>",
+            from: "LGPD - PGP <noreply@pgp.com>",
             to: [email],
-            subject: "Redefinição de Senha - PGP System",
+            subject: "Redefinição de Senha - LGPD - PGP",
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2563eb;">Redefinição de Senha</h2>
                 <p>Olá,</p>
-                <p>Você solicitou a redefinição de senha para sua conta no <strong>PGP System</strong>.</p>
+                <p>Você solicitou a redefinição de senha para sua conta no <strong>LGPD - PGP</strong>.</p>
                 <p>Clique no botão abaixo para criar uma nova senha:</p>
                 <div style="margin: 30px 0;">
                   <a href="${resetUrl}" 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                 </p>
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
                 <p style="color: #999; font-size: 12px;">
-                  PGP System - Programa de Governança em Privacidade
+                  LGPD - PGP - Programa de Governança em Privacidade
                 </p>
               </div>
             `,

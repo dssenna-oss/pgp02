@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
+import { isSuperAdmin } from "@/lib/auth-helpers";
 
 const prisma = new PrismaClient();
 
@@ -113,6 +114,10 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.companyId = user.companyId;
         token.company = user.company;
+        // SUPER_ADMIN_EMAIL é env var server-only — calculamos no JWT
+        // (server side) e propagamos pra session pro client poder usar
+        // sem causar mismatch de hidratação.
+        token.isSuperAdmin = isSuperAdmin(user.email);
       }
       return token;
     },
@@ -122,6 +127,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role;
         session.user.companyId = token.companyId;
         session.user.company = token.company;
+        session.user.isSuperAdmin = !!token.isSuperAdmin;
       }
       return session;
     },

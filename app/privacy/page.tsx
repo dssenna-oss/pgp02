@@ -60,7 +60,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introdução</h2>
             <p className="text-gray-700 leading-relaxed">
-              Esta Política de Privacidade descreve como o PGP System coleta, usa e protege 
+              Esta Política de Privacidade descreve como o LGPD - PGP coleta, usa e protege 
               suas informações pessoais quando você usa nossos serviços. Estamos comprometidos 
               em proteger sua privacidade e cumprindo integralmente a Lei Geral de Proteção 
               de Dados (LGPD).

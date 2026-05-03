@@ -1,0 +1,225 @@
+15.3 - LGPD PRO
+
+
+Transcrito por TurboScribe. Atualize para Ilimitado para remover esta mensagem.
+
+
+Olá, agora que nós já vimos os principais pontos, conceitos em relação ao mapeamento de dados e também sobre a parte operacional de ferramentas, de como organizar o mapeamento, a gente vai começar a analisar que tipo de informações a gente vai inserir e o que quer dizer cada uma dessas colunas, para que depois a gente possa analisar de uma forma mais fácil, mais direta, os riscos associados ao tratamento de dados pessoais. Vamos lá, vou compartilhar minha tela aqui com vocês. Bom, então aqui, gente, é um modelo de uma planilha de mapeamento que a gente utiliza aqui no escritório, que a gente utiliza desde que começamos a trabalhar com esse assunto em 2018.
+
+Então, é algo que a gente veio sempre aprimorando e o que a gente aplica na prática, tá? É isso que a gente sempre ensina aqui para vocês. Essa primeira linha amarela não é para vocês considerarem para o cliente, tá? Eu uso ela para lembrar de alguns pontos aqui em cima, ó. Eu escrevi para vocês algumas coisas para que vocês lembrem o porquê que a gente está nesse tipo de pergunta. E nos próximos módulos, nós vamos ver também mais uma linha que é para lembrar dos riscos.
+
+Então, é só lembrete, tá? Depois que finalizar o mapeamento. Então, aqui, ó, imagina que a gente já concluiu três atividades, tá? De uma maneira aqui para que vocês possam ver como que funciona. Três atividades concluídas.
+
+Vou lá, tiro essa linha e se for esse o tanto, né, de atividades do cliente, já está pronto o mapeamento de dados dele. O mapeamento, como eu comentei com vocês, ele tem geralmente ali entre 15, 30, 40 linhas, né? 40 atividades, numa empresa pequena para média. E em empresas grandes, a gente já chegou a fazer mapeamento de mais de 300 linhas, 400 linhas.
+
+Então, acaba tendo muito trabalho. Eu gosto bastante de passar para vocês essas questões aqui logo para quando vocês forem avaliar a parte de precificação, vocês perceberem que realmente dá um trabalhinho, tá? Então, claro que não é um trabalho, por exemplo, de um nível que eu tenha que ter o sócio atuando o tempo todo. Porque vocês vão ver que a parte disso é muito operacional, é muito capturar a informação.
+
+Então, eu, pelo menos aqui, né, a gente tem parceiros, estagiários, pessoas que vão fazer esse trabalho minucioso. E depois, a gente vai analisar aqui, eu, pelo menos, fico na revisão quando o relatório já está pronto, de olhar o risco, revisar o mapeamento, revisar a base legal, tá? Mas, via de regra, no início dos trabalhos, é claro que a gente vai fazer isso daqui sozinho, já fiz muito mapeamento, já fiz muita entrevista. Essa é a ideia, mas a ideia é você ir pensando em uma escala.
+
+Então, aqui, a gente começa o nosso mapeamento. Lembrem, é como se a gente tivesse enviado um link de um questionário, depois, baixado as informações para o Excel e organizado. Ou, se a gente tivesse preenchido um questionário junto com a pessoa, com o responsável por determinado departamento, e depois tivesse baixado para o Excel e organizado.
+
+Posso, também, ir preenchendo aqui na própria planilha. Mas qual é a diferença? Por exemplo, quando eu estiver perguntando para a pessoa, quais dados que você trata no seu dia a dia? Só com a planilha, gente, a pessoa tem que tirar as informações da cabeça dela. Com o questionário, ela vai preenchendo o xizinho, com a gente ou sem a gente.
+
+Então, o questionário, ele serve de guia. Eu acho muito mais fácil, tá? E depois, acaba tendo que formatar, mesmo se eu estiver já preenchendo aqui junto com a pessoa. Por quê? Porque quando a pessoa está aqui na minha frente, eu estou escrevendo tudo correndo.
+
+Depois, eu tenho que olhar, dar o espaço, deixar bonitinho, formatação, né? Não adianta. Então, eu sempre uso o questionário. Nesse caso aqui, a gente tem o primeiro passo, a primeira atividade, que foi a Maria da Silva que respondeu.
+
+Maria, da área de recrutamento e seleção. Eu vou colocar o número de D, o número dessa atividade no meu mapeamento, tá? E assim, eu vou seguindo. Por quê? Porque depois é mais fácil para eu me referenciar a essa atividade, tá? Depois, eu vou falar sobre riscos, e a gente vai falar, esse risco, ele tem na atividade do ID 01, do ID 46, do ID 79.
+
+E aí, eu vou na planilha de mapeamento olhar onde esse risco ocorre, tá? É muito mais fácil. E para vários outros casos, tá? Vou fazer um relatório de impacto. Vou indicar de qual atividade eu estou fazendo aquele relatório.
+
+Eu vou indicar o número do ID. E assim por diante, tá? Então, o ID dele é importante para identificação, como o próprio nome diz. Depois, o nome da área, departamento responsável.
+
+Aqui, a gente tem o recrutamento e seleção, tem outros relacionados a marketing, pode ser financeiro, qualquer área, qualquer departamento que a gente está mapeando naquela organização. Nome e contato de quem está respondendo. Por que eu pego também o contato? Se eu precisar tirar alguma dúvida.
+
+Tem empresa que só o nome, as pessoas, tem lá cinco pessoas. A gente já sabe quem é. Mas tem empresa que é muito grande, que nem o próprio encarregado de proteção de dados sabe o nome e tem o e-mail de todo mundo. Então, aqui fica mais fácil.
+
+Também, se eu tiver um de piores a serviço, alguém de fora da organização, fica fácil se eu tiver o contato da pessoa. Então, pode até pegar no nosso questionário, se não me engano, a gente também coloca até o telefone. Categoria de dados pessoais.
+
+Aqui, a gente falou na aula anterior, nas aulas anteriores, que a gente separa, distingue a categoria do dado e qual é o dado relacionado a cada categoria. Isso já vem, basicamente, dividido ali no mapeamento. É para a gente ter uma ideia, né? De quando a gente for falar de riscos, quando a gente for analisar outras questões.
+
+Por exemplo, qual é o grau do risco dessa atividade? Que tipo de dados tem? Ah, tem dados financeiros. Poxa, não é dado sensível, mas é um dado que pode ter um dano maior. Tem dados sensíveis, né? E assim por diante.
+
+Então, eu não preciso olhar exatamente qual é o dado. Pela categoria, eu já vou imaginando aqui a quantidade de informações. E depois, os dados propriamente ditos, uma lista mais extensa, com todas essas avaliações.
+
+Gente, aqui, vamos pensar que essa aula a gente está falando sobre o mapeamento em si. A gente não vai falar de riscos hoje. Mas se vocês olharem aqui, olha só a quantidade de informação num processo de recrutamento e seleção.
+
+Aqui, eu já começo a ficar com a minha anteninha de pé. Poxa, mas o nome do pai e da mãe num processo seletivo? Esse tipo de questão é que a gente vai começando a construir a nossa habilidade em relação a isso. Mas vamos falar dos riscos mais pra frente, tá? Enfim, a Maria disse que ela coleta esses dados no processo de recrutamento e seleção.
+
+Tem dados pessoais sensíveis? Não. Então, não é aplicável. Se a gente, né, eu coloco bem uma questão aqui, que é às vezes a pessoa vai lá e coloca que coleta dado sensível e lá na parte de indicar outros, ela coloca dados financeiros, background check, pesquisas de antecedentes criminais, coisas assim.
+
+Por quê? Porque aquela pessoa pensa que sensível é algo que ela que está classificando. Porque a lei indica um rol de dados sensíveis que está ali pra gente identificar. Tem esse dado, não tem esse dado.
+
+Se não tem aquele dado, não é aplicável, não tem dado sensível. Às vezes as pessoas colocam coisas aqui que depois a gente tem que revisar, tá? Eu também reviso, acho que até comentei com vocês, até a ortografia, né, até a correção do português. Porque as pessoas escrevem, às vezes, do jeito delas vem abaixo do mapeamento e sou eu que estou entregando o trabalho.
+
+Então, eu tomo bastante cuidado com isso também. Finalidade do tratamento do dado pessoal. A gente tem aqui, ó, a finalidade, de maneira geral, e a descrição detalhada do processo.
+
+Quando eu faço treinamento antes, gente, ou até quando eu estou entrevistando a pessoa, aqui é o meu principal ponto. Se eu não tiver uma descrição detalhada do processo, dificilmente eu vou conseguir identificar a base legal. Até falei pra vocês que tem gente que fala, emitir relatórios.
+
+Emitir relatórios pra quê? Eu não consigo identificar uma base legal com isso. Quando é muito abrangente, é muito difícil. Então, é aqui, ó, onde eu coloco a base legal bem detalhada.
+
+Como eu faço isso? Aí, de novo, na entrevista, quando eu estou falando com a pessoa, minha primeira pergunta é, me conta um pouco do seu dia a dia. Porque ali a pessoa vai falar a coisa que ela colocou e que ela não colocou no mapeamento. E é aqui que a gente vai perceber que tem outras atividades a serem mapeadas, que eu vou reenviar o link pra ela, ou que eu vou preencher com ela um questionário.
+
+Que a pessoa me falou que não tem transferência internacional, mas ela usa o Google Drive, né? A gente vai ver isso mais pra frente. Mas aqui, ó, quando ela fala da descrição detalhada, eu pego muita coisa no pulo. Às vezes, eu tenho aqui um caderninho, que eu sou um pouquinho menos digital, assim, e eu vou escrevendo.
+
+Essa parte da descrição detalhada é o que eu mais escrevo. Pra que eu tenha aqui, ó, na minha cara o que ela me falou. E quando eu for passando pelo mapeamento, eu vou lembrando se todos os pontos que ela falou estão aqui.
+
+Estão aqui, ó, descrição detalhada. Quando abre uma nova vaga na companhia, contratamos empresa especializada para apoio na seleção. Após separados os melhores candidatos, seguimos com o processo interno, como entrevistas e testes.
+
+Então, de maneira geral, geralmente aqui na descrição detalhada, né, a pessoa fala, fala, fala, e aí eu encurto pra falar qual é a finalidade. Contratar novo colaborador. Ó, tem alguma previsão legal? Aqui o campo destinado pra eu colocar se tem alguma lei que exige que o cliente faça essa determinada atividade.
+
+Gente, no começo, eu tinha aquela coisa de que eu sou a advogada, né, eu deveria saber todas as leis. Mas não é assim, gente. É impossível, humanamente impossível a gente saber o que cada empresa, o que cada negócio segue de legislação.
+
+Então, olha, o cara lá da área de contabilidade, ele vai saber instruções normativas da Receita Federal que eu nem imaginava. E que ele coleta aquela informação pra isso. Então, eu não deixo de perguntar pro cliente.
+
+Deixa eu só dar um ok aqui. Eu não deixo de perguntar pro cliente. Eu pergunto mesmo.
+
+Eu já trabalhei no setor de energia, setor financeiro, setor de saúde. É muito complicado você saber, você achar que você tem que saber tudo e deixar isso só pra você. Então, pode ser que a pessoa não saiba.
+
+Aí, eu posso até dar uma pesquisada. Eu olho o que ela faz, eu falo, nossa, sei lá, é uma empresa do setor produtos de dentistas, né? Que a gente já trabalhou também. Poxa, isso daqui deve ter uma regulamentação específica, né? No caso, tinha que nomear uma pessoa, um responsável técnico.
+
+Eu falei, geralmente, isso daqui é uma obrigação legal. Eu fui atrás. Então, a gente, eu confirmo, mas eu pergunto.
+
+Eu pergunto, tá? Mesmo que possa não parecer nada. Bases legais, gente, vamos lá. Aí, aqui é o campo nosso, tá bom? Esses três aqui, ó. É a gente que inclui no mapeamento.
+
+Base legal do dado sensível, base legal do dado comum e o comentário sobre as bases legais. O que é um comentário? Qualquer tipo de questão que eu possa querer indicar aqui, tá? Por exemplo, eles usam o consentimento e tem um termo que eu tenho que revisar. Revisar o termo de consentimento.
+
+Vai ser o legítimo interesse. Elaborar o teste de proporcionalidade. É uma base legal que, de repente, pode ter uma outra base legal alternativa, né? Então, eu sempre falo pra vocês na aula de bases legais, eu gosto de firmar uma base legal que eu quero.
+
+Então, vamos supor que é pagamento dos funcionários. Execução do contrato, né? Porque? Contrato de trabalho. Ele tá trabalhando pra mim, eu vou pagar.
+
+Mas poderia ser obrigação legal? Poderia, porque na CLT tem que eu tenho que remunerar o colaborador ali. Então, o que eu faço? Eu coloco a execução de contrato, gente, porque pra mim é uma base legal que tá mais ali, né? Na minha cara. É o meu contrato, eu acabei de celebrar o contrato com essa pessoa.
+
+E depois que acaba o contrato, eu vou manter alguns dados por obrigação legal. E aí, eu mudo a base legal na manutenção do dado. Mas aqui, eu coloco qual é a base legal que eu estou escolhendo.
+
+Aí, no comentário, eu coloco também, poderia ser obrigação legal, no caso, o artigo tal da CLT. Tá? Como comentário. Por que eu não indico duas bases legais? E aí, eu já falei pra vocês lá na aula de bases legais.
+
+Eu acho que você enfraquece o seu fundamento. Ah, eu uso consentimento. Mas se a pessoa não der consentimento, também pode ser o legítimo interesse.
+
+Qual é a força do seu fundamento? Que tipo de requisito você vai cumprir? O que você vai indicar na política de privacidade? Nos seus avisos, nas suas declarações de privacidade, nos seus avisos aí de transparência. Então, eu gosto de deixar uma base legal só. Dado pessoal sensível, aqui não é aplicável.
+
+Mas se eu tivesse, eu tinha que também indicar base legal. Não é aplicável por quê? Porque eu não tenho dado sensível. Ah, eu tenho dados pessoais que não deveriam ser coletados aqui pra esse processo.
+
+O que eu vou indicar? Pra esses dados, ausência de base legal. E depois, eu vou olhar esse risco com o cliente, tá? E aí, a gente vai ver mais pra frente. Um pouquinho.
+
+Categoria do titular do dado, gente. Por que isso daqui é tão importante? Aqui eu tenho candidatos. Poderia ter colaboradores, poderia ser clientes.
+
+Isso vai me ajudar a elaborar as minhas políticas. Quando eu venho aqui e faço um filtro, vou fazer um filtro. Vou olhar os dados, por exemplo, de clientes de terceiros pra elaborar minha política externa.
+
+Candidatos também iria pra política externa. Vou olhar só dos colaboradores pra minha política interna. Ah, alguém fez um pedido de titular e é um terceiro.
+
+Vou filtrar terceiros e vou ver as finalidades que eu uso os dados. E assim por diante. Os filtros são muito, muito, muito necessários.
+
+E úteis. Como a empresa teve acesso ao dado pessoal? Coleta direta ou indireta? Direta. O funcionário foi lá na minha loja, preencheu um cadastro.
+
+O funcionário entrou no meu site, no Fale Conosco e preencheu as informações e assim por diante. Indireta. Eu recebi essa informação através de um terceiro, de um parceiro.
+
+Que é o caso, a gente recebeu de uma agência de recrutamento. Tem a coleta direta, porque a empresa também faz a entrevista e os testes. Estava escrito lá na descrição do processo.
+
+E tem a maneira indireta. O que eu tenho que cuidar quando é indireto? Eu tenho que olhar que, assim, quando eu coleto diretamente pro titular tá no meu controle as questões dos riscos. Eu vou dar transparência.
+
+Eu não vou usá-la de maneira para outra finalidade. De maneira que não é adequada e assim por diante. Eu vou armazenar em local seguro.
+
+Mas quando vem de terceiros, eu tenho uma responsabilidade aqui junto. Se veio de terceiro, foi porque eu solicitei. Foi porque eu dei as instruções.
+
+E se eu dei as instruções, será que eu tenho um contrato adequado? Será que eu estou tomando conta desse terceiro de maneira adequada? O que esse terceiro é pra mim? É um controlador? É um operador? Então, aqui, eu preciso avaliar essa coleta direta. Essa coleta indireta. E tomar cuidado de onde vem o dado, né? É apresentado algum tipo de política de privacidade? Eu questiono pra saber se essa informação, de alguma maneira, ela é transparente pro titular.
+
+Então, aqui nesse caso, não. Os dados pessoais são coletados sem a apresentação de uma política. Ou a divulgação.
+
+Eu tenho que saber que aqui eu vou ter um risco também de falta de transparência. E a gente vai falar de risco depois, tá? Mas aqui, só explicando um pouco melhor o motivo da pergunta. Caso seja solicitado consentimento, é necessário verificar se esse consentimento está de acordo com a lei.
+
+Aqui eu pergunto, tem algum consentimento? Não. Nesse caso, não. E não era aplicável.
+
+Mas, gente, se eu tivesse que ter... Às vezes, a pessoa fala que sim. E o RH gosta de pedir consentimento pra tudo. E aí, eu vou olhar que não precisaria.
+
+Mas eu vou olhar mais pra frente. Eu vou olhar toda... Minha análise, depois, vai ser de toda a linha. Primeiro, eu vou capturar a informação.
+
+Eu não vou começar a discutir com a pessoa, mas você não deveria coletar, não. Tô pegando a informação do jeito que vem. Ah, tem um termo? Me envia esse termo pra eu dar uma analisada? Ah, sim, tal.
+
+Aí eu olho lá, candidato, né? A gente tem a base legal de procedimentos preliminares ao contrato, né? Que é a base legal de execução de contrato, procedimento preliminar. Preciso pedir o consentimento pra coletar o currículo? Eu entendo que não. Pra mim, é execução de contrato.
+
+Vou dar transparência de por quanto tempo eu vou manter esse dado? Se eu vou armazenar num banco de talentos? Transparência. Mas não preciso do consentimento. Então, se ela coleta o consentimento, eu vou falar, olha, para de coletar, porque não precisaria.
+
+Depois, você tem acesso a algum dado que não é necessário? A Maria disse, não. Eu só coleto os dados mínimos necessários. Aqui é um double check, tá? Porque, às vezes, a pessoa... É muito comum, por exemplo, o departamento financeiro.
+
+Ele quer só fazer o pagamento. Mas o RH, pra ser mais fácil, manda uma planilha com todas as informações dos colaboradores pro financeiro pegar só o que ele precisa. E aí, o financeiro fala, olha... Pra ser bem sincero, né? Eles falam bem assim.
+
+Pra ser bem sincero, o pessoal me manda uma planilha com tudo. Eu tenho acesso a tudo. Eu tenho acesso a um drive que tem toda... Mas eu não precisaria.
+
+Então, vem aqui esse tipo de questão. Parece que a gente tá perguntando algo que é muito estranho pra pessoa, mas, em alguns casos, vem, sim, os riscos relacionados. Como que esse dado pessoal é coletado? Ele vem de um banco de dados, de um formular online, de e-mail? Então, aqui, no nosso caso, coletado pela agência de recrutamento e enviado a nós por e-mail.
+
+Ou informado diretamente pelo candidato na entrevista. Lembrem, gente, a gente tá vendo essa questão, mas vocês já viram no módulo anterior o nosso questionário. Então, se você seguir o questionário, pra cada questão vai vir o tipo de questão que eu vou assinalar.
+
+Tem alguns pontos aqui, principalmente as perguntas relacionadas a riscos, que eu vou fazer na entrevista. Vocês vão ver que não vai ter o match com o questionário. Porque são questões que eu vou lá na conversa com a pessoa.
+
+Pra avaliar risco, pra eu lembrar de risco, que a gente vai ver no próximo ponto. Mas, via de regra, 90% do que tá aqui tá lá no questionário. E o questionário, vocês também viram, que ele pode ser, que ele é editável.
+
+Vocês podem incluir o que vocês quiserem lá também. Próximo. O dado pessoal é recebido de outra empresa pra prestação de serviços aos seus funcionários? Eu contrato uma empresa que vai me enviar dado pessoal? Então, isso aqui eu faço um demo check de novo, na fonte do dado, na coleta do dado, no risco em relação ao terceiro.
+
+E aqui eu vou formando também uma coluna, onde eu avalio se tem outros terceiros envolvidos. Aqui, como eu recebo, e também se eu compartilho também com outros, tá? E aí a gente vai tendo aqui o nosso quebra-cabeça sendo formado. Nesse caso, sim, o dado é recebido de agência de recrutamento e seleção para auxílio no processo seletivo.
+
+O dado é comprado de outra empresa? Às vezes a gente pergunta isso e a pessoa não entende o que a gente tá querendo dizer. Mas tem empresas que isso é muito comum, principalmente nas áreas de marketing, eles compram um banco de dados pra poder fazer ali uma campanha. E isso, gente, tem um risco muito grande, o risco de não ser legítima essa captura.
+
+Será que foi dado transparência pro titular que aquele dado dele tá sendo compartilhado com outras empresas, tá sendo vendido pra outras empresas, pra outras finalidades? A gente teve um caso que eles falaram sim e que eles compravam informações, né, que eles assinavam o serviço de uma empresa que chamava Empresa Aqui. E aí, a empresa Aqui, ela tinha o intuito, a forma como o dado era divulgado era pro intuito de que as pessoas pudessem ter transparência em relação a quem era o diretor, que ele poderia assinar o contrato, que aquela empresa de fato existia, que tinha aqueles sócios. Então, era um cadastro, como se fosse ali da junta comercial, mas tem várias empresas que deixam de uma forma mais simplificada pra esse tipo de consulta.
+
+Só que a área usava pra marketing, eles queriam saber, determinado tipo de pessoa profissional, que eles queriam divulgar campanhas. E aí, a gente conversou com, porque a gente começou a pensar, bom, será que é legítimo isso? Será que tem algum risco? Vamos avaliar como que é o contrato. Na verdade, era um contrato, né, mas tinha os termos de uso do site, daquele produto, daquele serviço.
+
+E aí, a gente até conversou com o DPO dessa empresa. E o DPO falou, não, pelo amor de Deus, não é pra essa finalidade de marketing. Aliás, tem muita gente reclamando da gente por causa disso.
+
+E não é pra isso que os dados são fornecidos. E aí, a gente indicou o risco dessa coleta que não era legítima. Então, aqui é muito importante questionar, pode parecer meio doido, mas é uma pergunta que é muito relevante.
+
+O dado pessoal é compartilhado com as áreas internas da instituição? Aqui, compartilhamento dentro da própria empresa. Aqui, ele diz que sim, com os gestores das áreas donas das vagas. Às vezes, a gente tem compartilhamento com áreas que não precisariam ter acesso.
+
+Então, a gente também vai avaliando. Nesse caso, ele divulgava com os donos das vagas. Então, a área, o setor de tecnologia está contratando um profissional.
+
+Quando eu vou pegar lá o pessoal de recrutamento e seleção, vai olhar os melhores candidatos, de acordo com o perfil da vaga. E quando eu selecionar o mundo, eu vou passar para a entrevista, vou enviar os currículos para os gestores. Então, tem esse compartilhamento, ok.
+
+Compartilhado com terceiros, parceiros de negócios externos ou agências governamentais? Sim, nesse caso aqui, compartilhado com agência de recrutamento. Como que o compartilhamento é feito? Gente, o que eu estou falando para vocês, vocês estão vendo que a gente está acompanhando, né, esses comentários aqui em amarelinho. Então, vai sempre ficar aqui para vocês.
+
+Vou fazer um mapeamento, vou olhando para ver se eu estou lembrando aqui em relação a alguns riscos. A gente vai ter mais, vai falar mais sobre os riscos, mas se eu estou indicando as informações corretas. Como que é feito o compartilhamento, né? Forma segura, forma não segura? Aqui é para a gente fazer esse tipo de análise, junto com os profissionais da área de segurança da informação, mas eu tenho aqui todas as formas de compartilhamento.
+
+Bom, eu compartilho num motoboy que leva uma lote. Ele sai daqui, dentro da moto lá, o risco de perda é muito grande. Então, não é uma forma segura.
+
+Vamos analisar outras formas de levar esse documento? Ou, forma segura, e-mail. Uma forma não segura, WhatsApp. E aí, a gente vai seguindo e avaliando o que a gente pode indicar aqui para essa empresa.
+
+O dado pessoal é compartilhado com outros países? Aqui, a gente vai avaliar questões relacionadas à transferência internacional de dados, né? Qual país é compartilhado? Aí, a Maria falou que não, mas como eu falei logo no início, ela disse que armazena esse documento ou compartilha aqui pelo Google Drive. Ah, então você tem compartilhamento de dados internacional. Eu preciso ir checando essas informações, perguntando, perguntando.
+
+É assim que a gente vai chegar no mapeamento da melhor maneira. É apresentado ao titular dos dados todos os compartilhamentos com prestadores de serviço? Aqui, questões de transparência. Vou olhar se está claro para o titular todo o compartilhamento que eu faço.
+
+Então, empresas de eventos, brindes, fornecedores, birô de crédito, empresas de TI. Tem vários tipos de prestadores que as empresas geralmente utilizam e que, muitas vezes, na maioria das vezes, não está claro para o titular, não está dentro de uma política. E é o tipo de informação que, como eu falei para vocês, se eu tiver coletado tudo bonitinho no mapeamento, na hora de desenhar minha política vai ser muito mais fácil.
+
+Armazenamento lógico, né? Em que sistemas? Aqui, nesse caso, era só no e-mail corporativo. Mas se eu estou falando, por exemplo, de backup, eu vou estar falando de sistema. Se eu estou falando de um CRM, né? Um software de clientes, eu estou falando também de um sistema.
+
+E assim vai. Às vezes, a gente pensa, nossa, Denise, é muita informação, eu não vou saber tudo. Calma, é a empresa que tem que te falar.
+
+E se eles não souberem, a gente vai buscando essa informação internamente. Tem dados impressos, né? Tem documentos impressos? Sim, existem currículos impressos que ficam em gavetas. Vou olhar aqui a questão de segurança, né? E como que eu vou proteger esses dados.
+
+O dado pessoal está em local único, sem redundância ou backup? Aqui, a gente tem dois pontos, né, gente? Imagina, se eu armazeno os dados em vários locais, tá no Google Drive, tá na minha pasta na rede, tá no meu desktop. Se o titular pede para pagar, eu tenho que saber onde esse dado está. Eu não deveria armazenar no meu desktop.
+
+Até se eu perder o meu notebook, é um risco. Deveria estar na rede, protegido, na nuvem, em um sistema. Então, isso daqui, a gente brinca muito, que às vezes as áreas guardam em cada lugar, por não confiar mesmo nas ferramentas da empresa.
+
+E depois o TI vai ver e eles falam, nossa, nem imaginava que esse pessoal, às vezes o pessoal contrata nuvem também, que nem é uma alugada pela empresa. Então, aqui a gente vai olhar onde que esses dados são armazenados. E se esses dados, né, se tem backup.
+
+Ah, eu faço backup sempre, tem gente que fala. E tem gente que fala, ah, eu nem sei. Aí a gente vai perguntar para a área de segurança, tá? Então, aqui nesse caso, armazenado em e-mail, e Drive, no caso do digital.
+
+Como que o dado pessoal é destruído? Não é destruído, não existe um período de retenção para esses dados. A gente vai olhar isso na questão dos riscos, mas o que a Maria disse aqui, é que realmente fica lá ad eterno. Tem decisão automatizada nesse processo, né? Uma decisão tomada unicamente por meio automatizado, sem interferência humana.
+
+Tô lá no aplicativo do banco, vou pedir um empréstimo, domingo à tarde já vem a informação se o empréstimo foi concedido ou não. Vocês acham que o gerente fez alguma coisa? Não, tudo tomado com base automatizada, decisão automatizada sem interferência humana. Agora, eu tenho lá um determinado sistema, que ele já vai fazendo algumas análises de critérios, mas que no final, tem alguém que tá lá analisando se eu vou conceder, por exemplo, se eu vou assinar um contrato com essa pessoa, se eu vou conceder ali, por exemplo, um seguro para essa pessoa.
+
+Mas não é totalmente automatizado, não tem decisão automatizada. Se eu tenho decisão automatizada, a gente vai lá ver na questão dos riscos. Avaliação relacionada aos princípios da finalidade e adequação.
+
+Aqui, a gente quer saber se o dado é utilizado para uma finalidade diferente, por quê? Ah, Denise, mas todo mundo vai falar que não, né? Não, pelo contrário. Às vezes, essa pessoa daqui fala, não, mas os candidatos, depois a gente manda uma newsletter para eles, a gente continua mandando, a gente inclui ele na nossa base e tal. As pessoas não sabem que realmente estão fazendo algo que pode ter algum tipo de problema em relação à privacidade.
+
+E eles falam, sim, ou a gente mesmo percebe, quando eles estão lá na descrição, a gente já percebe e vai apontando e confirma, né? Olha, mas você me disse que também usa para tal coisa, né? Então, vamos incluir aqui, ah, é verdade e tal. Então, vamos questionando. O dado pessoal é revisado periodicamente? Aqui, a gente olha para o princípio da qualidade, né? De manter os dados sempre atualizados.
+
+Às vezes, a gente liga no banco ou liga em alguma empresa, eles falam, posso confirmar seu telefone? Posso confirmar se seu e-mail continua o mesmo? É esse tipo de questão. Ou uma revisão no RH, né? Ah, todo ano, eu mando um e-mail, um link para o pessoal revisar os dados que estão lá na intranet. Tem que ter rotinas de atualização desses dados.
+
+Aqui, gente, a gente começa a ter, olha, os nossos últimos campos, esses aqui de antes escuro, eles são relacionados à questão de segurança da informação. Ah, Denise, mas eu sou do jurídico, eu vou coletar essas informações? Eu vou, porque eu estou fazendo mapeamento. A análise do risco, eu deixo para o pessoal da área de segurança.
+
+Seja um parceiro do cliente, seja o meu parceiro, que eu estou incluindo o projeto, o cliente também resolveu ali contratar, seja a área de TI da empresa. Eu não olho os riscos de segurança, mas até por a gente começar a trabalhar...
+
+
+Este arquivo é mais longo que 30 minutos.
+
+
+Atualize para Ilimitado em TurboScribe para transcrever arquivos de até 10 horas.

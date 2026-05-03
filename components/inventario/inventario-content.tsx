@@ -59,6 +59,12 @@ import {
   type FormAnswers,
   type WizardStep,
 } from "@/lib/inventario-form-schema";
+import {
+  inventoryStatusLabel,
+  inventoryStatusColor,
+  INVENTORY_STATUS,
+  isDPO,
+} from "@/lib/auth-helpers";
 
 interface InventarioContentProps {
   session?: any;
@@ -66,7 +72,13 @@ interface InventarioContentProps {
 
 const PLACEHOLDER = "[Em preenchimento]";
 
-type StatusFilter = "all" | "done" | "draft";
+type StatusFilter =
+  | "all"
+  | "RASCUNHO"
+  | "SUBMETIDO"
+  | "EM_REVISAO"
+  | "APROVADO"
+  | "DEVOLVIDO";
 type SortBy = "recent" | "oldest" | "az";
 
 /**
@@ -119,12 +131,18 @@ function cleanField(v?: string | null): string {
 
 export default function InventarioContent({ session }: InventarioContentProps) {
   const router = useRouter();
+  const userIsDPO = isDPO(session?.user?.role);
   const [searchTerm, setSearchTerm] = useState("");
   const [inventarios, setInventarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [setorFilter, setSetorFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<SortBy>("recent");
+  /** Quando setado, abre dialog pra DPO digitar comentário antes de devolver. */
+  const [devolverTarget, setDevolverTarget] = useState<any | null>(null);
+  const [devolverComment, setDevolverComment] = useState("");
+  const [devolvendo, setDevolvendo] = useState(false);
 
   useEffect(() => {
     loadInventarios();
@@ -142,6 +160,66 @@ export default function InventarioContent({ session }: InventarioContentProps) {
       toast.error("Erro ao carregar inventários");
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Mudança de status genérica — chama PATCH /api/inventario/[id]/status.
+   * Usado pra Iniciar revisão e Aprovar (Devolver tem flow próprio com
+   * comentário, vai pelo handleDevolver).
+   */
+  const changeStatus = async (id: string, status: string) => {
+    try {
+      const r = await fetch(`/api/inventario/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        toast.error(data.error ?? "Erro ao mudar status");
+        return;
+      }
+      const labels: Record<string, string> = {
+        EM_REVISAO: "Marcado em revisão",
+        APROVADO: "Processo aprovado!",
+        SUBMETIDO: "Re-submetido pra revisão do DPO",
+      };
+      toast.success(labels[status] ?? "Status atualizado");
+      loadInventarios();
+    } catch {
+      toast.error("Erro de rede");
+    }
+  };
+
+  const handleDevolver = async () => {
+    if (!devolverTarget || !devolverComment.trim()) return;
+    setDevolvendo(true);
+    try {
+      const r = await fetch(
+        `/api/inventario/${devolverTarget.id}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "DEVOLVIDO",
+            comment: devolverComment.trim(),
+          }),
+        }
+      );
+      const data = await r.json();
+      if (!r.ok) {
+        toast.error(data.error ?? "Erro ao devolver");
+        return;
+      }
+      toast.success("Processo devolvido pra ajustes");
+      setDevolverTarget(null);
+      setDevolverComment("");
+      loadInventarios();
+    } catch {
+      toast.error("Erro de rede");
+    } finally {
+      setDevolvendo(false);
     }
   };
 
@@ -182,7 +260,9 @@ export default function InventarioContent({ session }: InventarioContentProps) {
       Armazenamento: cleanField(item.storage),
       Compartilhamento: cleanField(item.sharing) || "Não há",
       "Medidas de Segurança": cleanField(item.security),
-      Status: item.isDraft ? "Rascunho" : "Concluído",
+      Status: inventoryStatusLabel(item.status ?? (item.isDraft ? "RASCUNHO" : "APROVADO")),
+      Setor: item.setor ?? item.createdBy?.setor ?? "",
+      "Criado por": item.createdBy?.name ?? "",
       "Data de Criação": new Date(item.createdAt).toLocaleDateString("pt-BR"),
     }));
 
@@ -193,7 +273,7 @@ export default function InventarioContent({ session }: InventarioContentProps) {
     const colWidths = [
       { wch: 30 }, { wch: 25 }, { wch: 40 }, { wch: 25 }, { wch: 40 },
       { wch: 25 }, { wch: 30 }, { wch: 25 }, { wch: 35 }, { wch: 40 },
-      { wch: 12 }, { wch: 15 },
+      { wch: 14 }, { wch: 18 }, { wch: 22 }, { wch: 15 },
     ];
     ws["!cols"] = colWidths;
 
@@ -203,25 +283,37 @@ export default function InventarioContent({ session }: InventarioContentProps) {
     toast.success("Arquivo Excel exportado com sucesso!");
   };
 
+  /** Status efetivo de um item — preferindo `status` (novo) sobre `isDraft` (legado). */
+  const itemStatus = (item: any): string =>
+    item.status ?? (item.isDraft ? "RASCUNHO" : "APROVADO");
+  /** Setor efetivo — pode estar no item, ou no `createdBy.setor`. */
+  const itemSetor = (item: any): string =>
+    item.setor ?? item.createdBy?.setor ?? "";
+
   const filteredInventarios = useMemo(() => {
     const search = searchTerm.toLowerCase();
     let list = inventarios.filter((item) => {
-      // status filter
-      if (statusFilter === "done" && item.isDraft) return false;
-      if (statusFilter === "draft" && !item.isDraft) return false;
+      // Status filter — exato (5 estados possíveis)
+      if (statusFilter !== "all" && itemStatus(item) !== statusFilter) {
+        return false;
+      }
+      // Setor filter
+      if (setorFilter !== "all" && itemSetor(item) !== setorFilter) return false;
 
-      // search filter
+      // Search filter
       if (!search) return true;
       return (
         cleanField(item.serviceName).toLowerCase().includes(search) ||
         cleanField(item.dataCategory).toLowerCase().includes(search) ||
         cleanField(item.personalData).toLowerCase().includes(search) ||
         cleanField(item.legalBasis).toLowerCase().includes(search) ||
-        cleanField(item.purpose).toLowerCase().includes(search)
+        cleanField(item.purpose).toLowerCase().includes(search) ||
+        itemSetor(item).toLowerCase().includes(search) ||
+        (item.createdBy?.name ?? "").toLowerCase().includes(search)
       );
     });
 
-    // sort
+    // Sort
     list = [...list].sort((a, b) => {
       if (sortBy === "az") {
         const an = (cleanField(a.serviceName) || "~").toLowerCase();
@@ -234,16 +326,31 @@ export default function InventarioContent({ session }: InventarioContentProps) {
     });
 
     return list;
-  }, [inventarios, searchTerm, statusFilter, sortBy]);
+  }, [inventarios, searchTerm, statusFilter, setorFilter, sortBy]);
 
-  // Estatísticas — só conta valores reais (ignora placeholders)
+  /** Lista de setores distintos pra popular o filtro. */
+  const distinctSetores = useMemo(() => {
+    const s = new Set<string>();
+    for (const item of inventarios) {
+      const sec = itemSetor(item);
+      if (sec) s.add(sec);
+    }
+    return [...s].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [inventarios]);
+
+  // Estatísticas — conta valores reais e agrupa por status
   const stats = useMemo(() => {
     const real = inventarios;
     const cats = new Set<string>();
     const purp = new Set<string>();
     const legal = new Set<string>();
-    let done = 0;
-    let draft = 0;
+    const byStatus: Record<string, number> = {
+      RASCUNHO: 0,
+      SUBMETIDO: 0,
+      EM_REVISAO: 0,
+      APROVADO: 0,
+      DEVOLVIDO: 0,
+    };
     for (const i of real) {
       const c = cleanField(i.dataCategory);
       const p = cleanField(i.purpose);
@@ -251,13 +358,15 @@ export default function InventarioContent({ session }: InventarioContentProps) {
       if (c) cats.add(c);
       if (p) purp.add(p);
       if (l) legal.add(l);
-      if (i.isDraft) draft++;
-      else done++;
+      const s = itemStatus(i);
+      if (byStatus[s] !== undefined) byStatus[s]++;
     }
     return {
       total: real.length,
-      done,
-      draft,
+      // Mantém done/draft pra compat dos cards de stats no topo
+      done: byStatus.APROVADO,
+      draft: byStatus.RASCUNHO,
+      byStatus,
       categories: cats.size,
       purposes: purp.size,
       legalBases: legal.size,
@@ -265,7 +374,10 @@ export default function InventarioContent({ session }: InventarioContentProps) {
   }, [inventarios]);
 
   const isFiltered =
-    !!searchTerm || statusFilter !== "all" || sortBy !== "recent";
+    !!searchTerm ||
+    statusFilter !== "all" ||
+    setorFilter !== "all" ||
+    sortBy !== "recent";
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -316,9 +428,21 @@ export default function InventarioContent({ session }: InventarioContentProps) {
             />
           </div>
 
+          {/* Tabs principais — os 3 status mais comuns ficam à mão.
+              Estados intermediários (Submetido / Em Revisão / Devolvido)
+              ficam no Select avançado abaixo. */}
           <Tabs
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+            value={
+              statusFilter === "all" ||
+              statusFilter === "RASCUNHO" ||
+              statusFilter === "APROVADO"
+                ? statusFilter
+                : "advanced"
+            }
+            onValueChange={(v) => {
+              if (v === "advanced") return; // visual-only — usar Select
+              setStatusFilter(v as StatusFilter);
+            }}
           >
             <TabsList>
               <TabsTrigger value="all">
@@ -327,23 +451,73 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                   {stats.total}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger value="done">
-                Concluídos
+              <TabsTrigger value="APROVADO">
+                Aprovados
                 <Badge variant="secondary" className="ml-2">
-                  {stats.done}
+                  {stats.byStatus.APROVADO}
                 </Badge>
               </TabsTrigger>
-              <TabsTrigger value="draft">
+              <TabsTrigger value="RASCUNHO">
                 Rascunhos
                 <Badge variant="secondary" className="ml-2">
-                  {stats.draft}
+                  {stats.byStatus.RASCUNHO}
                 </Badge>
               </TabsTrigger>
             </TabsList>
           </Tabs>
 
+          {/* Filtro de Status avançado — pra DPO ver Submetido / Em Revisão /
+              Devolvido. Sincronizado com as tabs acima. */}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          >
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                Todos os status ({stats.total})
+              </SelectItem>
+              <SelectItem value={INVENTORY_STATUS.RASCUNHO}>
+                Rascunho ({stats.byStatus.RASCUNHO})
+              </SelectItem>
+              <SelectItem value={INVENTORY_STATUS.SUBMETIDO}>
+                Submetido ({stats.byStatus.SUBMETIDO})
+              </SelectItem>
+              <SelectItem value={INVENTORY_STATUS.EM_REVISAO}>
+                Em revisão ({stats.byStatus.EM_REVISAO})
+              </SelectItem>
+              <SelectItem value={INVENTORY_STATUS.APROVADO}>
+                Aprovado ({stats.byStatus.APROVADO})
+              </SelectItem>
+              <SelectItem value={INVENTORY_STATUS.DEVOLVIDO}>
+                Devolvido ({stats.byStatus.DEVOLVIDO})
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Filtro de Setor — só faz sentido se houver setores
+              cadastrados (em geral aparecem quando contribuidores criam
+              processos). Pra DPO especialmente útil. */}
+          {distinctSetores.length > 0 && (
+            <Select value={setorFilter} onValueChange={setSetorFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Setor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os setores</SelectItem>
+                {distinctSetores.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[170px]">
               <ArrowDownUp className="h-4 w-4 mr-1 text-gray-500" />
               <SelectValue placeholder="Ordenar" />
             </SelectTrigger>
@@ -441,7 +615,12 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                   <InventarioRow
                     key={item.id}
                     item={item}
+                    showCreatorInfo={userIsDPO}
+                    isUserDPO={userIsDPO}
+                    currentUserId={session?.user?.id}
                     onDelete={() => setDeleteId(item.id)}
+                    onStatusChange={changeStatus}
+                    onDevolverClick={(it) => setDevolverTarget(it)}
                   />
                 ))}
               </div>
@@ -469,6 +648,48 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                 className="bg-red-600 hover:bg-red-700"
               >
                 Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* ===== Dialog: Devolver com comentário ===== */}
+        <AlertDialog
+          open={!!devolverTarget}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDevolverTarget(null);
+              setDevolverComment("");
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Devolver pra ajustes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                O processo voltará pro contribuidor com o seu comentário,
+                pra ele ajustar e re-submeter. O comentário é{" "}
+                <strong>obrigatório</strong> — explique o que precisa mudar.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <textarea
+              className="w-full mt-2 px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              placeholder="Ex: Faltou detalhar a finalidade do tratamento e indicar quais dados sensíveis são coletados."
+              value={devolverComment}
+              onChange={(e) => setDevolverComment(e.target.value)}
+              disabled={devolvendo}
+            />
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={devolvendo}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDevolver}
+                disabled={!devolverComment.trim() || devolvendo}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {devolvendo ? "Devolvendo..." : "Devolver"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -554,42 +775,70 @@ function StatCard({
 
 function InventarioRow({
   item,
+  showCreatorInfo,
+  isUserDPO,
+  currentUserId,
   onDelete,
+  onStatusChange,
+  onDevolverClick,
 }: {
   item: any;
+  showCreatorInfo: boolean;
+  isUserDPO: boolean;
+  currentUserId: string | null | undefined;
   onDelete: () => void;
+  onStatusChange: (id: string, status: string) => void;
+  onDevolverClick: (item: any) => void;
 }) {
-  const isDraft = !!item.isDraft;
+  // Status efetivo (preferindo `status` novo sobre `isDraft` legado)
+  const status: string =
+    item.status ?? (item.isDraft ? "RASCUNHO" : "APROVADO");
+  const isDraft = status === "RASCUNHO";
+  const isApproved = status === "APROVADO";
   const serviceName = cleanField(item.serviceName);
   const personalData = cleanField(item.personalData);
   const dataCategory = cleanField(item.dataCategory);
   const legalBasis = cleanField(item.legalBasis);
   const purpose = cleanField(item.purpose);
+  const setor = item.setor ?? item.createdBy?.setor ?? "";
+  const creatorName = item.createdBy?.name ?? null;
+
+  const statusColor = inventoryStatusColor(status);
 
   // Progresso só pra drafts (concluídos = 100% por definição)
   const progress = isDraft
     ? computeProgress(item.formAnswers)
     : { filledSections: 7, totalSections: 7, filledFields: 0, totalFields: 0, pct: 100 };
 
+  // Cor da borda esquerda — agora baseada no status
+  // (cobre os 5 estados, não só draft/approved)
+  const leftBorderClass: Record<string, string> = {
+    RASCUNHO: "border-l-amber-400 dark:border-l-amber-500",
+    SUBMETIDO: "border-l-blue-500 dark:border-l-blue-400",
+    EM_REVISAO: "border-l-amber-500 dark:border-l-amber-400",
+    APROVADO: "border-l-emerald-500 dark:border-l-emerald-500",
+    DEVOLVIDO: "border-l-red-500 dark:border-l-red-500",
+  };
+
   return (
     <div
       className={cn(
         "border rounded-lg p-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50",
         "border-l-4",
-        isDraft
-          ? "border-amber-400 dark:border-amber-500 border-y-amber-100 border-r-amber-100 dark:border-y-amber-900/40 dark:border-r-amber-900/40"
-          : "border-emerald-500 dark:border-emerald-500 border-y-emerald-100 border-r-emerald-100 dark:border-y-emerald-900/40 dark:border-r-emerald-900/40"
+        leftBorderClass[status] ?? "border-l-gray-400"
       )}
     >
       <div className="flex items-start gap-4 flex-wrap md:flex-nowrap">
         {/* Bloco esquerdo — info principal */}
         <div className="flex-1 min-w-0">
-          {/* Título */}
-          <div className="flex items-center gap-2 mb-1">
+          {/* Título + badge de status */}
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             {isDraft ? (
               <FileEdit className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-            ) : (
+            ) : isApproved ? (
               <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <FileEdit className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0" />
             )}
             <h3
               className={cn(
@@ -601,7 +850,38 @@ function InventarioRow({
             >
               {serviceName || "Mapeamento sem nome ainda"}
             </h3>
+            {/* Badge de status — sempre visível, com cores do helper */}
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-xs font-normal",
+                statusColor.bg,
+                statusColor.text,
+                statusColor.border
+              )}
+            >
+              {inventoryStatusLabel(status)}
+            </Badge>
           </div>
+
+          {/* Metadados de contexto: setor + criador (só visível pro DPO,
+              ou se o user é o próprio criador). Útil pro DPO entender de
+              onde veio o processo. */}
+          {(showCreatorInfo || creatorName || setor) && (showCreatorInfo) && (
+            <div className="ml-7 mb-2 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+              {setor && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="font-medium">Setor:</span> {setor}
+                </span>
+              )}
+              {creatorName && (
+                <span className="inline-flex items-center gap-1">
+                  <span className="font-medium">Criado por:</span>{" "}
+                  {creatorName}
+                </span>
+              )}
+            </div>
+          )}
 
           {isDraft ? (
             // ===== DRAFT: progresso, sem badges vazios =====
@@ -671,9 +951,63 @@ function InventarioRow({
           )}
         </div>
 
-        {/* Bloco direito — ações */}
-        <div className="flex items-center gap-2 shrink-0 ml-7 md:ml-0">
-          {isDraft ? (
+        {/* Bloco direito — ações (variam conforme status + papel) */}
+        <div className="flex items-center gap-2 shrink-0 ml-7 md:ml-0 flex-wrap">
+          {/* DPO vê ações de aprovação pra processos pendentes */}
+          {isUserDPO && status === "SUBMETIDO" && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onStatusChange(item.id, "EM_REVISAO")}
+                    className="border-amber-200 text-amber-700 hover:bg-amber-50"
+                  >
+                    Iniciar revisão
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Marcar como Em Revisão</TooltipContent>
+              </Tooltip>
+              <Button
+                size="sm"
+                onClick={() => onStatusChange(item.id, "APROVADO")}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Aprovar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDevolverClick(item)}
+                className="border-red-200 text-red-700 hover:bg-red-50"
+              >
+                Devolver
+              </Button>
+            </>
+          )}
+          {isUserDPO && status === "EM_REVISAO" && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onStatusChange(item.id, "APROVADO")}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> Aprovar
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDevolverClick(item)}
+                className="border-red-200 text-red-700 hover:bg-red-50"
+              >
+                Devolver
+              </Button>
+            </>
+          )}
+
+          {/* Continuar (Rascunho) */}
+          {isDraft && (
             <Button
               asChild
               size="sm"
@@ -684,7 +1018,24 @@ function InventarioRow({
                 Continuar
               </Link>
             </Button>
-          ) : (
+          )}
+
+          {/* Ajustar e re-submeter (Devolvido — para o criador) */}
+          {status === "DEVOLVIDO" && item.createdById === currentUserId && (
+            <Button
+              asChild
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Link href={`/dashboard/inventario/${item.id}/editar`}>
+                <Edit className="h-4 w-4 mr-1.5" />
+                Ajustar e re-submeter
+              </Link>
+            </Button>
+          )}
+
+          {/* Editar (Aprovado / Submetido / Em Revisão — pra DPO) */}
+          {!isDraft && status !== "DEVOLVIDO" && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -699,6 +1050,34 @@ function InventarioRow({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Editar mapeamento</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Bases Legais — botão dedicado pra DPO complementar.
+              Indicador visual: borda roxa cheia se já preenchido, vazia se pendente. */}
+          {isUserDPO && !isDraft && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className={cn(
+                    item.legalReviewedAt
+                      ? "border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100 dark:border-purple-800 dark:text-purple-300 dark:bg-purple-950/30"
+                      : "border-purple-200 text-purple-700 hover:bg-purple-50 dark:border-purple-900/50 dark:text-purple-300 dark:hover:bg-purple-950/20"
+                  )}
+                >
+                  <Link href={`/dashboard/inventario/${item.id}/bases-legais`}>
+                    <Scale className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {item.legalReviewedAt
+                  ? "Bases Legais preenchidas — clique pra revisar"
+                  : "Preencher Bases Legais"}
+              </TooltipContent>
             </Tooltip>
           )}
 
@@ -717,6 +1096,18 @@ function InventarioRow({
           </Tooltip>
         </div>
       </div>
+
+      {/* Banner do comentário do DPO em processos DEVOLVIDOS */}
+      {status === "DEVOLVIDO" && item.reviewComment && (
+        <div className="mt-3 ml-7 rounded-md border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 p-3">
+          <p className="text-xs uppercase font-bold tracking-wide text-red-700 dark:text-red-300 mb-1">
+            Devolvido pra ajustes — comentário do DPO:
+          </p>
+          <p className="text-sm text-red-900 dark:text-red-100 whitespace-pre-line">
+            {item.reviewComment}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

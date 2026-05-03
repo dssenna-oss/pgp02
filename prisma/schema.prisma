@@ -17,24 +17,48 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("user") // "admin" ou "user"
+  /// Papel do usuário. Valores aceitos:
+  ///   - "admin"           — legado, equivalente a DPO_PRINCIPAL + super-admin
+  ///                         (mantido pro usuário inicial pré-migração)
+  ///   - "DPO_PRINCIPAL"   — encarregado titular da organização (1 por org)
+  ///   - "DPO_SUBSTITUTO"  — substituto do principal (1 por org)
+  ///   - "DPO_AUXILIAR"    — auxiliar; vê tudo, aprova, sem poder de criar
+  ///                         contribuidor (N por org)
+  ///   - "CONTRIBUIDOR"    — preenche processos do próprio setor (N)
+  ///   - "user"            — legado pra contas antigas
+  /// Helpers em `lib/auth-helpers.ts` centralizam as checagens.
+  role          String    @default("CONTRIBUIDOR")
+  /// Setor / departamento do usuário (texto livre — RH, Ouvidoria, etc.).
+  /// Usado principalmente pra Contribuidores; opcional pra DPOs.
+  setor         String?
   isActive      Boolean   @default(false) // Novo usuário precisa ser ativado pelo admin
   accounts      Account[]
   sessions      Session[]
-  
+
   // Relacionamento com empresa
   companyId     String?
   company       Company?  @relation(fields: [companyId], references: [id])
-  
+
+  // Quem cadastrou este usuário (DPO que criou a conta de Contribuidor).
+  // null = usuário criado pelo super-admin ou pré-migração.
+  invitedById   String?
+  invitedBy     User?     @relation("InvitedUsers", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedUsers  User[]    @relation("InvitedUsers")
+
   // Recuperação de senha
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
-  
+
   // Progresso do checklist RIPD
   ripdChecklistProgress RipdChecklistProgress?
-  
+
   // Conversas do chatbot
   chatConversations ChatConversation[]
+
+  // Inventários criados/revisados por este usuário
+  createdInventories  DataInventory[] @relation("InventoryCreatedBy")
+  reviewedInventories DataInventory[] @relation("InventoryReviewedBy")
+  legalReviewedInventories DataInventory[] @relation("LegalReviewedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,7 +112,7 @@ model DataInventory {
   id              String   @id @default(cuid())
   companyId       String
   company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+
   serviceName     String
   dataCategory    String   // Categorias como "dados pessoais sensíveis", "dados pessoais", etc.
   personalData    String   // Tipos de dados coletados
@@ -106,12 +130,54 @@ model DataInventory {
   // Estrutura: { respondent: {...}, sections: { sec2: {...}, ..., sec7: {...} } }
   formAnswers     Json?
   // Marca se o registro ainda é rascunho (wizard não concluído).
+  // DEPRECATED em favor de `status` — mantido pra compatibilidade. Será
+  // removido num checkpoint futuro depois que toda a UI usar `status`.
   isDraft         Boolean  @default(false)
+
+  /// Status do processo no fluxo de aprovação. Valores:
+  ///   - "RASCUNHO"   — Contribuidor preenchendo (não submetido ainda)
+  ///   - "SUBMETIDO"  — Contribuidor submeteu pra revisão
+  ///   - "EM_REVISAO" — DPO está revisando
+  ///   - "APROVADO"   — DPO aprovou; entra na Análise de Riscos
+  ///   - "DEVOLVIDO"  — DPO devolveu pra ajustes (com comentário)
+  status          String   @default("RASCUNHO")
+
+  /// Setor responsável (RH, Ouvidoria, etc.). Geralmente igual ao setor
+  /// do usuário criador. Cacheado aqui pra facilitar filtros.
+  setor           String?
+
+  /// Usuário que criou o processo (Contribuidor da área).
+  createdById     String?
+  createdBy       User?    @relation("InventoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  /// Usuário (DPO) que revisou o processo.
+  reviewedById    String?
+  reviewedBy      User?    @relation("InventoryReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt      DateTime?
+  /// Comentário do DPO ao devolver pra ajustes (status DEVOLVIDO).
+  reviewComment   String?  @db.Text
+
+  // ---------- Bases Legais (preenchido pelo DPO/jurídico após o mapeamento) ----------
+  // Esses 4 campos correspondem às colunas J, K, L, M do Excel modelo.
+  // O wizard do contribuidor não preenche isso — fica em branco pro
+  // DPO complementar via tela dedicada.
+  /// Previsão Legal — Lei/norma que obriga o tratamento (Excel coluna J)
+  previsaoLegal       String?  @db.Text
+  /// Base Legal aplicável a Dados Pessoais Sensíveis (Excel coluna K)
+  legalBasisSensitive String?
+  /// Comentários sobre as Bases Legais sugeridas (Excel coluna M)
+  legalBasisComments  String?  @db.Text
+  /// Quem do jurídico/DPO preencheu as bases legais
+  legalReviewedById   String?
+  legalReviewedBy     User?    @relation("LegalReviewedBy", fields: [legalReviewedById], references: [id], onDelete: SetNull)
+  legalReviewedAt     DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("data_inventories")
+  @@index([companyId, status])
+  @@index([companyId, setor])
 }
 
 model RiskAssessment {

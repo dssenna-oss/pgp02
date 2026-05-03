@@ -1,0 +1,100 @@
+16.2 - LGPD PRO
+
+
+Transcrito por TurboScribe. Atualize para Ilimitado para remover esta mensagem.
+
+
+Olá, agora que nós já falamos de maneira geral sobre os riscos, vamos ver como a gente faz isso na prática, como que a gente consegue, com uma metodologia, com as perguntas adequadas, identificando esses riscos e colocando de uma forma organizada e que também dê para, posteriormente, ir atualizando, acompanhando, monitorando, que é o trabalho depois do encarregado de proteção de dados, e também como que a gente pode colocar isso em um plano de ação para o cliente. Depois de feito o mapeamento, a gente analisa os riscos e aí pega as informações para passar em um relatório para o cliente. Imagina só, eu não vou participar de uma reunião e abrir um Excel e ficar mostrando um monte de coluna para ele.
+
+Então, eu preciso já pensar em uma forma de fazer com que essas informações fiquem facilmente visíveis. E aí a gente vai ter, nas próximas aulas, a nossa aula de relatório de diagnóstico. Então, deixa eu apresentar aqui para vocês a minha tela.
+
+Vamos lá. Bom, então, na nossa aula, primeira aula desse módulo, nós, acho que na segunda, né, nós falamos, nós mostramos essa planilha de mapeamento de dados, mas nós mostramos só essa primeira linha amarela, que eram observações gerais, para como completar o mapeamento. Agora, a gente vem com essa linha de observações sobre os riscos, porque agora a gente já parte do princípio que o nosso relatório, que o nosso mapeamento, ele está pronto e que agora eu tenho que olhar para os riscos.
+
+E coloco também aqui, olha, duas abas que a gente vai trabalhar também nesse módulo, tá? Nessa aula de hoje. Então, aqui tem aquele processo, aquele fluxo de dados pessoais do recrutamento e seleção que foi respondido pela Maria. Lá naquela aula, a gente já foi pensando em alguns riscos, mas eu falei para vocês que a gente ia detalhar esses riscos agora.
+
+Então, quando a gente falou do recrutamento e seleção, nós estamos passando, né, a Maria indicou uma série de dados que ela pede, que ela coleta no momento da seleção e recrutamento. Não no momento da contratação, né? Só para selecionar, ela já coletava uma série de informações. E aí, nós indicamos, né, com a finalidade que ela falou de tratar os dados pessoais, não tem dados pessoais sensíveis, nós indicamos que para essa finalidade seria a base legal de execução de contrato.
+
+Nesse caso, gente, eu estou recomendando uma base legal como consultoria, né, ou muitas vezes como alguém que está liderando esse projeto dentro da empresa, eu vou recomendar a base legal adequada, né? Nesse caso, seriam os procedimentos preliminares ao contrato de trabalho. Então, como eu estou recomendando, eu ainda indico, eu ainda olho para essa linha aqui de riscos, né? E aí, lembrem, gente, tem que apagar essas duas linhas antes de mandar para o cliente, tá? Mas eu estou aqui só com comentários para vocês. Eu ainda coloco como risco a ausência de legitimação para o tratamento de dados, né, a ausência de indicação da base legal.
+
+Por quê? Porque eu preciso confirmar essa base legal na implementação. Então, eu falo para o cliente, olha, apesar de nós termos recomendado a base legal, na fase de implementação, nós temos uma etapa que é de confirmação dessas bases e de cumprimento dos requisitos adicionais. Por exemplo, elaboração de um teste de proporcionalidade, revisão ou elaboração de um termo de consentimento, né, e por aí vai.
+
+Então, eu indico ainda como risco e depois esse risco vai ser mitigado. Aí, a gente teve aquela questão, né, aquela pergunta sobre como que esse dado é coletado, né? E aí, vem várias perguntas nesse sentido. De que jeito? Como o dado foi coletado? Eu tenho que tomar cuidado quando o cliente fala em compra de dados, né? Que, na verdade, seria uma aquisição indireta de dados pessoais.
+
+E a gente falou lá na aula também do mapeamento que é muito comum, né, que as empresas tinham essas práticas no passado e que pode ser que em algum momento isso tenha, né, alguma empresa que, de alguma forma, use o serviço de avaliação, por exemplo, do Serasa para score de crédito, tá tudo bem. Mas se eu comprar aquela base de dados do Serasa para perfilamento o próprio Ministério Público proibiu. Então, eu tenho que tomar cuidado se a forma como eu tô adquirindo essa base de dados, ela é legítima.
+
+Se esse terceiro que tá me passando a informação ele tem uma base legal adequada. Se foi dado transparência para o titular. Então, todas essas perguntas, eu vou acabar pensando em como o dado é coletado, se é legítimo.
+
+E também, se eu coleto de terceiros, o risco de compartilhamento, né? Coleta e compartilhamento com os terceiros, quando eu também envio dados. Por quê? Porque a gente viu já nos outros módulos a responsabilidade, inclusive pode ser solidária entre os agentes de tratamento, a depender da forma como isso é feito. Tem que ter contrato, tem que ter avaliação desses terceiros, né? E assim por diante.
+
+Então, eu vou olhar aqui, né? A gente verificou que não foi apresentada nenhuma política de privacidade, ferindo o princípio de transparência. Que, para o processo de recrutamento e seleção tem dado pessoal excessivo. Que ela não precisaria de algumas informações.
+
+Por exemplo, nome do pai e da mãe, CPFRG, idade. Algumas vezes, as pessoas indicam coisas no currículo, tá? Adicionais, tem gente que põe até foto. E aí, o que acontece? No mapeamento de dados.
+
+Esse dado, a empresa coleta, ela tem a intenção de coletar? Não. Então, quando chega esse tipo de informação a gente sempre indica que a empresa tenha um procedimento diferenciado. Por exemplo, lá no site, no Trabalho Conosco põe um formulário, para que a pessoa só coloque a informação que você precisa saber.
+
+Diminui o risco, gente, até, de que essa pessoa venha dizer que foi discriminada, por exemplo. Por alguma informação que ela mesma colocou. Então, coletar o mínimo necessário, diminui vários riscos.
+
+Às vezes, não é possível. Às vezes, a empresa realmente utiliza o currículo. As empresas que fazem esse recrutamento e seleção elas também estão ajustando os seus formulários.
+
+Mas, se vem o currículo e tá lá aberto o que a gente pode fazer para mitigar risco? Guardar pelo tempo mínimo necessário. Não, de repente, se eu vou pegar as informações e passar para um sistema não passar as informações desnecessárias, e assim por diante. Mas, via de regra aqui, a gente tem que confirmar se, de fato, essas informações são necessárias.
+
+Outro ponto, aqui a gente fala de gênero, Estado Civil. Entender o que, de fato, a empresa quer com essas informações. Se tem uma política de equidade de gênero pode fazer sentido, tá? Mas, pode não fazer.
+
+Então, questionar, entender a minúcia. E, na hora de eu dar transparência eu fazer com que o titular, ele também saiba dessas questões que estão lá na cabeça do recrutador mas, ele não expõe os motivos. Então, a gente tem que fazer essa análise.
+
+Teve uma empresa, setor de energia que eles coletavam altura e peso. E eu falei, poxa, mas não é necessário. Já logo pintei de vermelhinho, coloquei lá o risco.
+
+E aí, na fase de implementação quando a gente foi fazer essa reavaliação eles falaram, não, Denise, a gente realmente precisa. Por quê? As pessoas vão subir numa escada que ela tem um limite de peso vão estar em um local que tem um limite de altura mínimo e máxima e eles fazem a manutenção da afiação elétrica. Então, isso precisa.
+
+Ah, então, tudo bem. Só que, na hora de elaborar minha política eu vou indicar o porquê que eu estou metendo essa informação. Se é porque a empresa confecciona os uniformes dos seus colaboradores.
+
+Eu tenho que dar transparência. Então, para eu dar transparência, eu preciso ter esse entendimento. Se esse entendimento não está claro para mim no mapeamento aponto o risco e vamos avaliá-lo lá na frente.
+
+O que mais? Vamos lá. Então, tem aqui o risco de coleta de dado excessivo. Eu sempre coloco, gente, o uso das palavras é muito importante aqui, tá? Eu não falo o seguinte Ah, está coletando dado que não precisa.
+
+Eu escrevo assim, ó, possível utilização excessiva. Vamos avaliar, eu estou apontando um possível risco. Vamos avaliar juntos a partir de agora, né? Então, é isso.
+
+A forma como o dado foi coletado de novo a gente coloca para avaliar se tem compra de bases, né? Aqui não, está tudo certo, é agência de recrutamento. Mas, apesar disso, eu tenho um compartilhamento de dados com essa agência que eu preciso, né, que eu coloco aqui como risco que eu preciso olhar lá na frente. Ó, vocês indo lendo as nossas linhas de observação dos riscos e vendo o que acontece, né, dentro da empresa vai facilitando.
+
+E posso garantir para vocês, depois dessas linhas vocês nem vão precisar mais porque abater o olho na pergunta a hora que vem a resposta já mata o risco ali. O dado é compartilhado com terceiros? Sim, agência de recrutamento. Como é feito o compartilhamento? Por e-mail.
+
+Você compartilha com outros países? Sim, tem, ela utiliza o Google Drive que o servidor fica nos Estados Unidos. É apresentado para o titular algum tipo de informação sobre esse compartilhamento? Não, também tem aqui questões do princípio da transparência. Aí a gente vem para questões relacionadas à segurança, né de forma de armazenamento, armazenamento impresso backup, redundância de informações que isso a gente deixa para o pessoal de segurança avaliar mas eu coleto a informação, como falei para vocês.
+
+Se o dado é destruído? Não é destruído, não tem um prazo de retenção. O que é isso? E não tem também aqui, ó, revisão periódica de dados. O que acontece? Eu não tenho um processo de retenção e descarte de dados e de revisão dessas informações.
+
+Falou que tem decisão automatizada? Não. Tem uso para finalidades diversas? Não. Repositório de terceiros, Google Drive, que fica nos Estados Unidos.
+
+A gente já falou tudo isso naquela primeira aula, tá? Por isso que eu estou passando de uma maneira mais rápida só para a gente olhar as questões de riscos mesmo. E aí, depois que eu fui olhando para a minha linha lembrando de onde olhar os riscos e já dando uma pintadinha, tá? Faz do jeito que vocês quiserem, mas eu costumo pintar assim de vermelho para depois voltar aqui olhando. O que eu faço, tá? De novo, não é nada que a LGPD me exige.
+
+A lei exige que eu tenha um mapeamento de dados só. Só que eu, quando eu faço um programa de adequação à lei eu me comprometo com a empresa de avaliar em que pé ela está e o que precisa ser feito. Então, eu vou analisar os riscos para ela, né? E de novo, a LGPD é uma lei baseada em riscos.
+
+Então, o que eu faço para facilitar? Eu coloco aqui os riscos, os principais riscos e eu vou fazendo um xizinho. Tem ausência de lei de estimação? Sim, por quê? Porque apesar de eu ter recomendado a base legal eu ainda não tenho a confirmação da empresa de que aquela base legal que eles vão utilizar eu vou dar todos os fundamentos e eles vão tomar a decisão. Após tomar a decisão, minha documentação de diagnóstico vira uma documentação final, né? Eu apresento uma primeira parte em formato de minuto ainda.
+
+Tem dados de crianças e adolescentes? Não. Tem possível utilização excessiva de dados? Sim, né? A gente tem que avaliar a real necessidade daquela coleta de gênero, nacionalidade naturalidade, estado civil. Muitas vezes o RH fala assim Ah, eu já coleto tudo porque se for escolhido, já topou a informação.
+
+E é isso que a gente tem que pensar e tentar reduzir. Tem falta de transparência? Sim, precisa elaborar política de privacidade. Aqui nesse caso, gente, é externa, tá? Por quê? Porque como não é colaborador ainda currículos, a gente coloca no site ou em algum local de maneira externa.
+
+Tem transferência internacional? Sim, para os Estados Unidos. Tem compartilhamento com terceiros? Agência de Recrutamento e Seleção. Armazena por prazo indeterminado? Sim.
+
+Não tem utilização para finalidade diversa? Não tem compartilhamento com empresas do grupo? Não tem aquisição indireta de dados? Não tem decisão automatizada? Não tem profiling? Não tem background check? Todos esses riscos a gente falou na aula passada, tá? Então, conforme vocês vão colocando aqui, gente a gente vai analisando a quantidade de riscos ó, essa linha aqui, ela vai preenchendo através de fórmula, tá? Por que está dando mais? Porque a gente tem outros dois processos de exemplos para vocês verem depois e irem acompanhando, tá? A gente tem dois processos do marketing onde a gente fez a mesma coisa de colocar o vermelhinho e ir olhando os riscos. Então, ele foi somando todos os riscos que a gente tem aqui nesse datamap modelo de avaliação de riscos. Vocês ficam um pouco tontos, né? O passando eu também fico um pouco aqui.
+
+Mas, depois que eu fiz esses xzinhos todos, gente por que isso daqui vai me ajudar? Porque eu olhei toda a linha, fui colocando os riscos e agora eu vou colocar risco por risco aqui. Gente, seguinte. Quando eu coloco esses riscos aqui aqui, olha, ele vai criar a fórmula ele já sai se é alto, médio ou baixo, tá? É que aqui ele acabou tirando a fórmula por algum motivo.
+
+Mas eu já olho na... arrumo essa planilha, organizo essa planilha aqui pra vocês quando vocês abrirem, baixarem do... da plataforma, ela vai estar corretinha, tá? Então, o que eu vou fazer aqui, ó? No meu ID01 Tá vendo aqui, ó? Todos esses aqui. Eu vou simplesmente vir aqui colocar a descrição de risco por risco que eu identifiquei e depois, gente, que fizer o primeiro é só copia e cola nos demais processos, tá? Aquilo que fizer sentido. Colocar o impacto, a probabilidade e aí a gente falou na aula passada, né? Se não tem dado pessoal sensível eu costumo deixar no impacto probabilidade médio, né? E quando tem algo, né? Que a gente, por exemplo, ainda não tem uma definição da lei específica como transferência internacional eu ainda deixo com um risco baixo mas eu vou colocando aqui entendendo o impacto e probabilidade naquela situação específica e aí eu coloco qual é a categoria do risco que eu tenho e o plano de ação específico, tá? Tudo isso daqui, gente, agora a fundamentação a gente viu na aula passada.
+
+Eu só tô colocando pra vocês aqui, por quê? Porque na fundamentação a gente conversou sobre o tipo de risco mas como que dentro de um projeto de adequação eu mostro isso pro cliente? Eu coloco aqui nessa tabela. E ela vai me trazer também, já tem a fórmula ela vai me trazer como que ficou aqui a quantidade de riscos alto, médio e baixo a partir da quantidade que eu indico aqui, tá bom? Então, quando a gente vai fazer agora nas nossas próximas aulas a gente vai ter avaliação de gaps dos requisitos da lei vou mostrar pra vocês a planilha de gaps e depois a gente vai apresentar o relatório onde eu pego esses riscos e indico pro cliente onde eles estão lá. Essas colunas aqui, gente eu não apresento pro cliente, tá? Depois que eu utilizei eu tiro da versão do cliente e fico só com a versão dos riscos.
+
+Ah, na categoria de riscos a gente já incluiu todas as categorias é só colocar lá qual categoria que a gente tá se referindo, tá? Então, qual é o risco aqui? Por que que eu coloco aqui na descrição do risco detalhada? Porque eu já escrevo os dados pessoais compartilhados com agência de recrutamento e seleção o risco macro é o compartilhamento de dados com terceiros sem salvaguardas como nós mencionamos na outra aula. Mas aqui eu coloco quais os dados que eu acho excessivos porque eu vou trazer pra cá as especificidades. Cada área depois consegue olhar os seus pontos e o DPO ou a empresa que estiver apoiando na implementação vai conseguir atacar ponto a ponto de uma maneira mais fácil.
+
+Aqui também a gente colocou pra vocês em vermelho é algo que vocês não precisam mostrar pro cliente, tá? É só pra vocês saberem qual que é o número correspondente do ID no mapeamento a indicação do motivo pelo qual a atividade é um risco o grau de impacto de 1 a 3 conforme a aula anterior a multiplicação que vai dar risco alto, médio ou baixo. O tipo de risco que a gente tem as categorias e as ações pra mitigar os riscos. Gente, essa tabela aqui, essa planilha é um trabalho minucioso a gente sabe, ainda mais quem é advogado que a gente não tem todo esse perfil de lidar com planilhas, né? A maioria de nós, pelo menos.
+
+Então a gente foi na forma mais simples possível criando essas fórmulas pra que a gente consiga ter essa visão geral. Quando o cliente tem essa visão geral que a gente entendeu quais são os riscos o que é risco alto onde a gente tem que ir com maior rapidez porque a criticidade é maior isso aqui vai trazer um conforto pro cliente isso mostra que você fez um diagnóstico na unha mesmo, sabe? Muito bem feito. Não fez um diagnóstico assim pra inglês ver.
+
+Então, a gente tem também o mão na massa onde vocês vão identificar os riscos indicar os riscos dessa forma e achar a tabela do risco de vocês. Quando vocês fizerem isso a gente tem a correção ali do mão na massa vocês vão conseguir ver como que ficaria o final já corrigido e aí vocês vão começar a entender as dúvidas que vocês têm nesse assunto. De qualquer forma, dúvidas mandem pra gente nos grupos ou inclui aqui, né? Quem não tá em um grupo de WhatsApp de alunos inclui aqui na plataforma tem a ferramenta comentários que vocês podem colocar as dúvidas de vocês e a gente já recebe lá um e-mail que chegou dúvida e a gente já responde.
+
+Tá bom? Então era isso. Aqui no inventário também, como vocês viram tem outros dois exemplos pra vocês passarem por eles irem entendendo como que a gente faz essa avaliação pra que quando chegue lá na hora que vocês fazerem os projetos de vocês pra que isso fique um pouco mais claro pra que vocês tenham isso de uma forma mais concreta, mais palpável. Tá bom? Bom, é isso.
+
+Próxima aula, então, nós vamos falar dos gaps. Nos vemos lá e até mais.
+
+
+Transcrito por TurboScribe. Atualize para Ilimitado para remover esta mensagem.
