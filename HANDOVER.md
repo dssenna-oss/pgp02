@@ -26,6 +26,12 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-2. **Diagnóstico de Privacidade (Checkpoint 10)** — COMPLETO
+   - `lib/diagnostico-scoring.ts`: engine pura — 4 sub-scores ponderados (GAP 40% · Riscos 30% · Bases 20% · Inventário 10%) → score final 0-100; gera recomendações priorizadas combinando bases legais faltantes + riscos identificados/sem plano + pontos de melhoria do GAP
+   - `GET /api/diagnostico`: roda 3 queries em paralelo + scoring; DPO-only
+   - `/dashboard/diagnostico`: hero com score grande + 4 cards de pilares (clicáveis pra tela de origem) + lista priorizada com badges ALTA/MEDIA/BAIXA × BASES/RISCO/GAP + bloco de transparência explicando como o score é calculado
+   - Link na sidebar (DPO-only) com ícone Activity
+
 -1. **Detalhamento de Riscos (Checkpoint 6)** — COMPLETO
    - `lib/riscos-catalog.ts`: matriz 3×3 Probabilidade × Impacto → Severidade (Alto/Médio/Baixo); helpers `computeSeverity`, `encodeSeverity`/`decodeSeverity` (formato "P:M;I:A;S:ALTO" no campo `severityLevel` existente — sem migration)
    - APIs: `GET/PATCH /api/inventario/[id]/risco/[riskCode]` (1 risco por vez)
@@ -129,7 +135,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 7 | **Visão de Riscos consolidada** (dashboard com gráficos) | depois |
 | 8 | **Exportação Excel consolidada do Inventário** (3 abas igual modelo) | depois |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
-| 10 | Diagnóstico de Privacidade (consolidador) | depois |
+| 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
 | 11+ | Plano de Ação · Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
 ---

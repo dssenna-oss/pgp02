@@ -26,7 +26,8 @@ import {
   Library,
   ListChecks,
   MessagesSquare,
-  Scale
+  Scale,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -208,6 +209,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Diagnóstico macro de adequação à LGPD",
       href: "/dashboard/gap-analysis",
       icon: ClipboardList,
+      dpoOnly: true,
+    },
+    {
+      name: "Diagnóstico de Privacidade",
+      description: "Visão executiva consolidada (score + recomendações)",
+      href: "/dashboard/diagnostico",
+      icon: Activity,
       dpoOnly: true,
     },
     {
