@@ -17,6 +17,7 @@
 --   * scripts/_migrate-gap.sql   (Etapa 8 — GAP Analysis: gap_answers + gap_snapshots)
 --   * scripts/_migrate-gap-notes.sql (Etapa 9 — Polimento C5: campo notes em gap_answers)
 --   * scripts/_migrate-action-plan.sql (Etapa 10 — Checkpoint 11: action_plans refatorada)
+--   * scripts/_migrate-policies.sql    (Etapa 11 — Checkpoint 12: policies + policy_versions + Company.slug)
 -- ============================================================
 
 BEGIN;
@@ -452,6 +453,63 @@ CREATE INDEX IF NOT EXISTS "action_plans_companyId_assigneeId_idx"
 
 CREATE INDEX IF NOT EXISTS "action_plans_companyId_dueDate_idx"
   ON "action_plans"("companyId", "dueDate");
+
+-- ====================================================================
+-- ETAPA 11 — Checkpoint 12: Políticas (slug + policies + policy_versions)
+-- ====================================================================
+
+ALTER TABLE "companies"
+  ADD COLUMN IF NOT EXISTS "slug" TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "companies_slug_key"
+  ON "companies"("slug");
+
+CREATE TABLE IF NOT EXISTS "policies" (
+  "id"               TEXT PRIMARY KEY,
+  "companyId"        TEXT NOT NULL,
+  "type"             TEXT NOT NULL,
+  "title"            TEXT NOT NULL,
+  "slug"             TEXT NOT NULL,
+  "status"           TEXT NOT NULL DEFAULT 'RASCUNHO',
+  "currentContent"   TEXT NOT NULL,
+  "publishedContent" TEXT,
+  "currentVersion"   INTEGER NOT NULL DEFAULT 0,
+  "publishedAt"      TIMESTAMP(3),
+  "publishedById"    TEXT,
+  "createdById"      TEXT NOT NULL,
+  "createdAt"        TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"        TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "policies_companyId_fkey"
+    FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE,
+  CONSTRAINT "policies_publishedById_fkey"
+    FOREIGN KEY ("publishedById") REFERENCES "users"("id") ON DELETE SET NULL,
+  CONSTRAINT "policies_createdById_fkey"
+    FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "policies_companyId_type_slug_key"
+  ON "policies"("companyId", "type", "slug");
+CREATE INDEX IF NOT EXISTS "policies_companyId_status_idx"
+  ON "policies"("companyId", "status");
+CREATE INDEX IF NOT EXISTS "policies_companyId_type_idx"
+  ON "policies"("companyId", "type");
+
+CREATE TABLE IF NOT EXISTS "policy_versions" (
+  "id"            TEXT PRIMARY KEY,
+  "policyId"      TEXT NOT NULL,
+  "version"       INTEGER NOT NULL,
+  "content"       TEXT NOT NULL,
+  "changeLog"     TEXT,
+  "publishedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "publishedById" TEXT NOT NULL,
+  CONSTRAINT "policy_versions_policyId_fkey"
+    FOREIGN KEY ("policyId") REFERENCES "policies"("id") ON DELETE CASCADE,
+  CONSTRAINT "policy_versions_publishedById_fkey"
+    FOREIGN KEY ("publishedById") REFERENCES "users"("id") ON DELETE NO ACTION
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "policy_versions_policyId_version_key"
+  ON "policy_versions"("policyId", "version");
+CREATE INDEX IF NOT EXISTS "policy_versions_policyId_publishedAt_idx"
+  ON "policy_versions"("policyId", "publishedAt");
 
 COMMIT;
 

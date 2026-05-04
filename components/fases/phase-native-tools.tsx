@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Target,
   CalendarDays,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
+ *   - fase-6 → Políticas LGPD
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -43,6 +45,9 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "fase-5") {
     return <Fase5Tools />;
   }
+  if (phase === "fase-6") {
+    return <Fase6Tools />;
+  }
   // Outras fases ainda sem mini-apps nativos.
   return null;
 }
@@ -50,7 +55,12 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 /** Indica se uma fase tem ferramentas nativas (pra `PhasePracticalLinks`
  * decidir se mostra ou não a mensagem "nenhum link adicionado"). */
 export function phaseHasNativeTools(phase: string): boolean {
-  return phase === "fase-3" || phase === "fase-4" || phase === "fase-5";
+  return (
+    phase === "fase-3" ||
+    phase === "fase-4" ||
+    phase === "fase-5" ||
+    phase === "fase-6"
+  );
 }
 
 // ============================================================
@@ -514,6 +524,120 @@ function Fase5Tools() {
           total === 0
             ? "Nenhuma ação cadastrada. Use \"Importar pendentes\" pra criar ações automaticamente a partir do GAP, Riscos e Bases Legais."
             : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 6 — Políticas LGPD
+// ============================================================
+
+interface PoliticasResp {
+  items: Array<{ id: string; status: string; type: string; currentContent: string; publishedContent: string | null }>;
+  stats: {
+    total: number;
+    byStatus: { RASCUNHO: number; PUBLICADA: number; ARQUIVADA: number };
+    outdated: number;
+  };
+}
+
+function Fase6Tools() {
+  const [pol, setPol] = useState<PoliticasResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/politicas");
+        if (res.ok) {
+          setPol(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = pol?.stats.total ?? 0;
+  const publicadas = pol?.stats.byStatus.PUBLICADA ?? 0;
+  const rascunhos = pol?.stats.byStatus.RASCUNHO ?? 0;
+  const outdated = pol?.stats.outdated ?? 0;
+
+  // Cor: neutral = nada; success = pelo menos 1 publicada e nenhuma com
+  // mudanças não publicadas; warning = tem rascunho ou divergência.
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : total === 0
+      ? "neutral"
+      : publicadas > 0 && outdated === 0 && rascunhos === 0
+        ? "success"
+        : "warning";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<FileText className="h-6 w-6" />}
+        iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+        title="Políticas LGPD"
+        description="Aviso de privacidade, termos de uso, política de cookies e outras. Templates oficiais já preenchidos com os dados da sua organização, prontos pra publicar em URL pública."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: total > 0 ? "Abrir Políticas" : "Criar primeira política",
+          href: "/dashboard/politicas",
+        }}
+        stats={
+          forbidden
+            ? []
+            : pol && total > 0
+              ? [
+                  {
+                    label: "políticas",
+                    value: total,
+                    icon: <FileText className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: "publicadas",
+                    value: publicadas,
+                    color: "emerald",
+                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                  },
+                  ...(rascunhos > 0
+                    ? [
+                        {
+                          label: "em rascunho",
+                          value: rascunhos,
+                          color: "amber" as const,
+                          icon: <Clock className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(outdated > 0
+                    ? [
+                        {
+                          label: "com mudanças não publicadas",
+                          value: outdated,
+                          color: "red" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : total === 0
+              ? "Comece pelos 3 mais comuns: Aviso de Privacidade, Termos de Uso e Política de Cookies."
+              : undefined
         }
       />
     </div>

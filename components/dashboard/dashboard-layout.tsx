@@ -28,7 +28,8 @@ import {
   MessagesSquare,
   Scale,
   Activity,
-  Target
+  Target,
+  FileText as FileTextIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -225,6 +226,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/plano-acao",
       icon: Target,
       // Visível também pra Contribuidor (vê só ações onde é responsável)
+    },
+    {
+      name: "Políticas",
+      description: "Aviso de privacidade, termos, cookies e outras",
+      href: "/dashboard/politicas",
+      icon: FileTextIcon,
+      dpoOnly: true,
     },
     {
       name: "Bases Legais",

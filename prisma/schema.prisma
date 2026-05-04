@@ -84,6 +84,12 @@ model User {
   assignedActions ActionPlan[] @relation("AssignedActions")
   createdActions  ActionPlan[] @relation("CreatedActions")
 
+  // Políticas (Checkpoint 12) — quem criou e quem publicou cada
+  // política/versão
+  createdPolicies   Policy[]        @relation("PolicyCreatedBy")
+  publishedPolicies Policy[]        @relation("PolicyPublishedBy")
+  publishedVersions PolicyVersion[] @relation("PolicyVersionPublishedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -93,6 +99,10 @@ model User {
 model Company {
   id                String   @id @default(cuid())
   companyName       String
+  /// Slug único da org pra usar em URLs públicas (ex: /p/<slug>/privacidade).
+  /// Se null, a página pública não funciona — só rota interna. Gerado de
+  /// `companyName` no primeiro acesso à tela de Políticas (Checkpoint 12).
+  slug              String?  @unique
   tradeName         String?
   cnpj              String?  @unique
   address           String?
@@ -125,6 +135,7 @@ model Company {
   gapAnswers        GapAnswer[]
   gapSnapshots      GapSnapshot[]
   actionPlans       ActionPlan[]
+  policies          Policy[]
   ripds            RIPD[]
   documents        Document[]
   incidents        Incident[]
@@ -613,6 +624,89 @@ model ActionPlan {
   @@index([companyId, assigneeId])
   @@index([companyId, dueDate])
   @@map("action_plans")
+}
+
+/// Políticas LGPD da organização (Checkpoint 12). Documentos jurídicos
+/// gerados a partir de templates: política de privacidade externa
+/// (site), política interna, termos de uso, política de cookies, etc.
+///
+/// Cada `Policy` é um documento "vivo" com 1 conteúdo de rascunho e
+/// histórico de versões publicadas (`PolicyVersion`). Quando o DPO
+/// publica, snapshot do `currentContent` vira nova `PolicyVersion` e
+/// `publishedContent` é atualizado.
+///
+/// `slug` é único por (companyId, type) — pra construir URL pública
+/// `/p/<companySlug>/<policySlug>` (ex: `/p/lgpd-pgp/privacidade`).
+model Policy {
+  id          String  @id @default(cuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Tipo da política — define template inicial e tela pública. Enum:
+  /// AVISO_PRIVACIDADE_EXTERNO | POLITICA_PRIVACIDADE_INTERNO |
+  /// NORMA_PRIVACIDADE | TERMOS_USO | POLITICA_COOKIES |
+  /// POLITICA_TERCEIROS | POLITICA_RETENCAO | POLITICA_TREINAMENTO |
+  /// POLITICA_TRANSFERENCIA | OUTRA
+  type        String
+
+  title       String
+  /// Slug interno desta política (pra URL pública). Único por (company, type).
+  slug        String
+
+  /// Status: RASCUNHO | PUBLICADA | ARQUIVADA
+  status      String  @default("RASCUNHO")
+
+  /// Conteúdo de rascunho (markdown). Sempre editável.
+  currentContent  String  @db.Text
+  /// Conteúdo publicado (snapshot da última publicação). null se nunca
+  /// foi publicada. Vai pra URL pública.
+  publishedContent String? @db.Text
+
+  /// Versão atual publicada (number). Increment a cada `publish`.
+  currentVersion  Int     @default(0)
+
+  /// Auditoria de publicação
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("PolicyPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  /// Quem criou
+  createdById String
+  createdBy   User     @relation("PolicyCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// Histórico de versões publicadas
+  versions    PolicyVersion[]
+
+  @@unique([companyId, type, slug])
+  @@index([companyId, status])
+  @@index([companyId, type])
+  @@map("policies")
+}
+
+/// Snapshot de uma versão publicada de Policy. Cada `publish` cria 1
+/// linha aqui — preserva o que foi publicado em cada momento, pra
+/// auditoria, comparação e possível rollback.
+model PolicyVersion {
+  id          String  @id @default(cuid())
+  policyId    String
+  policy      Policy  @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version     Int
+  /// Conteúdo congelado (markdown)
+  content     String  @db.Text
+  /// Changelog opcional (DPO descreve o que mudou)
+  changeLog   String?
+
+  publishedAt   DateTime @default(now())
+  publishedById String
+  publishedBy   User     @relation("PolicyVersionPublishedBy", fields: [publishedById], references: [id])
+
+  @@unique([policyId, version])
+  @@index([policyId, publishedAt])
+  @@map("policy_versions")
 }
 
 model RIPD {

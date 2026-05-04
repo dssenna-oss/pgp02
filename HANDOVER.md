@@ -26,6 +26,18 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-10. **Políticas (Checkpoint 12 — E1+E2+E3)** — COMPLETO
+   - **Schema novo**: `Policy` + `PolicyVersion` + `Company.slug` (Etapa 11)
+   - `lib/policies-helpers.ts`: enums, DTOs, slug helpers, `ensureCompanySlug` (gera slug único)
+   - `lib/policies-templates.ts`: **9 templates seed em markdown** (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra) com `{{placeholders}}` que são substituídos por dados da Company
+   - **APIs**: `GET/POST /api/politicas` · `GET/PATCH/DELETE /api/politicas/[id]` · `POST /api/politicas/[id]/publish` (cria PolicyVersion + atualiza publishedContent)
+   - **UI**: `/dashboard/politicas` (lista + KPIs + modal "criar de template" com 9 cards) · `/dashboard/politicas/[id]` (editor split markdown + preview ao vivo via `marked` + barra de ações com Salvar/Publicar/Histórico)
+   - **URL pública**: `/p/<companySlug>/<policySlug>` sem auth, layout limpo, header com logo+website da empresa, preview do markdown publicado, footer "Documento mantido por X · Gerado pelo PGP"
+   - **Versionamento**: cada publish cria PolicyVersion (snapshot do conteúdo + changeLog opcional). Modal "Histórico" lista versões com data e autor.
+   - **Sidebar** com ícone FileText (DPO-only)
+   - **Card "Coloque em prática" da Fase 6** (Execução) renderiza `Fase6Tools` com KPIs do Plano (total/publicadas/rascunhos/com-mudanças-não-publicadas)
+   - **Dependência nova:** `marked` (~50KB) — adicionado com `--legacy-peer-deps`
+
 -9. **Plano de Ação D3 (integrações + XLSX)** — COMPLETO
    - `lib/plano-acao-export.ts` + `GET /api/plano-acao/export` (DPO-only) + botão "Exportar Excel" no header
    - `POST /api/plano-acao` agora dedup por ref polimórfica: se já existe ação pra mesmo `(origin, ref*)`, devolve 409 com `existing.{id, title, status}`
@@ -161,6 +173,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 8 | `_migrate-gap.sql` | gap_answers + gap_snapshots (drop gap_analyses placeholder) | ✅ | ✅ |
 | 9 | `_migrate-gap-notes.sql` | gap_answers.notes (Polimento C5) | ✅ | ✅ |
 | 10 | `_migrate-action-plan.sql` | action_plans refatorada (Checkpoint 11 — Plano de Ação institucional) | ✅ | ✅ |
+| 11 | `_migrate-policies.sql` | policies + policy_versions + Company.slug (Checkpoint 12 — Políticas) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -186,7 +199,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
-| 12+ | Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
+| 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 |
+| 13+ | Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
 ---
 
