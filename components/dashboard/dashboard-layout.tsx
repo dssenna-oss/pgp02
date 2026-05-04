@@ -27,7 +27,8 @@ import {
   ListChecks,
   MessagesSquare,
   Scale,
-  Activity
+  Activity,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -217,6 +218,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/diagnostico",
       icon: Activity,
       dpoOnly: true,
+    },
+    {
+      name: "Plano de Ação",
+      description: "Ações institucionais com responsável e prazo",
+      href: "/dashboard/plano-acao",
+      icon: Target,
+      // Visível também pra Contribuidor (vê só ações onde é responsável)
     },
     {
       name: "Bases Legais",

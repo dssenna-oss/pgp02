@@ -16,6 +16,7 @@
 --   * scripts/_migrate-forum.sql (Etapa 7 — Fórum + Mensagens diretas)
 --   * scripts/_migrate-gap.sql   (Etapa 8 — GAP Analysis: gap_answers + gap_snapshots)
 --   * scripts/_migrate-gap-notes.sql (Etapa 9 — Polimento C5: campo notes em gap_answers)
+--   * scripts/_migrate-action-plan.sql (Etapa 10 — Checkpoint 11: action_plans refatorada)
 -- ============================================================
 
 BEGIN;
@@ -406,6 +407,51 @@ CREATE INDEX IF NOT EXISTS "gap_snapshots_companyId_createdAt_idx"
 
 ALTER TABLE "gap_answers"
   ADD COLUMN IF NOT EXISTS "notes" TEXT;
+
+-- ====================================================================
+-- ETAPA 10 — Checkpoint 11: Plano de Ação (action_plans refatorada)
+-- ====================================================================
+-- DROP da tabela legacy do Abacus + recria com schema novo (refs
+-- polimórficos pra GAP/Risco/Inventário). Em prod a tabela antiga
+-- pode estar vazia ou com seeds — sem valor de produção.
+
+DROP TABLE IF EXISTS "action_plans" CASCADE;
+
+CREATE TABLE "action_plans" (
+  "id"             TEXT PRIMARY KEY,
+  "companyId"      TEXT NOT NULL,
+  "title"          TEXT NOT NULL,
+  "description"    TEXT,
+  "notes"          TEXT,
+  "origin"         TEXT NOT NULL DEFAULT 'MANUAL',
+  "refGapCode"     TEXT,
+  "refRiskId"      TEXT,
+  "refInventoryId" TEXT,
+  "assigneeId"     TEXT,
+  "dueDate"        TIMESTAMP(3),
+  "priority"       TEXT NOT NULL DEFAULT 'MEDIA',
+  "status"         TEXT NOT NULL DEFAULT 'A_FAZER',
+  "completedAt"    TIMESTAMP(3),
+  "createdById"    TEXT NOT NULL,
+  "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"      TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "action_plans_companyId_fkey"
+    FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE,
+  CONSTRAINT "action_plans_assigneeId_fkey"
+    FOREIGN KEY ("assigneeId") REFERENCES "users"("id") ON DELETE SET NULL,
+  CONSTRAINT "action_plans_createdById_fkey"
+    FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION
+);
+
+CREATE INDEX IF NOT EXISTS "action_plans_companyId_status_idx"
+  ON "action_plans"("companyId", "status");
+
+CREATE INDEX IF NOT EXISTS "action_plans_companyId_assigneeId_idx"
+  ON "action_plans"("companyId", "assigneeId");
+
+CREATE INDEX IF NOT EXISTS "action_plans_companyId_dueDate_idx"
+  ON "action_plans"("companyId", "dueDate");
 
 COMMIT;
 

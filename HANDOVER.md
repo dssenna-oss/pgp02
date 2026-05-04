@@ -26,6 +26,15 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-8. **Plano de Ação institucional (Checkpoint 11)** — COMPLETO (D1+D2; D3 integrações em outras telas pendente)
+   - **Schema novo**: `model ActionPlan` refatorado do placeholder Abacus. Campos: `title`/`description`/`notes` + `origin` (MANUAL|GAP|RISCO|BASES) + refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`) + `assigneeId` (User responsável) + `dueDate` + `priority` (ALTA|MEDIA|BAIXA) + `status` (A_FAZER|EM_ANDAMENTO|CONCLUIDA|CANCELADA) + `completedAt` + `createdById`
+   - Migration Etapa 10 — DROP+CREATE (descartou 2 seeds Abacus sem valor de produção)
+   - `lib/action-plan-helpers.ts`: enums + DTO + labels + classes Tailwind + `loadActionPlanAuth` (DPO opcional) + `computeActionStats`
+   - **3 APIs**: `GET/POST /api/plano-acao` (lista DPO=tudo / Contribuidor=próprias) · `GET/PATCH/DELETE /api/plano-acao/[id]` (DPO edita tudo, Contribuidor só status+notes nas próprias) · `POST /api/plano-acao/import` (auto-importa pendentes, idempotente)
+   - **UI** `/dashboard/plano-acao`: header com KPIs, 3 tabs (Em aberto/Concluídas/Cronograma agrupado por mês), filtros (busca+origem+prioridade), cards com checkbox quick-toggle de conclusão, botões editar/excluir, refs clicáveis pra origem
+   - **Form modal** com responsável (carrega de /api/team), prazo, prioridade, status, notas
+   - **Sidebar** com ícone Target — visível pra todos (Contribuidor vê só próprias)
+
 -7. **GAP — Comparar versões (Polimento C1)** — COMPLETO
    - `lib/gap-compare.ts`: engine pura `buildGapDiff(listA, listB)` que classifica mudanças em 5 tipos (IMPROVED / WORSENED / CHANGED / NEW / REMOVED) e calcula scores comparativos
    - `GET /api/gap/compare?a=&b=` — cada lado aceita "atual" ou ID de snapshot. DPO-only, valida ownership
@@ -141,6 +150,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 7 | `_migrate-forum.sql` | forum_posts + forum_replies + forum_post_reads | ✅ | ✅ |
 | 8 | `_migrate-gap.sql` | gap_answers + gap_snapshots (drop gap_analyses placeholder) | ✅ | ✅ |
 | 9 | `_migrate-gap-notes.sql` | gap_answers.notes (Polimento C5) | ✅ | ✅ |
+| 10 | `_migrate-action-plan.sql` | action_plans refatorada (Checkpoint 11 — Plano de Ação institucional) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -165,7 +175,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 8 | ~~**Exportação Excel consolidada do Inventário**~~ — 3 abas (INVENTÁRIO 84 cols + RISCOS + TAB. VISÃO DE RISCOS) gerado do zero via SheetJS, replica template oficial. Botão DPO-only no header de `/dashboard/inventario`. | ✅ FEITO 2026-05-04 |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
-| 11+ | Plano de Ação · Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
+| 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs (A fazer/Em andamento/Atrasadas/Vencendo), filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria automaticamente ações pra GAP/Riscos/Bases pendentes (idempotente). Refs polimórficos: `refGapCode`/`refRiskId`/`refInventoryId` com link clicável pra origem. | ✅ FEITO 2026-05-04 |
+| 12+ | Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
 ---
 

@@ -79,6 +79,11 @@ model User {
   gapAnswered   GapAnswer[]
   gapSnapshots  GapSnapshot[]
 
+  // Plano de Ação institucional (Checkpoint 11) — ações onde sou
+  // responsável vs onde criei
+  assignedActions ActionPlan[] @relation("AssignedActions")
+  createdActions  ActionPlan[] @relation("CreatedActions")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -558,27 +563,55 @@ model GapSnapshot {
   @@map("gap_snapshots")
 }
 
+/// Plano de Ação institucional — diferente das `Task` (que são pessoais).
+/// Lista oficial das ações que a organização precisa executar pra adequação
+/// LGPD, com responsável formal, prazo, prioridade. Pode ser criado
+/// manualmente pelo DPO ou auto-importado de:
+///   - GAP (controles NAO_ADERENTE/PARCIAL com Ponto de Melhoria)
+///   - Riscos (status IDENTIFICADO sem mitigação)
+///   - Bases Legais (processos APROVADOS sem base legal)
+///
+/// Refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`): só 1 fica
+/// preenchido por linha, conforme `origin`. Quando `origin = MANUAL`, todas
+/// as refs ficam null.
 model ActionPlan {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  action          String
-  description     String
-  objective       String
-  responsibleArea String
-  responsible     String
-  startDate       DateTime
-  endDate         DateTime
-  priority        String   // "Alta", "Média", "Baixa"
-  status          String   @default("Não Iniciado")
-  progress        Int      @default(0)
-  resources       String?
-  budget          Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String  @id @default(cuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  /// Conteúdo da ação
+  title       String
+  description String? @db.Text
+  notes       String? @db.Text
+
+  /// Origem: MANUAL | GAP | RISCO | BASES
+  origin      String  @default("MANUAL")
+  /// Refs polimórficos pra rastrear de onde a ação saiu
+  refGapCode      String? // GapAnswer.controlCode
+  refRiskId       String? // ProcessRisk.id
+  refInventoryId  String? // DataInventory.id
+
+  /// Responsável formal (User da org); null = ainda sem responsável
+  assigneeId  String?
+  assignee    User?   @relation("AssignedActions", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  /// Prazo (data limite) e prioridade ALTA|MEDIA|BAIXA
+  dueDate     DateTime?
+  priority    String   @default("MEDIA")
+
+  /// Ciclo de vida: A_FAZER | EM_ANDAMENTO | CONCLUIDA | CANCELADA
+  status      String   @default("A_FAZER")
+  completedAt DateTime?
+
+  /// Auditoria — quem criou (DPO)
+  createdById String
+  createdBy   User     @relation("CreatedActions", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, assigneeId])
+  @@index([companyId, dueDate])
   @@map("action_plans")
 }
 
