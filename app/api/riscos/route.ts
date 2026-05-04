@@ -48,6 +48,7 @@ export async function GET(_request: NextRequest) {
           status: true,
           autoSuggested: true,
           severityLevel: true,
+          identifiedAt: true,
         },
       },
     },
@@ -112,6 +113,52 @@ export async function GET(_request: NextRequest) {
     bySeverity.NONE += item.bySeverity.NONE;
   }
 
+  // bySeverityByCode: { BR: { ALTO, MEDIO, BAIXO, NONE }, BS: ..., ... }
+  const bySeverityByCode: Record<string, { ALTO: number; MEDIO: number; BAIXO: number; NONE: number }> = {};
+  // byStatus agregado: { IDENTIFICADO, EM_MITIGACAO, ACEITO, ELIMINADO }
+  const byStatusAgg: Record<string, number> = {
+    IDENTIFICADO: 0, EM_MITIGACAO: 0, ACEITO: 0, ELIMINADO: 0,
+  };
+  // topCriticos: riscos com severidade ALTO + status IDENTIFICADO (priorizando alta urgência)
+  const topCriticos: Array<{
+    processId: string;
+    processName: string;
+    setor: string | null;
+    riskCode: string;
+    identifiedAt: string;
+  }> = [];
+
+  for (const p of processes) {
+    for (const r of p.processRisks) {
+      // bySeverityByCode
+      if (!bySeverityByCode[r.riskCode]) {
+        bySeverityByCode[r.riskCode] = { ALTO: 0, MEDIO: 0, BAIXO: 0, NONE: 0 };
+      }
+      const dec = decodeSeverity(r.severityLevel);
+      const sev = dec?.severity;
+      if (sev === "ALTO") bySeverityByCode[r.riskCode].ALTO += 1;
+      else if (sev === "MEDIO") bySeverityByCode[r.riskCode].MEDIO += 1;
+      else if (sev === "BAIXO") bySeverityByCode[r.riskCode].BAIXO += 1;
+      else bySeverityByCode[r.riskCode].NONE += 1;
+
+      // byStatus
+      if (byStatusAgg[r.status] !== undefined) byStatusAgg[r.status] += 1;
+
+      // topCriticos
+      if (sev === "ALTO" && r.status === "IDENTIFICADO") {
+        topCriticos.push({
+          processId: p.id,
+          processName: p.serviceName,
+          setor: p.setor,
+          riskCode: r.riskCode,
+          identifiedAt: r.identifiedAt.toISOString(),
+        });
+      }
+    }
+  }
+  // ordena topCriticos por mais antigo (parado há mais tempo = mais crítico)
+  topCriticos.sort((a, b) => a.identifiedAt.localeCompare(b.identifiedAt));
+
   return NextResponse.json({
     items,
     stats: {
@@ -121,6 +168,9 @@ export async function GET(_request: NextRequest) {
       totalRisks,
       byCode,
       bySeverity,
+      bySeverityByCode,
+      byStatusAgg,
+      topCriticos: topCriticos.slice(0, 5),
     },
   });
 }

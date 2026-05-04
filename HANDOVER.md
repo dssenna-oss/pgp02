@@ -26,6 +26,11 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-5. **Visão de Riscos consolidada (Checkpoint 7)** — COMPLETO
+   - `/api/riscos` estendido: além dos `byCode`/`bySeverity` que já tinha, agora devolve `bySeverityByCode` (matriz tipo × severidade), `byStatusAgg` (contagem por status do ciclo de vida) e `topCriticos` (top 5 ALTO+IDENTIFICADO ordenados por mais antigos)
+   - Componente novo `components/riscos/riscos-visao-content.tsx`: 4 seções (severidade agregada com stacked bar, 4 cards de status, 13 barras horizontais por tipo de risco, top 5 críticos com link "Detalhar")
+   - Plugado como **3ª tab** "Visão consolidada" entre "Por processo" e "Da organização" no `riscos-dashboard-content.tsx`
+
 -4. **Exportação Excel do Inventário (Checkpoint 8)** — COMPLETO
    - `lib/inventario-export.ts`: gera XLSX do zero via SheetJS replicando o template oficial (3 abas: INVENTÁRIO 84 colunas com bloco BR-CE de Análise de Riscos + RISCOS 1 linha por ProcessRisk + TAB. VISÃO DE RISCOS com contagens por tipo × severidade)
    - `GET /api/inventario/export`: DPO-only, escopo APROVADOS
@@ -143,7 +148,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | # | Etapa | Status |
 |---|---|---|
 | 6 | ~~**Detalhamento de Riscos**~~ — classificação via matriz 3×3 Probabilidade × Impacto, plano com checklist de recomendações + texto livre, ref. legal específica, status do ciclo de vida. Botão "Detalhar" no card; nova tela `/dashboard/inventario/[id]/risco/[code]`; KPIs de severidade e filtros no `/dashboard/riscos`. | ✅ FEITO 2026-05-04 |
-| 7 | **Visão de Riscos consolidada** (dashboard com gráficos) | depois |
+| 7 | ~~**Visão de Riscos consolidada**~~ — 3ª aba "Visão consolidada" no `/dashboard/riscos` com stacked bars de severidade agregada + 4 cards de status do ciclo de vida + 13 barras por tipo de risco × severidade + top 5 críticos parados | ✅ FEITO 2026-05-04 |
 | 8 | ~~**Exportação Excel consolidada do Inventário**~~ — 3 abas (INVENTÁRIO 84 cols + RISCOS + TAB. VISÃO DE RISCOS) gerado do zero via SheetJS, replica template oficial. Botão DPO-only no header de `/dashboard/inventario`. | ✅ FEITO 2026-05-04 |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |

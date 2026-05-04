@@ -17,7 +17,9 @@ import {
   Clock,
   Sparkles,
   FileText,
+  BarChart3,
 } from "lucide-react";
+import RiscosVisaoContent from "./riscos-visao-content";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RISCOS_CATALOG, RISCOS_BY_CODE } from "@/lib/riscos-catalog";
@@ -45,6 +47,18 @@ interface ApiResponse {
     totalRisks: number;
     byCode: Record<string, number>;
     bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
+    bySeverityByCode: Record<
+      string,
+      { ALTO: number; MEDIO: number; BAIXO: number; NONE: number }
+    >;
+    byStatusAgg: Record<string, number>;
+    topCriticos: Array<{
+      processId: string;
+      processName: string;
+      setor: string | null;
+      riskCode: string;
+      identifiedAt: string;
+    }>;
   };
 }
 
@@ -113,14 +127,18 @@ export default function RiscosDashboardContent({
 
       {/* Tabs */}
       <Tabs defaultValue="por-processo" className="space-y-6">
-        <TabsList className="grid grid-cols-2 max-w-lg">
+        <TabsList className="grid grid-cols-3 max-w-2xl">
           <TabsTrigger value="por-processo">
             <FileText className="h-4 w-4 mr-2" />
-            Riscos por processo
+            Por processo
+          </TabsTrigger>
+          <TabsTrigger value="visao">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Visão consolidada
           </TabsTrigger>
           <TabsTrigger value="organizacao">
             <Building2 className="h-4 w-4 mr-2" />
-            Riscos da organização
+            Da organização
           </TabsTrigger>
         </TabsList>
 
@@ -287,7 +305,16 @@ export default function RiscosDashboardContent({
           )}
         </TabsContent>
 
-        {/* ========== Aba 2 — Da organização (GAP Analysis) ========== */}
+        {/* ========== Aba 2 — Visão consolidada (Checkpoint 7) ========== */}
+        <TabsContent value="visao">
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Carregando...</div>
+          ) : !data ? null : (
+            <RiscosVisaoContent stats={data.stats} />
+          )}
+        </TabsContent>
+
+        {/* ========== Aba 3 — Da organização (GAP Analysis) ========== */}
         <TabsContent value="organizacao">
           <Card>
             <CardContent className="p-6 sm:p-8 space-y-5">
