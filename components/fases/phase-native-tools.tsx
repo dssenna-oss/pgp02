@@ -14,6 +14,7 @@ import {
   Target,
   CalendarDays,
   FileText,
+  FileCheck2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ import { cn } from "@/lib/utils";
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
- *   - fase-6 → Políticas LGPD
+ *   - fase-6 → Políticas LGPD + RIPD institucional
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -531,7 +532,7 @@ function Fase5Tools() {
 }
 
 // ============================================================
-// Fase 6 — Políticas LGPD
+// Fase 6 — Políticas LGPD + RIPD institucional
 // ============================================================
 
 interface PoliticasResp {
@@ -543,7 +544,26 @@ interface PoliticasResp {
   };
 }
 
+interface RipdResp {
+  items: Array<{ id: string; status: string; createdBy: { id: string } | null }>;
+  stats: {
+    total: number;
+    byStatus: { RASCUNHO: number; EM_REVISAO: number; APROVADO: number; ARQUIVADO: number };
+    awaitingReview: number;
+    myDrafts: number;
+  };
+}
+
 function Fase6Tools() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <PoliticasCard />
+      <RipdCardTools />
+    </div>
+  );
+}
+
+function PoliticasCard() {
   const [pol, setPol] = useState<PoliticasResp | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -581,66 +601,158 @@ function Fase6Tools() {
         : "warning";
 
   return (
-    <div className="grid grid-cols-1 gap-4">
-      <ToolCard
-        icon={<FileText className="h-6 w-6" />}
-        iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
-        title="Políticas LGPD"
-        description="Aviso de privacidade, termos de uso, política de cookies e outras. Templates oficiais já preenchidos com os dados da sua organização, prontos pra publicar em URL pública."
-        progressColor={color}
-        loading={loading}
-        primaryAction={{
-          label: total > 0 ? "Abrir Políticas" : "Criar primeira política",
-          href: "/dashboard/politicas",
-        }}
-        stats={
-          forbidden
-            ? []
-            : pol && total > 0
-              ? [
-                  {
-                    label: "políticas",
-                    value: total,
-                    icon: <FileText className="h-3.5 w-3.5" />,
-                  },
-                  {
-                    label: "publicadas",
-                    value: publicadas,
-                    color: "emerald",
-                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
-                  },
-                  ...(rascunhos > 0
-                    ? [
-                        {
-                          label: "em rascunho",
-                          value: rascunhos,
-                          color: "amber" as const,
-                          icon: <Clock className="h-3.5 w-3.5" />,
-                        },
-                      ]
-                    : []),
-                  ...(outdated > 0
-                    ? [
-                        {
-                          label: "com mudanças não publicadas",
-                          value: outdated,
-                          color: "red" as const,
-                          icon: <AlertCircle className="h-3.5 w-3.5" />,
-                        },
-                      ]
-                    : []),
-                ]
-              : []
-        }
-        emptyHint={
-          forbidden
-            ? "Esta tela é trabalhada pelo DPO da organização."
-            : total === 0
-              ? "Comece pelos 3 mais comuns: Aviso de Privacidade, Termos de Uso e Política de Cookies."
-              : undefined
-        }
-      />
-    </div>
+    <ToolCard
+      icon={<FileText className="h-6 w-6" />}
+      iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+      title="Políticas LGPD"
+      description="Aviso de privacidade, termos de uso, política de cookies e outras. Templates oficiais já preenchidos com os dados da sua organização, prontos pra publicar em URL pública."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: total > 0 ? "Abrir Políticas" : "Criar primeira política",
+        href: "/dashboard/politicas",
+      }}
+      stats={
+        forbidden
+          ? []
+          : pol && total > 0
+            ? [
+                {
+                  label: "políticas",
+                  value: total,
+                  icon: <FileText className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "publicadas",
+                  value: publicadas,
+                  color: "emerald",
+                  icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                },
+                ...(rascunhos > 0
+                  ? [
+                      {
+                        label: "em rascunho",
+                        value: rascunhos,
+                        color: "amber" as const,
+                        icon: <Clock className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(outdated > 0
+                  ? [
+                      {
+                        label: "com mudanças não publicadas",
+                        value: outdated,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+      }
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : total === 0
+            ? "Comece pelos 3 mais comuns: Aviso de Privacidade, Termos de Uso e Política de Cookies."
+            : undefined
+      }
+    />
+  );
+}
+
+// ============================================================
+// RipdCardTools — RIPD institucional (vizinho do PoliticasCard)
+// ============================================================
+
+function RipdCardTools() {
+  const [ripd, setRipd] = useState<RipdResp | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // RIPD é visível pra DPO + Contribuidor (escopo filtrado server-side)
+        const res = await fetch("/api/ripd");
+        if (res.ok) setRipd(await res.json());
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = ripd?.stats.total ?? 0;
+  const aprovados = ripd?.stats.byStatus.APROVADO ?? 0;
+  const rascunhos = ripd?.stats.byStatus.RASCUNHO ?? 0;
+  const emRevisao = ripd?.stats.byStatus.EM_REVISAO ?? 0;
+
+  // Cor: neutral=zero; success=tem aprovado e nada em revisão/rascunho;
+  // warning=tem itens pendentes
+  const color: ToolCardColor =
+    total === 0
+      ? "neutral"
+      : aprovados > 0 && rascunhos === 0 && emRevisao === 0
+        ? "success"
+        : "warning";
+
+  return (
+    <ToolCard
+      icon={<FileCheck2 className="h-6 w-6" />}
+      iconColor="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40"
+      title="RIPD"
+      description="Relatório de Impacto à Proteção de Dados — documento institucional exigido pela LGPD pra processos de alto risco. 8 seções estruturadas, pré-populadas a partir do Inventário, Riscos, GAP e Plano de Ação."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: total > 0 ? "Abrir RIPDs" : "Criar primeiro RIPD",
+        href: "/dashboard/ripd",
+      }}
+      stats={
+        ripd && total > 0
+          ? [
+              {
+                label: "RIPDs",
+                value: total,
+                icon: <FileCheck2 className="h-3.5 w-3.5" />,
+              },
+              {
+                label: "aprovados",
+                value: aprovados,
+                color: "emerald",
+                icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+              },
+              ...(emRevisao > 0
+                ? [
+                    {
+                      label: "em revisão",
+                      value: emRevisao,
+                      color: "blue" as const,
+                      icon: <Clock className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+              ...(rascunhos > 0
+                ? [
+                    {
+                      label: "em rascunho",
+                      value: rascunhos,
+                      color: "amber" as const,
+                      icon: <AlertCircle className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+            ]
+          : []
+      }
+      emptyHint={
+        total === 0
+          ? "Crie o RIPD pros processos de alto risco: cadastre, vincule a um processo aprovado do Inventário e o documento nasce 80% pré-preenchido."
+          : undefined
+      }
+    />
   );
 }
 

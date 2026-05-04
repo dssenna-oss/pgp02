@@ -29,7 +29,8 @@ import {
   Scale,
   Activity,
   Target,
-  FileText as FileTextIcon
+  FileText as FileTextIcon,
+  FileCheck2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -60,6 +61,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * sobrecarregar o servidor.
    */
   const [forumUnread, setForumUnread] = useState<number | null>(null);
+  /**
+   * RIPDs pedindo ação do usuário (Checkpoint 13 / F3):
+   *   - DPO: RIPDs em EM_REVISAO aguardando aprovação
+   *   - Contribuidor: RIPDs próprios em RASCUNHO devolvidos com
+   *     `rejectionNote` (precisam ajuste e reenvio)
+   * Polling 60s; refresh imediato via `notifySidebarRefresh()`.
+   */
+  const [ripdPending, setRipdPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -106,19 +115,33 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchRipdPending = async () => {
+      try {
+        const r = await fetch("/api/ripd/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setRipdPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
+      void fetchRipdPending();
     };
 
     refreshAll();
     const taskId = setInterval(fetchAlerts, 60000);
     const forumId = setInterval(fetchForumUnread, 30000);
+    const ripdId = setInterval(fetchRipdPending, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
       clearInterval(taskId);
       clearInterval(forumId);
+      clearInterval(ripdId);
       offEvent();
     };
   }, []);
@@ -233,6 +256,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/politicas",
       icon: FileTextIcon,
       dpoOnly: true,
+    },
+    {
+      name: "RIPD",
+      description: "Relatório de Impacto à Proteção de Dados",
+      href: "/dashboard/ripd",
+      icon: FileCheck2,
+      // Visível pra DPO + Contribuidor (cada um vê o que pode editar)
     },
     {
       name: "Bases Legais",
@@ -357,6 +387,15 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     forumUnread > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
                         {forumUnread}
+                      </span>
+                    )}
+                  {/* Badge de RIPDs aguardando ação:
+                      DPO → contagem de EM_REVISAO; Contribuidor → próprios devolvidos. */}
+                  {item.href === "/dashboard/ripd" &&
+                    ripdPending !== null &&
+                    ripdPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {ripdPending}
                       </span>
                     )}
                 </span>

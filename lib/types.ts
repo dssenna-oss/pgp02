@@ -86,26 +86,6 @@ export interface ActionPlan {
   updatedAt: Date;
 }
 
-export interface RIPD {
-  id: string;
-  companyId: string;
-  processName: string;
-  processDescription: string;
-  dataTypes: string;
-  dataSubjects: string;
-  purpose: string;
-  legalBasis: string;
-  necessityAssessment: string;
-  proportionalityAssessment: string;
-  riskIdentification: string;
-  riskMitigation: string;
-  safeguards: string;
-  consultationDetails?: string | null;
-  monitoring: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface Document {
   id: string;
   companyId: string;
@@ -146,7 +126,6 @@ export type CompanyFormData = Omit<Company, 'id'>;
 export type DataInventoryFormData = Omit<DataInventory, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type RiskAssessmentFormData = Omit<RiskAssessment, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type ActionPlanFormData = Omit<ActionPlan, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
-export type RIPDFormData = Omit<RIPD, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type DocumentFormData = Omit<Document, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type IncidentFormData = Omit<Incident, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 

@@ -2,15 +2,19 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
-import RipdListContent from "@/components/ripd/ripd-list-content";
+import RipdEditorContent from "@/components/ripd/ripd-editor-content";
 
-export default async function RipdPage() {
+export default async function RipdEditorPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
   return (
     <DashboardLayout session={session}>
-      <RipdListContent />
+      <RipdEditorContent ripdId={params.id} />
     </DashboardLayout>
   );
 }

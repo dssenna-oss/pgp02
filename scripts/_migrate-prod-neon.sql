@@ -18,6 +18,7 @@
 --   * scripts/_migrate-gap-notes.sql (Etapa 9 — Polimento C5: campo notes em gap_answers)
 --   * scripts/_migrate-action-plan.sql (Etapa 10 — Checkpoint 11: action_plans refatorada)
 --   * scripts/_migrate-policies.sql    (Etapa 11 — Checkpoint 12: policies + policy_versions + Company.slug)
+--   * scripts/_migrate-ripd-v2.sql     (Etapa 12 — Checkpoint 13: ripds refatorada + ripd_versions)
 -- ============================================================
 
 BEGIN;
@@ -511,6 +512,69 @@ CREATE UNIQUE INDEX IF NOT EXISTS "policy_versions_policyId_version_key"
 CREATE INDEX IF NOT EXISTS "policy_versions_policyId_publishedAt_idx"
   ON "policy_versions"("policyId", "publishedAt");
 
+-- ====================================================================
+-- ETAPA 12 — Checkpoint 13: RIPD v2 institucional (ripds + ripd_versions)
+-- ====================================================================
+-- Refatora a `ripds` antiga (placeholder Abacus, 13 colunas texto-livre,
+-- 0 registros em prod verificado em 2026-05-04) pra v2 institucional:
+-- documento estruturado em 8 seções (JSON), vínculo opcional a processo
+-- do Inventário, fluxo de aprovação Contribuidor → DPO, versionamento
+-- por snapshot a cada aprovação.
+-- ====================================================================
+
+DROP TABLE IF EXISTS "ripd_versions" CASCADE;
+DROP TABLE IF EXISTS "ripds" CASCADE;
+
+CREATE TABLE "ripds" (
+  "id"                  TEXT PRIMARY KEY,
+  "companyId"           TEXT NOT NULL,
+  "inventoryId"         TEXT,
+  "title"               TEXT NOT NULL,
+  "status"              TEXT NOT NULL DEFAULT 'RASCUNHO',
+  "data"                JSONB NOT NULL,
+  "rejectionNote"       TEXT,
+  "approvedById"        TEXT,
+  "approvedAt"          TIMESTAMP(3),
+  "publishedContent"    JSONB,
+  "publishedAt"         TIMESTAMP(3),
+  "publishedVersionNum" INTEGER,
+  "createdById"         TEXT NOT NULL,
+  "createdAt"           TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"           TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "ripds_companyId_fkey"
+    FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE,
+  CONSTRAINT "ripds_inventoryId_fkey"
+    FOREIGN KEY ("inventoryId") REFERENCES "data_inventories"("id") ON DELETE SET NULL,
+  CONSTRAINT "ripds_approvedById_fkey"
+    FOREIGN KEY ("approvedById") REFERENCES "users"("id") ON DELETE SET NULL,
+  CONSTRAINT "ripds_createdById_fkey"
+    FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION
+);
+CREATE INDEX IF NOT EXISTS "ripds_companyId_status_idx"
+  ON "ripds"("companyId", "status");
+CREATE INDEX IF NOT EXISTS "ripds_companyId_createdById_idx"
+  ON "ripds"("companyId", "createdById");
+CREATE INDEX IF NOT EXISTS "ripds_inventoryId_idx"
+  ON "ripds"("inventoryId");
+
+CREATE TABLE "ripd_versions" (
+  "id"           TEXT PRIMARY KEY,
+  "ripdId"       TEXT NOT NULL,
+  "version"      INTEGER NOT NULL,
+  "content"      JSONB NOT NULL,
+  "changeLog"    TEXT,
+  "approvedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "approvedById" TEXT NOT NULL,
+  CONSTRAINT "ripd_versions_ripdId_fkey"
+    FOREIGN KEY ("ripdId") REFERENCES "ripds"("id") ON DELETE CASCADE,
+  CONSTRAINT "ripd_versions_approvedById_fkey"
+    FOREIGN KEY ("approvedById") REFERENCES "users"("id") ON DELETE NO ACTION
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "ripd_versions_ripdId_version_key"
+  ON "ripd_versions"("ripdId", "version");
+CREATE INDEX IF NOT EXISTS "ripd_versions_ripdId_approvedAt_idx"
+  ON "ripd_versions"("ripdId", "approvedAt");
+
 COMMIT;
 
 -- ====================================================================
@@ -547,6 +611,12 @@ SELECT 'gap_snapshots (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='gap_snapshots');
 SELECT 'gap_analyses dropped', NOT EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='gap_analyses');
+SELECT 'ripds (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='ripds');
+SELECT 'ripds.data (jsonb)', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='ripds' AND column_name='data' AND data_type='jsonb');
+SELECT 'ripd_versions (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='ripd_versions');
 
 \echo ''
 \echo '=== Inventários por status ==='

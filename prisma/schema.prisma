@@ -90,6 +90,11 @@ model User {
   publishedPolicies Policy[]        @relation("PolicyPublishedBy")
   publishedVersions PolicyVersion[] @relation("PolicyVersionPublishedBy")
 
+  // RIPD (Checkpoint 13) — quem criou, aprovou e congelou cada versão
+  createdRipds         Ripd[]        @relation("RipdCreatedBy")
+  approvedRipds        Ripd[]        @relation("RipdApprovedBy")
+  approvedRipdVersions RipdVersion[] @relation("RipdVersionApprovedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -136,7 +141,7 @@ model Company {
   gapSnapshots      GapSnapshot[]
   actionPlans       ActionPlan[]
   policies          Policy[]
-  ripds            RIPD[]
+  ripds            Ripd[]
   documents        Document[]
   incidents        Incident[]
   phaseDocuments   PhaseDocument[]
@@ -223,6 +228,11 @@ model DataInventory {
   // Tarefas pessoais opcionalmente vinculadas a este processo
   // ("Atualizar política do Sistema X", "Conferir compartilhamento Y").
   tasks Task[]
+
+  // RIPDs gerados a partir deste processo (Checkpoint 13). Cada
+  // processo pode ter 0..N RIPDs (raro ter mais de 1 ativo, mas
+  // versões + arquivados acumulam).
+  ripds Ripd[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -709,29 +719,92 @@ model PolicyVersion {
   @@map("policy_versions")
 }
 
-model RIPD {
-  id                    String   @id @default(cuid())
-  companyId             String
-  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  processName           String
-  processDescription    String
-  dataTypes             String   // Tipos de dados pessoais
-  dataSubjects          String   // Categorias de titulares
-  purpose               String   // Finalidades do tratamento
-  legalBasis            String   // Base legal
-  necessityAssessment   String   // Avaliação de necessidade
-  proportionalityAssessment String // Avaliação de proporcionalidade
-  riskIdentification    String   // Identificação de riscos
-  riskMitigation        String   // Medidas de mitigação
-  safeguards            String   // Salvaguardas
-  consultationDetails   String?  // Detalhes de consulta aos titulares
-  monitoring            String   // Monitoramento
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Relatório de Impacto à Proteção de Dados Pessoais — RIPD
+/// (Checkpoint 13). Documento institucional que descreve um processo
+/// de tratamento que pode gerar risco alto aos titulares, exigido pela
+/// LGPD (arts. 5º XVII, 38) e regulamentado pela Resolução CD/ANPD
+/// nº 2/2022.
+///
+/// Cada Ripd é vinculado (opcional) a um `DataInventory` aprovado que
+/// serve de fonte pra pré-população das 8 seções (engine em
+/// `lib/ripd-prepopulate.ts`).
+///
+/// Fluxo de aprovação:
+///   - Contribuidor cria → RASCUNHO; pode editar e "enviar pra
+///     revisão" (EM_REVISAO)
+///   - DPO em RASCUNHO/EM_REVISAO próprio: aprova diretamente
+///   - DPO em EM_REVISAO de Contribuidor: aprova ou rejeita com
+///     `rejectionNote` (volta pra RASCUNHO)
+///   - Aprovação cria `RipdVersion` (snapshot) e atualiza
+///     `publishedContent` + `publishedAt` + `publishedVersionNum`
+///
+/// Estrutura do `data` (JSON): tipada por `RipdData` em
+/// `lib/ripd-helpers.ts` — 8 seções fixas (s1..s8).
+model Ripd {
+  id                  String         @id @default(cuid())
+  companyId           String
+  company             Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  /// Processo do Inventário origem dos dados (opcional — RIPDs avulsos
+  /// permitidos, mas o normal é ter). SetNull se o processo for excluído.
+  inventoryId         String?
+  inventory           DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  title               String
+
+  /// "RASCUNHO" | "EM_REVISAO" | "APROVADO" | "ARQUIVADO"
+  status              String         @default("RASCUNHO")
+
+  /// Conteúdo das 8 seções — ver RipdData em lib/ripd-helpers.ts
+  data                Json
+
+  /// Nota do DPO ao rejeitar (volta pra RASCUNHO).
+  rejectionNote       String?        @db.Text
+
+  // ---------- Aprovação ----------
+  approvedById        String?
+  approvedBy          User?          @relation("RipdApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt          DateTime?
+
+  // ---------- Versionamento (snapshot a cada aprovação) ----------
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+  versions            RipdVersion[]
+
+  // ---------- Auditoria ----------
+  createdById         String
+  createdBy           User           @relation("RipdCreatedBy", fields: [createdById], references: [id])
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdById])
+  @@index([inventoryId])
   @@map("ripds")
+}
+
+/// Snapshot de uma versão aprovada do Ripd. 1 linha = 1 aprovação.
+/// Preserva o conteúdo congelado pra histórico, comparação e rollback.
+model RipdVersion {
+  id           String   @id @default(cuid())
+  ripdId       String
+  ripd         Ripd     @relation(fields: [ripdId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version      Int
+  /// Conteúdo congelado (mesma estrutura JSON do Ripd.data)
+  content      Json
+  /// Changelog opcional descrito pelo DPO ao aprovar.
+  changeLog    String?  @db.Text
+
+  approvedAt   DateTime @default(now())
+  approvedById String
+  approvedBy   User     @relation("RipdVersionApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([ripdId, version])
+  @@index([ripdId, approvedAt])
+  @@map("ripd_versions")
 }
 
 model Document {
