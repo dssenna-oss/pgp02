@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-03 (Checkpoint 9 — GAP Analysis completo) · **Branch atual:** `claude/heuristic-grothendieck-ec0317` (worktree)
+> **Última sessão:** 2026-05-04 (Checkpoints 6 + 7 + 8 + 10 + 11 + 12 + polimentos do GAP — todos em produção)
 >
-> **Migração Neon:** ✅ aplicada até a Etapa 7. Etapa 8 (GAP) **falta aplicar** no Neon antes do push.
-> **Push pra `main`:** depois de aplicar Etapa 8 no Neon — comando no fim deste arquivo.
+> **Migração Neon:** ✅ Etapas 2 → 11 aplicadas e validadas em prod (verificadas via psql em 2026-05-04).
+> **`origin/main`:** ✅ sincronizada com tudo o que foi feito. HEAD = `97013f8`.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -22,7 +22,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-03 (não-pushado)
+## 🆕 O que foi feito na sessão 2026-05-04 (já em produção)
 
 ### Features novas
 
@@ -218,8 +218,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 # 1. Iniciar Postgres portátil (caso não esteja rodando)
 & "E:\postgres\pgsql2\pgsql\bin\pg_ctl.exe" -D E:\postgres\data -l E:\postgres\logs\server.log start
 
-# 2. Ir pro worktree atual
-cd E:\_________PGP\.claude\worktrees\great-rhodes-8a9681
+# 2. Ir pro worktree atual (ou outra worktree)
+cd E:\_________PGP\.claude\worktrees\youthful-almeida-c304f7
 
 # 3. Garantir .env (worktrees não compartilham — copiar da pasta-mãe se for 1ª vez)
 test-path .env || cp ../../../.env .env
@@ -319,27 +319,24 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 
 ## 📋 Pendências organizacionais
 
-1. **Aplicar Etapa 8 (GAP) no Neon** ANTES do push pra `main`:
-   ```bash
-   "/e/postgres/pgsql2/pgsql/bin/psql.exe" "<NEON_URL>" -f scripts/_migrate-prod-neon.sql
-   ```
-   (O consolidado já inclui as Etapas 1-8 e é idempotente — rodar de novo não dói.)
-2. **Commitar e fazer push da sessão 2026-05-03** — Checkpoint 9 completo + features anteriores
-3. **Rotacionar senha do Neon** (segurança após compartilhamento em chat)
-4. **Revogar PAT temporário do GitHub** se ainda estiver ativo
+1. **Rotacionar senha do Neon** (segurança após compartilhamento em chat — duas vezes agora: 2026-05-03 e 2026-05-04)
+2. **Revogar PAT temporário do GitHub** se ainda estiver ativo
+3. **Validar prod** após o último deploy: acessar https://lgpd-pgp.vercel.app e conferir `/dashboard/gap-analysis`, `/dashboard/plano-acao`, `/dashboard/politicas` carregando sem erro
 
 ---
 
 ## 🔥 Resumo executivo
 
-Sessão gigante, várias features entregues:
-- ✅ **GAP Analysis (Checkpoint 9)** completo — schema + APIs + UI com tabs/dashboard + exportação Excel oficial + integração Fase 4 + sidebar
-- ✅ Análise de Riscos completa (Checkpoint 5)
-- ✅ Tarefas pessoais (caderno individual)
-- ✅ Fórum e Mensagens (comunicação na org)
-- ✅ Bases Legais consolidada (visão DPO)
-- ✅ Mini-apps embutidos na Fase 3 + Fase 4
-- ✅ Auditoria mobile completa
-- ✅ Migração Neon aplicada (Etapas 1-7) + ⚠ Etapa 8 (GAP) FALTA aplicar
+Sessão 2026-05-04 (anterior) entregou Checkpoints 6, 7, 8, 10, 11, 12 + polimentos C1/C2/C3/C4/C5 do GAP. Tudo já em produção:
 
-**Antes de fazer push pra `main`:** rodar `_migrate-prod-neon.sql` no Neon (idempotente).
+- ✅ **Checkpoint 6** — Detalhamento de Riscos (matriz 3×3 P×I, severidade encoded)
+- ✅ **Checkpoint 7** — Visão de Riscos consolidada (3ª aba do dashboard de Riscos)
+- ✅ **Checkpoint 8** — Exportação Excel do Inventário (3 abas, modelo oficial)
+- ✅ **Checkpoint 9** — GAP Analysis (sessão anterior — 119 controles, 28 domínios, snapshots, dashboard, export XLSX)
+- ✅ **Checkpoint 10** — Diagnóstico de Privacidade (score executivo 0-100, 4 pilares ponderados)
+- ✅ **Checkpoint 11** — Plano de Ação institucional (3 tabs, dedup polimórfico, XLSX, integração 3 telas)
+- ✅ **Checkpoint 12** — Políticas LGPD (9 templates, editor split, URL pública, versionamento, DOCX + PDF + Diff)
+- ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
+- ✅ Schema Neon: Etapas 2 → 11 todas aplicadas e validadas em prod
+
+**Próxima fronteira (Checkpoint 13+):** Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP — todos pendentes, sem ordem definida ainda.
