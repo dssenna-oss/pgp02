@@ -129,6 +129,41 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Dedup por ref polimórfica: se origin != MANUAL e já existe ação
+  // pra essa mesma ref, devolver 409 com link pra existente. Evita
+  // duplicatas quando o user clica "Adicionar ao Plano" 2x ou um
+  // item aparece em mais de uma tela.
+  if (origin !== "MANUAL") {
+    const dedupWhere: any = { companyId: user.companyId, origin };
+    if (origin === "GAP" && body.refGapCode) {
+      dedupWhere.refGapCode = String(body.refGapCode);
+    } else if (origin === "RISCO" && body.refRiskId) {
+      dedupWhere.refRiskId = String(body.refRiskId);
+    } else if (origin === "BASES" && body.refInventoryId) {
+      dedupWhere.refInventoryId = String(body.refInventoryId);
+    }
+    // Só checa se ao menos uma ref aplicável foi fornecida
+    if (
+      dedupWhere.refGapCode ||
+      dedupWhere.refRiskId ||
+      dedupWhere.refInventoryId
+    ) {
+      const existing = await prisma.actionPlan.findFirst({
+        where: dedupWhere,
+        select: { id: true, title: true, status: true },
+      });
+      if (existing) {
+        return NextResponse.json(
+          {
+            error: "Já existe uma ação no Plano para esse item",
+            existing,
+          },
+          { status: 409 },
+        );
+      }
+    }
+  }
+
   // Validar assigneeId pertence à mesma org (se passado)
   if (body.assigneeId) {
     const assignee = await prisma.user.findFirst({

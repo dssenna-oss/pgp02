@@ -31,6 +31,7 @@ import {
   Edit,
   Trash2,
   CalendarDays,
+  Download,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -200,6 +201,16 @@ export default function PlanoAcaoContent({ session, isDPO }: Props) {
         </div>
         {isDPO && (
           <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              asChild
+              title="Baixar XLSX consolidado do Plano de Ação"
+            >
+              <a href="/api/plano-acao/export" download>
+                <Download className="h-4 w-4 mr-1.5" />
+                Exportar Excel
+              </a>
+            </Button>
             <Button
               variant="outline"
               onClick={handleImport}

@@ -40,11 +40,13 @@ import {
   impactLabel,
   PROBABILITY_HINTS,
   IMPACT_HINTS,
+  decodeSeverity,
   type RiskCode,
   type RiskProbability,
   type RiskImpact,
   type RiskSeverity,
 } from "@/lib/riscos-catalog";
+import AddToActionPlanButton from "@/components/plano-acao/add-to-action-plan-button";
 
 interface Props {
   invId: string;
@@ -421,12 +423,34 @@ export default function DetalhamentoRiscoContent({ invId, riskCode }: Props) {
       </Card>
 
       {/* Ações */}
-      <div className="flex justify-end gap-2 sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 -mx-4 px-4 py-3">
+      <div className="flex justify-end gap-2 sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 -mx-4 px-4 py-3 flex-wrap">
         <Button asChild variant="ghost">
           <Link href={`/dashboard/inventario/${invId}/analise-riscos`}>
             Cancelar
           </Link>
         </Button>
+        {/* Adicionar ao Plano de Ação institucional — só se ainda
+            IDENTIFICADO (não faz sentido pra ACEITO/ELIMINADO/MITIGAÇÃO). */}
+        {risk.status === RISK_STATUS.IDENTIFICADO && (
+          <AddToActionPlanButton
+            title={`Tratar risco "${risk.riskCode}" em "${proc.serviceName}"`}
+            description={
+              probability && impact
+                ? `Risco classificado como ${severityLabel(computedSeverity)}, status Identificado. Detalhe da matriz: Probabilidade ${probabilityLabel(probability)}, Impacto ${impactLabel(impact)}.`
+                : "Risco identificado sem severidade classificada. Definir matriz Probabilidade × Impacto e plano de mitigação."
+            }
+            origin="RISCO"
+            refRiskId={risk.id}
+            refInventoryId={invId}
+            priority={
+              computedSeverity === "ALTO"
+                ? "ALTA"
+                : computedSeverity === "MEDIO"
+                  ? "MEDIA"
+                  : "BAIXA"
+            }
+          />
+        )}
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />

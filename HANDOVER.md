@@ -26,7 +26,17 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
--8. **Plano de Ação institucional (Checkpoint 11)** — COMPLETO (D1+D2; D3 integrações em outras telas pendente)
+-9. **Plano de Ação D3 (integrações + XLSX)** — COMPLETO
+   - `lib/plano-acao-export.ts` + `GET /api/plano-acao/export` (DPO-only) + botão "Exportar Excel" no header
+   - `POST /api/plano-acao` agora dedup por ref polimórfica: se já existe ação pra mesmo `(origin, ref*)`, devolve 409 com `existing.{id, title, status}`
+   - Componente reusável `<AddToActionPlanButton>`: estado idle → loading → added/exists ("No Plano" verde + checkmark)
+   - Plugado em 3 telas:
+     - **Diagnóstico**: botão em cada recomendação (refs vêm do scoring que agora popula `refGapCode/refRiskId/refInventoryId`)
+     - **GAP**: botão na barra de ações do controle expandido — só aparece quando aderencia=NAO_ADERENTE|PARCIAL E ponto de melhoria preenchido
+     - **Detalhamento de Risco individual**: botão na barra sticky — só quando status=IDENTIFICADO; prioridade derivada da severidade decoded
+   - `DiagnosticoInput.risks` ganha `id`; `Recommendation` ganha `refGapCode/refRiskId/refInventoryId`; `/api/diagnostico` traz `id` no select
+
+-8. **Plano de Ação institucional (Checkpoint 11)** — COMPLETO (D1+D2)
    - **Schema novo**: `model ActionPlan` refatorado do placeholder Abacus. Campos: `title`/`description`/`notes` + `origin` (MANUAL|GAP|RISCO|BASES) + refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`) + `assigneeId` (User responsável) + `dueDate` + `priority` (ALTA|MEDIA|BAIXA) + `status` (A_FAZER|EM_ANDAMENTO|CONCLUIDA|CANCELADA) + `completedAt` + `createdById`
    - Migration Etapa 10 — DROP+CREATE (descartou 2 seeds Abacus sem valor de produção)
    - `lib/action-plan-helpers.ts`: enums + DTO + labels + classes Tailwind + `loadActionPlanAuth` (DPO opcional) + `computeActionStats`
@@ -175,7 +185,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 8 | ~~**Exportação Excel consolidada do Inventário**~~ — 3 abas (INVENTÁRIO 84 cols + RISCOS + TAB. VISÃO DE RISCOS) gerado do zero via SheetJS, replica template oficial. Botão DPO-only no header de `/dashboard/inventario`. | ✅ FEITO 2026-05-04 |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
-| 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs (A fazer/Em andamento/Atrasadas/Vencendo), filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria automaticamente ações pra GAP/Riscos/Bases pendentes (idempotente). Refs polimórficos: `refGapCode`/`refRiskId`/`refInventoryId` com link clicável pra origem. | ✅ FEITO 2026-05-04 |
+| 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
 | 12+ | Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
 ---

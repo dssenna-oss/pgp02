@@ -57,6 +57,7 @@ export async function GET(_request: NextRequest) {
     prisma.processRisk.findMany({
       where: { companyId: user.companyId },
       select: {
+        id: true,
         dataInventoryId: true,
         riskCode: true,
         status: true,

@@ -32,6 +32,7 @@ export interface DiagnosticoInput {
   }>;
   /** Riscos identificados em processos APROVADOS. */
   risks: ReadonlyArray<{
+    id: string;
     dataInventoryId: string;
     riskCode: string;
     status: string;
@@ -92,6 +93,11 @@ export interface Recommendation {
   href: string;
   /** Contexto curto (nome do processo / domínio do GAP / etc). */
   context: string | null;
+  /** Refs polimórficas pra plugar no Plano de Ação (Checkpoint 11/D3).
+   * Só 1 fica preenchida por linha, conforme `source`. */
+  refGapCode: string | null;
+  refRiskId: string | null;
+  refInventoryId: string | null;
 }
 
 export interface DiagnosticoOutput {
@@ -333,6 +339,9 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
       source: "BASES",
       href: `/dashboard/inventario/${inv.id}/bases-legais`,
       context: inv.setor ?? null,
+      refGapCode: null,
+      refRiskId: null,
+      refInventoryId: inv.id,
     });
   }
 
@@ -354,6 +363,9 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
         source: "RISCO",
         href: `/dashboard/inventario/${risk.dataInventoryId}/risco/${risk.riskCode}`,
         context: null,
+        refGapCode: null,
+        refRiskId: risk.id,
+        refInventoryId: risk.dataInventoryId,
       });
     } else if (risk.status === "EM_MITIGACAO" && !risk.mitigationPlan) {
       recs.push({
@@ -365,6 +377,9 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
         source: "RISCO",
         href: `/dashboard/inventario/${risk.dataInventoryId}/risco/${risk.riskCode}`,
         context: null,
+        refGapCode: null,
+        refRiskId: risk.id,
+        refInventoryId: risk.dataInventoryId,
       });
     }
   }
@@ -382,6 +397,9 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
         source: "GAP",
         href: `/dashboard/gap-analysis`,
         context: null,
+        refGapCode: a.controlCode,
+        refRiskId: null,
+        refInventoryId: null,
       });
     } else if (a.aderencia === "PARCIAL") {
       recs.push({
@@ -392,6 +410,9 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
         source: "GAP",
         href: `/dashboard/gap-analysis`,
         context: null,
+        refGapCode: a.controlCode,
+        refRiskId: null,
+        refInventoryId: null,
       });
     }
   }

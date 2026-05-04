@@ -27,6 +27,7 @@ import {
   type DiagnosticoOutput,
   type SubScoreKey,
 } from "@/lib/diagnostico-scoring";
+import AddToActionPlanButton from "@/components/plano-acao/add-to-action-plan-button";
 
 const SUB_SCORE_ICON: Record<SubScoreKey, React.ReactNode> = {
   INVENTARIO: <ClipboardList className="h-5 w-5" />,
@@ -294,7 +295,18 @@ export default function DiagnosticoContent() {
                       </p>
                     )}
                   </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
+                  <div className="shrink-0 flex items-center gap-2 mt-0.5">
+                    <AddToActionPlanButton
+                      title={rec.title}
+                      description={rec.description}
+                      origin={rec.source}
+                      refGapCode={rec.refGapCode ?? undefined}
+                      refRiskId={rec.refRiskId ?? undefined}
+                      refInventoryId={rec.refInventoryId ?? undefined}
+                      priority={rec.priority}
+                    />
+                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                  </div>
                 </div>
               </Link>
             ))}

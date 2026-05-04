@@ -34,6 +34,7 @@ import {
   gapAderenciaBadgeClass,
 } from "@/lib/gap-helpers";
 import type { GapSuggestion } from "@/lib/gap-suggest";
+import AddToActionPlanButton from "@/components/plano-acao/add-to-action-plan-button";
 
 interface Props {
   control: GapControl;
@@ -450,6 +451,20 @@ export default function GapControlRow({
             >
               Limpar
             </Button>
+            {/* Adicionar ao Plano de Ação institucional — só faz sentido
+                quando aderencia é NAO_ADERENTE/PARCIAL e tem PM (esses
+                viram ações priorizáveis pra direção). */}
+            {answer &&
+              pontoMelhoria.trim() &&
+              (aderencia === "NAO_ADERENTE" || aderencia === "PARCIAL") && (
+                <AddToActionPlanButton
+                  title={`GAP #${control.code}: ${pontoMelhoria.slice(0, 140)}`}
+                  description={`Domínio: ${control.domain}\nPergunta: ${control.question}\n\nPonto de Melhoria registrado: ${pontoMelhoria}`}
+                  origin="GAP"
+                  refGapCode={control.code}
+                  priority={aderencia === "NAO_ADERENTE" ? "ALTA" : "MEDIA"}
+                />
+              )}
             <Button
               size="sm"
               variant="outline"
