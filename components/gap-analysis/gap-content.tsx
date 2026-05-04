@@ -27,6 +27,7 @@ import {
   Download,
   CheckCheck,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -192,7 +193,7 @@ export default function GapContent({ session: _session }: GapContentProps) {
             mapeamento, aderência e ponto de melhoria.
           </p>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 flex-wrap">
           <Button
             variant="outline"
             asChild
@@ -201,6 +202,16 @@ export default function GapContent({ session: _session }: GapContentProps) {
             <a href="/api/gap/export" download>
               <Download className="h-4 w-4 mr-1.5" />
               Exportar Excel
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            asChild
+            title="Relatório executivo em PDF (abre em nova aba; salvar via diálogo de impressão do navegador)"
+          >
+            <a href="/dashboard/gap-analysis/pdf?autoprint=1" target="_blank" rel="noopener">
+              <FileText className="h-4 w-4 mr-1.5" />
+              Exportar PDF
             </a>
           </Button>
           <Button variant="outline" onClick={() => setShowSnapshots(true)}>

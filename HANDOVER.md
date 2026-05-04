@@ -26,6 +26,12 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-6. **GAP — Exportar PDF (Polimento C2)** — COMPLETO
+   - Página dedicada `/dashboard/gap-analysis/pdf` — layout print-friendly (A4, sem sidebar) com capa executiva, score de maturidade, KPIs por aderência/mapeamento, top 10 pontos de melhoria, sumário por domínio (28 linhas)
+   - Auto-print via `window.print()` (condicional por query param `?autoprint=1`) — ao clicar "Exportar PDF" no header do GAP abre nova aba que já dispara o diálogo de impressão; user escolhe "Salvar como PDF"
+   - Botão "Imprimir / Salvar PDF" na barra de controles pra reabrir o diálogo manualmente
+   - Sem dependência de PDF lib (zero adições no bundle)
+
 -5. **Visão de Riscos consolidada (Checkpoint 7)** — COMPLETO
    - `/api/riscos` estendido: além dos `byCode`/`bySeverity` que já tinha, agora devolve `bySeverityByCode` (matriz tipo × severidade), `byStatusAgg` (contagem por status do ciclo de vida) e `topCriticos` (top 5 ALTO+IDENTIFICADO ordenados por mais antigos)
    - Componente novo `components/riscos/riscos-visao-content.tsx`: 4 seções (severidade agregada com stacked bar, 4 cards de status, 13 barras horizontais por tipo de risco, top 5 críticos com link "Detalhar")
