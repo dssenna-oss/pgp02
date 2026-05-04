@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-04 (Checkpoints 6 + 7 + 8 + 10 + 11 + 12 + polimentos do GAP — todos em produção)
+> **Última sessão:** 2026-05-04 (Checkpoint 13 — RIPD v2 institucional completo + Checkpoints 6/7/8/10/11/12)
 >
-> **Migração Neon:** ✅ Etapas 2 → 11 aplicadas e validadas em prod (verificadas via psql em 2026-05-04).
-> **`origin/main`:** ✅ sincronizada com tudo o que foi feito. HEAD = `97013f8`.
+> **Migração Neon:** ✅ Etapas 2 → 12 aplicadas e validadas em prod (Etapa 12 = RIPD v2, em 2026-05-04).
+> **`origin/main`:** ✅ sincronizada. HEAD = `acaf485` (Checkpoint 13).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -25,6 +25,22 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 ## 🆕 O que foi feito na sessão 2026-05-04 (já em produção)
 
 ### Features novas
+
+-12. **RIPD v2 institucional (Checkpoint 13 — F1+F2+F3+F4)** — COMPLETO
+   - **Schema novo (Etapa 12 da migration)**: refatorou `model RIPD` legacy do Abacus (DROP+CREATE com 0 registros) → `Ripd` (8 seções estruturadas em JSON, fluxo de aprovação, versionamento) + `RipdVersion` (snapshot por aprovação)
+   - **`lib/ripd-helpers.ts`**: enums (RASCUNHO/EM_REVISAO/APROVADO/ARQUIVADO), DTO, auth gate aceitando DPO + Contribuidor, 6 permissões granulares (canEdit/Submit/Approve/Reject/Delete/Archive), tipo `RipdData` com 8 seções (s1..s8)
+   - **`lib/ripd-prepopulate.ts`**: engine pura que monta as 8 seções a partir de `DataInventory` + `Company` + `ProcessRisk` (não-eliminados) + `GapAnswer` (aderentes) + `ActionPlan` (abertas) — RIPD nasce 80% pré-preenchido
+   - **8 APIs**: `GET/POST /api/ripd` · `GET/PATCH/DELETE /api/ripd/[id]` · `POST /api/ripd/[id]/{submit,approve,reject}` · `GET /versions` · `GET /diff?a=&b=` · `GET /pending-count` · `GET /export?source=published|current`
+   - **`lib/ripd-diff.ts`**: engine pura word-level (jsdiff) + diff estrutural de listas (riscos por code, ações por id, controles por code). Devolve `RipdDiff` com seções, stats e parts[]
+   - **`lib/ripd-docx-export.ts`**: builder DOCX com docx-js — capa institucional, H1 por seção, H3 por campo, tabelas pra riscos/controles/ações
+   - **UI**: `/dashboard/ripd` (lista com 4 KPIs, filtros, busca, banner DPO destacado, modal de criação) · `/dashboard/ripd/[id]` (editor com 8 abas verticais, ações dinâmicas por papel, modais aprovação/rejeição/histórico/comparar) · `/dashboard/ripd/[id]/pdf` (print-friendly auto-print)
+   - **Sidebar**: item "RIPD" com ícone FileCheck2, badge azul com contagem de pendentes (polling 60s + custom event refresh imediato)
+   - **Permissões**: DPO edita/aprova qualquer RIPD da org; Contribuidor cria rascunho próprio → envia pra revisão → DPO aprova/rejeita com motivo
+   - **Decisão**: `canEdit/canApprove` permitem editar e re-aprovar em APROVADO (modelo igual Políticas — `data` é rascunho vivo, `publishedContent` é snapshot da última versão)
+   - **Plug Fase 6**: 2º card `RipdCardTools` ao lado de `PoliticasCard` no "Coloque em prática"
+   - **Limpeza**: deletados `app/api/ripds/`, `components/ripd/{ripd-content,ripd-form-modal,ripd-view-modal}.tsx`, interface `RIPD` em `lib/types.ts`
+   - **Deps**: `docx` + `diff` (já estavam em package.json mas faltava `npm install`); criei `diff.d.ts` shim de types
+   - **`scripts/_migrate-ripd-v2.sql`** + Etapa 12 no consolidado, idempotente
 
 -11. **Políticas — E4 (DOCX + PDF + Diff)** — COMPLETO
    - **`lib/policies-docx-export.ts`**: parser markdown→DOCX usando `docx-js`. Suporta headings, parágrafos, listas (bullet/numeric), tabelas, blockquote, HR, bold/italic/code, links. Não é parser perfeito mas cobre o subset dos templates. Capa com tipo + título + metadata da empresa/versão.
@@ -182,6 +198,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 9 | `_migrate-gap-notes.sql` | gap_answers.notes (Polimento C5) | ✅ | ✅ |
 | 10 | `_migrate-action-plan.sql` | action_plans refatorada (Checkpoint 11 — Plano de Ação institucional) | ✅ | ✅ |
 | 11 | `_migrate-policies.sql` | policies + policy_versions + Company.slug (Checkpoint 12 — Políticas) | ✅ | ✅ |
+| 12 | `_migrate-ripd-v2.sql` | ripds refatorada + ripd_versions (Checkpoint 13 — RIPD v2 institucional) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -208,7 +225,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
 | 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
-| 13+ | Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
+| 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
+| 14+ | Termos · Segurança · Contratos · Incidentes · Modelo PGP | depois |
 
 ---
 
@@ -327,16 +345,17 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 
 ## 🔥 Resumo executivo
 
-Sessão 2026-05-04 (anterior) entregou Checkpoints 6, 7, 8, 10, 11, 12 + polimentos C1/C2/C3/C4/C5 do GAP. Tudo já em produção:
+Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos C1/C2/C3/C4/C5 do GAP. Tudo em produção:
 
 - ✅ **Checkpoint 6** — Detalhamento de Riscos (matriz 3×3 P×I, severidade encoded)
 - ✅ **Checkpoint 7** — Visão de Riscos consolidada (3ª aba do dashboard de Riscos)
 - ✅ **Checkpoint 8** — Exportação Excel do Inventário (3 abas, modelo oficial)
-- ✅ **Checkpoint 9** — GAP Analysis (sessão anterior — 119 controles, 28 domínios, snapshots, dashboard, export XLSX)
+- ✅ **Checkpoint 9** — GAP Analysis (119 controles, 28 domínios, snapshots, dashboard, export XLSX)
 - ✅ **Checkpoint 10** — Diagnóstico de Privacidade (score executivo 0-100, 4 pilares ponderados)
 - ✅ **Checkpoint 11** — Plano de Ação institucional (3 tabs, dedup polimórfico, XLSX, integração 3 telas)
 - ✅ **Checkpoint 12** — Políticas LGPD (9 templates, editor split, URL pública, versionamento, DOCX + PDF + Diff)
+- ✅ **Checkpoint 13** — RIPD v2 institucional (8 seções estruturadas, fluxo Contribuidor → DPO, versionamento, diff word-level, DOCX + PDF, plug Fase 6)
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
-- ✅ Schema Neon: Etapas 2 → 11 todas aplicadas e validadas em prod
+- ✅ Schema Neon: Etapas 2 → 12 todas aplicadas e validadas em prod
 
-**Próxima fronteira (Checkpoint 13+):** Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP — todos pendentes, sem ordem definida ainda.
+**Próxima fronteira (Checkpoint 14+):** Termos · Segurança · Contratos · Incidentes · Modelo PGP — todos pendentes, sem ordem definida ainda.
