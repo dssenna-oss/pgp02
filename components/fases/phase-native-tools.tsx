@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Target,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ import { cn } from "@/lib/utils";
  * Hoje suporta:
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
+ *   - fase-5 → Plano de Ação institucional
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -37,6 +40,9 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "fase-4") {
     return <Fase4Tools />;
   }
+  if (phase === "fase-5") {
+    return <Fase5Tools />;
+  }
   // Outras fases ainda sem mini-apps nativos.
   return null;
 }
@@ -44,7 +50,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 /** Indica se uma fase tem ferramentas nativas (pra `PhasePracticalLinks`
  * decidir se mostra ou não a mensagem "nenhum link adicionado"). */
 export function phaseHasNativeTools(phase: string): boolean {
-  return phase === "fase-3" || phase === "fase-4";
+  return phase === "fase-3" || phase === "fase-4" || phase === "fase-5";
 }
 
 // ============================================================
@@ -392,6 +398,122 @@ function Fase4Tools() {
             : answered === 0
               ? "Você ainda não começou. Abra o GAP pra ver as sugestões automáticas vindas do Inventário."
               : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 5 — Plano de Ação institucional
+// ============================================================
+
+interface PlanoAcaoResp {
+  items: Array<{ id: string; status: string; priority: string; origin: string }>;
+  stats: {
+    total: number;
+    byStatus: { A_FAZER: number; EM_ANDAMENTO: number; CONCLUIDA: number; CANCELADA: number };
+    byPriority: { ALTA: number; MEDIA: number; BAIXA: number };
+    byOrigin: { MANUAL: number; GAP: number; RISCO: number; BASES: number };
+    overdue: number;
+    dueSoon: number;
+  };
+}
+
+function Fase5Tools() {
+  const [plano, setPlano] = useState<PlanoAcaoResp | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Plano de Ação é visível pra DPO (tudo) e Contribuidor (próprias)
+        // — sempre 200, sem 403. UI mostra contagens conforme escopo.
+        const res = await fetch("/api/plano-acao");
+        if (res.ok) setPlano(await res.json());
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = plano?.stats.total ?? 0;
+  const emAberto =
+    (plano?.stats.byStatus.A_FAZER ?? 0) +
+    (plano?.stats.byStatus.EM_ANDAMENTO ?? 0);
+  const concluidas = plano?.stats.byStatus.CONCLUIDA ?? 0;
+  const overdue = plano?.stats.overdue ?? 0;
+  const dueSoon = plano?.stats.dueSoon ?? 0;
+
+  // Cor de progresso:
+  //   - neutral: sem ações
+  //   - success: total > 0 e nada em aberto (tudo concluído/cancelado)
+  //   - warning: tem coisas em aberto
+  const color: ToolCardColor =
+    total === 0 ? "neutral" : emAberto === 0 ? "success" : "warning";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<Target className="h-6 w-6" />}
+        iconColor="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40"
+        title="Plano de Ação"
+        description="Lista oficial das ações da organização pra adequação à LGPD — com responsável formal, prazo e prioridade. Aceita import automático de gaps, riscos e bases legais pendentes."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: total > 0 ? "Abrir Plano de Ação" : "Iniciar Plano de Ação",
+          href: "/dashboard/plano-acao",
+        }}
+        stats={
+          plano && total > 0
+            ? [
+                {
+                  label: "ações totais",
+                  value: total,
+                  icon: <Target className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "em aberto",
+                  value: emAberto,
+                  color: "amber",
+                  icon: <Clock className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "concluídas",
+                  value: concluidas,
+                  color: "emerald",
+                  icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                },
+                ...(overdue > 0
+                  ? [
+                      {
+                        label: "atrasadas",
+                        value: overdue,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(dueSoon > 0
+                  ? [
+                      {
+                        label: "vencendo (7d)",
+                        value: dueSoon,
+                        color: "amber" as const,
+                        icon: <CalendarDays className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+        }
+        emptyHint={
+          total === 0
+            ? "Nenhuma ação cadastrada. Use \"Importar pendentes\" pra criar ações automaticamente a partir do GAP, Riscos e Bases Legais."
+            : undefined
         }
       />
     </div>
