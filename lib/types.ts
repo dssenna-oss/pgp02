@@ -63,20 +63,9 @@ export interface RiskAssessment {
   updatedAt: Date;
 }
 
-export interface GapAnalysis {
-  id: string;
-  companyId: string;
-  requirement: string;
-  currentStatus: string;
-  evidence?: string | null;
-  gap?: string | null;
-  recommendation?: string | null;
-  priority: string;
-  responsibleArea: string;
-  deadline?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// GAP Analysis (Checkpoint 9): catálogo fixo de 119 controles em
+// `lib/gap-catalog.ts`. Resposta por linha do template oficial — vide
+// modelos `GapAnswer` e `GapSnapshot` em `prisma/schema.prisma`.
 
 export interface ActionPlan {
   id: string;
@@ -156,7 +145,6 @@ export interface Incident {
 export type CompanyFormData = Omit<Company, 'id'>;
 export type DataInventoryFormData = Omit<DataInventory, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type RiskAssessmentFormData = Omit<RiskAssessment, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
-export type GapAnalysisFormData = Omit<GapAnalysis, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type ActionPlanFormData = Omit<ActionPlan, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type RIPDFormData = Omit<RIPD, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;
 export type DocumentFormData = Omit<Document, 'id' | 'companyId' | 'createdAt' | 'updatedAt'>;

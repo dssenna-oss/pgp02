@@ -27,7 +27,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
   const [stats, setStats] = useState({
     dataInventories: 0,
     riskAssessments: 0,
-    gapAnalyses: 0,
+    gapAnswered: 0,
     actionPlans: 0,
     documents: 0,
     incidents: 0
@@ -70,13 +70,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
       icon: <AlertTriangle className="h-5 w-5" />,
       color: "bg-orange-500"
     },
-    {
-      title: "GAP Analysis",
-      description: "Verificar conformidade LGPD",
-      href: "/dashboard/gap-analysis",
-      icon: <BarChart3 className="h-5 w-5" />,
-      color: "bg-green-500"
-    },
+    // GAP Analysis: link removido até a Sessão 3 do Checkpoint 9
+    // recriar `/dashboard/gap-analysis`. Cartão de stats abaixo continua
+    // aparecendo (mostra # de controles respondidos) mas sem href.
     {
       title: "Gerar RIPD",
       description: "Criar relatório de impacto",
@@ -205,9 +201,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
                 <BarChart3 className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.gapAnalyses}</div>
+                <div className="text-2xl font-bold">{stats.gapAnswered}<span className="text-sm font-normal text-muted-foreground"> / 119</span></div>
                 <p className="text-xs text-muted-foreground">
-                  Requisitos analisados
+                  Controles respondidos
                 </p>
               </CardContent>
             </Card>

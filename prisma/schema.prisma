@@ -74,6 +74,11 @@ model User {
   authoredForumReplies ForumReply[]
   forumReads          ForumPostRead[]
 
+  // GAP Analysis (Checkpoint 9) — quem respondeu cada controle e quem
+  // congelou os snapshots
+  gapAnswered   GapAnswer[]
+  gapSnapshots  GapSnapshot[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -111,7 +116,9 @@ model Company {
   taskMarkers       TaskMarker[]
   forumPosts        ForumPost[]
   riskAssessments   RiskAssessment[]
-  gapAnalyses       GapAnalysis[]
+  // GAP Analysis (Checkpoint 9)
+  gapAnswers        GapAnswer[]
+  gapSnapshots      GapSnapshot[]
   actionPlans       ActionPlan[]
   ripds            RIPD[]
   documents        Document[]
@@ -453,24 +460,96 @@ model RiskAssessment {
   @@map("risk_assessments")
 }
 
-model GapAnalysis {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  requirement     String   // Requisito da LGPD
-  currentStatus   String   // Status atual: "Implementado", "Parcialmente Implementado", "Não Implementado"
-  evidence        String?  // Evidências
-  gap             String?  // Lacuna identificada
-  recommendation  String?  // Recomendação
-  priority        String   // "Alta", "Média", "Baixa"
-  responsibleArea String
-  deadline        DateTime?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Resposta de 1 controle do GAP Analysis (Checkpoint 9) — replica
+/// 1 LINHA do template oficial "Matriz de Controles e Avaliação de Gaps"
+/// (XLSX em `scripts/_gap-modelo-em-branco.xlsx`).
+///
+/// O catálogo dos 119 controles fica em `lib/gap-catalog.ts` (gerado por
+/// `scripts/generate-gap-catalog.ts` a partir do XLSX). Esta tabela só
+/// guarda as RESPOSTAS — os textos de pergunta/artigo/instrução vêm do
+/// catálogo em código.
+///
+/// Granularidade: cada `controlCode` (estável, ex: "001"-"119") representa
+/// 1 pergunta marcável (incluindo sub-perguntas condicionais e itens
+/// individuais de checkbox — todos podem receber resposta no template).
+///
+/// Visibilidade: só DPO (Principal/Substituto/Auxiliar) preenche.
+/// 1 GapAnswer "ativo" por (companyId, controlCode); versões congeladas
+/// vão pra `GapSnapshot`.
+model GapAnswer {
+  id           String   @id @default(cuid())
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@map("gap_analyses")
+  /// Código estável do controle no catálogo (ex: "001", "048", "119").
+  /// Referência: `lib/gap-catalog.ts::GAP_CONTROLS`. Não é FK — o
+  /// catálogo vive em código (versionado pelo git).
+  controlCode  String
+
+  /// Coluna H do XLSX — "Cenário Atual" (texto livre descrevendo a
+  /// situação real da organização pra esse controle).
+  cenarioAtual String?  @db.Text
+
+  /// Coluna I do XLSX — "Mapeamento". Valores aceitos:
+  ///   "NAO_INICIADO" | "EM_ANDAMENTO" | "FINALIZADO"
+  mapeamento   String?
+
+  /// Coluna J do XLSX — "Aderência". Valores aceitos:
+  ///   "ADERENTE" | "PARCIAL" | "NAO_ADERENTE" | "NA"
+  aderencia    String?
+
+  /// Coluna K do XLSX — "Ponto de Melhoria" (texto livre). Vira insumo
+  /// pra criar Tasks pessoais (bloco 8b da decisão).
+  pontoMelhoria String? @db.Text
+
+  /// Indica se o valor foi pré-preenchido pelo auto-suggest baseado no
+  /// Inventário (decisão 5b) e ainda não foi confirmado pelo DPO.
+  /// Vira `false` assim que o DPO salvar manualmente o controle.
+  autoSuggested Boolean @default(false)
+
+  /// DPO que respondeu por último.
+  answeredById String?
+  answeredBy   User?    @relation(fields: [answeredById], references: [id], onDelete: SetNull)
+  answeredAt   DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyId, controlCode])
+  @@index([companyId, mapeamento])
+  @@index([companyId, aderencia])
+  @@map("gap_answers")
+}
+
+/// Snapshot congelado do GAP Analysis (decisão 2c) — captura todas as
+/// respostas + perfil/aplicabilidade num ponto no tempo. Usado pra
+/// histórico de versões e pra Exportar Excel reproduzindo o estado
+/// daquela data (decisão 10b).
+model GapSnapshot {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Rótulo curto livre dado pelo DPO ao congelar (ex: "Diagnóstico
+  /// inicial 2026-Q2"). Default: "Snapshot dd/mm/aaaa".
+  label       String   @db.VarChar(120)
+
+  /// Comentário opcional do DPO sobre essa versão.
+  notes       String?  @db.Text
+
+  /// Cópia congelada de todos os GapAnswer da empresa no momento da
+  /// criação. Estrutura: { answers: GapAnswer[], stats: {...},
+  /// generatedAt: ISO } — enxuto, só os dados de resposta (sem o catálogo,
+  /// que é fixo em código).
+  payload     Json
+
+  /// DPO que criou o snapshot.
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("gap_snapshots")
 }
 
 model ActionPlan {

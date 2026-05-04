@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-03 (longa, várias features) · **Branch atual:** `claude/great-rhodes-8a9681` (worktree)
+> **Última sessão:** 2026-05-03 (Checkpoint 9 — GAP Analysis completo) · **Branch atual:** `claude/heuristic-grothendieck-ec0317` (worktree)
 >
-> **Migração Neon:** ✅ aplicada (todas as 11 tabelas/colunas novas existem em prod).
-> **Push pra `main`:** liberado — pode commitar e fazer push sem medo.
+> **Migração Neon:** ✅ aplicada até a Etapa 7. Etapa 8 (GAP) **falta aplicar** no Neon antes do push.
+> **Push pra `main`:** depois de aplicar Etapa 8 no Neon — comando no fim deste arquivo.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -25,6 +25,16 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 ## 🆕 O que foi feito na sessão 2026-05-03 (não-pushado)
 
 ### Features novas
+
+0. **GAP Analysis (Checkpoint 9)** — COMPLETO em 5 sub-sessões
+   - Schema: `GapAnswer` + `GapSnapshot` em Prisma; `gap_analyses` (placeholder Abacus) removida
+   - Catálogo: `lib/gap-catalog.ts` GERADO por `scripts/generate-gap-catalog.ts` a partir do template oficial — 119 controles em 28 domínios
+   - Auto-suggest: `lib/gap-suggest.ts` pré-preenche 7 controles a partir do Inventário aprovado + DPO da Company
+   - APIs: `GET /api/gap`, `PATCH/DELETE /api/gap/answer/[code]`, `POST /api/gap/answer/[code]/task` (vira tarefa pessoal), `GET/POST /api/gap/snapshot`, `GET/DELETE /api/gap/snapshot/[id]`
+   - UI: `/dashboard/gap-analysis` com tabs (Responder controles | Visão geral); accordion por domínio; tela welcome (1ª vez); modal de snapshots (Sheet lateral); subpágina `/snapshot/[id]` read-only
+   - Dashboard analítico: barras horizontais empilhadas por domínio, top problemas/aderência, dicas
+   - Exportação: `GET /api/gap/export` + `GET /api/gap/snapshot/[id]/export` — clonam o template oficial, sobrescrevem só o que vem do banco, preservam as 143 fórmulas COUNTIF da aba Analítico (recalcula no Excel)
+   - Integrações: link na sidebar (DPO-only); aba 2 do `/dashboard/riscos` agora aponta pro GAP; card "Coloque em prática" da Fase 4 mostra stats reais
 
 1. **Análise de Riscos (Checkpoint 5)** — completo
    - Modelo `ProcessRisk` + 13 tipos de risco (BR-CD do Excel)
@@ -88,6 +98,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 5 | `_migrate-process-risks.sql` | process_risks (tabela) | ✅ | ✅ |
 | 6 | `_migrate-tasks.sql` | tasks + task_markers | ✅ | ✅ |
 | 7 | `_migrate-forum.sql` | forum_posts + forum_replies + forum_post_reads | ✅ | ✅ |
+| 8 | `_migrate-gap.sql` | gap_answers + gap_snapshots (drop gap_analyses placeholder) | ✅ | ⚠ FALTA |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -109,8 +120,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 |---|---|---|
 | 6 | **Detalhamento de Riscos** — classificação Alto/Médio/Baixo + plano de mitigação por risco. Schema já tem campos vazios (`severityLevel`, `mitigationPlan`, `legalBasisRef`). Badge "Detalhar (em breve)" já está na UI esperando. | próximo |
 | 7 | **Visão de Riscos consolidada** (dashboard com gráficos) | depois |
-| 8 | **Exportação Excel consolidada** (3 abas igual modelo) | depois |
-| 9 | **GAP Analysis** (riscos macro da organização) — preenche a 2ª aba do `/dashboard/riscos` que hoje é placeholder | depois |
+| 8 | **Exportação Excel consolidada do Inventário** (3 abas igual modelo) | depois |
+| 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | Diagnóstico de Privacidade (consolidador) | depois |
 | 11+ | Plano de Ação · Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
@@ -170,6 +181,10 @@ Diga **"retomar do HANDOVER + memória"** e o assistente lê:
 | `lib/riscos-catalog.ts` | 13 tipos de risco + auto-suggest engine |
 | `lib/tarefas-types.ts` | Tipos + helpers das Tarefas |
 | `lib/forum-types.ts` | Tipos + helpers do Fórum |
+| `lib/gap-catalog.ts` | **GERADO** por `scripts/generate-gap-catalog.ts` — 119 controles do template oficial |
+| `lib/gap-helpers.ts` | Auth check DPO + enums GAP_MAPEAMENTO/ADERENCIA + buildGapStats + DTOs |
+| `lib/gap-suggest.ts` | Auto-suggest engine pra pré-preencher controles do GAP a partir do Inventário |
+| `lib/gap-export.ts` | Builder do XLSX (clona template oficial e sobrescreve só dinâmicos) |
 | `lib/sidebar-events.ts` | Events bus pra refresh imediato dos badges da sidebar |
 | `lib/llm.ts` | Wrapper Gemini |
 | `lib/embeddings.ts` | Embeddings Gemini 768-dim |
@@ -188,6 +203,7 @@ Diga **"retomar do HANDOVER + memória"** e o assistente lê:
 | `components/inventario/bases-legais-dashboard-content.tsx` | Dashboard consolidado de Bases Legais |
 | `components/tarefas/*` | Tarefas (5 arquivos) |
 | `components/forum/*` | Fórum (5 arquivos) |
+| `components/gap-analysis/*` | GAP Analysis (6 arquivos: gap-content, gap-welcome, gap-domain-accordion, gap-control-row, gap-snapshots-modal, gap-snapshot-detail, gap-dashboard) |
 
 ---
 
@@ -218,21 +234,27 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 
 ## 📋 Pendências organizacionais
 
-1. **Commitar e fazer push da sessão 2026-05-03** — várias features novas pra subir
-2. **Rotacionar senha do Neon** (segurança após compartilhamento em chat)
-3. **Revogar PAT temporário do GitHub** se ainda estiver ativo
+1. **Aplicar Etapa 8 (GAP) no Neon** ANTES do push pra `main`:
+   ```bash
+   "/e/postgres/pgsql2/pgsql/bin/psql.exe" "<NEON_URL>" -f scripts/_migrate-prod-neon.sql
+   ```
+   (O consolidado já inclui as Etapas 1-8 e é idempotente — rodar de novo não dói.)
+2. **Commitar e fazer push da sessão 2026-05-03** — Checkpoint 9 completo + features anteriores
+3. **Rotacionar senha do Neon** (segurança após compartilhamento em chat)
+4. **Revogar PAT temporário do GitHub** se ainda estiver ativo
 
 ---
 
 ## 🔥 Resumo executivo
 
-Sessão grande, várias features entregues:
+Sessão gigante, várias features entregues:
+- ✅ **GAP Analysis (Checkpoint 9)** completo — schema + APIs + UI com tabs/dashboard + exportação Excel oficial + integração Fase 4 + sidebar
 - ✅ Análise de Riscos completa (Checkpoint 5)
 - ✅ Tarefas pessoais (caderno individual)
 - ✅ Fórum e Mensagens (comunicação na org)
 - ✅ Bases Legais consolidada (visão DPO)
-- ✅ Mini-apps embutidos na Fase 3
+- ✅ Mini-apps embutidos na Fase 3 + Fase 4
 - ✅ Auditoria mobile completa
-- ✅ Migração Neon aplicada
+- ✅ Migração Neon aplicada (Etapas 1-7) + ⚠ Etapa 8 (GAP) FALTA aplicar
 
-Pronto pra push em `main`.
+**Antes de fazer push pra `main`:** rodar `_migrate-prod-neon.sql` no Neon (idempotente).

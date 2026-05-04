@@ -14,6 +14,7 @@
 --   * scripts/_migrate-process-risks.sql (Etapa 5 — Análise de Riscos)
 --   * scripts/_migrate-tasks.sql (Etapa 6 — Tarefas pessoais + Marcadores)
 --   * scripts/_migrate-forum.sql (Etapa 7 — Fórum + Mensagens diretas)
+--   * scripts/_migrate-gap.sql   (Etapa 8 — GAP Analysis: gap_answers + gap_snapshots)
 -- ============================================================
 
 BEGIN;
@@ -329,6 +330,75 @@ CREATE UNIQUE INDEX IF NOT EXISTS "forum_post_reads_postId_userId_key"
 CREATE INDEX IF NOT EXISTS "forum_post_reads_userId_idx"
   ON "forum_post_reads"("userId");
 
+-- ====================================================================
+-- ETAPA 8 — GAP Analysis (gap_answers + gap_snapshots)
+-- ====================================================================
+-- Substitui o placeholder Abacus `gap_analyses` (drop seguro com IF EXISTS).
+-- Catálogo dos 119 controles fica em código (`lib/gap-catalog.ts`).
+
+DROP TABLE IF EXISTS "gap_analyses" CASCADE;
+
+CREATE TABLE IF NOT EXISTS "gap_answers" (
+  "id"             TEXT PRIMARY KEY,
+  "companyId"      TEXT NOT NULL,
+  "controlCode"    TEXT NOT NULL,
+  "cenarioAtual"   TEXT,
+  "mapeamento"     TEXT,
+  "aderencia"      TEXT,
+  "pontoMelhoria"  TEXT,
+  "autoSuggested"  BOOLEAN NOT NULL DEFAULT false,
+  "answeredById"   TEXT,
+  "answeredAt"     TIMESTAMP(3),
+  "createdAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"      TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'gap_answers_companyId_fkey') THEN
+    ALTER TABLE "gap_answers" ADD CONSTRAINT "gap_answers_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'gap_answers_answeredById_fkey') THEN
+    ALTER TABLE "gap_answers" ADD CONSTRAINT "gap_answers_answeredById_fkey"
+      FOREIGN KEY ("answeredById") REFERENCES "users"("id") ON DELETE SET NULL;
+  END IF;
+END
+$$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "gap_answers_companyId_controlCode_key"
+  ON "gap_answers"("companyId", "controlCode");
+CREATE INDEX IF NOT EXISTS "gap_answers_companyId_mapeamento_idx"
+  ON "gap_answers"("companyId", "mapeamento");
+CREATE INDEX IF NOT EXISTS "gap_answers_companyId_aderencia_idx"
+  ON "gap_answers"("companyId", "aderencia");
+
+CREATE TABLE IF NOT EXISTS "gap_snapshots" (
+  "id"          TEXT PRIMARY KEY,
+  "companyId"   TEXT NOT NULL,
+  "label"       VARCHAR(120) NOT NULL,
+  "notes"       TEXT,
+  "payload"     JSONB NOT NULL,
+  "createdById" TEXT,
+  "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'gap_snapshots_companyId_fkey') THEN
+    ALTER TABLE "gap_snapshots" ADD CONSTRAINT "gap_snapshots_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'gap_snapshots_createdById_fkey') THEN
+    ALTER TABLE "gap_snapshots" ADD CONSTRAINT "gap_snapshots_createdById_fkey"
+      FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE SET NULL;
+  END IF;
+END
+$$;
+
+CREATE INDEX IF NOT EXISTS "gap_snapshots_companyId_createdAt_idx"
+  ON "gap_snapshots"("companyId", "createdAt");
+
 COMMIT;
 
 -- ====================================================================
@@ -359,6 +429,12 @@ SELECT 'forum_replies (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='forum_replies');
 SELECT 'forum_post_reads (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='forum_post_reads');
+SELECT 'gap_answers (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='gap_answers');
+SELECT 'gap_snapshots (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='gap_snapshots');
+SELECT 'gap_analyses dropped', NOT EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='gap_analyses');
 
 \echo ''
 \echo '=== Inventários por status ==='

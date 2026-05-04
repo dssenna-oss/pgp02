@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
  *
  * Hoje suporta:
  *   - fase-3 → Inventário + Análise de Riscos
+ *   - fase-4 → GAP Analysis
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -33,6 +34,9 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "fase-3") {
     return <Fase3Tools />;
   }
+  if (phase === "fase-4") {
+    return <Fase4Tools />;
+  }
   // Outras fases ainda sem mini-apps nativos.
   return null;
 }
@@ -40,7 +44,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 /** Indica se uma fase tem ferramentas nativas (pra `PhasePracticalLinks`
  * decidir se mostra ou não a mensagem "nenhum link adicionado"). */
 export function phaseHasNativeTools(phase: string): boolean {
-  return phase === "fase-3";
+  return phase === "fase-3" || phase === "fase-4";
 }
 
 // ============================================================
@@ -270,6 +274,124 @@ function Fase3Tools() {
             : !riscos || riscos.stats.totalProcesses === 0
             ? "Aprove pelo menos 1 processo no Inventário pra começar a Análise de Riscos."
             : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 4 — GAP Analysis
+// ============================================================
+
+interface GapResp {
+  answers: Array<{ controlCode: string; autoSuggested: boolean }>;
+  stats: {
+    total: number;
+    answered: number;
+    confirmed: number;
+    autoSuggested: number;
+    byAderencia: Record<string, number>;
+  };
+  suggestions: Record<string, unknown> | null;
+}
+
+function Fase4Tools() {
+  const [gap, setGap] = useState<GapResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/gap?withSuggestions=1");
+        if (res.ok) {
+          setGap(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = gap?.stats.total ?? 119;
+  const answered = gap?.stats.answered ?? 0;
+  const pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+
+  // Cor da borda esquerda do card
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : answered === 0
+      ? "neutral"
+      : answered === total
+        ? "success"
+        : "warning";
+
+  const naoAderente = gap?.stats.byAderencia.NAO_ADERENTE ?? 0;
+  const sugestoes = gap?.suggestions ? Object.keys(gap.suggestions).length : 0;
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<ClipboardList className="h-6 w-6" />}
+        iconColor="text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40"
+        title="GAP Analysis"
+        description="Diagnóstico macro de adequação à LGPD: 119 controles em 28 domínios, baseados no template oficial LGPD PRO."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: answered > 0 ? "Continuar diagnóstico" : "Iniciar diagnóstico",
+          href: "/dashboard/gap-analysis",
+        }}
+        stats={
+          forbidden
+            ? []
+            : gap
+              ? [
+                  {
+                    label: `de ${total} controles respondidos (${pct}%)`,
+                    value: answered,
+                    icon: <ClipboardList className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: "confirmados pelo DPO",
+                    value: gap.stats.confirmed,
+                    color: "emerald",
+                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                  },
+                  ...(naoAderente > 0
+                    ? [
+                        {
+                          label: "não aderente(s)",
+                          value: naoAderente,
+                          color: "red" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(sugestoes > 0
+                    ? [
+                        {
+                          label: "sugestão(ões) auto pendente(s)",
+                          value: sugestoes,
+                          color: "amber" as const,
+                          icon: <Clock className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : answered === 0
+              ? "Você ainda não começou. Abra o GAP pra ver as sugestões automáticas vindas do Inventário."
+              : undefined
         }
       />
     </div>

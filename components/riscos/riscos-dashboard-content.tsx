@@ -237,27 +237,35 @@ export default function RiscosDashboardContent({
           )}
         </TabsContent>
 
-        {/* ========== Aba 2 — Da organização (placeholder) ========== */}
+        {/* ========== Aba 2 — Da organização (GAP Analysis) ========== */}
         <TabsContent value="organizacao">
-          <Card className="border-dashed">
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="rounded-full bg-blue-100 dark:bg-blue-950/40 p-3 inline-block">
-                <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <Card>
+            <CardContent className="p-6 sm:p-8 space-y-5">
+              <div className="flex items-start gap-3 flex-wrap">
+                <div className="rounded-full bg-emerald-100 dark:bg-emerald-950/40 p-2.5">
+                  <Building2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Riscos da organização (GAP Analysis)
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Os riscos macro que não pertencem a um processo específico
+                    — ausência de DPO, política de incidentes, governança em
+                    privacidade, etc. — são tratados no GAP Analysis: 119
+                    controles em 28 domínios baseados no template oficial LGPD
+                    PRO.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Riscos da organização — em breve
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Aqui ficarão os riscos macro que não pertencem a uma área
-                específica — como ausência de Encarregado (DPO), falta de
-                programa de conscientização, política de incidentes
-                inexistente, processos de gestão de terceiros, gestão do
-                ciclo de vida da informação, etc.
-              </p>
-              <p className="text-xs text-gray-500 max-w-xl mx-auto">
-                Vai ser construído no <strong>GAP Analysis (Checkpoint 9)</strong>{" "}
-                e consolidado no Diagnóstico de Privacidade.
-              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button asChild>
+                  <Link href="/dashboard/gap-analysis">
+                    Abrir GAP Analysis
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

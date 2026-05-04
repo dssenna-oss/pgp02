@@ -204,6 +204,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       dpoOnly: true,
     },
     {
+      name: "GAP Analysis",
+      description: "Diagnóstico macro de adequação à LGPD",
+      href: "/dashboard/gap-analysis",
+      icon: ClipboardList,
+      dpoOnly: true,
+    },
+    {
       name: "Bases Legais",
       description: "Visão consolidada por processo",
       href: "/dashboard/bases-legais",

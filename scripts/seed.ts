@@ -114,31 +114,9 @@ async function main() {
     ],
   })
 
-  // Criar GAP Analysis de exemplo
-  await prisma.gapAnalysis.createMany({
-    data: [
-      {
-        companyId: company.id,
-        requirement: 'Art. 9º - Consentimento do titular',
-        currentStatus: 'Parcialmente Implementado',
-        evidence: 'Formulário de consentimento existe mas não está claro',
-        gap: 'Consentimento não específico para cada finalidade',
-        recommendation: 'Revisar formulários para consentimento granular',
-        priority: 'Alta',
-        responsibleArea: 'Jurídico',
-      },
-      {
-        companyId: company.id,
-        requirement: 'Art. 48 - Comunicação de incidentes',
-        currentStatus: 'Não Implementado',
-        evidence: 'Não há processo formal',
-        gap: 'Falta procedimento para comunicação à ANPD',
-        recommendation: 'Criar plano de resposta a incidentes',
-        priority: 'Alta',
-        responsibleArea: 'Segurança',
-      },
-    ],
-  })
+  // GAP Analysis (Checkpoint 9): não tem seed — o catálogo é fixo em
+  // `lib/gap-catalog.ts` e as respostas (`GapAnswer`) começam vazias
+  // pra cada empresa.
 
   // Criar plano de ação de exemplo
   await prisma.actionPlan.createMany({
