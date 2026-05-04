@@ -79,18 +79,17 @@ export async function GET(request: NextRequest) {
       company: company ?? { dpoName: null, dpoEmail: null, dpoPhone: null },
     });
 
-    // Filtra: só incluir sugestão pra controles que ainda NÃO foram
-    // confirmados pelo DPO (autoSuggested=false). Caso contrário a UI
-    // vai sobrescrever resposta humana.
-    const confirmedCodes = new Set(
-      answerDTOs
-        .filter((a) => !a.autoSuggested)
-        .map((a) => a.controlCode),
-    );
+    // Filtra: só incluir sugestão pra controles que ainda NÃO TÊM
+    // resposta no banco — qualquer resposta. Isso evita:
+    //   1. Sobrescrever resposta humana (autoSuggested=false)
+    //   2. Re-mostrar sugestão depois que o DPO clicou em "Aceitar
+    //      todas em massa" (decisão C4) — aceitar criou GapAnswer
+    //      com autoSuggested=true; banner deve sumir até refresh.
+    const codesComResposta = new Set(answerDTOs.map((a) => a.controlCode));
 
     suggestions = {};
     for (const [code, sug] of map.entries()) {
-      if (!confirmedCodes.has(code)) suggestions[code] = sug;
+      if (!codesComResposta.has(code)) suggestions[code] = sug;
     }
   }
 

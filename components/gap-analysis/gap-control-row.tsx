@@ -83,6 +83,7 @@ export default function GapControlRow({
   const [mapeamento, setMapeamento] = useState<GapMapeamento | null>(initialMap);
   const [aderencia, setAderencia] = useState<GapAderencia | null>(initialAde);
   const [pontoMelhoria, setPontoMelhoria] = useState(initialPM);
+  const [notes, setNotes] = useState(answer?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [creatingTask, setCreatingTask] = useState(false);
 
@@ -93,6 +94,7 @@ export default function GapControlRow({
       setMapeamento((answer.mapeamento as GapMapeamento | null) ?? null);
       setAderencia((answer.aderencia as GapAderencia | null) ?? null);
       setPontoMelhoria(answer.pontoMelhoria ?? "");
+      setNotes(answer.notes ?? "");
     }
   }, [answer]);
 
@@ -108,6 +110,7 @@ export default function GapControlRow({
   const hasAnyContent =
     !!cenario.trim() ||
     !!pontoMelhoria.trim() ||
+    !!notes.trim() ||
     !!mapeamento ||
     !!aderencia;
 
@@ -122,6 +125,7 @@ export default function GapControlRow({
           mapeamento,
           aderencia,
           pontoMelhoria,
+          notes,
           // applySuggestion: false (default) — salvar manualmente vira resposta confirmada
         }),
       });
@@ -146,6 +150,7 @@ export default function GapControlRow({
       setMapeamento(null);
       setAderencia(null);
       setPontoMelhoria("");
+      setNotes("");
       return;
     }
     if (!confirm("Apagar a resposta deste controle?")) return;
@@ -414,6 +419,23 @@ export default function GapControlRow({
               onChange={(e) => setPontoMelhoria(e.target.value)}
               rows={2}
               placeholder="O que precisa ser feito pra ficar aderente? (vira tarefa pessoal se você quiser)"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Notas livres (5º campo — polimento C5) */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              Notas / observações
+              <span className="text-[10px] font-normal text-gray-500">
+                (interno — não vai pro Excel exportado)
+              </span>
+            </label>
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Links pra políticas, decisões em andamento, contexto pra próxima revisão..."
               className="text-sm"
             />
           </div>

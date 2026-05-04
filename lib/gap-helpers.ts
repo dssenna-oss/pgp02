@@ -193,6 +193,8 @@ export interface GapAnswerDTO {
   mapeamento: GapMapeamento | null;
   aderencia: GapAderencia | null;
   pontoMelhoria: string | null;
+  /** Notas/observações livres (campo `notes` — polimento C5). */
+  notes: string | null;
   autoSuggested: boolean;
   answeredById: string | null;
   answeredAt: string | null;
@@ -265,6 +267,7 @@ export function buildGapStats(
     aderencia: string | null;
     cenarioAtual: string | null;
     pontoMelhoria: string | null;
+    notes?: string | null;
     autoSuggested: boolean;
   }>,
 ): GapStats {
@@ -296,7 +299,7 @@ export function buildGapStats(
       const ade = (a?.aderencia ?? null) as GapAderencia | null;
       const hasContent = !!(
         a &&
-        (a.cenarioAtual || a.pontoMelhoria || map || ade)
+        (a.cenarioAtual || a.pontoMelhoria || a.notes || map || ade)
       );
 
       if (hasContent) {
@@ -334,6 +337,7 @@ export function answerToDTO(a: {
   mapeamento: string | null;
   aderencia: string | null;
   pontoMelhoria: string | null;
+  notes: string | null;
   autoSuggested: boolean;
   answeredById: string | null;
   answeredAt: Date | null;
@@ -347,6 +351,7 @@ export function answerToDTO(a: {
     mapeamento: (a.mapeamento ?? null) as GapMapeamento | null,
     aderencia: (a.aderencia ?? null) as GapAderencia | null,
     pontoMelhoria: a.pontoMelhoria,
+    notes: a.notes,
     autoSuggested: a.autoSuggested,
     answeredById: a.answeredById,
     answeredAt: a.answeredAt ? a.answeredAt.toISOString() : null,

@@ -26,6 +26,11 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-3. **Polimentos no GAP (C3 + C4 + C5)** — COMPLETO
+   - **C3**: Dropdown "Filtrar por domínio" ao lado dos filtros existentes; abre o accordion automaticamente do domínio selecionado
+   - **C4**: Botão "Aceitar todas as N sugestões" no banner amarelo de sugestões; faz N PATCHes em paralelo com `applySuggestion: true`. Bug fix: `/api/gap` agora exclui sugestões pra códigos com QUALQUER answer (não só os autoSuggested=false), evitando o banner re-aparecer depois da aceitação em massa
+   - **C5**: 5º campo "Notas / observações" no controle expandido (texto livre interno, não vai pro XLSX exportado). Schema novo: coluna `notes` em `gap_answers` (Etapa 9). Migration aplicada local + Neon
+
 -2. **Diagnóstico de Privacidade (Checkpoint 10)** — COMPLETO
    - `lib/diagnostico-scoring.ts`: engine pura — 4 sub-scores ponderados (GAP 40% · Riscos 30% · Bases 20% · Inventário 10%) → score final 0-100; gera recomendações priorizadas combinando bases legais faltantes + riscos identificados/sem plano + pontos de melhoria do GAP
    - `GET /api/diagnostico`: roda 3 queries em paralelo + scoring; DPO-only
@@ -111,7 +116,8 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 5 | `_migrate-process-risks.sql` | process_risks (tabela) | ✅ | ✅ |
 | 6 | `_migrate-tasks.sql` | tasks + task_markers | ✅ | ✅ |
 | 7 | `_migrate-forum.sql` | forum_posts + forum_replies + forum_post_reads | ✅ | ✅ |
-| 8 | `_migrate-gap.sql` | gap_answers + gap_snapshots (drop gap_analyses placeholder) | ✅ | ⚠ FALTA |
+| 8 | `_migrate-gap.sql` | gap_answers + gap_snapshots (drop gap_analyses placeholder) | ✅ | ✅ |
+| 9 | `_migrate-gap-notes.sql` | gap_answers.notes (Polimento C5) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 

@@ -23,6 +23,7 @@ interface GapDomainAccordionProps {
   suggestions: Record<string, GapSuggestion>;
   search: string;
   aderFilter: string | null;
+  domainFilter: string | null;
   onlyWithPM: boolean;
   onAnswerSaved: () => void;
 }
@@ -33,6 +34,7 @@ export default function GapDomainAccordion({
   suggestions,
   search,
   aderFilter,
+  domainFilter,
   onlyWithPM,
   onAnswerSaved,
 }: GapDomainAccordionProps) {
@@ -41,6 +43,11 @@ export default function GapDomainAccordion({
     const q = search.trim().toLowerCase();
     const out = new Map<string, GapControl[]>();
     for (const dom of GAP_DOMAINS) {
+      // Filtro por domínio: se setado, ignora os demais
+      if (domainFilter && dom.code !== domainFilter) {
+        out.set(dom.code, []);
+        continue;
+      }
       const filtered = dom.controls.filter((c) => {
         // Filtro por aderência (do controle ou da resposta)
         const ans = answersByCode.get(c.code);
@@ -63,7 +70,7 @@ export default function GapDomainAccordion({
       out.set(dom.code, filtered);
     }
     return out;
-  }, [search, aderFilter, onlyWithPM, answersByCode]);
+  }, [search, aderFilter, domainFilter, onlyWithPM, answersByCode]);
 
   const totalVisible = [...visibleByDomain.values()].reduce(
     (acc, arr) => acc + arr.length,
@@ -90,7 +97,9 @@ export default function GapDomainAccordion({
   return (
     <Accordion
       type="multiple"
-      defaultValue={search ? visibleDomains.map((d) => d.code) : []}
+      defaultValue={
+        search || domainFilter ? visibleDomains.map((d) => d.code) : []
+      }
       className="w-full space-y-2"
     >
       {visibleDomains.map((dom) => {

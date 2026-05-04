@@ -502,6 +502,12 @@ model GapAnswer {
   /// pra criar Tasks pessoais (bloco 8b da decisão).
   pontoMelhoria String? @db.Text
 
+  /// Notas/observações livres do DPO sobre esse controle. Não vai pro
+  /// XLSX exportado; é um espaço pra registrar contexto interno (links,
+  /// decisões em andamento, citações de outras políticas, etc.) que
+  /// não cabe nos 4 campos formais do template.
+  notes         String? @db.Text
+
   /// Indica se o valor foi pré-preenchido pelo auto-suggest baseado no
   /// Inventário (decisão 5b) e ainda não foi confirmado pelo DPO.
   /// Vira `false` assim que o DPO salvar manualmente o controle.

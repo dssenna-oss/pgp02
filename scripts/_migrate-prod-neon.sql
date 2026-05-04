@@ -15,6 +15,7 @@
 --   * scripts/_migrate-tasks.sql (Etapa 6 — Tarefas pessoais + Marcadores)
 --   * scripts/_migrate-forum.sql (Etapa 7 — Fórum + Mensagens diretas)
 --   * scripts/_migrate-gap.sql   (Etapa 8 — GAP Analysis: gap_answers + gap_snapshots)
+--   * scripts/_migrate-gap-notes.sql (Etapa 9 — Polimento C5: campo notes em gap_answers)
 -- ============================================================
 
 BEGIN;
@@ -398,6 +399,13 @@ $$;
 
 CREATE INDEX IF NOT EXISTS "gap_snapshots_companyId_createdAt_idx"
   ON "gap_snapshots"("companyId", "createdAt");
+
+-- ====================================================================
+-- ETAPA 9 — Polimento C5: campo notes em gap_answers
+-- ====================================================================
+
+ALTER TABLE "gap_answers"
+  ADD COLUMN IF NOT EXISTS "notes" TEXT;
 
 COMMIT;
 

@@ -7,6 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { GAP_DOMAINS } from "@/lib/gap-catalog";
+import {
   ClipboardList,
   Search,
   Clock,
@@ -17,6 +25,8 @@ import {
   ListChecks,
   BarChart3,
   Download,
+  CheckCheck,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -54,9 +64,11 @@ export default function GapContent({ session: _session }: GapContentProps) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [aderFilter, setAderFilter] = useState<string | null>(null);
+  const [domainFilter, setDomainFilter] = useState<string | null>(null);
   const [onlyWithPM, setOnlyWithPM] = useState(false);
   const [showSnapshots, setShowSnapshots] = useState(false);
   const [skipWelcome, setSkipWelcome] = useState(false);
+  const [acceptingAll, setAcceptingAll] = useState(false);
 
   const refresh = async () => {
     try {
@@ -78,6 +90,49 @@ export default function GapContent({ session: _session }: GapContentProps) {
   useEffect(() => {
     refresh();
   }, []);
+
+  /**
+   * Aceita TODAS as sugestões automáticas em massa (polimento C4).
+   * Faz N PATCHes em paralelo (com `applySuggestion: true` pra preservar
+   * autoSuggested=true — DPO ainda pode editar depois). Usa Promise.all
+   * pra rodar concorrente; se o servidor tiver gargalo, troca por loop
+   * sequencial.
+   */
+  const acceptAllSuggestions = async (
+    sugs: Record<string, GapSuggestion>,
+  ) => {
+    const codes = Object.keys(sugs);
+    if (codes.length === 0) return;
+    setAcceptingAll(true);
+    try {
+      const results = await Promise.allSettled(
+        codes.map((code) => {
+          const s = sugs[code];
+          return fetch(`/api/gap/answer/${code}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cenarioAtual: s.cenarioAtual ?? null,
+              mapeamento: s.mapeamento ?? null,
+              aderencia: s.aderencia ?? null,
+              applySuggestion: true,
+            }),
+          });
+        }),
+      );
+      const failed = results.filter(
+        (r) => r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok),
+      ).length;
+      if (failed === 0) {
+        toast.success(`${codes.length} sugestão(ões) aceita(s)!`);
+      } else {
+        toast.error(`${codes.length - failed} aceita(s), ${failed} falhou(aram).`);
+      }
+      refresh();
+    } finally {
+      setAcceptingAll(false);
+    }
+  };
 
   // Map de respostas pra lookup rápido por code
   const answersByCode = useMemo(() => {
@@ -197,9 +252,28 @@ export default function GapContent({ session: _session }: GapContentProps) {
               <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
                 Os campos foram pré-preenchidos onde possível e aparecem com
                 etiqueta laranja "✨ Sugestão". Salve manualmente pra confirmar
-                como sua resposta.
+                como sua resposta — ou aceite todas de uma vez no botão ao lado.
               </p>
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => acceptAllSuggestions(data.suggestions!)}
+              disabled={acceptingAll}
+              className="shrink-0 bg-amber-100 border-amber-400 hover:bg-amber-200 dark:bg-amber-950/40 dark:border-amber-700 dark:hover:bg-amber-950/60 text-amber-900 dark:text-amber-200"
+            >
+              {acceptingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  Aceitando...
+                </>
+              ) : (
+                <>
+                  <CheckCheck className="h-4 w-4 mr-1.5" />
+                  Aceitar todas as {Object.keys(data.suggestions).length}
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -276,6 +350,25 @@ export default function GapContent({ session: _session }: GapContentProps) {
             >
               Só com Ponto de Melhoria
             </Badge>
+            {/* Dropdown filtro por domínio (polimento C3) */}
+            <Select
+              value={domainFilter ?? "_all"}
+              onValueChange={(v) =>
+                setDomainFilter(v === "_all" ? null : v)
+              }
+            >
+              <SelectTrigger className="w-[200px] h-8 text-xs">
+                <SelectValue placeholder="Filtrar por domínio..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos os domínios</SelectItem>
+                {GAP_DOMAINS.map((d) => (
+                  <SelectItem key={d.code} value={d.code}>
+                    {d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Accordion por domínio */}
@@ -285,6 +378,7 @@ export default function GapContent({ session: _session }: GapContentProps) {
             suggestions={data.suggestions ?? {}}
             search={search}
             aderFilter={aderFilter}
+            domainFilter={domainFilter}
             onlyWithPM={onlyWithPM}
             onAnswerSaved={() => refresh()}
           />

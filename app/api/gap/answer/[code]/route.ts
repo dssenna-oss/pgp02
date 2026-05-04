@@ -96,6 +96,8 @@ export async function PATCH(
     body.cenarioAtual === undefined ? undefined : normText(body.cenarioAtual);
   const pontoInput =
     body.pontoMelhoria === undefined ? undefined : normText(body.pontoMelhoria);
+  const notesInput =
+    body.notes === undefined ? undefined : normText(body.notes);
 
   const isAutoSuggestion = body.applySuggestion === true;
   const now = new Date();
@@ -110,6 +112,7 @@ export async function PATCH(
   if (mapInput !== undefined) updateData.mapeamento = mapInput;
   if (adeInput !== undefined) updateData.aderencia = adeInput;
   if (pontoInput !== undefined) updateData.pontoMelhoria = pontoInput;
+  if (notesInput !== undefined) updateData.notes = notesInput;
 
   const createData: any = {
     companyId: user.companyId,
@@ -118,6 +121,7 @@ export async function PATCH(
     mapeamento: mapInput ?? null,
     aderencia: adeInput ?? null,
     pontoMelhoria: pontoInput ?? null,
+    notes: notesInput ?? null,
     autoSuggested: isAutoSuggestion,
     answeredById: user.id,
     answeredAt: now,
