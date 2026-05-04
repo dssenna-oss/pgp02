@@ -406,15 +406,30 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                 Novo Mapeamento
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={exportToExcel}
-              className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
-            >
-              <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
-              Exportar Excel
-            </Button>
+            {userIsDPO ? (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
+                title="XLSX consolidado no formato oficial (3 abas: INVENTÁRIO + RISCOS + VISÃO DE RISCOS)"
+              >
+                <a href="/api/inventario/export" download>
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                  Exportar Excel (modelo oficial)
+                </a>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={exportToExcel}
+                className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                Exportar Excel
+              </Button>
+            )}
           </div>
         </div>
 

@@ -26,6 +26,11 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-4. **Exportação Excel do Inventário (Checkpoint 8)** — COMPLETO
+   - `lib/inventario-export.ts`: gera XLSX do zero via SheetJS replicando o template oficial (3 abas: INVENTÁRIO 84 colunas com bloco BR-CE de Análise de Riscos + RISCOS 1 linha por ProcessRisk + TAB. VISÃO DE RISCOS com contagens por tipo × severidade)
+   - `GET /api/inventario/export`: DPO-only, escopo APROVADOS
+   - Botão dinâmico no header de `/dashboard/inventario`: DPO vê "Exportar Excel (modelo oficial)" → 3 abas; Contribuidor mantém o export simples local de 14 colunas
+
 -3. **Polimentos no GAP (C3 + C4 + C5)** — COMPLETO
    - **C3**: Dropdown "Filtrar por domínio" ao lado dos filtros existentes; abre o accordion automaticamente do domínio selecionado
    - **C4**: Botão "Aceitar todas as N sugestões" no banner amarelo de sugestões; faz N PATCHes em paralelo com `applySuggestion: true`. Bug fix: `/api/gap` agora exclui sugestões pra códigos com QUALQUER answer (não só os autoSuggested=false), evitando o banner re-aparecer depois da aceitação em massa
@@ -139,7 +144,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 |---|---|---|
 | 6 | ~~**Detalhamento de Riscos**~~ — classificação via matriz 3×3 Probabilidade × Impacto, plano com checklist de recomendações + texto livre, ref. legal específica, status do ciclo de vida. Botão "Detalhar" no card; nova tela `/dashboard/inventario/[id]/risco/[code]`; KPIs de severidade e filtros no `/dashboard/riscos`. | ✅ FEITO 2026-05-04 |
 | 7 | **Visão de Riscos consolidada** (dashboard com gráficos) | depois |
-| 8 | **Exportação Excel consolidada do Inventário** (3 abas igual modelo) | depois |
+| 8 | ~~**Exportação Excel consolidada do Inventário**~~ — 3 abas (INVENTÁRIO 84 cols + RISCOS + TAB. VISÃO DE RISCOS) gerado do zero via SheetJS, replica template oficial. Botão DPO-only no header de `/dashboard/inventario`. | ✅ FEITO 2026-05-04 |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
 | 11+ | Plano de Ação · Políticas · Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
