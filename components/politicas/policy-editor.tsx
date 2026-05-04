@@ -25,6 +25,9 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertCircle,
+  Download,
+  FileText,
+  GitCompareArrows,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -41,6 +44,14 @@ interface VersionEntry {
   changeLog: string | null;
   publishedAt: string;
   publishedBy: { id: string; name: string | null; email: string } | null;
+}
+
+interface DiffResp {
+  a: { ref: string; label: string; length: number };
+  b: { ref: string; label: string; length: number };
+  sameContent: boolean;
+  stats: { addedLines: number; removedLines: number };
+  parts: { value: string; added: boolean; removed: boolean }[];
 }
 
 interface ApiResponse {
@@ -66,6 +77,11 @@ export default function PolicyEditor({ policyId }: Props) {
   const [showPublish, setShowPublish] = useState(false);
   const [changeLog, setChangeLog] = useState("");
   const [showHistory, setShowHistory] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
+  const [diffData, setDiffData] = useState<DiffResp | null>(null);
+  const [diffA, setDiffA] = useState<string>("published");
+  const [diffB, setDiffB] = useState<string>("current");
+  const [loadingDiff, setLoadingDiff] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -136,6 +152,41 @@ export default function PolicyEditor({ policyId }: Props) {
       setSaving(false);
     }
   };
+
+  const loadDiff = async (a: string, b: string) => {
+    setLoadingDiff(true);
+    try {
+      const r = await fetch(
+        `/api/politicas/${policyId}/diff?a=${a}&b=${b}`,
+        { cache: "no-store" },
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        toast.error(err.error ?? "Erro ao comparar");
+        setDiffData(null);
+        return;
+      }
+      setDiffData(await r.json());
+    } finally {
+      setLoadingDiff(false);
+    }
+  };
+
+  // Quando abre o modal Comparar, carrega diff default (published vs current)
+  useEffect(() => {
+    if (showCompare && data) {
+      loadDiff(diffA, diffB);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCompare]);
+
+  // Reload quando troca a/b dentro do modal
+  useEffect(() => {
+    if (showCompare && data) {
+      loadDiff(diffA, diffB);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diffA, diffB]);
 
   const handlePublish = async () => {
     if (!data) return;
@@ -227,6 +278,43 @@ export default function PolicyEditor({ policyId }: Props) {
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            asChild
+            title="Baixar como Word (.docx) — usa rascunho atual"
+          >
+            <a
+              href={`/api/politicas/${policyId}/export?source=current`}
+              download
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              DOCX
+            </a>
+          </Button>
+          <Button
+            variant="outline"
+            asChild
+            title="Abrir versão de impressão (Salvar como PDF)"
+          >
+            <a
+              href={`/dashboard/politicas/${policyId}/pdf?source=current&autoprint=1`}
+              target="_blank"
+              rel="noopener"
+            >
+              <FileText className="h-4 w-4 mr-1.5" />
+              PDF
+            </a>
+          </Button>
+          {policy.versionCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setShowCompare(true)}
+              title="Comparar rascunho com versão publicada (ou versões entre si)"
+            >
+              <GitCompareArrows className="h-4 w-4 mr-1.5" />
+              Comparar
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setShowHistory(true)}>
             <History className="h-4 w-4 mr-1.5" />
             Histórico ({policy.versionCount})
@@ -428,6 +516,110 @@ export default function PolicyEditor({ policyId }: Props) {
               ))}
             </ul>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: comparar versões */}
+      <Dialog open={showCompare} onOpenChange={setShowCompare}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Comparar versões</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {/* Seletores */}
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Versão A (antes)
+                </label>
+                <select
+                  value={diffA}
+                  onChange={(e) => setDiffA(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                >
+                  <option value="published">Publicada (v{policy.currentVersion})</option>
+                  <option value="current">Rascunho atual</option>
+                  {data.versions.map((v) => (
+                    <option key={v.id} value={String(v.version)}>
+                      v{v.version} ({new Date(v.publishedAt).toLocaleDateString("pt-BR")})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="text-center text-gray-500 pb-2 hidden sm:block">→</div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Versão B (depois)
+                </label>
+                <select
+                  value={diffB}
+                  onChange={(e) => setDiffB(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm bg-white dark:bg-gray-900 dark:border-gray-700"
+                >
+                  <option value="current">Rascunho atual</option>
+                  <option value="published">Publicada (v{policy.currentVersion})</option>
+                  {data.versions.map((v) => (
+                    <option key={v.id} value={String(v.version)}>
+                      v{v.version} ({new Date(v.publishedAt).toLocaleDateString("pt-BR")})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Resultado */}
+            {loadingDiff ? (
+              <div className="text-center py-12 text-gray-500">
+                <Loader2 className="h-5 w-5 animate-spin mx-auto mb-1" />
+                Comparando...
+              </div>
+            ) : diffData ? (
+              <>
+                <div className="flex flex-wrap gap-3 text-xs text-gray-600 dark:text-gray-400 border-t pt-3 dark:border-gray-800">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-emerald-200 dark:bg-emerald-800/50 border border-emerald-400"></span>
+                    +{diffData.stats.addedLines} linha(s) adicionada(s)
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-3 h-3 rounded bg-red-200 dark:bg-red-900/40 border border-red-400"></span>
+                    -{diffData.stats.removedLines} linha(s) removida(s)
+                  </span>
+                  {diffData.sameContent && (
+                    <span className="text-emerald-700 dark:text-emerald-400">
+                      ✓ Conteúdos idênticos
+                    </span>
+                  )}
+                </div>
+                <div className="border rounded p-4 bg-gray-50 dark:bg-gray-900/50 dark:border-gray-800 max-h-[50vh] overflow-y-auto">
+                  {diffData.sameContent ? (
+                    <p className="text-sm text-gray-500 italic text-center py-4">
+                      Nenhuma diferença entre as duas versões.
+                    </p>
+                  ) : (
+                    <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">
+                      {diffData.parts.map((p, i) => (
+                        <span
+                          key={i}
+                          className={cn(
+                            p.added &&
+                              "bg-emerald-200 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200",
+                            p.removed &&
+                              "bg-red-200 dark:bg-red-900/40 text-red-900 dark:text-red-200 line-through",
+                          )}
+                        >
+                          {p.value}
+                        </span>
+                      ))}
+                    </pre>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-gray-500 italic text-center py-6">
+                Escolha duas versões pra comparar.
+              </p>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

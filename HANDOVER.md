@@ -26,6 +26,14 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-11. **Políticas — E4 (DOCX + PDF + Diff)** — COMPLETO
+   - **`lib/policies-docx-export.ts`**: parser markdown→DOCX usando `docx-js`. Suporta headings, parágrafos, listas (bullet/numeric), tabelas, blockquote, HR, bold/italic/code, links. Não é parser perfeito mas cobre o subset dos templates. Capa com tipo + título + metadata da empresa/versão.
+   - **`GET /api/politicas/[id]/export?source=published|current`** — DOCX download (DPO-only)
+   - **`/dashboard/politicas/[id]/pdf`** — view de impressão dedicada (mesmo padrão do PDF do GAP). `?autoprint=1` dispara window.print() no carregamento.
+   - **`GET /api/politicas/[id]/diff?a=<ref>&b=<ref>`** — usa `diff` (jsdiff) pra calcular word-level diff. `ref` aceita `current`, `published` ou número de versão. Devolve parts[] + stats.
+   - **Botões "DOCX", "PDF", "Comparar"** no header do editor (`policy-editor.tsx`). Modal "Comparar" com 2 dropdowns (any vs any) + barra de stats colorida + diff inline em pre.
+   - **Deps novas:** `docx` + `diff` (~150KB)
+
 -10. **Políticas (Checkpoint 12 — E1+E2+E3)** — COMPLETO
    - **Schema novo**: `Policy` + `PolicyVersion` + `Company.slug` (Etapa 11)
    - `lib/policies-helpers.ts`: enums, DTOs, slug helpers, `ensureCompanySlug` (gera slug único)
@@ -199,7 +207,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |
 | 10 | ~~Diagnóstico de Privacidade~~ — score executivo (4 pilares ponderados) + recomendações priorizadas | ✅ FEITO 2026-05-04 |
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
-| 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 |
+| 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
 | 13+ | Termos · Segurança · Contratos · Incidentes · RIPD · Modelo PGP | depois |
 
 ---
