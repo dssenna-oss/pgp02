@@ -419,6 +419,7 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
             <RiskRow
               key={def.code}
               code={def.code}
+              invId={id}
               marked={st.marked}
               description={st.description}
               status={st.status}
@@ -471,6 +472,7 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
 
 function RiskRow({
   code,
+  invId,
   marked,
   description,
   status,
@@ -481,6 +483,7 @@ function RiskRow({
   onStatus,
 }: {
   code: RiskCode;
+  invId: string;
   marked: boolean;
   description: string;
   status: RiskStatus;
@@ -676,14 +679,18 @@ function RiskRow({
                     </SelectContent>
                   </Select>
                 </div>
-                {/* Bridge pro Checkpoint 6 */}
-                <Badge
+                {/* Detalhamento individual (Checkpoint 6) */}
+                <Button
+                  asChild
+                  size="sm"
                   variant="outline"
-                  className="text-xs font-normal text-gray-500 border-dashed cursor-not-allowed"
-                  title="Detalhamento de risco (impacto, probabilidade, plano de ação) — em breve no Checkpoint 6"
+                  className="text-xs h-7"
+                  title="Abrir detalhamento (probabilidade, impacto, plano de mitigação)"
                 >
-                  Detalhar (em breve)
-                </Badge>
+                  <Link href={`/dashboard/inventario/${invId}/risco/${code}`}>
+                    Detalhar →
+                  </Link>
+                </Button>
               </div>
             </div>
           )}

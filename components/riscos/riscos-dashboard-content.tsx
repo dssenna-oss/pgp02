@@ -32,6 +32,7 @@ interface Item {
   totalRisks: number;
   analyzed: boolean;
   byStatus: Record<string, number>;
+  bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
   codes: string[];
 }
 
@@ -43,6 +44,7 @@ interface ApiResponse {
     pendingCount: number;
     totalRisks: number;
     byCode: Record<string, number>;
+    bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
   };
 }
 
@@ -54,6 +56,7 @@ export default function RiscosDashboardContent({
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sevFilter, setSevFilter] = useState<"ALL" | "ALTO" | "MEDIO" | "BAIXO" | "NONE">("ALL");
 
   useEffect(() => {
     (async () => {
@@ -75,6 +78,7 @@ export default function RiscosDashboardContent({
   }, []);
 
   const filtered = (data?.items ?? []).filter((it) => {
+    if (sevFilter !== "ALL" && (it.bySeverity?.[sevFilter] ?? 0) === 0) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -176,6 +180,29 @@ export default function RiscosDashboardContent({
                 />
               </div>
 
+              {/* Severidade agregada (Checkpoint 6) */}
+              {data.stats.totalRisks > 0 && (
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Severidade dos riscos identificados
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <SevPill label="Alto" value={data.stats.bySeverity.ALTO} tone="red" />
+                      <SevPill label="Médio" value={data.stats.bySeverity.MEDIO} tone="amber" />
+                      <SevPill label="Baixo" value={data.stats.bySeverity.BAIXO} tone="emerald" />
+                      <SevPill label="Sem classificação" value={data.stats.bySeverity.NONE} tone="gray" />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Riscos sem classificação ainda não tiveram a matriz Probabilidade × Impacto definida. Abra cada um pelo botão "Detalhar" e classifique.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Top riscos da organização */}
               {Object.keys(data.stats.byCode).length > 0 && (
                 <Card>
@@ -211,15 +238,38 @@ export default function RiscosDashboardContent({
                 </Card>
               )}
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nome do processo, setor ou criador..."
-                  className="pl-9"
-                />
+              {/* Busca + filtro por severidade */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por nome do processo, setor ou criador..."
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {(["ALL", "ALTO", "MEDIO", "BAIXO", "NONE"] as const).map((v) => {
+                    const labelMap = { ALL: "Todos", ALTO: "Alto", MEDIO: "Médio", BAIXO: "Baixo", NONE: "S/ classif." };
+                    const active = sevFilter === v;
+                    return (
+                      <Badge
+                        key={v}
+                        variant="outline"
+                        onClick={() => setSevFilter(v)}
+                        className={cn(
+                          "cursor-pointer px-2.5 py-1 text-xs whitespace-nowrap",
+                          active
+                            ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        )}
+                      >
+                        {labelMap[v]}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Lista de processos */}
@@ -374,14 +424,38 @@ function ProcessRiskCard({ item }: { item: Item }) {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {item.totalRisks > 0 ? (
-            <div className="text-right">
-              <div className="text-xl font-bold text-red-600 dark:text-red-400">
-                {item.totalRisks}
+            <>
+              <div className="flex flex-col items-end gap-0.5 text-[10px]">
+                {item.bySeverity.ALTO > 0 && (
+                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800">
+                    {item.bySeverity.ALTO} alto
+                  </Badge>
+                )}
+                {item.bySeverity.MEDIO > 0 && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800">
+                    {item.bySeverity.MEDIO} médio
+                  </Badge>
+                )}
+                {item.bySeverity.BAIXO > 0 && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
+                    {item.bySeverity.BAIXO} baixo
+                  </Badge>
+                )}
+                {item.bySeverity.NONE > 0 && (
+                  <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400">
+                    {item.bySeverity.NONE} s/ classif.
+                  </Badge>
+                )}
               </div>
-              <div className="text-xs text-gray-500">
-                de 13 ({pct}%)
+              <div className="text-right">
+                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                  {item.totalRisks}
+                </div>
+                <div className="text-xs text-gray-500">
+                  de 13 ({pct}%)
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <span className="text-sm text-gray-400">Sem riscos marcados</span>
           )}
@@ -389,5 +463,32 @@ function ProcessRiskCard({ item }: { item: Item }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+// ============================================================
+// SevPill — pílula colorida pra contagem por severidade
+// ============================================================
+
+function SevPill({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "red" | "amber" | "emerald" | "gray";
+}) {
+  const toneCls: Record<typeof tone, string> = {
+    red: "bg-red-50 text-red-800 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800",
+    amber: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+    emerald: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800",
+    gray: "bg-gray-50 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+  };
+  return (
+    <div className={cn("border rounded-md p-2 text-center", toneCls[tone])}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-[11px]">{label}</div>
+    </div>
   );
 }

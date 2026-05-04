@@ -26,6 +26,13 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-1. **Detalhamento de Riscos (Checkpoint 6)** — COMPLETO
+   - `lib/riscos-catalog.ts`: matriz 3×3 Probabilidade × Impacto → Severidade (Alto/Médio/Baixo); helpers `computeSeverity`, `encodeSeverity`/`decodeSeverity` (formato "P:M;I:A;S:ALTO" no campo `severityLevel` existente — sem migration)
+   - APIs: `GET/PATCH /api/inventario/[id]/risco/[riskCode]` (1 risco por vez)
+   - UI: `/dashboard/inventario/[id]/risco/[code]` com 4 cards metodológicos (FATO/FUNDAMENTO/RISCO/RECOMENDAÇÕES) + matriz interativa colorida + plano de mitigação (checkboxes das recomendações + notas livres) + ref. legal específica + status
+   - `/dashboard/riscos` ganha card "Severidade dos riscos identificados" (4 SevPills: Alto/Médio/Baixo/Sem classif.) + filtro por severidade + badges de severidade no card de cada processo
+   - Botão "Detalhar →" no card do risco substitui o antigo "(em breve)"
+
 0. **GAP Analysis (Checkpoint 9)** — COMPLETO em 5 sub-sessões
    - Schema: `GapAnswer` + `GapSnapshot` em Prisma; `gap_analyses` (placeholder Abacus) removida
    - Catálogo: `lib/gap-catalog.ts` GERADO por `scripts/generate-gap-catalog.ts` a partir do template oficial — 119 controles em 28 domínios
@@ -118,7 +125,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 
 | # | Etapa | Status |
 |---|---|---|
-| 6 | **Detalhamento de Riscos** — classificação Alto/Médio/Baixo + plano de mitigação por risco. Schema já tem campos vazios (`severityLevel`, `mitigationPlan`, `legalBasisRef`). Badge "Detalhar (em breve)" já está na UI esperando. | próximo |
+| 6 | ~~**Detalhamento de Riscos**~~ — classificação via matriz 3×3 Probabilidade × Impacto, plano com checklist de recomendações + texto livre, ref. legal específica, status do ciclo de vida. Botão "Detalhar" no card; nova tela `/dashboard/inventario/[id]/risco/[code]`; KPIs de severidade e filtros no `/dashboard/riscos`. | ✅ FEITO 2026-05-04 |
 | 7 | **Visão de Riscos consolidada** (dashboard com gráficos) | depois |
 | 8 | **Exportação Excel consolidada do Inventário** (3 abas igual modelo) | depois |
 | 9 | ~~**GAP Analysis**~~ | ✅ FEITO 2026-05-03 |

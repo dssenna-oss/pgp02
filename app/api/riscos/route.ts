@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isDPO } from "@/lib/auth-helpers";
+import { decodeSeverity } from "@/lib/riscos-catalog";
 
 /**
  * GET /api/riscos
@@ -42,7 +43,12 @@ export async function GET(_request: NextRequest) {
       reviewedAt: true,
       createdBy: { select: { name: true, email: true } },
       processRisks: {
-        select: { riskCode: true, status: true, autoSuggested: true },
+        select: {
+          riskCode: true,
+          status: true,
+          autoSuggested: true,
+          severityLevel: true,
+        },
       },
     },
     orderBy: { reviewedAt: "desc" },
@@ -57,6 +63,18 @@ export async function GET(_request: NextRequest) {
       },
       {} as Record<string, number>
     );
+    // Severidades por processo (decodificadas do campo severityLevel
+    // — a estrutura encoded é "P:M;I:A;S:ALTO" mas o consumidor só
+    // precisa do nível final pra agregar)
+    const bySeverity = { ALTO: 0, MEDIO: 0, BAIXO: 0, NONE: 0 };
+    for (const r of p.processRisks) {
+      const dec = decodeSeverity(r.severityLevel);
+      const sev = dec?.severity;
+      if (sev === "ALTO") bySeverity.ALTO += 1;
+      else if (sev === "MEDIO") bySeverity.MEDIO += 1;
+      else if (sev === "BAIXO") bySeverity.BAIXO += 1;
+      else bySeverity.NONE += 1;
+    }
     return {
       id: p.id,
       serviceName: p.serviceName,
@@ -67,6 +85,7 @@ export async function GET(_request: NextRequest) {
       totalRisks: total,
       analyzed: total > 0,
       byStatus,
+      bySeverity,
       codes: p.processRisks.map((r) => r.riskCode),
     };
   });
@@ -84,6 +103,15 @@ export async function GET(_request: NextRequest) {
     }
   }
 
+  // Contagem agregada por severidade (todos os processos somados)
+  const bySeverity = { ALTO: 0, MEDIO: 0, BAIXO: 0, NONE: 0 };
+  for (const item of items) {
+    bySeverity.ALTO += item.bySeverity.ALTO;
+    bySeverity.MEDIO += item.bySeverity.MEDIO;
+    bySeverity.BAIXO += item.bySeverity.BAIXO;
+    bySeverity.NONE += item.bySeverity.NONE;
+  }
+
   return NextResponse.json({
     items,
     stats: {
@@ -92,6 +120,7 @@ export async function GET(_request: NextRequest) {
       pendingCount: totalProcesses - analyzedCount,
       totalRisks,
       byCode,
+      bySeverity,
     },
   });
 }
