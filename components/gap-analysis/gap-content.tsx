@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
   CheckCheck,
   Loader2,
   FileText,
+  GitCompareArrows,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -213,6 +215,16 @@ export default function GapContent({ session: _session }: GapContentProps) {
               <FileText className="h-4 w-4 mr-1.5" />
               Exportar PDF
             </a>
+          </Button>
+          <Button
+            variant="outline"
+            asChild
+            title="Comparar 2 versões do GAP (snapshots ou estado atual)"
+          >
+            <Link href="/dashboard/gap-analysis/compare">
+              <GitCompareArrows className="h-4 w-4 mr-1.5" />
+              Comparar
+            </Link>
           </Button>
           <Button variant="outline" onClick={() => setShowSnapshots(true)}>
             <History className="h-4 w-4 mr-1.5" />

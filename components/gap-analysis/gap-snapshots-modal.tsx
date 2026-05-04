@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Trash2,
   Download,
+  GitCompareArrows,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -179,6 +180,18 @@ export default function GapSnapshotsModal({ onClose, onCreated }: Props) {
                     )}
                   </div>
                   <div className="shrink-0 flex gap-1">
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="ghost"
+                      title="Comparar este snapshot com o estado atual"
+                    >
+                      <Link
+                        href={`/dashboard/gap-analysis/compare?a=${s.id}&b=atual`}
+                      >
+                        <GitCompareArrows className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
                     <Button
                       asChild
                       size="sm"

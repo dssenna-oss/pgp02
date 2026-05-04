@@ -26,6 +26,13 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
+-7. **GAP — Comparar versões (Polimento C1)** — COMPLETO
+   - `lib/gap-compare.ts`: engine pura `buildGapDiff(listA, listB)` que classifica mudanças em 5 tipos (IMPROVED / WORSENED / CHANGED / NEW / REMOVED) e calcula scores comparativos
+   - `GET /api/gap/compare?a=&b=` — cada lado aceita "atual" ou ID de snapshot. DPO-only, valida ownership
+   - `/dashboard/gap-analysis/compare` — UI com 2 dropdowns no topo, hero comparativo (score A · delta · score B), 6 KPI pills coloridos por tipo, tabela com 1 linha por mudança (filtrável por tipo). Inalterados ficam fora pra reduzir ruído
+   - Pontos de entrada: botão "Comparar" no header do GAP + ícone GitCompareArrows em cada item do modal de Snapshots (`?a=<snap>&b=atual` pré-selecionado)
+   - Zero migration; só agrega dados existentes
+
 -6. **GAP — Exportar PDF (Polimento C2)** — COMPLETO
    - Página dedicada `/dashboard/gap-analysis/pdf` — layout print-friendly (A4, sem sidebar) com capa executiva, score de maturidade, KPIs por aderência/mapeamento, top 10 pontos de melhoria, sumário por domínio (28 linhas)
    - Auto-print via `window.print()` (condicional por query param `?autoprint=1`) — ao clicar "Exportar PDF" no header do GAP abre nova aba que já dispara o diálogo de impressão; user escolhe "Salvar como PDF"
