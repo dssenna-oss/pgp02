@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileText, Loader2, Save, Edit2, X, Code, Type } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
+import HtmlSubAccordion from "./html-sub-accordion";
 
 interface PhaseDescriptionManagerProps {
   phase: string;
@@ -191,12 +192,19 @@ export default function PhaseDescriptionManager({
     </div>
   );
 
-  // Conteúdo principal — comum entre os 2 modos
+  // Conteúdo principal — comum entre os 2 modos.
+  // Modo noCard usa HtmlSubAccordion (CP19 Fatia 2) que detecta múltiplos
+  // <h4> e quebra em sub-accordions (especialmente útil em "Considerações").
+  // Quando há < 2 h4s, o componente faz fallback pra render plano.
   const innerContent = editing ? null : (
-    <div
-      className="prose dark:prose-invert max-w-none"
-      dangerouslySetInnerHTML={{ __html: content }}
-    />
+    noCard ? (
+      <HtmlSubAccordion html={content} />
+    ) : (
+      <div
+        className="prose dark:prose-invert max-w-none"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    )
   );
 
   if (noCard) {
