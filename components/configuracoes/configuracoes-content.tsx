@@ -10,6 +10,7 @@ import { Settings, Mail, Bell, Shield, Download, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import CompanyLogoUploader from "./company-logo-uploader";
 import UserManagement from "./user-management";
+import TourSettingsCard from "@/components/tour/tour-settings-card";
 import toast from "react-hot-toast";
 
 interface ConfiguracoesContentProps {
@@ -169,6 +170,9 @@ export default function ConfiguracoesContent({ session }: ConfiguracoesContentPr
 
       {/* Logo da Empresa */}
       <CompanyLogoUploader />
+
+      {/* Tour guiado (Checkpoint 20 / Fatia 2) — status + botões de refazer/resetar */}
+      <TourSettingsCard />
 
       {/* Email Settings */}
       <Card>

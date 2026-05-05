@@ -20,6 +20,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { TourScriptId, TourState, TourStep } from "@/lib/tour/tour-types";
 import { MASTER_TOUR } from "@/lib/tour/master-script";
+import {
+  markTourCompleted,
+  markTourSkipped,
+  shouldAutoStart,
+} from "@/lib/tour/tour-storage";
 import TourSpotlight from "./tour-spotlight";
 import TourPanel from "./tour-panel";
 
@@ -82,26 +87,31 @@ export default function TourProvider({ children }: TourProviderProps) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    // Encerramento manual (Pular tour / Esc / ×) → marca como skipped.
+    // Se já houver `completedAt` em local storage, `markTourSkipped` é
+    // no-op — a conclusão vence a desistência.
+    if (scriptId) markTourSkipped(scriptId);
     setIsOpen(false);
     setIsPlaying(false);
     setCurrentIndex(0);
-  }, []);
+  }, [scriptId]);
 
   const next = useCallback(() => {
     setCurrentIndex((idx) => {
       if (idx >= steps.length - 1) {
-        // Último passo → encerrar.
+        // Último passo → marcar como concluído + encerrar.
         if (audioRef.current) {
           audioRef.current.pause();
           audioRef.current.currentTime = 0;
         }
+        if (scriptId) markTourCompleted(scriptId);
         setIsOpen(false);
         setIsPlaying(false);
         return 0;
       }
       return idx + 1;
     });
-  }, [steps.length]);
+  }, [steps.length, scriptId]);
 
   const prev = useCallback(() => {
     setCurrentIndex((idx) => Math.max(0, idx - 1));
@@ -121,6 +131,35 @@ export default function TourProvider({ children }: TourProviderProps) {
       audio.pause();
       setIsPlaying(false);
     }
+  }, []);
+
+  // Auto-disparo do tour mestre na 1ª visita (sem registro em localStorage).
+  // Aguarda a sidebar estar montada na DOM antes de abrir, pra que o passo 2
+  // já consiga aplicar spotlight sem race. Tenta por até 5s; se a sidebar
+  // não aparecer (ex.: viewport mobile com sidebar fechada), desiste em
+  // silêncio e usuário pode disparar pelo botão flutuante.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!shouldAutoStart("master")) return;
+    let attempts = 0;
+    let cancelled = false;
+    const tryStart = () => {
+      if (cancelled) return;
+      const sidebarReady = !!document.querySelector('[data-tour-id="sidebar"]');
+      if (sidebarReady) {
+        start("master");
+      } else if (attempts < 20) {
+        attempts += 1;
+        setTimeout(tryStart, 250);
+      }
+    };
+    const initial = setTimeout(tryStart, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(initial);
+    };
+    // Roda só uma vez no mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Atalhos globais quando o tour está aberto.
