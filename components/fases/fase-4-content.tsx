@@ -11,6 +11,8 @@ import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
 import PhaseSection from "./phase-section";
 import PhaseToolbar from "./phase-toolbar";
+import PhaseTOC from "./phase-toc";
+import PhaseReadingProgress from "./phase-reading-progress";
 
 export default function Fase4Content() {
   // Definir o checklist da Fase 4
@@ -267,7 +269,10 @@ export default function Fase4Content() {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+      <PhaseReadingProgress />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6">
+        <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           🚩 Fase 4 - GAP Analysis
@@ -396,7 +401,10 @@ export default function Fase4Content() {
       >
         <PhaseDocumentsUpload phase="fase-4" noCard />
       </PhaseSection>
-    </div>
+        </div>
+        <PhaseTOC phase="fase-4" />
+      </div>
+    </>
   );
 }
 

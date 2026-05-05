@@ -10,6 +10,8 @@ import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
 import PhaseSection from "./phase-section";
 import PhaseToolbar from "./phase-toolbar";
+import PhaseTOC from "./phase-toc";
+import PhaseReadingProgress from "./phase-reading-progress";
 
 export default function Fase1Content() {
   // Definir o checklist da Fase 1
@@ -121,7 +123,10 @@ export default function Fase1Content() {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+      <PhaseReadingProgress />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6">
+        <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           🚩 Fase 1 - Formação das Equipes de Trabalho
@@ -214,6 +219,9 @@ export default function Fase1Content() {
       >
         <PhaseDocumentsUpload phase="fase-1" noCard />
       </PhaseSection>
-    </div>
+        </div>
+        <PhaseTOC phase="fase-1" />
+      </div>
+    </>
   );
 }

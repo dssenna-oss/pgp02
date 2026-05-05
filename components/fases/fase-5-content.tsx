@@ -11,6 +11,8 @@ import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
 import PhaseSection from "./phase-section";
 import PhaseToolbar from "./phase-toolbar";
+import PhaseTOC from "./phase-toc";
+import PhaseReadingProgress from "./phase-reading-progress";
 
 export default function Fase5Content() {
   // Definir o checklist da Fase 5
@@ -209,7 +211,10 @@ export default function Fase5Content() {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+      <PhaseReadingProgress />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6">
+        <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           🚩 Fase 5 - Plano de Ação e Adequação
@@ -305,7 +310,10 @@ export default function Fase5Content() {
       >
         <PhaseDocumentsUpload phase="fase-5" noCard />
       </PhaseSection>
-    </div>
+        </div>
+        <PhaseTOC phase="fase-5" />
+      </div>
+    </>
   );
 }
 

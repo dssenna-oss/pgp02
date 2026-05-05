@@ -56,8 +56,9 @@ export default function PhaseSection({
 
   return (
     <section
+      data-phase-section-id={section}
       className={cn(
-        "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden",
+        "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden scroll-mt-4",
         ACCENT_CLASSES[accent],
       )}
     >
