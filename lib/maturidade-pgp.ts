@@ -94,6 +94,21 @@ export interface MaturityInput {
     contribuidores: number;
     hasDpoCadastrado: boolean;
   };
+
+  /** Incidentes (Checkpoint 16). Alimenta a Fase 7 e pendências
+   * críticas. Não vira pilar separado pra não rebalancear pesos. */
+  incidentes: {
+    total: number;
+    /** Em aberto: tudo exceto ENCERRADO e FALSO_POSITIVO */
+    emAberto: number;
+    encerrados: number;
+    /** Severidade ALTO/MEDIO sem comunicação ANPD (obrigatoriedade legal) */
+    pendingAnpd: number;
+    /** Prazo regressivo crítico (<24h ou vencido) */
+    criticalDeadline: number;
+    /** Vencidos (passou dos 72h sem comunicar ANPD) */
+    overdueDeadline: number;
+  };
 }
 
 // ============================================================
@@ -541,19 +556,76 @@ function computePhases(i: MaturityInput): PhaseStatus[] {
       href: "/dashboard/fase-6",
     },
 
-    // Fase 7 — Monitoramento
+    // Fase 7 — Monitoramento (Incidentes — Checkpoint 16)
     {
       id: "7",
       number: 7,
       name: "Fase 7",
-      description: "Monitoramento contínuo",
-      progress: 0,
-      statusLabel: "Aguardando ferramenta",
-      statusColor: "neutral",
+      description: "Monitoramento contínuo (Incidentes)",
+      progress: (() => {
+        const inc = i.incidentes;
+        // Sem incidentes = 70 (pilar neutro: monitoramento ativo mas sem
+        // ocorrências — equivalente a "operando bem"). Com incidentes:
+        // - 100 se todos encerrados ou falsos positivos
+        // - Penalidade por overdue (deadline ANPD vencido) e pending
+        if (inc.total === 0) return 70;
+        const closedPct = ((inc.encerrados) / inc.total) * 100;
+        const overduePenalty = Math.min(40, inc.overdueDeadline * 20);
+        const criticalPenalty = Math.min(
+          20,
+          (inc.criticalDeadline - inc.overdueDeadline) * 10
+        );
+        return Math.max(
+          0,
+          Math.round(closedPct - overduePenalty - criticalPenalty)
+        );
+      })(),
+      statusLabel:
+        i.incidentes.overdueDeadline > 0
+          ? "Atenção"
+          : i.incidentes.criticalDeadline > 0
+            ? "Atenção"
+            : i.incidentes.emAberto > 0
+              ? "Em andamento"
+              : i.incidentes.total > 0
+                ? "Em dia"
+                : "Sem ocorrências",
+      statusColor:
+        i.incidentes.overdueDeadline > 0
+          ? "danger"
+          : i.incidentes.criticalDeadline > 0
+            ? "warning"
+            : i.incidentes.emAberto > 0
+              ? "warning"
+              : i.incidentes.total > 0
+                ? "success"
+                : "neutral",
       kpis: [
-        { label: "Status", value: "Em construção (Checkpoint 15+)" },
+        { label: "Total registrados", value: i.incidentes.total },
+        { label: "Em aberto", value: i.incidentes.emAberto },
+        ...(i.incidentes.criticalDeadline > 0
+          ? [
+              {
+                label: "Prazo crítico",
+                value: i.incidentes.criticalDeadline,
+                highlight: true,
+              },
+            ]
+          : []),
+        ...(i.incidentes.overdueDeadline > 0
+          ? [
+              {
+                label: "ANPD vencido",
+                value: i.incidentes.overdueDeadline,
+                highlight: true,
+              },
+            ]
+          : []),
+        ...(i.incidentes.encerrados > 0
+          ? [{ label: "Encerrados", value: i.incidentes.encerrados }]
+          : []),
       ],
-      href: "/dashboard/fase-7",
+      href: "/dashboard/incidentes",
     },
   ];
 }
@@ -627,6 +699,30 @@ function computeCriticalPending(
       severity: "media",
       message: "Diagnóstico de Privacidade ainda não foi calculado.",
       href: "/dashboard/diagnostico",
+    });
+  }
+
+  // Incidentes (Checkpoint 16) — prazo legal regressivo é o mais urgente
+  if (i.incidentes.overdueDeadline > 0) {
+    out.push({
+      severity: "alta",
+      message: `${i.incidentes.overdueDeadline} incidente(s) com prazo de comunicação à ANPD VENCIDO (Art. 48 LGPD).`,
+      href: "/dashboard/incidentes",
+    });
+  } else if (i.incidentes.criticalDeadline > 0) {
+    out.push({
+      severity: "alta",
+      message: `${i.incidentes.criticalDeadline} incidente(s) com prazo crítico (≤24h) pra comunicar a ANPD.`,
+      href: "/dashboard/incidentes",
+    });
+  }
+
+  if (i.incidentes.pendingAnpd > i.incidentes.criticalDeadline) {
+    const additional = i.incidentes.pendingAnpd - i.incidentes.criticalDeadline;
+    out.push({
+      severity: "media",
+      message: `${additional} incidente(s) de severidade ALTO/MEDIO sem comunicação à ANPD.`,
+      href: "/dashboard/incidentes",
     });
   }
 

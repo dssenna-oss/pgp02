@@ -77,6 +77,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * mais recente com risco geral ALTO. Polling 60s.
    */
   const [operatorsPending, setOperatorsPending] = useState<number | null>(null);
+  /**
+   * Incidentes com prazo crítico (Checkpoint 16 / F4):
+   * severidade ALTO/MEDIO + sem comunicação ANPD + prazo regressivo de
+   * 72h em estado WARN (≤24h) ou CRITICAL (vencido). Polling 60s.
+   */
+  const [incidentsPending, setIncidentsPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -145,11 +151,23 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchIncidentsPending = async () => {
+      try {
+        const r = await fetch("/api/incidents/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setIncidentsPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
       void fetchRipdPending();
       void fetchOperatorsPending();
+      void fetchIncidentsPending();
     };
 
     refreshAll();
@@ -157,6 +175,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     const forumId = setInterval(fetchForumUnread, 30000);
     const ripdId = setInterval(fetchRipdPending, 60000);
     const opsId = setInterval(fetchOperatorsPending, 60000);
+    const incidentsId = setInterval(fetchIncidentsPending, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
@@ -164,6 +183,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       clearInterval(forumId);
       clearInterval(ripdId);
       clearInterval(opsId);
+      clearInterval(incidentsId);
       offEvent();
     };
   }, []);
@@ -300,6 +320,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: Handshake,
       // Visível pra DPO + Contribuidor (Contribuidor vê só os
       // operadores ligados a processos próprios; DPO edita tudo)
+    },
+    {
+      name: "Incidentes",
+      description: "Resposta a incidentes (Art. 48 LGPD · 72h ANPD)",
+      href: "/dashboard/incidentes",
+      icon: AlertTriangle,
+      // Visível pra DPO + Contribuidor (Contribuidor vê só os próprios)
     },
     {
       name: "Bases Legais",
@@ -442,6 +469,16 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     operatorsPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex-shrink-0">
                         {operatorsPending}
+                      </span>
+                    )}
+                  {/* Badge de incidentes em prazo crítico (≤24h ou vencido,
+                      severidade ALTO/MEDIO sem comunicação ANPD). Vermelho
+                      por se tratar de prazo legal. */}
+                  {item.href === "/dashboard/incidentes" &&
+                    incidentsPending !== null &&
+                    incidentsPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold flex-shrink-0 animate-pulse">
+                        {incidentsPending}
                       </span>
                     )}
                 </span>

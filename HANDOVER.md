@@ -1,9 +1,11 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-05 (Checkpoint 15 — Declaração formal do PGP)
+> **Última sessão:** 2026-05-05 (Checkpoint 16 — Incidentes) · **Branch:** `claude/recursing-nash-10eacb` (worktree)
 >
-> **Migração Neon:** ✅ Etapas 2 → 16 aplicadas em prod (Checkpoint 15 não tem schema novo).
-> **`origin/main`:** Pendente (commit Checkpoint 15 ainda não pushado).
+> **Migração Neon:** ✅ Etapas 2 → 17 aplicadas (Etapa 17 = Incidentes refatorado + IncidentCommunication + action_plans.refIncidentId).
+> **`origin/main`:** Pendente (commits Checkpoint 15 + 16 ainda não pushados).
+>
+> **⚠ Senha Neon:** foi exposta em chat duas vezes (2026-05-03 e 2026-05-05). **Rotacionar** quando puder e atualizar `DATABASE_URL` no Vercel.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -295,6 +297,23 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
      (sem esperar polling) ao criar/excluir tarefa/post
    - Banner "Mostrando apenas tarefas do processo X" com botão "Limpar filtro"
 
+-17. **Incidentes (Checkpoint 16)** — COMPLETO MVP+D+F5
+   - **Refatorou Incident legado** (placeholder do Abacus) pela estrutura definitiva. Rename `detectionDate→detectedAt`, `anpdReportDate→anpdNotifiedAt`, etc. + adição de 13 campos novos (occurredAt/closedAt/subjectsNotifiedAt/hasSensitiveData/affectedSubjectsCategories/attackVector/affectedSystems/affectedOperators/riskAssessment/securityMeasuresInPlace/delayJustification/closureNotes/createdById/closedById). Indexes em (companyId, status), (companyId, severity), (companyId, detectedAt). Drop colunas legadas (preventiveActions, reportDate, reportedToAnpd) + drop NOT NULL em affectedDataTypes.
+   - **Novo modelo `IncidentCommunication`** — histórico de auditoria das comunicações (target ANPD/TITULARES, content snapshot, channel, createdBy).
+   - **Workflow 7 estados** com tabela TRANSITIONS: `DETECTADO → EM_ANALISE → EM_CONTENCAO → COMUNICADO_ANPD → COMUNICADO_TITULARES → ENCERRADO` (ou `FALSO_POSITIVO`). Transições inválidas rejeitadas server-side.
+   - **Severidade ALTO/MEDIO** disparam obrigatoriedade ANPD (Art. 48 §3º LGPD).
+   - **Prazo regressivo 72h** com 3 níveis (OK/WARN/CRITICAL) — cálculo em `lib/incidentes-helpers.ts:computeAnpdDeadline()`. Tick reativo de 60s no editor pra atualizar o relógio.
+   - **DOCX Comunicação à ANPD** (Res. CD/ANPD nº 15/2024) — `lib/incidentes-docx-export.ts` com 8 seções estruturadas. Endpoint `POST /api/incidents/[id]/communicate-anpd` (DPO-only) gera + marca anpdNotifiedAt + avança status COMUNICADO_ANPD + grava IncidentCommunication.
+   - **DOCX Carta aos Titulares** (Art. 48 §1º LGPD) — `lib/incidentes-titulares-docx.ts` com linguagem acessível, 6 seções incluindo direitos do titular Art. 18. Endpoint `POST /api/incidents/[id]/communicate-subjects` (DPO-only).
+   - **UI Lista** `/dashboard/incidentes` — 4 KPIs (em aberto/prazo crítico ≤24h/encerrados/falsos positivos), filtros status+severidade+busca, registro rápido inline com 5 campos.
+   - **UI Editor** `/dashboard/incidentes/[id]` — 6 abas (Identificação · Dados afetados · Técnico · Risco · Comunicações · Encerramento) + banner regressivo 72h com 3 estados visuais + status switcher + histórico de comunicações com snapshot expansível.
+   - **Plano de Ação ganha origem `INCIDENTE`** — `lib/action-plan-helpers.ts` (label "Incidente", badge vermelho, refIncidentId resolver). `/api/plano-acao/import` cria 1 ação por incidente em aberto, idempotente, prioridade derivada da severidade, título urgente quando ANPD vencido. `<AddToActionPlanButton>` aceita `origin: INCIDENTE`.
+   - **Badge sidebar** vermelho com `animate-pulse` quando há incidentes em prazo crítico (≤24h ou vencido). Item novo "Incidentes" na nav (ícone AlertTriangle, visível DPO+Contribuidor). Endpoint dedicado `/api/incidents/pending-count` + polling 60s.
+   - **Card "Coloque em prática" da Fase 7** — `Fase7Tools` em `phase-native-tools.tsx` com stats reais (registrados/em aberto/prazo crítico/encerrados), borda warning quando há crítico.
+   - **Plug Painel de Maturidade (F5)** — Fase 7 saiu de "Aguardando ferramenta" pra fase real com KPIs (`lib/maturidade-pgp.ts:computePhases`). Pendências críticas adicionadas: ANPD vencido (alta), prazo crítico ≤24h (alta), pendingAnpd geral (média). Não criou pilar separado pra preservar pesos atuais (40/20/15/15/10).
+   - **Visibilidade:** DPO vê tudo + edita tudo + encerra. Contribuidor cria + lista próprios + edita os próprios enquanto não em COMUNICADO_ANPD/COMUNICADO_TITULARES/ENCERRADO.
+   - **Backlog (fora do escopo):** F2/F3 (M:N Inventário/Operadores — hoje texto livre), E3 (timeline visual — redundante com histórico), H (sino sidebar + formulário emergência simplificado).
+
 ### Migrações de banco aplicadas
 
 | Etapa | Arquivo | Tabelas/colunas | Status local | Status Neon |
@@ -313,6 +332,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 14 | `_migrate-terceiros-assessment.sql` | operator_assessments + publicToken único (Checkpoint 14 G2) | ✅ | ✅ |
 | 15 | `_migrate-action-plan-operator.sql` | action_plans.refOperatorId (Checkpoint 14 G4 — Plano ↔ Operadores) | ✅ | ✅ |
 | 16 | `_migrate-terceiros-adequacao.sql` | operators.lgpdComplianceStatus + contractOriginalDate (Checkpoint 14 H1 — Adequação) | ✅ | ✅ |
+| 17 | `_migrate-incidents.sql` | incidents refatorada (rename detectionDate→detectedAt etc) + incident_communications + action_plans.refIncidentId (Checkpoint 16) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -342,7 +362,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
 | 14 | ~~**Gestão de Terceiros**~~ — G1+G2+G3 (operadores + régua ANPD + formulário Cyber+LGPD + 5 cláusulas DOCX) + G4 (auto-import Inventário→Operador, plug Plano de Ação `OPERADOR`, plug RIPD Seção 1 estruturada, 3º card Fase 6, badge sidebar) + **H1 (adequação de contratos pré-LGPD)**: status `lgpdComplianceStatus` + `contractOriginalDate`; campanha "Iniciar adequação" gera 5 ações automáticas (avaliar/decidir/negociar/assinar/reavaliar); toggle DOCX **Cláusula nova** vs **Termo aditivo** com cabeçalho jurídico próprio; **Importação de PDF** pesquisável (regex CNPJ/datas, 3 estratégias de razão social, keywords LGPD pra cláusulas existentes, modal preview editável + anexo automático no Vercel Blob). | ✅ FEITO 2026-05-04 (G1+G2+G3+G4+H1) |
 | 15 | ~~**Declaração formal do PGP (Opção 1)**~~ — A: Template "Política do PGP" (11º template, documento mater) + B: Painel executivo de Maturidade do PGP (5 pilares ponderados, 5 níveis qualitativos, status das 8 fases, pendências críticas, export PDF) + C: 2 cards no "Coloque em prática" do Entendendo o PGP. Sem schema novo. | ✅ FEITO 2026-05-05 |
-| 16+ | Incidentes (notificação ANPD 72h) · Segurança institucional (PSI) | depois |
+| 16 | ~~**Incidentes**~~ — Refatorou Incident legado, IncidentCommunication, workflow 7 estados + severidade ALTO/MEDIO + prazo 72h, DOCX ANPD (Res. 15/2024) + DOCX titulares (Art. 48 §1º), UI lista+editor 6 abas + banner regressivo, plug Plano (origem INCIDENTE) + Maturidade (Fase 7 viva), badge sidebar pulsante, card Fase 7. | ✅ FEITO 2026-05-05 (A+B+C+D+E1+E2+F1+F4+F5+G1) |
+| 17+ | Segurança institucional (PSI) · Refinos backlog CP16 (E3 timeline, F2/F3 M:N, H sino) | depois |
 
 ---
 
@@ -353,7 +374,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 & "E:\postgres\pgsql2\pgsql\bin\pg_ctl.exe" -D E:\postgres\data -l E:\postgres\logs\server.log start
 
 # 2. Ir pro worktree atual (ou outra worktree)
-cd E:\_________PGP\.claude\worktrees\youthful-almeida-c304f7
+cd E:\_________PGP\.claude\worktrees\recursing-nash-10eacb
 
 # 3. Garantir .env (worktrees não compartilham — copiar da pasta-mãe se for 1ª vez)
 test-path .env || cp ../../../.env .env

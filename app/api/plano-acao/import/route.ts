@@ -33,12 +33,12 @@ export async function POST(_request: NextRequest) {
   const { user } = r;
 
   // 1) Carregar TUDO em paralelo
-  const [existingActions, gapAnswers, risks, inventories, operators] = await Promise.all([
+  const [existingActions, gapAnswers, risks, inventories, operators, incidents] = await Promise.all([
     // Pra dedup: chaves já existentes
     prisma.actionPlan.findMany({
       where: {
         companyId: user.companyId,
-        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR"] },
+        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR", "INCIDENTE"] },
       },
       select: {
         origin: true,
@@ -46,6 +46,7 @@ export async function POST(_request: NextRequest) {
         refRiskId: true,
         refInventoryId: true,
         refOperatorId: true,
+        refIncidentId: true,
       },
     }),
     prisma.gapAnswer.findMany({
@@ -106,6 +107,24 @@ export async function POST(_request: NextRequest) {
         },
       },
     }),
+    // Incidentes em aberto (não encerrados / não falsos positivos) — geram
+    // ações automáticas de remediação no Plano (Checkpoint 16 F1).
+    prisma.incident.findMany({
+      where: {
+        companyId: user.companyId,
+        status: { notIn: ["ENCERRADO", "FALSO_POSITIVO"] },
+      },
+      select: {
+        id: true,
+        title: true,
+        severity: true,
+        status: true,
+        detectedAt: true,
+        anpdNotifiedAt: true,
+        correctiveMeasures: true,
+        containmentMeasures: true,
+      },
+    }),
   ]);
 
   // Sets pra dedup rápido
@@ -113,11 +132,13 @@ export async function POST(_request: NextRequest) {
   const seenRisk = new Set<string>();
   const seenBases = new Set<string>();
   const seenOperator = new Set<string>();
+  const seenIncident = new Set<string>();
   for (const a of existingActions) {
     if (a.origin === "GAP" && a.refGapCode) seenGap.add(a.refGapCode);
     if (a.origin === "RISCO" && a.refRiskId) seenRisk.add(a.refRiskId);
     if (a.origin === "BASES" && a.refInventoryId) seenBases.add(a.refInventoryId);
     if (a.origin === "OPERADOR" && a.refOperatorId) seenOperator.add(a.refOperatorId);
+    if (a.origin === "INCIDENTE" && a.refIncidentId) seenIncident.add(a.refIncidentId);
   }
 
   // Cache do catálogo do GAP pra título amigável
@@ -135,6 +156,7 @@ export async function POST(_request: NextRequest) {
     refRiskId?: string;
     refInventoryId?: string;
     refOperatorId?: string;
+    refIncidentId?: string;
     priority: string;
     status: string;
     createdById: string;
@@ -300,6 +322,64 @@ export async function POST(_request: NextRequest) {
     });
   }
 
+  // ---------- INCIDENTES (Checkpoint 16 F1) ----------
+  // 1 ação consolidada por incidente em aberto. Prioridade derivada da
+  // severidade. Título reflete urgência se houver prazo ANPD pendente.
+  const nowMs = Date.now();
+  for (const inc of incidents) {
+    if (seenIncident.has(inc.id)) continue;
+
+    const incPriority =
+      inc.severity === "ALTO"
+        ? ACTION_PRIORITY.ALTA
+        : inc.severity === "MEDIO"
+          ? ACTION_PRIORITY.MEDIA
+          : ACTION_PRIORITY.BAIXA;
+
+    const requiresAnpd = inc.severity === "ALTO" || inc.severity === "MEDIO";
+    const anpdPending = requiresAnpd && inc.anpdNotifiedAt == null;
+    const detectedMs = inc.detectedAt.getTime();
+    const overdueAnpd = anpdPending && nowMs - detectedMs > 72 * 60 * 60 * 1000;
+
+    let title: string;
+    let descPrefix: string;
+    if (overdueAnpd) {
+      title = `Incidente "${truncate(inc.title, 100)}": prazo ANPD vencido`;
+      descPrefix =
+        "Prazo de 3 dias úteis (Art. 48 LGPD) já vencido. Comunicar ANPD com justificativa de demora e seguir com contenção.";
+    } else if (anpdPending) {
+      title = `Incidente "${truncate(inc.title, 100)}": comunicar ANPD em até 72h`;
+      descPrefix =
+        "Severidade dispara obrigatoriedade de comunicação à ANPD em até 3 dias úteis (Res. CD/ANPD nº 15/2024).";
+    } else {
+      title = `Tratar incidente "${truncate(inc.title, 100)}"`;
+      descPrefix =
+        "Seguir com contenção, medidas corretivas e encerramento do incidente.";
+    }
+
+    const measuresParts: string[] = [];
+    if (inc.containmentMeasures) {
+      measuresParts.push(`Contenção planejada: ${inc.containmentMeasures}`);
+    }
+    if (inc.correctiveMeasures) {
+      measuresParts.push(`Corretivas planejadas: ${inc.correctiveMeasures}`);
+    }
+    const description = measuresParts.length
+      ? `${descPrefix}\n\n${measuresParts.join("\n\n")}`
+      : descPrefix;
+
+    toCreate.push({
+      companyId: user.companyId,
+      title,
+      description,
+      origin: ACTION_ORIGIN.INCIDENTE,
+      refIncidentId: inc.id,
+      priority: incPriority,
+      status: ACTION_STATUS.A_FAZER,
+      createdById: user.id,
+    });
+  }
+
   // 2) Criar tudo (idempotente — só os novos)
   let created = 0;
   if (toCreate.length > 0) {
@@ -313,12 +393,14 @@ export async function POST(_request: NextRequest) {
       gapAnswers.filter((a) => a.pontoMelhoria?.trim() && seenGap.has(a.controlCode)).length +
       risks.filter((r) => seenRisk.has(r.id)).length +
       inventories.filter((i) => seenBases.has(i.id)).length +
-      operators.filter((o) => seenOperator.has(o.id)).length,
+      operators.filter((o) => seenOperator.has(o.id)).length +
+      incidents.filter((i) => seenIncident.has(i.id)).length,
     byOrigin: {
       GAP: toCreate.filter((t) => t.origin === ACTION_ORIGIN.GAP).length,
       RISCO: toCreate.filter((t) => t.origin === ACTION_ORIGIN.RISCO).length,
       BASES: toCreate.filter((t) => t.origin === ACTION_ORIGIN.BASES).length,
       OPERADOR: toCreate.filter((t) => t.origin === ACTION_ORIGIN.OPERADOR).length,
+      INCIDENTE: toCreate.filter((t) => t.origin === ACTION_ORIGIN.INCIDENTE).length,
     },
   });
 }

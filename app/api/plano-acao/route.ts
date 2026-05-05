@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
   // Contribuidor: só ações próprias
   if (!user.isDPO) where.assigneeId = user.id;
 
-  const [actions, inventories, operators] = await Promise.all([
+  const [actions, inventories, operators, incidents] = await Promise.all([
     prisma.actionPlan.findMany({
       where,
       include: {
@@ -53,6 +53,10 @@ export async function GET(_request: NextRequest) {
       where: { companyId: user.companyId },
       select: { id: true, name: true },
     }),
+    prisma.incident.findMany({
+      where: { companyId: user.companyId },
+      select: { id: true, title: true },
+    }),
   ]);
 
   // Resolver de labels pra refs polimórficas
@@ -60,13 +64,15 @@ export async function GET(_request: NextRequest) {
   for (const i of inventories) inventoryById[i.id] = i.serviceName;
   const operatorById: Record<string, string> = {};
   for (const o of operators) operatorById[o.id] = o.name;
+  const incidentById: Record<string, string> = {};
+  for (const i of incidents) incidentById[i.id] = i.title;
   const gapDomainByCode: Record<string, string> = {};
   for (const c of GAP_CONTROLS) {
     gapDomainByCode[c.code] = c.domain;
   }
 
   const items = actions.map((a) =>
-    actionToDTO(a, { gapDomainByCode, inventoryById, operatorById }),
+    actionToDTO(a, { gapDomainByCode, inventoryById, operatorById, incidentById }),
   );
   const stats = computeActionStats(actions);
 
@@ -149,13 +155,16 @@ export async function POST(request: NextRequest) {
       dedupWhere.refInventoryId = String(body.refInventoryId);
     } else if (origin === "OPERADOR" && body.refOperatorId) {
       dedupWhere.refOperatorId = String(body.refOperatorId);
+    } else if (origin === "INCIDENTE" && body.refIncidentId) {
+      dedupWhere.refIncidentId = String(body.refIncidentId);
     }
     // Só checa se ao menos uma ref aplicável foi fornecida
     if (
       dedupWhere.refGapCode ||
       dedupWhere.refRiskId ||
       dedupWhere.refInventoryId ||
-      dedupWhere.refOperatorId
+      dedupWhere.refOperatorId ||
+      dedupWhere.refIncidentId
     ) {
       const existing = await prisma.actionPlan.findFirst({
         where: dedupWhere,
@@ -209,6 +218,7 @@ export async function POST(request: NextRequest) {
       refRiskId: body.refRiskId ? String(body.refRiskId) : null,
       refInventoryId: body.refInventoryId ? String(body.refInventoryId) : null,
       refOperatorId: body.refOperatorId ? String(body.refOperatorId) : null,
+      refIncidentId: body.refIncidentId ? String(body.refIncidentId) : null,
       assigneeId: body.assigneeId ?? null,
       dueDate,
       priority,

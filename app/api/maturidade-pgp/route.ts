@@ -10,6 +10,10 @@ import {
   computePgpMaturity,
   type MaturityInput,
 } from "@/lib/maturidade-pgp";
+import {
+  computeAnpdDeadline,
+  requiresAnpdCommunication,
+} from "@/lib/incidentes-helpers";
 
 /**
  * GET /api/maturidade-pgp
@@ -54,6 +58,7 @@ export async function GET(_request: NextRequest) {
     operators,
     teamUsers,
     company,
+    incidents,
   ] = await Promise.all([
     prisma.dataInventory.findMany({
       where: { companyId },
@@ -118,6 +123,15 @@ export async function GET(_request: NextRequest) {
     prisma.company.findUnique({
       where: { id: companyId },
       select: { dpoName: true, dpoEmail: true },
+    }),
+    prisma.incident.findMany({
+      where: { companyId },
+      select: {
+        status: true,
+        severity: true,
+        detectedAt: true,
+        anpdNotifiedAt: true,
+      },
     }),
   ]);
 
@@ -233,6 +247,39 @@ export async function GET(_request: NextRequest) {
     hasDpoCadastrado: !!(company?.dpoName && company?.dpoEmail),
   };
 
+  // Incidentes (Checkpoint 16 / F5) — KPIs derivados pro Painel de Maturidade
+  const incidentesStats = (() => {
+    let pendingAnpd = 0;
+    let criticalDeadline = 0;
+    let overdueDeadline = 0;
+    for (const inc of incidents) {
+      const requires = requiresAnpdCommunication(inc.severity);
+      const stillPending =
+        requires &&
+        inc.anpdNotifiedAt == null &&
+        inc.status !== "FALSO_POSITIVO";
+      if (stillPending) {
+        pendingAnpd += 1;
+        const deadline = computeAnpdDeadline(inc.detectedAt, null);
+        if (deadline?.level === "WARN") criticalDeadline += 1;
+        if (deadline?.level === "CRITICAL") {
+          criticalDeadline += 1;
+          overdueDeadline += 1;
+        }
+      }
+    }
+    return {
+      total: incidents.length,
+      emAberto: incidents.filter(
+        (i) => i.status !== "ENCERRADO" && i.status !== "FALSO_POSITIVO"
+      ).length,
+      encerrados: incidents.filter((i) => i.status === "ENCERRADO").length,
+      pendingAnpd,
+      criticalDeadline,
+      overdueDeadline,
+    };
+  })();
+
   const input: MaturityInput = {
     diagnosticoScore,
     inventario: {
@@ -257,6 +304,7 @@ export async function GET(_request: NextRequest) {
     ripd: ripdStats,
     terceiros: terceirosStats,
     equipe: equipeStats,
+    incidentes: incidentesStats,
   };
 
   const result = computePgpMaturity(input);

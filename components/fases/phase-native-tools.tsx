@@ -18,6 +18,7 @@ import {
   Handshake,
   Sparkles,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
  *   - fase-6 → Políticas LGPD + RIPD institucional + Gestão de Terceiros
+ *   - fase-7 → Incidentes (Checkpoint 16 / G1)
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -56,6 +58,9 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "fase-6") {
     return <Fase6Tools />;
   }
+  if (phase === "fase-7") {
+    return <Fase7Tools />;
+  }
   // Outras fases ainda sem mini-apps nativos.
   return null;
 }
@@ -68,7 +73,8 @@ export function phaseHasNativeTools(phase: string): boolean {
     phase === "fase-3" ||
     phase === "fase-4" ||
     phase === "fase-5" ||
-    phase === "fase-6"
+    phase === "fase-6" ||
+    phase === "fase-7"
   );
 }
 
@@ -1050,6 +1056,132 @@ function TerceirosCardTools() {
           : undefined
       }
     />
+  );
+}
+
+// ============================================================
+// Fase 7 — Incidentes (Checkpoint 16 / G1)
+// ============================================================
+
+interface IncidentsResponse {
+  items: Array<{
+    id: string;
+    severity: string;
+    status: string;
+    anpdNotifiedAt: string | null;
+    anpdCommunicationRequired: boolean;
+    anpdDeadline: { level: "OK" | "WARN" | "CRITICAL" } | null;
+  }>;
+  stats: {
+    total: number;
+    open: number;
+    closed: number;
+    falsePositives: number;
+    pendingAnpd: number;
+    criticalDeadline: number;
+  };
+}
+
+function Fase7Tools() {
+  const [data, setData] = useState<IncidentsResponse | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/incidents");
+        if (r.ok) {
+          setData(await r.json());
+        } else if (r.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const stats = data?.stats;
+  const total = stats?.total ?? 0;
+  const open = stats?.open ?? 0;
+  const critical = stats?.criticalDeadline ?? 0;
+
+  // Cor da borda esquerda: vermelho se prazo crítico, âmbar se há abertos,
+  // verde se tudo encerrado, cinza se vazio.
+  const color: ToolCardColor =
+    forbidden || total === 0
+      ? "neutral"
+      : critical > 0
+        ? "warning"
+        : open === 0
+          ? "success"
+          : "warning";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<AlertTriangle className="h-6 w-6" />}
+        iconColor="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/40"
+        title="Incidentes de Segurança"
+        description="Resposta a incidentes envolvendo dados pessoais (Art. 48 LGPD · prazo de 3 dias úteis pra ANPD)."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label:
+            total > 0 ? "Abrir Incidentes" : "Registrar primeiro incidente",
+          href: "/dashboard/incidentes",
+        }}
+        stats={
+          forbidden
+            ? []
+            : total > 0
+              ? [
+                  {
+                    label: "registrados",
+                    value: total,
+                    icon: <AlertTriangle className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: "em aberto",
+                    value: open,
+                    color: open > 0 ? "amber" : "default",
+                    icon: <Clock className="h-3.5 w-3.5" />,
+                  },
+                  ...(critical > 0
+                    ? [
+                        {
+                          label: "prazo crítico",
+                          value: critical,
+                          color: "red" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(stats && stats.closed > 0
+                    ? [
+                        {
+                          label: "encerrados",
+                          value: stats.closed,
+                          color: "emerald" as const,
+                          icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : total === 0
+              ? "Nenhum incidente registrado. Abra a tela e use 'Registrar incidente' pra documentar o primeiro caso."
+              : undefined
+        }
+      />
+    </div>
   );
 }
 

@@ -27,11 +27,12 @@ import { cn } from "@/lib/utils";
 interface Props {
   title: string;
   description?: string;
-  origin: "GAP" | "RISCO" | "BASES" | "OPERADOR";
+  origin: "GAP" | "RISCO" | "BASES" | "OPERADOR" | "INCIDENTE";
   refGapCode?: string;
   refRiskId?: string;
   refInventoryId?: string;
   refOperatorId?: string;
+  refIncidentId?: string;
   priority?: "ALTA" | "MEDIA" | "BAIXA";
   size?: "sm" | "xs";
   variant?: "outline" | "ghost";
@@ -46,6 +47,7 @@ export default function AddToActionPlanButton({
   refRiskId,
   refInventoryId,
   refOperatorId,
+  refIncidentId,
   priority = "MEDIA",
   size = "sm",
   variant = "outline",
@@ -70,6 +72,7 @@ export default function AddToActionPlanButton({
           refRiskId,
           refInventoryId,
           refOperatorId,
+          refIncidentId,
           priority,
         }),
       });

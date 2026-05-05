@@ -1,94 +1,136 @@
+export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { ensureUserHasCompany } from "@/lib/ensure-company";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import {
+  loadIncidentAuth,
+  incidentAccessFilter,
+  incidentToDTO,
+  computeIncidentStats,
+  INCIDENT_FULL_INCLUDE,
+  VALID_INCIDENT_SEVERITIES,
+  VALID_INCIDENT_TYPES,
+  sanitizeText,
+  sanitizeRequiredText,
+  sanitizeDate,
+  sanitizeInt,
+  sanitizeBool,
+} from "@/lib/incidentes-helpers";
 
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
+/**
+ * GET /api/incidents
+ *
+ * Lista incidentes da org. Filtragem por papel:
+ *   - DPO: todos
+ *   - Contribuidor: somente os que ele criou
+ *
+ * Devolve { items: IncidentDTO[], stats: IncidentStats }.
+ */
+export async function GET(_request: NextRequest) {
+  const r = await loadIncidentAuth();
+  if ("error" in r) return r.error;
+  const { user } = r;
 
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
+  const incidents = await prisma.incident.findMany({
+    where: incidentAccessFilter(user),
+    include: INCIDENT_FULL_INCLUDE,
+    orderBy: [{ detectedAt: "desc" }],
+  });
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email! },
-      include: { company: true },
-    });
+  const items = incidents.map((i: any) => incidentToDTO(i));
+  const stats = computeIncidentStats(
+    incidents.map((i: any) => ({
+      status: i.status,
+      severity: i.severity,
+      detectedAt: i.detectedAt,
+      anpdNotifiedAt: i.anpdNotifiedAt,
+    }))
+  );
 
-    if (!user || !user.companyId) {
-      return NextResponse.json(
-        { error: "Empresa não encontrada" },
-        { status: 404 }
-      );
-    }
-
-    const incidents = await prisma.incident.findMany({
-      where: { companyId: user.companyId },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json(incidents);
-  } catch (error) {
-    console.error("Erro ao buscar incidentes:", error);
-    return NextResponse.json(
-      { error: "Erro ao buscar incidentes" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ items, stats });
 }
 
+/**
+ * POST /api/incidents
+ *
+ * Cria novo incidente. Qualquer papel pode (DPO ou Contribuidor).
+ *
+ * Body mínimo: { title, description, incidentType, detectedAt }.
+ * Demais campos opcionais. `severity` default = MEDIO. `status` default
+ * = DETECTADO.
+ */
 export async function POST(request: NextRequest) {
+  const r = await loadIncidentAuth();
+  if ("error" in r) return r.error;
+  const { user } = r;
+
+  let body: any;
   try {
-    const session = await getServerSession(authOptions);
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
+  }
 
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email! },
-      include: { company: true },
-    });
-
-    if (!user || !user.companyId) {
-      return NextResponse.json(
-        { error: "Empresa não encontrada" },
-        { status: 404 }
-      );
-    }
-
-    const body = await request.json();
-
-    const incident = await prisma.incident.create({
-      data: {
-        companyId: user.companyId,
-        title: body.title,
-        description: body.description,
-        incidentType: body.incidentType,
-        severity: body.severity,
-        affectedData: body.affectedData,
-        affectedSubjects: body.affectedSubjects ? parseInt(body.affectedSubjects) : null,
-        cause: body.cause || "",
-        detectionDate: new Date(body.detectionDate),
-        reportDate: body.reportDate ? new Date(body.reportDate) : new Date(),
-        containmentActions: body.containmentActions || "",
-        correctiveActions: body.correctiveActions || "",
-        preventiveActions: body.preventiveActions || "",
-        status: body.status || "Aberto",
-        reportedToAnpd: body.reportedToAnpd || false,
-        anpdReportDate: body.anpdReportDate ? new Date(body.anpdReportDate) : null,
-      },
-    });
-
-    return NextResponse.json(incident, { status: 201 });
-  } catch (error) {
-    console.error("Erro ao criar incidente:", error);
+  const title = sanitizeRequiredText(body?.title, 200);
+  if (!title) {
     return NextResponse.json(
-      { error: "Erro ao criar incidente" },
-      { status: 500 }
+      { error: "Título é obrigatório" },
+      { status: 400 }
     );
   }
+  const description = sanitizeRequiredText(body?.description, 5000);
+  if (!description) {
+    return NextResponse.json(
+      { error: "Descrição é obrigatória" },
+      { status: 400 }
+    );
+  }
+
+  const incidentType =
+    typeof body?.incidentType === "string" &&
+    VALID_INCIDENT_TYPES.has(body.incidentType)
+      ? body.incidentType
+      : "OUTRO";
+
+  const detectedAt = sanitizeDate(body?.detectedAt) ?? new Date();
+  const occurredAt = sanitizeDate(body?.occurredAt);
+
+  const severity =
+    typeof body?.severity === "string" &&
+    VALID_INCIDENT_SEVERITIES.has(body.severity)
+      ? body.severity
+      : "MEDIO";
+
+  const created = await prisma.incident.create({
+    data: {
+      companyId: user.companyId,
+      title,
+      description,
+      incidentType,
+      severity,
+      status: "DETECTADO",
+      occurredAt,
+      detectedAt,
+      affectedDataTypes: sanitizeText(body?.affectedDataTypes),
+      hasSensitiveData: sanitizeBool(body?.hasSensitiveData),
+      affectedSubjectsCategories: sanitizeText(body?.affectedSubjectsCategories),
+      affectedSubjectsCount: sanitizeInt(body?.affectedSubjectsCount),
+      rootCause: sanitizeText(body?.rootCause),
+      attackVector: sanitizeText(body?.attackVector, 200),
+      affectedSystems: sanitizeText(body?.affectedSystems),
+      affectedOperators: sanitizeText(body?.affectedOperators),
+      riskAssessment: sanitizeText(body?.riskAssessment),
+      securityMeasuresInPlace: sanitizeText(body?.securityMeasuresInPlace),
+      containmentMeasures: sanitizeText(body?.containmentMeasures),
+      correctiveMeasures: sanitizeText(body?.correctiveMeasures),
+      delayJustification: sanitizeText(body?.delayJustification),
+      createdById: user.id,
+    },
+    include: INCIDENT_FULL_INCLUDE,
+  });
+
+  return NextResponse.json(
+    { incident: incidentToDTO(created as any) },
+    { status: 201 }
+  );
 }

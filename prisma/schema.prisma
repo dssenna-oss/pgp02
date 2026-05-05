@@ -103,6 +103,12 @@ model User {
   createdAssessments   OperatorAssessment[] @relation("AssessmentCreatedBy")
   reviewedAssessments  OperatorAssessment[] @relation("AssessmentReviewedBy")
 
+  // Incidentes (Checkpoint 16) — quem registrou, quem encerrou, e quem
+  // gerou comunicações pra ANPD/titulares.
+  createdIncidents       Incident[]              @relation("IncidentCreatedBy")
+  closedIncidents        Incident[]              @relation("IncidentClosedBy")
+  incidentCommunications IncidentCommunication[] @relation("IncidentCommGeneratedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -619,13 +625,15 @@ model ActionPlan {
   description String? @db.Text
   notes       String? @db.Text
 
-  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR
+  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR | INCIDENTE
   origin      String  @default("MANUAL")
   /// Refs polimórficos pra rastrear de onde a ação saiu
   refGapCode      String? // GapAnswer.controlCode
   refRiskId       String? // ProcessRisk.id
   refInventoryId  String? // DataInventory.id
   refOperatorId   String? // Operator.id (Checkpoint 14 G4)
+  refIncidentId   String? // Incident.id (Checkpoint 16 F1)
+  refIncident     Incident? @relation("ActionPlanIncident", fields: [refIncidentId], references: [id], onDelete: SetNull)
 
   /// Responsável formal (User da org); null = ainda sem responsável
   assigneeId  String?
@@ -649,6 +657,7 @@ model ActionPlan {
   @@index([companyId, assigneeId])
   @@index([companyId, dueDate])
   @@index([companyId, refOperatorId])
+  @@index([companyId, refIncidentId])
   @@map("action_plans")
 }
 
@@ -1077,31 +1086,143 @@ model Document {
   @@map("documents")
 }
 
+/// Incidente de segurança envolvendo dados pessoais (Checkpoint 16).
+///
+/// Base legal: Art. 48 LGPD + Resolução CD/ANPD nº 15/2024.
+/// Prazo legal: 3 dias úteis (≈72h) pra comunicar ANPD desde a ciência.
+///
+/// Workflow (status):
+///   DETECTADO → EM_ANALISE → EM_CONTENCAO →
+///     COMUNICADO_ANPD → COMUNICADO_TITULARES → ENCERRADO
+///   (ou FALSO_POSITIVO em qualquer momento)
+///
+/// Severidade:
+///   - "ALTO" / "MEDIO" — disparam obrigatoriedade de comunicação ANPD
+///     (Art. 48 §3º LGPD)
+///   - "BAIXO" — comunicação discricionária
+///
+/// Prazo regressivo: 72h desde `detectedAt` até `anpdNotifiedAt` (clock
+/// visual no editor + badge sidebar quando <24h).
+///
+/// Refatorado em 2026-05-05 substituindo o placeholder do template
+/// Abacus original (que era um CRUD raso sem workflow nem comunicação).
 model Incident {
   id              String   @id @default(cuid())
   companyId       String
   company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+
+  // ----- Identificação -----
+  /// Título descritivo curto (ex: "Vazamento de e-mails do CRM")
   title           String
-  description     String
-  incidentType    String   // "Vazamento", "Acesso não autorizado", "Perda de dados", etc.
-  severity        String   // "Baixa", "Média", "Alta", "Crítica"
-  affectedData    String   // Dados afetados
-  affectedSubjects Int?    // Número de titulares afetados
-  cause           String?  // Causa do incidente
-  detectionDate   DateTime
-  reportDate      DateTime @default(now())
-  containmentActions String? // Ações de contenção
-  correctiveActions String?  // Ações corretivas
-  preventiveActions String? // Ações preventivas
-  status          String   @default("Aberto")
-  reportedToAnpd  Boolean  @default(false)
-  anpdReportDate  DateTime?
-  
+  /// Descrição livre (o que aconteceu, contexto narrativo)
+  description     String   @db.Text
+  /// "VAZAMENTO" | "ACESSO_NAO_AUTORIZADO" | "PERDA" | "ALTERACAO_INDEVIDA"
+  /// | "INDISPONIBILIDADE" | "OUTRO"
+  incidentType    String
+
+  // ----- Workflow + severidade -----
+  /// "DETECTADO" | "EM_ANALISE" | "EM_CONTENCAO" | "COMUNICADO_ANPD"
+  /// | "COMUNICADO_TITULARES" | "ENCERRADO" | "FALSO_POSITIVO"
+  status          String   @default("DETECTADO")
+  /// "ALTO" | "MEDIO" | "BAIXO"
+  severity        String   @default("MEDIO")
+
+  // ----- Datas-chave -----
+  /// Quando o incidente ocorreu de fato (estimado; pode ser anterior à detecção)
+  occurredAt      DateTime?
+  /// Quando a empresa teve ciência. Start do prazo de 72h pra ANPD.
+  detectedAt      DateTime
+  /// Quando ANPD foi notificada (null = ainda não)
+  anpdNotifiedAt  DateTime?
+  /// Quando os titulares foram notificados (null = ainda não / não aplicável)
+  subjectsNotifiedAt DateTime?
+  /// Quando o incidente foi encerrado
+  closedAt        DateTime?
+
+  // ----- Dados afetados (texto livre no MVP; M:N com Inventário/Operadores
+  // fica pra refino futuro F2/F3) -----
+  /// Tipos/categorias de dados pessoais afetados
+  affectedDataTypes String? @db.Text
+  /// Houve dados sensíveis (Art. 11 LGPD)?
+  hasSensitiveData Boolean @default(false)
+  /// Categorias de titulares (clientes, funcionários, candidatos, ...)
+  affectedSubjectsCategories String? @db.Text
+  /// Volume estimado de titulares afetados
+  affectedSubjectsCount Int?
+
+  // ----- Técnico -----
+  /// Causa raiz identificada
+  rootCause       String?  @db.Text
+  /// Vetor de origem (Phishing, Erro humano, Falha técnica, Acesso indevido, etc.)
+  attackVector    String?
+  /// Sistemas/ativos afetados (texto livre)
+  affectedSystems String?  @db.Text
+  /// Operadores/terceiros envolvidos (texto livre)
+  affectedOperators String? @db.Text
+
+  // ----- Risco e medidas (Res. CD/ANPD nº 15/2024) -----
+  /// Avaliação de risco aos titulares
+  riskAssessment           String? @db.Text
+  /// Medidas técnicas e administrativas que estavam em vigor
+  securityMeasuresInPlace  String? @db.Text
+  /// Medidas de contenção (curto prazo)
+  containmentMeasures      String? @db.Text
+  /// Medidas corretivas/preventivas (médio/longo prazo)
+  correctiveMeasures       String? @db.Text
+  /// Justificativa de eventual demora pra comunicar ANPD (Res. 15/2024)
+  delayJustification       String? @db.Text
+
+  // ----- Encerramento -----
+  /// Notas finais / lições aprendidas
+  closureNotes    String?  @db.Text
+
+  // ----- Auditoria -----
+  /// Quem registrou (qualquer papel)
+  createdById     String?
+  createdBy       User?    @relation("IncidentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Quem encerrou (DPO)
+  closedById      String?
+  closedBy        User?    @relation("IncidentClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+
+  // ----- Histórico de comunicações -----
+  communications  IncidentCommunication[]
+
+  // ----- Plug Plano de Ação (F1) -----
+  /// Ações geradas a partir deste incidente (origin = INCIDENTE)
+  actionPlans     ActionPlan[] @relation("ActionPlanIncident")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([companyId, status])
+  @@index([companyId, severity])
+  @@index([companyId, detectedAt])
   @@map("incidents")
+}
+
+/// Histórico de comunicações de um incidente — pra ANPD ou titulares.
+/// Cada vez que o DPO gera o ofício, criamos uma linha aqui pra
+/// auditoria (quem gerou, quando, qual canal, snapshot do conteúdo).
+model IncidentCommunication {
+  id          String   @id @default(cuid())
+  incidentId  String
+  incident    Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  /// "ANPD" | "TITULARES"
+  target      String
+  /// Snapshot do conteúdo gerado (markdown ou texto livre)
+  content     String   @db.Text
+  /// "EMAIL" | "PROTOCOLO_ANPD" | "OFICIO" | "OUTRO" | null
+  channel     String?
+
+  /// Quem gerou
+  createdById String?
+  createdBy   User?    @relation("IncidentCommGeneratedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("incident_communications")
 }
 
 model Account {
