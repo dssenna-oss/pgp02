@@ -2,7 +2,7 @@
 
 > **Última sessão:** 2026-05-04 (Checkpoint 14 G4 — Integrações Gestão de Terceiros · **fechou Checkpoint 14 inteiro**)
 >
-> **Migração Neon:** ✅ Etapas 2 → 14 aplicadas em prod. **Etapa 15 PENDENTE** — `_migrate-action-plan-operator.sql` precisa ser aplicada.
+> **Migração Neon:** ✅ Etapas 2 → 15 aplicadas em prod.
 > **`origin/main`:** Pendente (commit do G4 ainda não pushado).
 
 App em **produção:** https://lgpd-pgp.vercel.app
@@ -242,7 +242,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 12 | `_migrate-ripd-v2.sql` | ripds refatorada + ripd_versions (Checkpoint 13 — RIPD v2 institucional) | ✅ | ✅ |
 | 13 | `_migrate-terceiros.sql` | operators + operator_process_links (Checkpoint 14 G1) | ✅ | ✅ |
 | 14 | `_migrate-terceiros-assessment.sql` | operator_assessments + publicToken único (Checkpoint 14 G2) | ✅ | ✅ |
-| 15 | `_migrate-action-plan-operator.sql` | action_plans.refOperatorId (Checkpoint 14 G4 — Plano ↔ Operadores) | ✅ | ⚠️ pendente |
+| 15 | `_migrate-action-plan-operator.sql` | action_plans.refOperatorId (Checkpoint 14 G4 — Plano ↔ Operadores) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -404,6 +404,6 @@ Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos
   - **G1+G2+G3**: operadores + contratos + régua de risco ANPD + formulário público de avaliação Cyber+LGPD + 5 cláusulas DOCX + 10º template Política.
   - **G4 (integrações)**: auto-import Inventário→Operador via banner com sugestões; plug Plano de Ação (origem OPERADOR com import idempotente + dedup polimórfico + botão "Adicionar ao Plano" no header do operador quando há pendência); plug RIPD Seção 1 (lista estruturada `s1.operatorsList` com tabela DOCX + diff estrutural + link cruzado); 3º card Fase 6 + badge sidebar âmbar.
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
-- ⚠️ **Schema Neon: Etapa 15 (`_migrate-action-plan-operator.sql`) pendente** — aplicar antes do próximo deploy: `psql "<NEON_URL>" -f scripts/_migrate-action-plan-operator.sql`. Etapas 2 → 14 já estão em prod.
+- ✅ Schema Neon: Etapas 2 → 15 todas aplicadas e validadas em prod.
 
 **Próxima fronteira (Checkpoint 15+):** Segurança · Incidentes · Modelo PGP. (Termos de Uso já está em Políticas; Contratos com Operadores está no Checkpoint 14.)
