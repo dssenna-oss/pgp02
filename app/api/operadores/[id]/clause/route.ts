@@ -20,13 +20,18 @@ const VALID_TYPES = new Set<RecommendedClause>([
 ]);
 
 /**
- * GET /api/operadores/[id]/clause?type=<RecommendedClause>
+ * GET /api/operadores/[id]/clause?type=<RecommendedClause>&mode=<NOVA|ADITIVO>
  *
  * Devolve DOCX da cláusula contratual recomendada (ou explicitamente
  * pedida). Apenas DPO.
  *
  * `type` (opcional): se omitido, usa `operator.recommendedClause`.
  *   Se `INDEFINIDO`, devolve 400 — DPO precisa classificar primeiro.
+ *
+ * `mode` (opcional, default "NOVA"):
+ *   - "NOVA"    → cláusula isolada pra constar em contrato em redação
+ *   - "ADITIVO" → embrulhada num cabeçalho de Termo Aditivo (uso pra
+ *                 adequação de contratos pré-LGPD vigentes)
  *
  * Reutiliza o parser markdown→DOCX do Checkpoint 12 (Políticas).
  */
@@ -84,6 +89,9 @@ export async function GET(
     );
   }
 
+  const rawMode = url.searchParams.get("mode");
+  const mode: "NOVA" | "ADITIVO" = rawMode === "ADITIVO" ? "ADITIVO" : "NOVA";
+
   const rendered = renderClauseTemplate({
     operator: {
       name: op.name,
@@ -91,10 +99,15 @@ export async function GET(
       cnpj: op.cnpj,
       country: op.country,
       contractLabel: op.contractLabel,
-      contractSignedAt: op.contractSignedAt,
+      contractSignedAt:
+        // Em modo aditivo, prioriza data do contrato original
+        mode === "ADITIVO" && op.contractOriginalDate
+          ? op.contractOriginalDate
+          : op.contractSignedAt,
     },
     company: op.company,
     clauseType,
+    mode,
   });
   if (!rendered) {
     return NextResponse.json(
@@ -122,7 +135,8 @@ export async function GET(
     .trim()
     .replace(/\s+/g, "_")
     .slice(0, 60) || "terceiro";
-  const filename = `Clausula_${clauseType}_${safeName}.docx`;
+  const filenamePrefix = mode === "ADITIVO" ? "TermoAditivo" : "Clausula";
+  const filename = `${filenamePrefix}_${clauseType}_${safeName}.docx`;
 
   return new NextResponse(buffer, {
     status: 200,

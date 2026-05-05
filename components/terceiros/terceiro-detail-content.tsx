@@ -32,6 +32,7 @@ import {
   CalendarDays,
   ScrollText,
   FileDown,
+  Upload,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ import {
   RELATION_TYPE,
   CONTRACT_STATUS,
   OPERATOR_TYPE,
+  LGPD_COMPLIANCE_STATUS,
   relationTypeLabel,
   relationTypeBadgeClass,
   contractStatusLabel,
@@ -52,6 +54,8 @@ import {
   contractRiskBadgeClass,
   recommendedClauseLabel,
   operatorTypeLabel,
+  lgpdComplianceStatusLabel,
+  lgpdComplianceBadgeClass,
 } from "@/lib/operadores-helpers";
 import TerceiroAssessmentSection from "./terceiro-assessment-section";
 import TerceiroAttachmentUpload, { type AttachmentItem } from "./terceiro-attachment-upload";
@@ -204,6 +208,48 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
     }
   };
 
+  /** Inicia campanha de adequação LGPD (Checkpoint 14 H1).
+   *  Muda lgpdComplianceStatus pra EM_ADEQUACAO + cria 5 ações no Plano. */
+  const [startingAdequacao, setStartingAdequacao] = useState(false);
+  const handleStartAdequacao = async () => {
+    if (
+      !confirm(
+        `Iniciar campanha de adequação LGPD para "${op?.name}"?\n\n` +
+          `Isso vai:\n` +
+          `• Marcar o operador como "Em adequação"\n` +
+          `• Criar 5 ações automáticas no Plano de Ação (avaliar, decidir cláusula, negociar, assinar, reavaliar)\n\n` +
+          `Você pode acompanhar/ajustar cada ação no Plano de Ação depois.`
+      )
+    ) {
+      return;
+    }
+    setStartingAdequacao(true);
+    try {
+      const r = await fetch(
+        `/api/operadores/${operatorId}/start-adequacao`,
+        { method: "POST" }
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        toast.error(err.error ?? "Erro ao iniciar adequação");
+        return;
+      }
+      const j = await r.json();
+      const msg = j.skipped
+        ? `Campanha iniciada — ${j.created} ação(ões) criada(s), ${j.skipped} já existiam.`
+        : `Campanha iniciada — ${j.created} ações criadas no Plano.`;
+      toast.success(msg);
+      // Recarrega operador pra refletir novo status
+      const r2 = await fetch(`/api/operadores/${operatorId}`, { cache: "no-store" });
+      if (r2.ok) {
+        const data = await r2.json();
+        setOp(data.operator);
+      }
+    } finally {
+      setStartingAdequacao(false);
+    }
+  };
+
   // Carregar processos pra modal de vínculo
   const loadInventories = async () => {
     try {
@@ -324,6 +370,16 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
             >
               {contractStatusLabel(op.contractStatus)}
             </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-xs",
+                lgpdComplianceBadgeClass(op.lgpdComplianceStatus)
+              )}
+              title="Status de adequação LGPD"
+            >
+              {lgpdComplianceStatusLabel(op.lgpdComplianceStatus)}
+            </Badge>
           </div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <Building2 className="h-6 w-6 text-muted-foreground" />
@@ -340,6 +396,23 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
           )}
         </div>
         <div className="flex flex-wrap gap-2 flex-shrink-0">
+          {canEdit && op.lgpdComplianceStatus === "NAO_AVALIADO" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStartAdequacao}
+              disabled={startingAdequacao}
+              title="Cria 5 ações no Plano de Ação e marca o operador como 'Em adequação'"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300"
+            >
+              {startingAdequacao ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-1.5" />
+              )}
+              Iniciar adequação
+            </Button>
+          )}
           {canEdit && hasOperatorIssues(op) && (
             <AddToActionPlanButton
               title={buildOperatorActionTitle(op)}
@@ -352,20 +425,36 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
             />
           )}
           {canEdit && op.recommendedClause !== "INDEFINIDO" && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                window.open(
-                  `/api/operadores/${op.id}/clause`,
-                  "_blank"
-                );
-              }}
-              title="Gerar DOCX da cláusula recomendada"
-            >
-              <FileDown className="h-4 w-4 mr-1.5" />
-              Baixar cláusula (.docx)
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.open(
+                    `/api/operadores/${op.id}/clause?mode=NOVA`,
+                    "_blank"
+                  );
+                }}
+                title="Cláusula isolada pra constar em contrato em redação"
+              >
+                <FileDown className="h-4 w-4 mr-1.5" />
+                Cláusula nova (.docx)
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.open(
+                    `/api/operadores/${op.id}/clause?mode=ADITIVO`,
+                    "_blank"
+                  );
+                }}
+                title="Termo aditivo de adequação LGPD pra contrato vigente pré-LGPD"
+              >
+                <FileDown className="h-4 w-4 mr-1.5" />
+                Termo aditivo (.docx)
+              </Button>
+            </>
           )}
           {canEdit && (
             <Button onClick={handleSave} disabled={saving || !dirty}>

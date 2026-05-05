@@ -12,6 +12,7 @@ import {
   VALID_RELATION_TYPES,
   VALID_CONTRACT_STATUSES,
   VALID_OPERATOR_TYPES,
+  VALID_LGPD_COMPLIANCE_STATUSES,
 } from "@/lib/operadores-helpers";
 import { recalcRiskAndClause } from "@/lib/operadores-risco-contrato";
 
@@ -206,6 +207,7 @@ export async function PATCH(
     "contractSignedAt",
     "contractExpiresAt",
     "contractLastReviewedAt",
+    "contractOriginalDate",
   ]) {
     if (f in body) updates[f] = body[f] ? new Date(body[f]) : null;
   }
@@ -217,6 +219,15 @@ export async function PATCH(
       );
     }
     updates.contractStatus = body.contractStatus;
+  }
+  if ("lgpdComplianceStatus" in body) {
+    if (!VALID_LGPD_COMPLIANCE_STATUSES.has(body.lgpdComplianceStatus)) {
+      return NextResponse.json(
+        { error: "Status de adequação LGPD inválido" },
+        { status: 400 }
+      );
+    }
+    updates.lgpdComplianceStatus = body.lgpdComplianceStatus;
   }
 
   // Régua de risco — 6 booleanos

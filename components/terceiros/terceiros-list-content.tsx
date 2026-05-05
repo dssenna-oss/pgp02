@@ -17,6 +17,8 @@ import {
   ShieldAlert,
   Sparkles,
   X,
+  FileText,
+  Upload,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -31,6 +33,7 @@ import {
 } from "@/lib/operadores-helpers";
 import TerceiroCard from "./terceiro-card";
 import TerceiroCreateModal from "./terceiro-create-modal";
+import TerceiroPdfImportModal from "./terceiro-pdf-import-modal";
 
 interface ApiResponse {
   items: OperatorDTO[];
@@ -63,6 +66,15 @@ const RISK_FILTERS = [
   { value: "BAIXO", label: "Baixo" },
 ] as const;
 
+const COMPLIANCE_FILTERS = [
+  { value: "ALL", label: "Todas" },
+  { value: "PENDING", label: "Pendentes (não avaliado + em adequação)" },
+  { value: "NAO_AVALIADO", label: "Não avaliado" },
+  { value: "EM_ADEQUACAO", label: "Em adequação" },
+  { value: "ADEQUADO", label: "Adequado" },
+  { value: "NAO_APLICAVEL", label: "Não aplicável" },
+] as const;
+
 export default function TerceirosListContent() {
   const { data: session } = useSession();
   const userIsDPO = isDPO(session?.user?.role);
@@ -72,7 +84,9 @@ export default function TerceirosListContent() {
   const [search, setSearch] = useState("");
   const [relationFilter, setRelationFilter] = useState<string>("ALL");
   const [riskFilter, setRiskFilter] = useState<string>("ALL");
+  const [complianceFilter, setComplianceFilter] = useState<string>("ALL");
   const [showCreate, setShowCreate] = useState(false);
+  const [showPdfImport, setShowPdfImport] = useState(false);
 
   // Sugestões de auto-import do Inventário (Checkpoint 14 G4)
   const [suggestions, setSuggestions] = useState<SuggestionItem[] | null>(null);
@@ -135,6 +149,18 @@ export default function TerceirosListContent() {
         return false;
       if (riskFilter !== "ALL" && o.contractRiskClass !== riskFilter)
         return false;
+      if (complianceFilter !== "ALL") {
+        if (complianceFilter === "PENDING") {
+          if (
+            o.lgpdComplianceStatus !== "NAO_AVALIADO" &&
+            o.lgpdComplianceStatus !== "EM_ADEQUACAO"
+          ) {
+            return false;
+          }
+        } else if (o.lgpdComplianceStatus !== complianceFilter) {
+          return false;
+        }
+      }
       if (!search.trim()) return true;
       const q = search.toLowerCase();
       return (
@@ -143,7 +169,7 @@ export default function TerceirosListContent() {
         (o.cnpj ?? "").toLowerCase().includes(q)
       );
     });
-  }, [data?.items, relationFilter, riskFilter, search]);
+  }, [data?.items, relationFilter, riskFilter, complianceFilter, search]);
 
   return (
     <div className="container mx-auto py-6 space-y-6 max-w-7xl">
@@ -163,10 +189,20 @@ export default function TerceirosListContent() {
           </div>
         </div>
         {userIsDPO && (
-          <Button onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Cadastrar terceiro
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              onClick={() => setShowPdfImport(true)}
+              title="Sobe um contrato em PDF e extrai os dados via regex"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Importar PDF
+            </Button>
+            <Button onClick={() => setShowCreate(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar terceiro
+            </Button>
+          </div>
         )}
       </div>
 
@@ -283,6 +319,30 @@ export default function TerceirosListContent() {
         </Card>
       )}
 
+      {/* Banner de adequação LGPD (Checkpoint 14 H1) */}
+      {userIsDPO &&
+        data?.stats &&
+        data.stats.pendingCompliance > 0 && (
+          <Card className="border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900">
+            <CardContent className="p-4 flex items-start gap-3">
+              <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md flex-shrink-0">
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-blue-900 dark:text-blue-200">
+                  {data.stats.pendingCompliance} terceiro(s) pendente(s) de
+                  adequação LGPD
+                </p>
+                <p className="text-sm text-blue-800 dark:text-blue-300 mt-0.5">
+                  Contratos pré-LGPD ainda sem avaliação ou em campanha de
+                  adequação. Use o botão <strong>"Iniciar adequação"</strong>{" "}
+                  no detalhe do operador pra gerar plano de ação.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       {userIsDPO &&
         data?.stats &&
         data.stats.expiringSoon > 0 && (
@@ -372,6 +432,23 @@ export default function TerceirosListContent() {
               ))}
             </div>
           </div>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1 ml-1">
+              Adequação LGPD
+            </p>
+            <div className="flex gap-1 flex-wrap">
+              {COMPLIANCE_FILTERS.map((s) => (
+                <Button
+                  key={s.value}
+                  size="sm"
+                  variant={complianceFilter === s.value ? "default" : "outline"}
+                  onClick={() => setComplianceFilter(s.value)}
+                >
+                  {s.label}
+                </Button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -436,6 +513,16 @@ export default function TerceirosListContent() {
         prefillName={prefill?.name}
         linkInventoryId={prefill?.inventoryId}
         linkActivityDescription={prefill?.activityDescription}
+      />
+
+      {/* Modal de importação de PDF (Checkpoint 14 H1 / D2) */}
+      <TerceiroPdfImportModal
+        open={showPdfImport}
+        onClose={() => setShowPdfImport(false)}
+        onCreated={(id) => {
+          setShowPdfImport(false);
+          window.location.assign(`/dashboard/terceiros/${id}`);
+        }}
       />
     </div>
   );

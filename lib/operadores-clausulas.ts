@@ -189,10 +189,28 @@ function resolvePath(obj: any, path: string): unknown {
 // Helper de alto nível
 // ============================================================
 
+/**
+ * Modo de renderização (Checkpoint 14 H1).
+ *
+ * - "NOVA" → produz a cláusula como se fosse pra constar no corpo
+ *   de um contrato em redação (uso original da feature).
+ * - "ADITIVO" → embrulha a mesma cláusula num cabeçalho de TERMO
+ *   ADITIVO ao contrato existente — pra contratos vigentes pré-LGPD
+ *   que precisam ser adequados sem reescrever o instrumento original.
+ *
+ * O CONTEÚDO das cláusulas LGPD é o mesmo nos dois modos. O wrapper
+ * adiciona moldura jurídica adequada (referência ao contrato original,
+ * "considerando" LGPD, numeração de cláusulas, fecho de "permanecem
+ * inalteradas as demais cláusulas").
+ */
+export type ClauseRenderMode = "NOVA" | "ADITIVO";
+
 export interface RenderClauseInput {
   operator: Parameters<typeof buildClauseContext>[0];
   company: Parameters<typeof buildClauseContext>[1];
   clauseType: RecommendedClause;
+  /** Modo de renderização (default "NOVA"). */
+  mode?: ClauseRenderMode;
 }
 
 export interface RenderedClause {
@@ -213,10 +231,98 @@ export function renderClauseTemplate(
     input.company,
     input.clauseType
   );
+  const baseContent = applyClauseTemplate(tpl.content, ctx);
+  const mode: ClauseRenderMode = input.mode ?? "NOVA";
+
+  if (mode === "ADITIVO") {
+    return {
+      type: tpl.type,
+      title: `Termo Aditivo de Adequação à LGPD — ${tpl.defaultTitle}`,
+      content: wrapAsAditivo(baseContent, ctx, tpl.defaultTitle),
+      context: ctx,
+    };
+  }
+
   return {
     type: tpl.type,
     title: tpl.defaultTitle,
-    content: applyClauseTemplate(tpl.content, ctx),
+    content: baseContent,
     context: ctx,
   };
+}
+
+/**
+ * Embrulha o conteúdo da cláusula num "Termo Aditivo" formal:
+ *   - Cabeçalho "TERMO ADITIVO Nº ... AO CONTRATO ..."
+ *   - Qualificação das partes (já presente no template, preserva)
+ *   - Considerandos LGPD
+ *   - Cláusulas numeradas (Cláusula 1ª, 2ª...) — usa o conteúdo original
+ *   - Fecho "permanecem inalteradas as demais cláusulas"
+ *   - Foro + assinaturas
+ *
+ * Estratégia: preserva o conteúdo original como bloco, só prefixa e
+ * sufixa o framing de aditivo. Não tenta reescrever o markdown porque
+ * cada template tem estrutura diferente.
+ */
+function wrapAsAditivo(
+  content: string,
+  ctx: ClauseContext,
+  baseTitle: string
+): string {
+  const header = [
+    `# TERMO ADITIVO DE ADEQUAÇÃO À LGPD`,
+    ``,
+    `**Aditivo ao contrato:** ${ctx.contrato.nome}`,
+    ``,
+    `**Modelo aplicado:** ${baseTitle}`,
+    ``,
+    `## Das partes`,
+    ``,
+    `**CONTRATANTE:** ${ctx.contratante.razaoSocial}, inscrita no CNPJ sob o nº ${ctx.contratante.cnpj}, com sede em ${ctx.contratante.endereco}.`,
+    ``,
+    `**CONTRATADO:** ${ctx.contratado.razaoSocial}, inscrita no CNPJ sob o nº ${ctx.contratado.cnpj}, com sede em ${ctx.contratado.endereco}.`,
+    ``,
+    `## Considerandos`,
+    ``,
+    `**CONSIDERANDO** que as partes celebraram o contrato acima identificado em data anterior à plena vigência das obrigações decorrentes da Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — LGPD);`,
+    ``,
+    `**CONSIDERANDO** que o referido contrato envolve, direta ou indiretamente, o tratamento de dados pessoais, atraindo as obrigações dispostas na LGPD e nas Resoluções da Autoridade Nacional de Proteção de Dados (ANPD);`,
+    ``,
+    `**CONSIDERANDO** que as partes acordam em adequar o instrumento original às exigências legais vigentes, sem prejuízo das demais obrigações assumidas;`,
+    ``,
+    `**RESOLVEM** celebrar o presente **TERMO ADITIVO**, que será regido pelas cláusulas e condições a seguir:`,
+    ``,
+    `---`,
+    ``,
+    `## Cláusulas de adequação à LGPD`,
+    ``,
+  ].join("\n");
+
+  const footer = [
+    ``,
+    `---`,
+    ``,
+    `## Disposições finais`,
+    ``,
+    `**Cláusula final.** Permanecem inalteradas todas as demais cláusulas e condições do contrato original que não conflitarem com as obrigações ora assumidas. Em caso de conflito, prevalece o disposto neste Termo Aditivo.`,
+    ``,
+    `**Foro.** Fica eleito o foro da comarca da sede da CONTRATANTE para dirimir controvérsias decorrentes do presente termo, com renúncia a qualquer outro, por mais privilegiado que seja.`,
+    ``,
+    `E, por estarem assim justas e contratadas, as partes assinam o presente Termo Aditivo em duas vias de igual teor e forma, na presença das testemunhas abaixo.`,
+    ``,
+    `${ctx.contrato.dataAtual}`,
+    ``,
+    ``,
+    `___________________________________`,
+    `**${ctx.contratante.razaoSocial}**`,
+    `(CONTRATANTE)`,
+    ``,
+    ``,
+    `___________________________________`,
+    `**${ctx.contratado.razaoSocial}**`,
+    `(CONTRATADO)`,
+    ``,
+  ].join("\n");
+
+  return header + content + footer;
 }

@@ -67,6 +67,55 @@ export const RECOMMENDED_CLAUSE = {
 export type RecommendedClause =
   (typeof RECOMMENDED_CLAUSE)[keyof typeof RECOMMENDED_CLAUSE];
 
+/**
+ * Status do ciclo de adequação LGPD (Checkpoint 14 H1).
+ *
+ * Diferente do `contractStatus` (que mede vigência: vigente/vencido/etc.),
+ * o `lgpdComplianceStatus` mede ADEQUAÇÃO LGPD do contrato — se ele tem
+ * cláusulas obrigatórias, se passou por avaliação, etc.
+ *
+ *   - NAO_AVALIADO: default; ainda não passou por avaliação LGPD
+ *   - EM_ADEQUACAO: campanha de adequação ativa (5 ações no Plano)
+ *   - ADEQUADO: avaliado, com cláusulas LGPD presentes e ok
+ *   - NAO_APLICAVEL: relação não trata dados pessoais (ex: aluguel imóvel)
+ */
+export const LGPD_COMPLIANCE_STATUS = {
+  NAO_AVALIADO: "NAO_AVALIADO",
+  EM_ADEQUACAO: "EM_ADEQUACAO",
+  ADEQUADO: "ADEQUADO",
+  NAO_APLICAVEL: "NAO_APLICAVEL",
+} as const;
+export type LgpdComplianceStatus =
+  (typeof LGPD_COMPLIANCE_STATUS)[keyof typeof LGPD_COMPLIANCE_STATUS];
+export const VALID_LGPD_COMPLIANCE_STATUSES = new Set(
+  Object.values(LGPD_COMPLIANCE_STATUS)
+);
+
+export function lgpdComplianceStatusLabel(s: string | null | undefined): string {
+  switch (s) {
+    case "NAO_AVALIADO":   return "Não avaliado";
+    case "EM_ADEQUACAO":   return "Em adequação";
+    case "ADEQUADO":       return "Adequado";
+    case "NAO_APLICAVEL":  return "Não aplicável";
+    default:               return "—";
+  }
+}
+
+export function lgpdComplianceBadgeClass(s: string | null | undefined): string {
+  switch (s) {
+    case "ADEQUADO":
+      return "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+    case "EM_ADEQUACAO":
+      return "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800";
+    case "NAO_AVALIADO":
+      return "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+    case "NAO_APLICAVEL":
+      return "bg-gray-200 text-gray-700 border-gray-300";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-300";
+  }
+}
+
 export const OPERATOR_TYPE = {
   CLOUD: "CLOUD",
   PAGAMENTOS: "PAGAMENTOS",
@@ -340,7 +389,10 @@ export interface OperatorDTO {
   contractSignedAt: string | null;
   contractExpiresAt: string | null;
   contractLastReviewedAt: string | null;
+  contractOriginalDate: string | null;
   contractStatus: ContractStatus;
+  /** Status do ciclo de adequação LGPD (Checkpoint 14 H1). */
+  lgpdComplianceStatus: LgpdComplianceStatus;
 
   // Régua de risco
   largaEscala: boolean;
@@ -396,7 +448,9 @@ interface OperatorRow {
   contractSignedAt: Date | null;
   contractExpiresAt: Date | null;
   contractLastReviewedAt: Date | null;
+  contractOriginalDate: Date | null;
   contractStatus: string;
+  lgpdComplianceStatus: string;
   largaEscala: boolean;
   afetaTitulares: boolean;
   novasTecnologias: boolean;
@@ -457,7 +511,11 @@ export function operatorToDTO(o: OperatorRow): OperatorDTO {
     contractLastReviewedAt: o.contractLastReviewedAt
       ? o.contractLastReviewedAt.toISOString()
       : null,
+    contractOriginalDate: o.contractOriginalDate
+      ? o.contractOriginalDate.toISOString()
+      : null,
     contractStatus: o.contractStatus as ContractStatus,
+    lgpdComplianceStatus: o.lgpdComplianceStatus as LgpdComplianceStatus,
     largaEscala: o.largaEscala,
     afetaTitulares: o.afetaTitulares,
     novasTecnologias: o.novasTecnologias,
@@ -582,10 +640,13 @@ export interface OperatorStats {
   byRelation: Record<RelationType, number>;
   byRiskClass: Record<ContractRiskClass, number>;
   byContractStatus: Record<ContractStatus, number>;
+  byLgpdCompliance: Record<LgpdComplianceStatus, number>;
   /** Operadores com contrato vencendo em ≤90d. Calculado on-demand. */
   expiringSoon: number;
   /** Operadores sem contrato vigente OU vencido. Sinaliza ação urgente. */
   needsAttention: number;
+  /** Operadores pendentes de adequação LGPD (NAO_AVALIADO + EM_ADEQUACAO). */
+  pendingCompliance: number;
 }
 
 export function computeOperatorStats(
@@ -593,6 +654,7 @@ export function computeOperatorStats(
     relationType: string;
     contractRiskClass: string;
     contractStatus: string;
+    lgpdComplianceStatus: string;
   }>
 ): OperatorStats {
   const stats: OperatorStats = {
@@ -612,8 +674,15 @@ export function computeOperatorStats(
       SEM_CONTRATO: 0,
       NAO_APLICAVEL: 0,
     },
+    byLgpdCompliance: {
+      NAO_AVALIADO: 0,
+      EM_ADEQUACAO: 0,
+      ADEQUADO: 0,
+      NAO_APLICAVEL: 0,
+    },
     expiringSoon: 0,
     needsAttention: 0,
+    pendingCompliance: 0,
   };
   for (const r of rows) {
     if (r.relationType in stats.byRelation) {
@@ -625,9 +694,18 @@ export function computeOperatorStats(
     if (r.contractStatus in stats.byContractStatus) {
       (stats.byContractStatus as any)[r.contractStatus] += 1;
     }
+    if (r.lgpdComplianceStatus in stats.byLgpdCompliance) {
+      (stats.byLgpdCompliance as any)[r.lgpdComplianceStatus] += 1;
+    }
     if (r.contractStatus === "VENCENDO_90D") stats.expiringSoon += 1;
     if (r.contractStatus === "VENCIDO" || r.contractStatus === "SEM_CONTRATO") {
       stats.needsAttention += 1;
+    }
+    if (
+      r.lgpdComplianceStatus === "NAO_AVALIADO" ||
+      r.lgpdComplianceStatus === "EM_ADEQUACAO"
+    ) {
+      stats.pendingCompliance += 1;
     }
   }
   return stats;

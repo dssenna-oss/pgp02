@@ -59,6 +59,7 @@ export async function GET(_request: NextRequest) {
       relationType: i.relationType,
       contractRiskClass: i.contractRiskClass,
       contractStatus: i.contractStatus,
+      lgpdComplianceStatus: i.lgpdComplianceStatus,
     }))
   );
 
@@ -109,6 +110,27 @@ export async function POST(request: NextRequest) {
       ? body.relationType
       : "INDEFINIDO";
 
+  // Campos opcionais aceitos no create (Checkpoint 14 H1 — D2: import
+  // de PDF pré-preenche dados extraídos por regex).
+  const extras: Record<string, unknown> = {};
+  if (body?.contractOriginalDate) {
+    const d = new Date(body.contractOriginalDate);
+    if (!Number.isNaN(d.getTime())) extras.contractOriginalDate = d;
+  }
+  if (body?.contractExpiresAt) {
+    const d = new Date(body.contractExpiresAt);
+    if (!Number.isNaN(d.getTime())) extras.contractExpiresAt = d;
+  }
+  if (typeof body?.hasPrivacyClause === "boolean") {
+    extras.hasPrivacyClause = body.hasPrivacyClause;
+  }
+  if (typeof body?.hasIncidentClause === "boolean") {
+    extras.hasIncidentClause = body.hasIncidentClause;
+  }
+  if (Array.isArray(body?.contractAttachments)) {
+    extras.contractAttachments = body.contractAttachments;
+  }
+
   const created = await prisma.operator.create({
     data: {
       companyId: user.companyId,
@@ -120,6 +142,7 @@ export async function POST(request: NextRequest) {
         : null,
       relationType,
       createdById: user.id,
+      ...extras,
     },
     include: FULL_INCLUDE,
   });

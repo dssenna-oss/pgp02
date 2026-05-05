@@ -23,6 +23,8 @@ import {
   contractRiskClassLabel,
   contractRiskBadgeClass,
   operatorTypeLabel,
+  lgpdComplianceStatusLabel,
+  lgpdComplianceBadgeClass,
 } from "@/lib/operadores-helpers";
 
 interface Props {
@@ -86,6 +88,16 @@ export default function TerceiroCard({ operator, canDelete, onDelete }: Props) {
                   {operatorTypeLabel(operator.operatorType)}
                 </Badge>
               )}
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-xs",
+                  lgpdComplianceBadgeClass(operator.lgpdComplianceStatus)
+                )}
+                title="Status de adequação LGPD"
+              >
+                {lgpdComplianceStatusLabel(operator.lgpdComplianceStatus)}
+              </Badge>
             </div>
             <Link
               href={`/dashboard/terceiros/${operator.id}`}

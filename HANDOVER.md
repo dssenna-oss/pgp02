@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-04 (Checkpoint 14 G4 — Integrações Gestão de Terceiros · **fechou Checkpoint 14 inteiro**)
+> **Última sessão:** 2026-05-04 (Checkpoint 14 H1 — Adequação de contratos pré-LGPD)
 >
-> **Migração Neon:** ✅ Etapas 2 → 15 aplicadas em prod.
-> **`origin/main`:** Pendente (commit do G4 ainda não pushado).
+> **Migração Neon:** ✅ Etapas 2 → 16 aplicadas em prod.
+> **`origin/main`:** Pendente (commits G4+H1 ainda não pushados).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -25,6 +25,29 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 ## 🆕 O que foi feito na sessão 2026-05-04 (já em produção)
 
 ### Features novas
+
+-15. **Adequação de Terceiros pré-LGPD (Checkpoint 14 — H1)** — COMPLETO
+   - **Schema (Etapa 16)**: `operators.lgpdComplianceStatus` (NAO_AVALIADO/EM_ADEQUACAO/ADEQUADO/NAO_APLICAVEL) + `operators.contractOriginalDate`. Migration nova `_migrate-terceiros-adequacao.sql` + adicionada ao consolidado.
+   - **A1+A3 (Status de adequação)**:
+     - Helper `LGPD_COMPLIANCE_STATUS` + label + classes Tailwind em `lib/operadores-helpers.ts`
+     - Campos `lgpdComplianceStatus` + `contractOriginalDate` no DTO + `OperatorStats.byLgpdCompliance` + `pendingCompliance`
+     - PATCH `/api/operadores/[id]` aceita os 2 campos novos com validação
+     - `pending-count` agora também conta operadores em NAO_AVALIADO/EM_ADEQUACAO
+     - UI: filtro "Adequação LGPD" (com opção "Pendentes (não avaliado + em adequação)") em `/dashboard/terceiros`, badge no card e no header do detalhe, banner azul quando há pendências
+   - **C1 (Campanha de adequação)**:
+     - Endpoint `POST /api/operadores/[id]/start-adequacao`: muda status pra `EM_ADEQUACAO` + cria 5 `ActionPlan` em transaction (avaliar 14d / decidir cláusula 21d / negociar 45d / assinar 75d / reavaliar 365d), com `origin=OPERADOR` + `refOperatorId` + prioridade derivada do risco. Idempotente (verifica por título + ainda em aberto).
+     - Botão "Iniciar adequação" no header do detalhe (só aparece quando `lgpdComplianceStatus = NAO_AVALIADO`) com `confirm()` explicando o que vai acontecer.
+   - **B1 (Toggle Cláusula nova / Termo aditivo)**:
+     - `lib/operadores-clausulas.ts` ganhou `mode: NOVA | ADITIVO` (default NOVA)
+     - Em modo ADITIVO, `wrapAsAditivo()` embrulha o conteúdo da cláusula com cabeçalho "TERMO ADITIVO DE ADEQUAÇÃO À LGPD", qualificação das partes, considerandos LGPD (3 cláusulas obrigatórias), referência ao contrato original, fecho "Permanecem inalteradas as demais cláusulas" + foro + assinaturas
+     - API `/api/operadores/[id]/clause?mode=NOVA|ADITIVO` — em modo ADITIVO usa `contractOriginalDate` se presente; nome do arquivo muda pra `TermoAditivo_*` ou `Clausula_*`
+     - UI: 2 botões separados no header em vez de 1 ("Cláusula nova (.docx)" / "Termo aditivo (.docx)")
+   - **D2 (Importação de PDF pesquisável)**:
+     - `lib/pdf-contract-extractor.ts`: engine pura via `pdfjs-dist` + regex (sem LLM). Extrai CNPJ (formato fixo), até 30 primeiras páginas, candidatos a razão social via 3 estratégias (proximidade de CNPJ, rótulos CONTRATANTE/CONTRATADO, caixa-alta com sufixo societário), datas em formato DD/MM/YYYY ou "DD de MÊS de YYYY", contexto pra `contractOriginalDate` ("celebrado em", "datado de") e `contractExpiresAt` ("vigência até", "vence em"), keywords LGPD pra `hasPrivacyClause` (LGPD, Lei 13.709, ANPD, encarregado, ...) e `hasIncidentClause` (notificação de incidente, 72 horas, ...). Trata PDFs escaneados sem texto retornando `noText: true`.
+     - API `POST /api/operadores/extract-pdf` (multipart): salva PDF no Vercel Blob, extrai metadata, devolve `{ blob, extraction }` pra preview. Rejeita PDFs sem texto com 422.
+     - `POST /api/operadores` aceita `contractOriginalDate`, `contractExpiresAt`, `hasPrivacyClause`, `hasIncidentClause`, `contractAttachments` opcionais no create.
+     - UI: novo botão **"Importar PDF"** no header de `/dashboard/terceiros` + modal `terceiro-pdf-import-modal.tsx` em 2 etapas (upload com drag-drop estilo / preview editável com badges + sugestões alternativas + checkboxes de cláusulas detectadas + sumário do anexo). PDF anexado automaticamente como `contractAttachments[0]` ao confirmar.
+   - **Filename DOCX**: prefixo "TermoAditivo" vs "Clausula" conforme modo
 
 -14. **Gestão de Terceiros — G4 Integrações (Checkpoint 14 fechado)** — COMPLETO
    - **Schema (Etapa 15)**: `action_plans.refOperatorId` (4ª ref polimórfica) + índice `companyId,refOperatorId`. Migration nova `_migrate-action-plan-operator.sql` + adicionada ao consolidado.
@@ -243,6 +266,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 13 | `_migrate-terceiros.sql` | operators + operator_process_links (Checkpoint 14 G1) | ✅ | ✅ |
 | 14 | `_migrate-terceiros-assessment.sql` | operator_assessments + publicToken único (Checkpoint 14 G2) | ✅ | ✅ |
 | 15 | `_migrate-action-plan-operator.sql` | action_plans.refOperatorId (Checkpoint 14 G4 — Plano ↔ Operadores) | ✅ | ✅ |
+| 16 | `_migrate-terceiros-adequacao.sql` | operators.lgpdComplianceStatus + contractOriginalDate (Checkpoint 14 H1 — Adequação) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -270,7 +294,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
 | 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
 | 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
-| 14 | ~~**Gestão de Terceiros**~~ — G1+G2+G3: operadores + contratos + régua ANPD + formulário público de avaliação + 5 cláusulas DOCX + 10º template Política. **G4 (integrações)**: auto-import Inventário→Operador (banner em `/dashboard/terceiros` com sugestões de processos APROVADOS com `sharing` sem operadores vinculados); plug Plano de Ação (origem `OPERADOR` + import gera ações automáticas pra vencidos/sem cláusulas/risco ALTO/avaliação ALTO + botão `<AddToActionPlanButton>` no header do operador); plug RIPD Seção 1 (lista estruturada `s1.operatorsList` com tabela em DOCX + diff word-level + render no editor com link cruzado); 3º card "Gestão de Terceiros" no Fase 6 (xl:grid-cols-3); badge sidebar âmbar com count de pendências críticas. | ✅ FEITO 2026-05-04 (G1+G2+G3+G4) |
+| 14 | ~~**Gestão de Terceiros**~~ — G1+G2+G3 (operadores + régua ANPD + formulário Cyber+LGPD + 5 cláusulas DOCX) + G4 (auto-import Inventário→Operador, plug Plano de Ação `OPERADOR`, plug RIPD Seção 1 estruturada, 3º card Fase 6, badge sidebar) + **H1 (adequação de contratos pré-LGPD)**: status `lgpdComplianceStatus` + `contractOriginalDate`; campanha "Iniciar adequação" gera 5 ações automáticas (avaliar/decidir/negociar/assinar/reavaliar); toggle DOCX **Cláusula nova** vs **Termo aditivo** com cabeçalho jurídico próprio; **Importação de PDF** pesquisável (regex CNPJ/datas, 3 estratégias de razão social, keywords LGPD pra cláusulas existentes, modal preview editável + anexo automático no Vercel Blob). | ✅ FEITO 2026-05-04 (G1+G2+G3+G4+H1) |
 | 15+ | Segurança · Incidentes · Modelo PGP — _Termos de Uso já está em Políticas (`TERMOS_USO`); Contratos com Operadores está no Checkpoint 14_ | depois |
 
 ---
@@ -400,10 +424,11 @@ Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos
 - ✅ **Checkpoint 11** — Plano de Ação institucional (3 tabs, dedup polimórfico, XLSX, integração 3 telas)
 - ✅ **Checkpoint 12** — Políticas LGPD (9 templates, editor split, URL pública, versionamento, DOCX + PDF + Diff)
 - ✅ **Checkpoint 13** — RIPD v2 institucional (8 seções estruturadas, fluxo Contribuidor → DPO, versionamento, diff word-level, DOCX + PDF, plug Fase 6)
-- ✅ **Checkpoint 14** — Gestão de Terceiros completa (G1+G2+G3+G4):
+- ✅ **Checkpoint 14** — Gestão de Terceiros completa (G1+G2+G3+G4+H1):
   - **G1+G2+G3**: operadores + contratos + régua de risco ANPD + formulário público de avaliação Cyber+LGPD + 5 cláusulas DOCX + 10º template Política.
-  - **G4 (integrações)**: auto-import Inventário→Operador via banner com sugestões; plug Plano de Ação (origem OPERADOR com import idempotente + dedup polimórfico + botão "Adicionar ao Plano" no header do operador quando há pendência); plug RIPD Seção 1 (lista estruturada `s1.operatorsList` com tabela DOCX + diff estrutural + link cruzado); 3º card Fase 6 + badge sidebar âmbar.
+  - **G4 (integrações)**: auto-import Inventário→Operador via banner; plug Plano de Ação (origem OPERADOR); plug RIPD Seção 1 (lista estruturada); 3º card Fase 6 + badge sidebar âmbar.
+  - **H1 (adequação pré-LGPD)**: `lgpdComplianceStatus` + `contractOriginalDate`; botão "Iniciar adequação" gera 5 ações automáticas no Plano (avaliar/decidir/negociar/assinar/reavaliar); toggle "Cláusula nova" vs "Termo aditivo" no DOCX (wrapper com cabeçalho de aditivo + considerandos LGPD + fecho de inalterabilidade); importação de PDF pesquisável via regex (CNPJ + datas + razão social com 3 estratégias + keywords LGPD) com modal preview editável + anexo automático no Vercel Blob.
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
-- ✅ Schema Neon: Etapas 2 → 15 todas aplicadas e validadas em prod.
+- ✅ Schema Neon: Etapas 2 → 16 todas aplicadas e validadas em prod.
 
 **Próxima fronteira (Checkpoint 15+):** Segurança · Incidentes · Modelo PGP. (Termos de Uso já está em Políticas; Contratos com Operadores está no Checkpoint 14.)

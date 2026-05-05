@@ -22,6 +22,7 @@
 --   * scripts/_migrate-terceiros.sql   (Etapa 13 — Checkpoint 14 G1: operators + operator_process_links)
 --   * scripts/_migrate-terceiros-assessment.sql (Etapa 14 — Checkpoint 14 G2: operator_assessments)
 --   * scripts/_migrate-action-plan-operator.sql (Etapa 15 — Checkpoint 14 G4: action_plans.refOperatorId)
+--   * scripts/_migrate-terceiros-adequacao.sql (Etapa 16 — Checkpoint 14 H1: lgpdComplianceStatus + contractOriginalDate)
 -- ============================================================
 
 BEGIN;
@@ -711,6 +712,16 @@ ALTER TABLE "action_plans"
 CREATE INDEX IF NOT EXISTS "action_plans_companyId_refOperatorId_idx"
   ON "action_plans"("companyId", "refOperatorId");
 
+-- ====================================================================
+-- ETAPA 16 — Adequação de Terceiros (Checkpoint 14 H1)
+-- ====================================================================
+
+ALTER TABLE "operators"
+  ADD COLUMN IF NOT EXISTS "lgpdComplianceStatus" TEXT NOT NULL DEFAULT 'NAO_AVALIADO',
+  ADD COLUMN IF NOT EXISTS "contractOriginalDate" TIMESTAMP(3);
+CREATE INDEX IF NOT EXISTS "operators_companyId_lgpdComplianceStatus_idx"
+  ON "operators"("companyId", "lgpdComplianceStatus");
+
 COMMIT;
 
 -- ====================================================================
@@ -765,6 +776,10 @@ SELECT 'operator_assessments.publicToken', EXISTS (SELECT 1 FROM information_sch
   WHERE table_name='operator_assessments' AND column_name='publicToken');
 SELECT 'action_plans.refOperatorId', EXISTS (SELECT 1 FROM information_schema.columns
   WHERE table_name='action_plans' AND column_name='refOperatorId');
+SELECT 'operators.lgpdComplianceStatus', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='operators' AND column_name='lgpdComplianceStatus');
+SELECT 'operators.contractOriginalDate', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='operators' AND column_name='contractOriginalDate');
 
 \echo ''
 \echo '=== Inventários por status ==='

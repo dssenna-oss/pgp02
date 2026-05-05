@@ -893,10 +893,20 @@ model Operator {
   contractSignedAt     DateTime?
   contractExpiresAt    DateTime?
   contractLastReviewedAt DateTime?
+  /// Data do contrato ORIGINAL — relevante quando o contrato é
+  /// pré-LGPD e está em adequação via termo aditivo. `contractSignedAt`
+  /// pode então virar a data do aditivo. (Checkpoint 14 H1)
+  contractOriginalDate DateTime?
   /// "VIGENTE" | "VENCENDO_90D" | "VENCIDO" | "EM_RENOVACAO" |
   /// "SEM_CONTRATO" | "NAO_APLICAVEL"
   /// "VENCENDO_90D" é calculado on-demand a partir de contractExpiresAt.
   contractStatus       String   @default("SEM_CONTRATO")
+  /// Status do ciclo de adequação LGPD (Checkpoint 14 H1):
+  /// "NAO_AVALIADO" — default, ainda não passou por avaliação
+  /// "EM_ADEQUACAO"  — em campanha de adequação (5 ações no Plano)
+  /// "ADEQUADO"      — passou por avaliação e tem cláusulas LGPD ok
+  /// "NAO_APLICAVEL" — relação não trata dados pessoais (ex: aluguel imóvel)
+  lgpdComplianceStatus String   @default("NAO_AVALIADO")
 
   // ----- Régua de risco do CONTRATO (6 critérios ANPD) -----
   largaEscala          Boolean  @default(false)
@@ -944,6 +954,7 @@ model Operator {
   @@index([companyId, relationType])
   @@index([companyId, contractRiskClass])
   @@index([companyId, contractStatus])
+  @@index([companyId, lgpdComplianceStatus])
   @@map("operators")
 }
 
