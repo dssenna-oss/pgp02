@@ -1064,7 +1064,6 @@ model OperatorAssessment {
   updatedAt       DateTime @updatedAt
 
   @@index([operatorId, status])
-  @@index([publicToken])
   @@map("operator_assessments")
 }
 
