@@ -38,6 +38,8 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { roleLabel, isDPO } from "@/lib/auth-helpers";
+import NotificationBell from "./notification-bell";
+import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
@@ -50,6 +52,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, session }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [quickIncidentOpen, setQuickIncidentOpen] = useState(false);
   const pathname = usePathname();
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   /**
@@ -395,7 +398,22 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
               {roleLabel(session?.user?.role)}
             </p>
           </div>
+          {/* Sino de notificações agregadas (Checkpoint 16 / H) — só pra DPO,
+              que é quem tem ações sobre incidentes/RIPDs/operadores. */}
+          {isDPO(session?.user?.role) && <NotificationBell />}
         </div>
+        {/* Botão de emergência (Checkpoint 16 / H) — DPO pode acionar de
+            qualquer tela; modal compacto cria incidente em segundos. */}
+        {isDPO(session?.user?.role) && (
+          <button
+            onClick={() => setQuickIncidentOpen(true)}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
+            title="Registrar incidente urgente"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Registrar incidente urgente
+          </button>
+        )}
         {/* Atalho pro painel super admin. Flag `isSuperAdmin` é calculada
             server-side no JWT callback (lib/auth.ts) — usar via session
             evita mismatch de hidratação (process.env só existe no server). */}
@@ -590,6 +608,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           </div>
         </main>
       </div>
+
+      {/* Modal de registro emergencial de incidente (Checkpoint 16 / H) */}
+      {isDPO(session?.user?.role) && (
+        <QuickIncidentModal
+          open={quickIncidentOpen}
+          onClose={() => setQuickIncidentOpen(false)}
+        />
+      )}
     </div>
   );
 }
