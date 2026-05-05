@@ -1,4 +1,5 @@
-
+// @ts-nocheck - seed antigo com modelos pré-CP11; mantido para compatibilidade
+// mas typecheck desligado. Usar scripts/_create-admin.ts pra novo seed.
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
