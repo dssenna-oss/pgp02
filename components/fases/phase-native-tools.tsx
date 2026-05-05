@@ -16,6 +16,8 @@ import {
   FileText,
   FileCheck2,
   Handshake,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +26,7 @@ import { cn } from "@/lib/utils";
  * Riscos, GAP, etc.). Cada fase tem seu conjunto.
  *
  * Hoje suporta:
+ *   - entendendo-pgp → Maturidade do PGP + Política do PGP (Checkpoint 15 / Opção 1)
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
@@ -38,6 +41,9 @@ import { cn } from "@/lib/utils";
  * suporta ações primária/secundária.
  */
 export default function PhaseNativeTools({ phase }: { phase: string }) {
+  if (phase === "entendendo-pgp") {
+    return <EntendendoPgpTools />;
+  }
   if (phase === "fase-3") {
     return <Fase3Tools />;
   }
@@ -58,10 +64,184 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
  * decidir se mostra ou não a mensagem "nenhum link adicionado"). */
 export function phaseHasNativeTools(phase: string): boolean {
   return (
+    phase === "entendendo-pgp" ||
     phase === "fase-3" ||
     phase === "fase-4" ||
     phase === "fase-5" ||
     phase === "fase-6"
+  );
+}
+
+// ============================================================
+// Entendendo o PGP — Maturidade + Política do PGP (Checkpoint 15 / Opção 1)
+// ============================================================
+
+interface MaturityResp {
+  score: number;
+  level: string;
+  levelDescription: string;
+  phases: Array<{ statusColor: string }>;
+}
+
+interface PoliticasMinResp {
+  items: Array<{ id: string; type: string; status: string }>;
+}
+
+function EntendendoPgpTools() {
+  const [maturity, setMaturity] = useState<MaturityResp | null>(null);
+  const [politicas, setPoliticas] = useState<PoliticasMinResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [rMat, rPol] = await Promise.all([
+          fetch("/api/maturidade-pgp", { cache: "no-store" }),
+          fetch("/api/politicas", { cache: "no-store" }),
+        ]);
+        if (rMat.status === 403) {
+          setForbidden(true);
+        } else if (rMat.ok) {
+          setMaturity(await rMat.json());
+        }
+        if (rPol.ok) {
+          setPoliticas(await rPol.json());
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // C3 — quantas das 8 fases (preliminar + 7) já têm evidência (não-neutral)
+  const fasesComEvidencia = maturity
+    ? maturity.phases.filter((p) => p.statusColor !== "neutral").length
+    : 0;
+  const totalFases = maturity?.phases.length ?? 8;
+
+  // Política do PGP: existe alguma policy do tipo POLITICA_PGP?
+  const politicaPgp = politicas?.items.find((p) => p.type === "POLITICA_PGP");
+  const politicaPgpPublicada =
+    politicaPgp && politicaPgp.status === "PUBLICADA";
+
+  // Cor do card Maturidade
+  const maturityColor: ToolCardColor = forbidden
+    ? "neutral"
+    : maturity == null
+      ? "neutral"
+      : maturity.score >= 70
+        ? "success"
+        : maturity.score >= 25
+          ? "warning"
+          : "neutral";
+
+  // Cor do card Política do PGP
+  const politicaColor: ToolCardColor = forbidden
+    ? "neutral"
+    : politicaPgpPublicada
+      ? "success"
+      : politicaPgp
+        ? "warning"
+        : "neutral";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Card 1: Maturidade do PGP */}
+      <ToolCard
+        icon={<Sparkles className="h-6 w-6" />}
+        iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+        title="Maturidade do PGP"
+        description="Painel executivo do Programa de Governança em Privacidade — score consolidado, status de cada uma das 7 Fases e pendências críticas. Pra DPO levar à diretoria/auditoria/ANPD."
+        progressColor={maturityColor}
+        loading={loading}
+        primaryAction={{
+          label: maturity ? "Abrir painel" : "Calcular maturidade",
+          href: "/dashboard/maturidade-pgp",
+        }}
+        stats={
+          forbidden
+            ? []
+            : maturity
+              ? [
+                  {
+                    label: `nível ${maturity.level.toLowerCase().replace(/_/g, " ")}`,
+                    value: `${maturity.score}/100`,
+                    color:
+                      maturity.score >= 70
+                        ? "emerald"
+                        : maturity.score >= 25
+                          ? "amber"
+                          : "red",
+                    icon: <TrendingUp className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: `de ${totalFases} Fases com evidências`,
+                    value: fasesComEvidencia,
+                    color: "default",
+                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                  },
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : !maturity
+              ? "Calcule a maturidade pra ver score consolidado das 7 Fases e pendências críticas."
+              : undefined
+        }
+      />
+
+      {/* Card 2: Política do PGP (documento mater) */}
+      <ToolCard
+        icon={<FileText className="h-6 w-6" />}
+        iconColor="text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-950/40"
+        title="Política do PGP"
+        description="Documento mater que formaliza o programa — declara escopo, governança, papéis, ciclo de revisão e referencia os outros instrumentos como anexos. Base: Art. 50 da LGPD + Resolução CD/ANPD nº 2/2022."
+        progressColor={politicaColor}
+        loading={loading}
+        primaryAction={{
+          label: politicaPgp
+            ? politicaPgpPublicada
+              ? "Abrir Política do PGP"
+              : "Continuar (rascunho)"
+            : "Criar Política do PGP",
+          href: politicaPgp
+            ? `/dashboard/politicas/${politicaPgp.id}`
+            : "/dashboard/politicas",
+        }}
+        stats={
+          forbidden
+            ? []
+            : politicaPgp
+              ? [
+                  {
+                    label: politicaPgpPublicada
+                      ? "publicada — formaliza o PGP"
+                      : "em rascunho",
+                    value: politicaPgpPublicada ? "Sim" : "Pendente",
+                    color: politicaPgpPublicada ? "emerald" : "amber",
+                    icon: politicaPgpPublicada ? (
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5" />
+                    ),
+                  },
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : !politicaPgp
+              ? "Crie o documento mater do programa a partir do template oficial em Políticas. Sem ele, o programa não tem declaração formal."
+              : undefined
+        }
+      />
+    </div>
   );
 }
 

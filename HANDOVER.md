@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-04 (Checkpoint 14 H1 — Adequação de contratos pré-LGPD)
+> **Última sessão:** 2026-05-05 (Checkpoint 15 — Declaração formal do PGP)
 >
-> **Migração Neon:** ✅ Etapas 2 → 16 aplicadas em prod.
-> **`origin/main`:** Pendente (commits G4+H1 ainda não pushados).
+> **Migração Neon:** ✅ Etapas 2 → 16 aplicadas em prod (Checkpoint 15 não tem schema novo).
+> **`origin/main`:** Pendente (commit Checkpoint 15 ainda não pushado).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -22,11 +22,57 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-04 (já em produção)
+## 🆕 O que foi feito na sessão 2026-05-05 (em prod ao push)
 
 ### Features novas
 
--15. **Adequação de Terceiros pré-LGPD (Checkpoint 14 — H1)** — COMPLETO
+-16. **Declaração formal do PGP (Checkpoint 15 — Opção 1)** — COMPLETO
+   - **Sem schema novo** — toda a feature usa dados já existentes (Diagnóstico, GAP, Riscos, Plano, Políticas, RIPD, Terceiros, equipe).
+   - **A1+A2 — Template "Política do PGP"** (`lib/policies-templates.ts`):
+     - 11º template oficial em `POLICY_TEMPLATES` — entra como o **1º da lista** porque é o documento mater do programa.
+     - `POLICY_TYPE.POLITICA_PGP` adicionado ao enum + label/badge classes em `lib/policies-helpers.ts`.
+     - Conteúdo seed completo em markdown: Apresentação, Objetivo, Escopo, Princípios (10 do Art. 6º LGPD em tabela), Estrutura de Governança (DPO + Comitê + Alta Direção + Colaboradores), 11 Instrumentos do Programa anexos, Ciclo PDCA, Métricas e Indicadores (referencia o Painel de Maturidade), Revisão (anual + gatilhos), Penalidades, Disposições Finais. Base legal: Art. 50 LGPD + Resolução CD/ANPD nº 2/2022 + Guia ANPD.
+     - Placeholders padronizados ({{empresa}}, {{cnpj}}, {{dpo_nome}}, etc. — reusa pipeline existente do Checkpoint 12).
+   - **B1+B2 — Engine + API**:
+     - `lib/maturidade-pgp.ts` (engine pura, testável sem DB) — calcula 5 pilares ponderados:
+       - Diagnóstico de Privacidade: 40%
+       - Plano de Ação em dia: 20%
+       - Políticas publicadas: 15%
+       - RIPDs aprovados: 15%
+       - Terceiros adequados: 10%
+     - 5 níveis qualitativos: INICIANTE / EM_DESENVOLVIMENTO / INTERMEDIARIO / AVANCADO / EXEMPLAR (corte 25/50/70/85)
+     - Status detalhado das 8 fases (Preliminar + 1 a 7) com KPIs reais e progresso 0-100
+     - Pendências críticas (alta/média) com link pra resolução
+     - `GET /api/maturidade-pgp` (DPO-only, force-dynamic) — carrega tudo em paralelo + reusa `buildDiagnostico` (Checkpoint 10)
+   - **B1 — Tela `/dashboard/maturidade-pgp`** (`maturidade-pgp-content.tsx`):
+     - Hero com score grande + nível qualitativo + descrição
+     - Mensagem institucional reforçando "PGP é programa contínuo, não projeto"
+     - Grid de 5 pilares com score, peso, contribuição e rationale individual
+     - Lista de pendências críticas com botão "Resolver" linkado pra tela específica
+     - Grid das 8 fases × KPIs × progresso × botão "Abrir fase"
+     - Card de rodapé linkando pra Política do PGP em Políticas
+   - **B3 — Export PDF** (`/dashboard/maturidade-pgp/pdf` + `maturidade-pgp-pdf-view.tsx`):
+     - Layout A4 limpo, sem sidebar
+     - Capa institucional + score + nível
+     - Tabela de pilares (4 colunas: Pilar, Score, Peso, Contribuição) com total
+     - Lista de pendências críticas
+     - Tabela das 8 fases (Fase × Descrição × Progresso × Status × KPIs)
+     - `?autoprint=1` dispara `window.print()` automaticamente — usuário só clica "Salvar como PDF"
+     - Sem dependência de PDF lib (zero adição no bundle, mesmo padrão do GAP/RIPD/Políticas)
+   - **B4 — Sidebar**: novo item "Maturidade do PGP" com ícone `Sparkles` + flag `dpoOnly`
+   - **C — Card "Coloque em prática" da Fase 0** (Entendendo o PGP):
+     - Estendido `phaseHasNativeTools()` e `PhaseNativeTools()` em `phase-native-tools.tsx` pra suportar `phase === "entendendo-pgp"`
+     - Novo `EntendendoPgpTools` renderiza grid de 2 cards:
+       - **Card "Maturidade do PGP"**: ícone violeta, score atual `XX/100 nível ...`, "X de 8 Fases com evidências", botão "Abrir painel"
+       - **Card "Política do PGP"**: ícone índigo, status "publicada/em rascunho/inexistente", botão "Criar/Continuar/Abrir Política do PGP"
+     - Os dois cards consultam APIs em paralelo, são DPO-only (mostram aviso pro Contribuidor)
+
+-15. **Mobile fixes nas Fases (sessão 2026-05-05 manhã)** — COMPLETO
+   - Bug claro em `phase-practical-links.tsx`: header sem `flex-col` em mobile, fazendo título + botão estourarem viewport. Corrigido pro padrão `flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`.
+   - Blindados também `phase-checklist.tsx`, `phase-description-manager.tsx`, `phase-info-manager.tsx`, `phase-documents-upload.tsx` — botões viram coluna full-width em mobile (em vez de tentarem caber lado a lado), cards de documento quebram em flex-col com título sem truncate severo.
+   - Validado em viewports 320, 360, 375 e desktop — zero botões extrapolando viewport.
+
+-14. **Adequação de Terceiros pré-LGPD (Checkpoint 14 — H1)** — COMPLETO
    - **Schema (Etapa 16)**: `operators.lgpdComplianceStatus` (NAO_AVALIADO/EM_ADEQUACAO/ADEQUADO/NAO_APLICAVEL) + `operators.contractOriginalDate`. Migration nova `_migrate-terceiros-adequacao.sql` + adicionada ao consolidado.
    - **A1+A3 (Status de adequação)**:
      - Helper `LGPD_COMPLIANCE_STATUS` + label + classes Tailwind em `lib/operadores-helpers.ts`
@@ -295,7 +341,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
 | 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
 | 14 | ~~**Gestão de Terceiros**~~ — G1+G2+G3 (operadores + régua ANPD + formulário Cyber+LGPD + 5 cláusulas DOCX) + G4 (auto-import Inventário→Operador, plug Plano de Ação `OPERADOR`, plug RIPD Seção 1 estruturada, 3º card Fase 6, badge sidebar) + **H1 (adequação de contratos pré-LGPD)**: status `lgpdComplianceStatus` + `contractOriginalDate`; campanha "Iniciar adequação" gera 5 ações automáticas (avaliar/decidir/negociar/assinar/reavaliar); toggle DOCX **Cláusula nova** vs **Termo aditivo** com cabeçalho jurídico próprio; **Importação de PDF** pesquisável (regex CNPJ/datas, 3 estratégias de razão social, keywords LGPD pra cláusulas existentes, modal preview editável + anexo automático no Vercel Blob). | ✅ FEITO 2026-05-04 (G1+G2+G3+G4+H1) |
-| 15+ | Segurança · Incidentes · Modelo PGP — _Termos de Uso já está em Políticas (`TERMOS_USO`); Contratos com Operadores está no Checkpoint 14_ | depois |
+| 15 | ~~**Declaração formal do PGP (Opção 1)**~~ — A: Template "Política do PGP" (11º template, documento mater) + B: Painel executivo de Maturidade do PGP (5 pilares ponderados, 5 níveis qualitativos, status das 8 fases, pendências críticas, export PDF) + C: 2 cards no "Coloque em prática" do Entendendo o PGP. Sem schema novo. | ✅ FEITO 2026-05-05 |
+| 16+ | Incidentes (notificação ANPD 72h) · Segurança institucional (PSI) | depois |
 
 ---
 
@@ -431,4 +478,4 @@ Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
 - ✅ Schema Neon: Etapas 2 → 16 todas aplicadas e validadas em prod.
 
-**Próxima fronteira (Checkpoint 15+):** Segurança · Incidentes · Modelo PGP. (Termos de Uso já está em Políticas; Contratos com Operadores está no Checkpoint 14.)
+**Próxima fronteira (Checkpoint 16+):** Incidentes (notificação ANPD em 72h) · Segurança institucional (PSI). O "Modelo PGP" já está cumprido pela combinação Política do PGP + Painel de Maturidade do Checkpoint 15 — esse era o documento mater + tela executiva pendentes.

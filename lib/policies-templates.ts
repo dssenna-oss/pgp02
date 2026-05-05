@@ -82,8 +82,171 @@ export function applyPlaceholders(
 }
 
 // ============================================================
-// Os 9 templates
+// Os 11 templates (Política do PGP é o documento mater)
 // ============================================================
+
+const T_POLITICA_PGP: PolicyTemplate = {
+  type: "POLITICA_PGP",
+  defaultTitle: "Política do Programa de Governança em Privacidade (PGP)",
+  blurb:
+    "Documento mater que formaliza o Programa de Governança em Privacidade da organização. Declara o programa, escopo, governança, papéis, ciclo de revisão, e referencia os outros instrumentos (Inventário, RIPD, Plano de Ação, GAP, Políticas, Terceiros) como anexos. Base legal: Art. 50 da LGPD + Resolução CD/ANPD nº 2/2022.",
+  content: `# Política do Programa de Governança em Privacidade (PGP) — {{empresa}}
+
+**Última atualização:** {{data_publicacao}}
+
+## 1. Apresentação
+
+A **{{empresa}}**, inscrita no CNPJ {{cnpj}}, com sede em {{endereco}}, formaliza por meio deste documento o seu **Programa de Governança em Privacidade (PGP)** — um conjunto contínuo de práticas, processos e instrumentos que assegura o tratamento de dados pessoais em conformidade com a **Lei nº 13.709/2018 (LGPD)**, com a **Resolução CD/ANPD nº 2/2022** (Regulamento de Aplicação da LGPD para agentes de tratamento de pequeno porte, quando aplicável) e com as **boas práticas de governança previstas no Art. 50 da LGPD**.
+
+> O PGP **não é um projeto** com início, meio e fim. É um **programa permanente**, vivo, que evolui junto com a organização, com a tecnologia e com o entendimento jurisprudencial da LGPD pela Autoridade Nacional de Proteção de Dados (ANPD).
+
+## 2. Objetivo
+
+Este documento tem por objetivo:
+
+a) Declarar o compromisso institucional da {{empresa}} com a proteção de dados pessoais e a privacidade dos titulares;
+b) Estabelecer o conjunto mínimo de regras, controles, papéis e instrumentos que compõem o PGP;
+c) Atribuir responsabilidades dentro da organização;
+d) Definir o ciclo de revisão, monitoramento e melhoria contínua do programa;
+e) Servir de instrumento mater de governança, ao qual se subordinam as demais políticas, normas, procedimentos e instrumentos de proteção de dados.
+
+## 3. Escopo
+
+Esta Política se aplica a:
+
+- Todos os colaboradores, prestadores de serviço, estagiários e terceiros que tratem dados pessoais em nome da {{empresa}};
+- Todos os processos, sistemas, áreas e unidades organizacionais da {{empresa}} que envolvam, direta ou indiretamente, o tratamento de dados pessoais;
+- Toda relação contratual, presente ou futura, que envolva o compartilhamento de dados pessoais com terceiros (operadores ou outros controladores).
+
+## 4. Princípios
+
+O PGP da {{empresa}} é regido pelos princípios do **Art. 6º da LGPD**:
+
+| Princípio | Aplicação no PGP |
+|---|---|
+| Finalidade | Tratamento limitado a finalidades legítimas, específicas e informadas. |
+| Adequação | Tratamento compatível com as finalidades informadas ao titular. |
+| Necessidade | Limitação ao mínimo necessário para a finalidade pretendida. |
+| Livre acesso | Garantia de consulta gratuita e facilitada pelos titulares. |
+| Qualidade dos dados | Exatidão, clareza, relevância e atualização. |
+| Transparência | Informações claras, precisas e facilmente acessíveis. |
+| Segurança | Medidas técnicas e administrativas aptas a proteger os dados. |
+| Prevenção | Medidas para prevenir a ocorrência de danos. |
+| Não discriminação | Vedação ao tratamento para fins discriminatórios ilícitos ou abusivos. |
+| Responsabilização e prestação de contas | Demonstração da adoção de medidas eficazes. |
+
+## 5. Estrutura de Governança
+
+### 5.1. Encarregado pelo Tratamento de Dados Pessoais (DPO)
+
+A {{empresa}} designa formalmente, na pessoa de **{{dpo_nome}}** ({{dpo_email}}, {{dpo_telefone}}), o **Encarregado pelo Tratamento de Dados Pessoais (DPO)**, conforme exigido pelo Art. 41 da LGPD.
+
+Atribuições do DPO:
+
+a) Aceitar reclamações e comunicações dos titulares, prestar esclarecimentos e adotar providências;
+b) Receber comunicações da ANPD e adotar providências;
+c) Orientar funcionários e contratados sobre práticas a serem tomadas em relação à proteção de dados;
+d) Executar as demais atribuições determinadas pelo controlador ou estabelecidas em normas complementares.
+
+### 5.2. Comitê de Privacidade
+
+A {{empresa}} mantém um **Comitê de Privacidade** com representantes das áreas-chave (TI, Jurídico/Compliance, RH, Marketing/Comercial, Segurança da Informação), que se reúne ao menos **trimestralmente** para:
+
+- Revisar incidentes, riscos e ações em curso;
+- Aprovar mudanças relevantes nos instrumentos do PGP;
+- Definir prioridades do Plano de Ação institucional;
+- Avaliar a maturidade do programa e propor melhorias.
+
+### 5.3. Alta Direção
+
+A Alta Direção é responsável por:
+
+- Aprovar formalmente esta Política e suas revisões;
+- Garantir os recursos necessários (humanos, financeiros, tecnológicos) para a execução do PGP;
+- Demandar e analisar relatórios periódicos de maturidade e conformidade;
+- Sancionar o descumprimento das obrigações desta Política.
+
+### 5.4. Colaboradores e Terceiros
+
+Todos os colaboradores e terceiros que tratam dados pessoais em nome da {{empresa}} são responsáveis por:
+
+- Conhecer e cumprir esta Política e os instrumentos a ela vinculados;
+- Comunicar imediatamente ao DPO qualquer suspeita de incidente, vazamento ou tratamento irregular;
+- Participar dos treinamentos obrigatórios de proteção de dados.
+
+## 6. Instrumentos do Programa (anexos integrantes)
+
+O PGP da {{empresa}} é composto pelos seguintes instrumentos, que **integram esta Política como anexos** e são revisados conforme item 9:
+
+1. **Inventário de Atividades de Tratamento (RoPA)** — registro completo dos processos que envolvem dados pessoais, com finalidade, base legal, dados tratados, titulares, retenção, compartilhamento e medidas de segurança.
+2. **Análise de Riscos de Privacidade** — avaliação de riscos por processo (matriz Probabilidade × Impacto), com plano de mitigação e ciclo de vida (identificado / em mitigação / aceito / eliminado).
+3. **GAP Analysis (Diagnóstico Macro)** — diagnóstico macro de adequação à LGPD em 119 controles distribuídos em 28 domínios, com aderência (não aderente / parcial / aderente) e ponto de melhoria.
+4. **Diagnóstico de Privacidade** — score executivo consolidado (0–100) calculado a partir de GAP, Riscos, Bases Legais e Inventário, com recomendações priorizadas.
+5. **Plano de Ação Institucional** — lista oficial das ações de adequação, com responsável formal, prazo, prioridade e origem (manual / GAP / Riscos / Bases Legais / Operadores).
+6. **Políticas LGPD** — conjunto de políticas e avisos institucionais (Aviso de Privacidade externo, Política Interna, Norma, Termos de Uso, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional, Avaliação de Terceiros).
+7. **Relatórios de Impacto à Proteção de Dados (RIPD)** — documento formal exigido para tratamentos de alto risco, em 8 seções estruturadas conforme Guia ANPD, com fluxo de aprovação Contribuidor → DPO.
+8. **Gestão de Terceiros** — cadastro de operadores, controladores e co-controladores; contratos com cláusulas LGPD obrigatórias (privacidade + notificação de incidente); régua de risco do contrato (6 critérios ANPD); avaliações periódicas Cyber + LGPD.
+9. **Programa de Treinamento** — capacitação inicial e periódica de toda a organização em proteção de dados.
+10. **Procedimento de Atendimento aos Titulares** — canal único, prazo legal, registros de solicitações de acesso, retificação, eliminação, portabilidade e revogação de consentimento (Art. 18 da LGPD).
+11. **Procedimento de Resposta a Incidentes** — fluxo de detecção, contenção, comunicação à ANPD em até 72 horas (quando aplicável), notificação aos titulares e registro pós-incidente.
+
+## 7. Ciclo PDCA aplicado ao PGP
+
+O programa segue o ciclo **Plan-Do-Check-Act** de melhoria contínua:
+
+- **Plan (Planejar)** — revisão anual do Plano de Ação, do GAP e do Diagnóstico de Privacidade. Definição de prioridades pelo Comitê.
+- **Do (Executar)** — execução das ações pelo DPO + Comitê + áreas responsáveis, com registro de evidências em cada instrumento.
+- **Check (Verificar)** — monitoramento contínuo (Painel de Maturidade do PGP) e auditorias periódicas. Revisão dos riscos, controles e métricas.
+- **Act (Agir)** — ajuste das políticas, instrumentos e controles a partir das lições aprendidas, incidentes e mudanças regulatórias.
+
+## 8. Métricas e Indicadores
+
+A maturidade do PGP é medida por meio do **Painel de Maturidade do PGP** (tela executiva do sistema), que consolida:
+
+- **Score de maturidade (0–100)** com pesos: Diagnóstico (40%) · Plano em dia (20%) · Políticas publicadas (15%) · RIPDs aprovados (15%) · Terceiros adequados (10%);
+- Status de cada uma das 7 Fases do programa (Preliminar, Formação das Equipes, Diagnóstico Inicial, Mapeamento e Análise de Riscos, GAP Analysis, Plano de Ação, Execução, Monitoramento);
+- Pendências críticas (riscos abertos, ações atrasadas, contratos pendentes de adequação).
+
+O Painel é apresentado **trimestralmente à Alta Direção** e exportado em PDF para os relatórios formais de governança.
+
+## 9. Revisão da Política e dos Instrumentos
+
+Esta Política e seus instrumentos integrantes são revisados:
+
+- **Anualmente**, em ciclo regular do PGP;
+- **Sempre que** houver mudança regulatória relevante (nova resolução da ANPD, alteração da LGPD, decisão judicial estruturante);
+- **Sempre que** houver incidente de segurança que demande revisão de controles;
+- **Sempre que** houver mudança organizacional relevante (fusão, aquisição, novo serviço, mudança de modelo de negócio).
+
+A última revisão e a data da próxima revisão programada são registradas no campo de versionamento desta Política.
+
+## 10. Penalidades
+
+O descumprimento desta Política sujeita o infrator às penalidades previstas no Regimento Interno da {{empresa}}, sem prejuízo das sanções administrativas, civis e penais cabíveis, conforme:
+
+- **LGPD** (Lei 13.709/2018) — Art. 52 (sanções aplicáveis pela ANPD);
+- **CLT** e instrumentos de regulação trabalhista — para empregados;
+- **Contratos vigentes** — para terceiros, prestadores e fornecedores.
+
+## 11. Disposições Finais
+
+a) Esta Política entra em vigor na data de sua publicação e revoga eventuais disposições em contrário;
+b) Casos omissos serão resolvidos pelo Encarregado em conjunto com o Comitê de Privacidade, com aprovação da Alta Direção quando necessário;
+c) Esta Política é divulgada interna e externamente nos canais oficiais da {{empresa}}, e está sempre disponível para consulta no portal institucional.
+
+---
+
+**Aprovado em {{data_publicacao}}**
+
+**{{representante_legal}}** — Representante Legal da {{empresa}}
+
+**{{dpo_nome}}** — Encarregado pelo Tratamento de Dados Pessoais (DPO)
+
+---
+
+*Documento institucional do Programa de Governança em Privacidade — versão {{data_publicacao}}*
+`,
+};
 
 const T_AVISO_EXTERNO: PolicyTemplate = {
   type: "AVISO_PRIVACIDADE_EXTERNO",
@@ -1077,6 +1240,7 @@ Esta política é revisada [periodicidade]. Mudanças são comunicadas por [cana
 // ============================================================
 
 export const POLICY_TEMPLATES: PolicyTemplate[] = [
+  T_POLITICA_PGP,
   T_AVISO_EXTERNO,
   T_PRIVACIDADE_INTERNA,
   T_NORMA_PRIVACIDADE,

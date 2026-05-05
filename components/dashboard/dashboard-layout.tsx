@@ -31,7 +31,8 @@ import {
   Target,
   FileText as FileTextIcon,
   FileCheck2,
-  Handshake
+  Handshake,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -262,6 +263,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Visão executiva consolidada (score + recomendações)",
       href: "/dashboard/diagnostico",
       icon: Activity,
+      dpoOnly: true,
+    },
+    {
+      name: "Maturidade do PGP",
+      description: "Painel executivo do Programa de Governança em Privacidade",
+      href: "/dashboard/maturidade-pgp",
+      icon: Sparkles,
       dpoOnly: true,
     },
     {

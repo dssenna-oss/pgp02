@@ -21,6 +21,7 @@ import { isDPO } from "@/lib/auth-helpers";
 // ============================================================
 
 export const POLICY_TYPE = {
+  POLITICA_PGP: "POLITICA_PGP",
   AVISO_PRIVACIDADE_EXTERNO: "AVISO_PRIVACIDADE_EXTERNO",
   POLITICA_PRIVACIDADE_INTERNO: "POLITICA_PRIVACIDADE_INTERNO",
   NORMA_PRIVACIDADE: "NORMA_PRIVACIDADE",
@@ -51,6 +52,7 @@ export const VALID_POLICY_STATUSES = new Set(Object.values(POLICY_STATUS));
 
 export function policyTypeLabel(t: string | null | undefined): string {
   switch (t) {
+    case "POLITICA_PGP":                 return "Política do Programa de Governança em Privacidade (PGP)";
     case "AVISO_PRIVACIDADE_EXTERNO":   return "Aviso de Privacidade (externo)";
     case "POLITICA_PRIVACIDADE_INTERNO": return "Política de Privacidade (interna)";
     case "NORMA_PRIVACIDADE":            return "Norma de Privacidade";
@@ -68,6 +70,7 @@ export function policyTypeLabel(t: string | null | undefined): string {
 
 export function policyTypeShortLabel(t: string | null | undefined): string {
   switch (t) {
+    case "POLITICA_PGP":                 return "Política do PGP";
     case "AVISO_PRIVACIDADE_EXTERNO":   return "Privacidade (externa)";
     case "POLITICA_PRIVACIDADE_INTERNO": return "Privacidade (interna)";
     case "NORMA_PRIVACIDADE":            return "Norma";
@@ -111,6 +114,8 @@ export function policyStatusBadgeClass(s: string | null | undefined): string {
 
 export function policyTypeBadgeClass(t: string | null | undefined): string {
   switch (t) {
+    case "POLITICA_PGP":
+      return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800";
     case "AVISO_PRIVACIDADE_EXTERNO":
     case "POLITICA_PRIVACIDADE_INTERNO":
       return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800";
