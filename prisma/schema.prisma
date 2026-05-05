@@ -109,6 +109,9 @@ model User {
   closedIncidents        Incident[]              @relation("IncidentClosedBy")
   incidentCommunications IncidentCommunication[] @relation("IncidentCommGeneratedBy")
 
+  // Capacitação LGPD (Checkpoint 18) — quem registrou cada evento de capacitação.
+  createdCapacitacoes    CapacitacaoEvento[]     @relation("CapacitacaoCreatedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -162,6 +165,7 @@ model Company {
   phaseDocuments   PhaseDocument[]
   phaseInfos       PhaseInfo[]
   phaseEbooks      PhaseEbook[]
+  capacitacaoEventos CapacitacaoEvento[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -954,6 +958,11 @@ model Operator {
   // ----- Vínculo com processos do Inventário -----
   processLinks    OperatorProcessLink[]
 
+  // ----- Vínculo com eventos de Capacitação (Checkpoint 18) -----
+  // Eventos de capacitação direcionados a este terceiro (ex: workshop
+  // sobre cláusulas contratuais, treinamento de obrigações LGPD).
+  capacitacaoEventos CapacitacaoEvento[]
+
   // ----- Auditoria -----
   createdById     String
   createdBy       User     @relation("OperatorCreatedBy", fields: [createdById], references: [id])
@@ -1189,6 +1198,11 @@ model Incident {
   // ----- Plug Plano de Ação (F1) -----
   /// Ações geradas a partir deste incidente (origin = INCIDENTE)
   actionPlans     ActionPlan[] @relation("ActionPlanIncident")
+
+  // ----- Plug Capacitação Corretiva (Checkpoint 18) -----
+  /// Eventos de capacitação registrados como ação corretiva pós-incidente
+  /// (ex: treinamento de phishing após incidente por engenharia social).
+  capacitacaoEventos CapacitacaoEvento[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1571,5 +1585,96 @@ model DocumentChunk {
   @@index([phase])
   @@index([source])
   @@map("document_chunks")
+}
+
+// ============================================================
+// CapacitacaoEvento (Checkpoint 18) — Capacitação LGPD
+// ============================================================
+// Registro temporal de evidências de que a Instituição promoveu/promoverá
+// capacitações para fomento de sensibilização e engajamento. Base legal:
+//   - Art. 41 §2º I LGPD (papel do Encarregado de orientar funcionários)
+//   - Art. 50 (programa de governança e boas práticas)
+//   - Art. 6º VIII (princípio da Prevenção)
+//   - Art. 52 §1º VIII (dosimetria — mitigação de penalidade)
+//
+// Organizado por 5 EIXOS de atuação:
+//   - ONBOARDING       — Integração e nivelamento de novos colaboradores
+//   - PILULAS          — Comunicação interna constante (newsletter, wallpaper)
+//   - PRATICA          — Atividades práticas e gamificação (phishing, quizzes)
+//   - DEPARTAMENTAL    — Treinamentos específicos por área
+//   - MONITORAMENTO    — Matriz de treinamento, pesquisas, revisão
+//
+// E por PÚBLICO-alvo: GERAL · RH_MARKETING · TI_SEGURANCA · EXTERNOS ·
+// DIRETORIA · ATENDIMENTO · NOVOS_COLABORADORES.
+//
+// Vínculos polimórficos opcionais: pode ser linkado a um Operator (capacitação
+// pra terceiro) ou a um Incident (capacitação corretiva pós-incidente).
+model CapacitacaoEvento {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // ----- Identificação -----
+  title           String
+  description     String?   @db.Text
+
+  /// Eixo de atuação no programa de capacitação
+  /// "ONBOARDING" | "PILULAS" | "PRATICA" | "DEPARTAMENTAL" | "MONITORAMENTO"
+  eixo            String
+
+  /// Tipo de atividade
+  /// "PALESTRA" | "WORKSHOP" | "TREINAMENTO" | "EMAIL" | "VIDEO" |
+  /// "CAMPANHA" | "SIMULADO" | "QUIZ" | "OUTRO"
+  type            String
+
+  /// Público-alvo da capacitação
+  /// "GERAL" | "RH_MARKETING" | "TI_SEGURANCA" | "EXTERNOS" |
+  /// "DIRETORIA" | "ATENDIMENTO" | "NOVOS_COLABORADORES"
+  audience        String
+
+  // ----- Dimensão temporal -----
+  /// Quando vai/foi planejado pra acontecer
+  scheduledAt     DateTime?
+  /// Quando efetivamente aconteceu (preenchido ao concluir)
+  completedAt     DateTime?
+
+  /// "PLANEJADO" | "REALIZADO" | "CANCELADO"
+  status          String    @default("PLANEJADO")
+
+  /// Recorrência da atividade (pra cronograma anual)
+  /// "UNICO" | "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL"
+  recurrence      String    @default("UNICO")
+
+  // ----- Evidências (Art. 52 §1º VIII — comprovação pra ANPD) -----
+  /// URL pública do arquivo no Vercel Blob (lista presença, foto, vídeo, PDF)
+  evidenceUrl     String?
+  evidenceFileName String?
+  /// Número de participantes (input manual, opcional)
+  attendeesCount  Int?
+
+  // ----- Notas internas -----
+  notes           String?   @db.Text
+
+  // ----- Vínculos polimórficos opcionais -----
+  /// Capacitação direcionada a um terceiro específico (workshop de cláusulas, etc.)
+  operatorId      String?
+  operator        Operator? @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+  /// Capacitação corretiva após incidente (treinamento phishing pós-vazamento, etc.)
+  incidentId      String?
+  incident        Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  // ----- Auditoria -----
+  createdById     String?
+  createdBy       User?     @relation("CapacitacaoCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, scheduledAt])
+  @@index([companyId, eixo])
+  @@index([companyId, audience])
+  @@index([operatorId])
+  @@index([incidentId])
+  @@map("capacitacao_eventos")
 }
 
