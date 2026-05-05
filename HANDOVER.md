@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-04 (Checkpoint 13 — RIPD v2 institucional completo + Checkpoints 6/7/8/10/11/12)
+> **Última sessão:** 2026-05-04 (Checkpoint 14 G1+G2+G3 — Gestão de Terceiros · **G4 pendente** pra próxima sessão)
 >
-> **Migração Neon:** ✅ Etapas 2 → 12 aplicadas e validadas em prod (Etapa 12 = RIPD v2, em 2026-05-04).
-> **`origin/main`:** ✅ sincronizada. HEAD = `acaf485` (Checkpoint 13).
+> **Migração Neon:** ✅ Etapas 2 → 14 aplicadas em prod.
+> **`origin/main`:** ✅ HEAD = `a91f7d0` (Checkpoint 14 G1+G2+G3).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -25,6 +25,21 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 ## 🆕 O que foi feito na sessão 2026-05-04 (já em produção)
 
 ### Features novas
+
+-13. **Gestão de Terceiros (Checkpoint 14 — G1+G2+G3 completos · G4 pendente)** — EM ANDAMENTO
+   - **Schema novo (Etapas 13 + 14)**: `Operator` (entidade jurídica + contrato embutido — incluindo régua de risco do contrato baseada em 6 critérios ANPD) + `OperatorProcessLink` (M:N com `DataInventory`) + `OperatorAssessment` (formulário de avaliação com workflow de 5 estados e publicToken único)
+   - **`lib/operadores-helpers.ts`**: enums (RelationType, ContractStatus, ContractRiskClass, RecommendedClause), DTOs, auth gate (DPO edita; Contribuidor visualiza com escopo limitado a processos próprios), checklist de classificação Operador/Controlador (10 perguntas em 2 blocos com sugestão automática)
+   - **`lib/operadores-risco-contrato.ts`**: engine pura — 6 critérios ANPD → ALTO/MEDIO/BAIXO. Geral × Específico ≥ 1 = ALTO; geral OU específico ≥ 1 = MEDIO; nenhum = BAIXO. Recomendação de cláusula combina com `relationType`
+   - **`lib/operadores-formulario.ts`**: catálogo de 52 perguntas em 7 blocos (transcritas literalmente do XLSX modelo da Denise) com tags Cyber/LGPD/Cyber+LGPD, gabarito, flag evidência, sub-questões
+   - **`lib/operadores-pontuacao.ts`**: engine pura — pontuação Cyber e LGPD **separadas**, NA neutro, classificação <60% ALTO / 60-90% MEDIO / ≥90% BAIXO, geração de token público URL-safe
+   - **`lib/operadores-clausulas-templates.ts`**: 5 templates seed em markdown (Robusta, Simples, CC, Cliente Op, Minuta) com placeholders `{{contratante.razaoSocial}}`, `{{contrato.dataAtual}}`, `{{dpo.email}}`
+   - **`lib/operadores-clausulas.ts`**: engine de aplicação de placeholders + `buildClauseContext` (decide contratante/contratado conforme tipo) + `renderClauseTemplate`
+   - **APIs (12 rotas novas)**: `GET/POST /api/operadores`, `GET/PATCH/DELETE /api/operadores/[id]`, `POST/DELETE /api/operadores/[id]/processes`, `GET/POST /api/operadores/[id]/assessment`, `GET/PATCH/DELETE /api/operadores/[id]/assessment/[assessmentId]`, `GET/PATCH/POST /api/avaliacao-terceiro/[token]` (público sem auth), `GET /api/operadores/[id]/clause` (DOCX), `POST /api/operadores/[id]/upload` (Vercel Blob)
+   - **UI**: `/dashboard/terceiros` (lista com KPIs por risco + 2 banners DPO + filtros + busca + modal cadastro) · `/dashboard/terceiros/[id]` (editor com 6 abas: Identificação · Posição (checklist + sugestão) · Risco do contrato (6 critérios) · Contrato (vigência + cláusulas + 2 uploaders) · Processos vinculados · Avaliação de risco (criar token + revisar respostas)) · `/avaliacao-terceiro/[token]` (formulário público sem auth, auto-save 1.5s, 7 blocos)
+   - **DOCX**: botão "Baixar cláusula (.docx)" no header gera aditivo já preenchido (reusa `buildPolicyDocx` do Checkpoint 12)
+   - **10º template Política**: `POLITICA_AVALIACAO_TERCEIROS` adicionado ao Checkpoint 12 (Política de Gestão de Risco de Segurança e Privacidade na Contratação de Terceiros)
+   - **Sidebar**: item "Gestão de Terceiros" com ícone Handshake — visível pra DPO + Contribuidor
+   - **G4 pendente**: integração com Inventário (auto-import operadores do `sharing`), Plano de Ação (ações automáticas), RIPD (Seção 1 puxa lista estruturada), 3º card Fase 6, badge sidebar com pendentes
 
 -12. **RIPD v2 institucional (Checkpoint 13 — F1+F2+F3+F4)** — COMPLETO
    - **Schema novo (Etapa 12 da migration)**: refatorou `model RIPD` legacy do Abacus (DROP+CREATE com 0 registros) → `Ripd` (8 seções estruturadas em JSON, fluxo de aprovação, versionamento) + `RipdVersion` (snapshot por aprovação)
@@ -199,6 +214,8 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 10 | `_migrate-action-plan.sql` | action_plans refatorada (Checkpoint 11 — Plano de Ação institucional) | ✅ | ✅ |
 | 11 | `_migrate-policies.sql` | policies + policy_versions + Company.slug (Checkpoint 12 — Políticas) | ✅ | ✅ |
 | 12 | `_migrate-ripd-v2.sql` | ripds refatorada + ripd_versions (Checkpoint 13 — RIPD v2 institucional) | ✅ | ✅ |
+| 13 | `_migrate-terceiros.sql` | operators + operator_process_links (Checkpoint 14 G1) | ✅ | ✅ |
+| 14 | `_migrate-terceiros-assessment.sql` | operator_assessments + publicToken único (Checkpoint 14 G2) | ✅ | ✅ |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -226,7 +243,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
 | 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
 | 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
-| 14+ | Segurança · Contratos · Incidentes · Modelo PGP — _Termos de Uso já está em Políticas (template `TERMOS_USO`)_ | depois |
+| 14 | **Gestão de Terceiros** — `/dashboard/terceiros` com lista + KPIs por risco + 2 banners DPO (vencidos/sem contrato e vencendo 90d) + filtros (Posição × Risco) + busca. Editor com 6 abas: Identificação · Posição (checklist + sugestão Operador/Controlador automática) · Risco do contrato (6 critérios ANPD → Alto/Médio/Baixo) · Contrato (vigência + 5 cláusulas LGPD + termo confidencialidade + 2 uploaders Vercel Blob) · Processos vinculados (M:N com Inventário) · Avaliação de risco (formulário público com 52 perguntas em 7 blocos enviado ao terceiro via token; pontuação Cyber+LGPD separadas; revisão pelo DPO). Botão "Baixar cláusula (.docx)" gera aditivo automaticamente preenchido (5 modelos: Robusta/Simples/CC/Cliente Op/Minuta). 10º template Política de Avaliação de Terceiros adicionado ao Checkpoint 12. **G4 pendente:** auto-import do `sharing` do Inventário; plug Plano de Ação; plug Seção 1 do RIPD; 3º card Fase 6; badge sidebar. | 🟡 G1+G2+G3 FEITOS · G4 pendente |
+| 15+ | Segurança · Incidentes · Modelo PGP — _Termos de Uso já está em Políticas (`TERMOS_USO`); Contratos com Operadores está no Checkpoint 14_ | depois |
 
 ---
 
@@ -355,7 +373,10 @@ Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos
 - ✅ **Checkpoint 11** — Plano de Ação institucional (3 tabs, dedup polimórfico, XLSX, integração 3 telas)
 - ✅ **Checkpoint 12** — Políticas LGPD (9 templates, editor split, URL pública, versionamento, DOCX + PDF + Diff)
 - ✅ **Checkpoint 13** — RIPD v2 institucional (8 seções estruturadas, fluxo Contribuidor → DPO, versionamento, diff word-level, DOCX + PDF, plug Fase 6)
+- 🟡 **Checkpoint 14 G1+G2+G3** — Gestão de Terceiros (operadores + contratos + régua de risco ANPD + formulário público de avaliação com pontuação Cyber/LGPD + 5 cláusulas DOCX + 10º template Política). **G4 pendente:** integrações com Inventário/Plano de Ação/RIPD/Fase 6.
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
-- ✅ Schema Neon: Etapas 2 → 12 todas aplicadas e validadas em prod
+- ✅ Schema Neon: Etapas 2 → 14 todas aplicadas e validadas em prod
 
-**Próxima fronteira (Checkpoint 14+):** Segurança · Contratos · Incidentes · Modelo PGP — todos pendentes, sem ordem definida ainda. (Termos de Uso já está em Políticas como template `TERMOS_USO`.)
+**Próxima sub-sessão imediata:** Checkpoint 14 G4 — integrações + plug Fase 6 + badge sidebar (~3h, em sessão nova com contexto fresco).
+
+**Próxima fronteira (Checkpoint 15+):** Segurança · Incidentes · Modelo PGP. (Termos de Uso já está em Políticas; Contratos com Operadores está no Checkpoint 14.)
