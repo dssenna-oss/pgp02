@@ -30,7 +30,8 @@ import {
   Activity,
   Target,
   FileText as FileTextIcon,
-  FileCheck2
+  FileCheck2,
+  Handshake
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -263,6 +264,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/ripd",
       icon: FileCheck2,
       // Visível pra DPO + Contribuidor (cada um vê o que pode editar)
+    },
+    {
+      name: "Gestão de Terceiros",
+      description: "Operadores, contratos e avaliação de risco",
+      href: "/dashboard/terceiros",
+      icon: Handshake,
+      // Visível pra DPO + Contribuidor (Contribuidor vê só os
+      // operadores ligados a processos próprios; DPO edita tudo)
     },
     {
       name: "Bases Legais",

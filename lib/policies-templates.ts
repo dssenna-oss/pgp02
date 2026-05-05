@@ -888,6 +888,142 @@ Mantemos registro atualizado com:
 `,
 };
 
+const T_AVALIACAO_TERCEIROS: PolicyTemplate = {
+  type: "POLITICA_AVALIACAO_TERCEIROS",
+  defaultTitle: "Política de Gestão de Risco de Segurança e Privacidade na Contratação de Terceiros",
+  blurb:
+    "Diretrizes para avaliação e gestão de risco de fornecedores, prestadores de serviço e parceiros que tratam dados pessoais. Define papéis (DPO, TI/Segurança, Jurídico) e o fluxo de avaliação.",
+  content: `# Política de Gestão de Risco de Segurança e Privacidade na Contratação de Terceiros — {{empresa}}
+
+**Última atualização:** {{data_publicacao}}
+
+## 1. Objetivo
+
+Estabelecer diretrizes claras para evitar violação de leis, regulações ou obrigações contratuais e manter os requisitos de segurança e privacidade na contratação de terceiros, fornecedores e prestadores de serviço da {{empresa}}.
+
+## 2. Escopo
+
+Aplica-se a todos os contratos com terceiros, fornecedores e prestadores de serviço da {{empresa}}, especialmente quando envolverem o compartilhamento ou tratamento de Dados Pessoais ou informações confidenciais.
+
+## 3. Definições
+
+- **Anonimização:** utilização de meios técnicos pelos quais um Dado Pessoal perde a possibilidade de associação a um indivíduo.
+- **ANPD:** Autoridade Nacional de Proteção de Dados — órgão responsável pela fiscalização da LGPD.
+- **Controlador:** pessoa natural ou jurídica a quem competem as decisões referentes ao Tratamento de Dados Pessoais.
+- **Operador:** pessoa natural ou jurídica que realiza o Tratamento de Dados Pessoais em nome do Controlador.
+- **Dados Pessoais:** qualquer informação relacionada a pessoa natural identificada ou identificável.
+- **Dados Pessoais Sensíveis:** dados sobre origem racial ou étnica, convicção religiosa, opinião política, filiação sindical, saúde, vida sexual, dado genético ou biométrico.
+- **Encarregado (DPO):** pessoa indicada como canal de comunicação entre Controlador, Titulares e a ANPD.
+- **Incidente:** qualquer violação de segurança que cause destruição, perda, alteração, divulgação ou acesso não autorizado a Dados Pessoais.
+- **LGPD:** Lei Geral de Proteção de Dados — Lei nº 13.709/2018.
+- **Subcontratado:** pessoa contratada pelo Operador pra colaborar no Tratamento dos Dados decorrentes do contrato com o Controlador.
+- **Titular:** pessoa física a quem se referem os Dados Pessoais.
+
+## 4. Papéis e Responsabilidades
+
+### 4.1. Encarregado (DPO) — {{dpo_nome}}
+- Atuar como canal de comunicação entre Controlador, Titulares e ANPD.
+- Revisar informações fornecidas pelos prestadores de serviços antes da contratação, sob a ótica de privacidade e proteção de dados.
+- Aprovar a avaliação de risco de Privacidade e Segurança da Informação para contratos que envolvam Dados Pessoais.
+- Recomendar ou desaconselhar contratações com risco alto.
+
+### 4.2. TI / Segurança da Informação
+- Garantir que controles de segurança e níveis de entrega incluídos em acordos com prestadores de serviço sejam implementados.
+- Revisar informações dos prestadores antes da contratação sob a ótica de Segurança da Informação.
+
+### 4.3. Jurídico
+- Revisar informações fornecidas pelos prestadores antes da contratação, sob a ótica de contratos e cláusulas necessárias.
+- Manter inventário dos prestadores de serviço que envolvam troca de Dados Pessoais ou armazenamento de informações confidenciais.
+
+## 5. Diretrizes
+
+### 5.1. Termo de Confidencialidade
+Todos os prestadores de serviço devem assinar um Termo de Confidencialidade demonstrando ciência e concordância com as diretrizes de Segurança da Informação da {{empresa}}.
+
+### 5.2. Categorias de prestadores e análise de riscos
+Os prestadores de serviço que se enquadrem nas categorias abaixo devem ser submetidos à avaliação de riscos:
+
+- Prestadores que tratam Dados Pessoais em nome da {{empresa}};
+- Prestadores que armazenam ou processam informações confidenciais;
+- Prestadores que terão acesso aos sistemas internos da {{empresa}}.
+
+O responsável pela contratação deve enviar o **Formulário de Avaliação de Riscos de Privacidade e Proteção de Dados Pessoais** ao prestador. O formulário preenchido será analisado por:
+
+- **TI/Segurança** — avalia a seção de Segurança da Informação;
+- **Encarregado (DPO)** — avalia a seção de Privacidade e o papel do prestador (Operador ou Controlador), verificando riscos de violação da LGPD.
+
+### 5.3. Contratos com troca de Dados Pessoais (Controlador/Operador)
+Sempre que a relação contratual envolver troca de Dados Pessoais, a avaliação de riscos deve ser aprovada pelo DPO. É recomendável que contratos sejam firmados apenas com prestadores que demonstrem:
+
+- Capacidade de proteger os Dados Pessoais;
+- Capacidade de atender esta Política;
+- Conformidade com a LGPD e legislações aplicáveis.
+
+A {{empresa}} obterá garantias específicas via contrato, incluindo:
+
+- Tratamento dos Dados conforme instruções da {{empresa}};
+- Acesso aos Dados restrito a pessoas autorizadas sob Termo de Confidencialidade;
+- Atendimento a esta Política de Segurança da Informação;
+- Apoio à {{empresa}} no cumprimento de obrigações da LGPD e na resposta a solicitações de Titulares e da ANPD;
+- Notificação tempestiva de incidentes;
+- Descarte ou devolução dos Dados Pessoais ao fim do contrato;
+- Disponibilização de informação para demonstrar conformidade e contribuir em auditorias.
+
+### 5.4. Contratos com armazenamento de dados confidenciais
+Antes da contratação, a {{empresa}} verificará se a organização possui política de segurança da informação que abranja:
+
+- Barreiras de proteção física (controle de acesso por crachá ou biometria);
+- Controle de acesso de visitantes ao escritório e a datacenters;
+- Sistema de monitoramento (câmeras, equipes de segurança);
+- Análise das imagens do sistema de monitoramento;
+- Proteção contra danos, destruição e interrupção em salas de armazenamento.
+
+Caso a TI/Segurança identifique riscos durante a análise, a contratação será discutida com o DPO e, após parecer, levada à Diretoria responsável.
+
+### 5.5. Inventário de contratos
+O Jurídico mantém um inventário de prestadores de serviço que envolvem troca de Dados Pessoais e armazenamento de informações confidenciais, com:
+
+- Razão social, CNPJ, objeto do serviço;
+- Posição na relação (Controlador / Operador);
+- Vigência e prazo de revisão do contrato;
+- Risco do contrato (Alto/Médio/Baixo) conforme critérios da ANPD;
+- Cláusulas LGPD presentes (privacidade, incidentes, subcontratação, transferência internacional);
+- Status da avaliação de risco do terceiro.
+
+### 5.6. Acordo de transferência de Dados Pessoais
+Quando o contrato envolver transferência de Dados Pessoais, devem ser observados:
+
+- Procedimentos de notificação de transmissão, envio e recebimento;
+- Política de criptografia ponto-a-ponto durante a transmissão;
+- Registros de log durante todo o ciclo de vida da operação para garantir rastreabilidade.
+
+### 5.7. Revisão de contratos
+A {{empresa}} pode solicitar revisão de contratos em virtude de mudanças nos serviços, novas aplicações, atualizações de políticas, novos controles, ou Incidentes de segurança. O terceiro deve garantir as mudanças estabelecidas, podendo essas mudanças desencadear nova avaliação de risco.
+
+## 6. Procedimento de Contratação
+
+1. **Identificação:** o responsável pela contratação encaminha ao DPO o contrato proposto, indicando se há tratamento de Dados Pessoais ou acesso a informações confidenciais.
+2. **Classificação:** o DPO avalia se o terceiro será **Operador** ou **Controlador** e classifica o risco do contrato.
+3. **Avaliação:** caso necessário, é enviado o Formulário de Avaliação de Terceiros pra preenchimento pelo prestador.
+4. **Análise:** TI/Segurança e DPO analisam as respostas; o Jurídico revisa as cláusulas contratuais.
+5. **Decisão:** o DPO emite recomendação (favorável, com ressalvas, ou desfavorável). Para risco alto, parecer é submetido à Diretoria.
+6. **Formalização:** as cláusulas LGPD adequadas são incluídas no contrato (cláusula robusta, simples, controlador/controlador, ou minuta padrão).
+7. **Monitoramento:** o contrato é incluído no inventário; a vigência e a próxima revisão são acompanhadas pelo DPO.
+
+## 7. Penalidades
+
+O descumprimento desta Política poderá ensejar advertências, suspensão ou rescisão do contrato com o terceiro, sem prejuízo das responsabilidades civis e administrativas previstas em lei.
+
+## 8. Atualização
+
+Esta Política é revisada anualmente ou quando houver alteração relevante na legislação ou no negócio. Mudanças são comunicadas pelos canais oficiais da {{empresa}}.
+
+---
+
+**Versão {{data_publicacao}}** — Aprovado por {{representante_legal}}
+`,
+};
+
 const T_OUTRA: PolicyTemplate = {
   type: "OUTRA",
   defaultTitle: "Outra Política",
@@ -950,6 +1086,7 @@ export const POLICY_TEMPLATES: PolicyTemplate[] = [
   T_RETENCAO,
   T_TREINAMENTO,
   T_TRANSFERENCIA,
+  T_AVALIACAO_TERCEIROS,
   T_OUTRA,
 ];
 

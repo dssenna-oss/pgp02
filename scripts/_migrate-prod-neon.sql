@@ -19,6 +19,8 @@
 --   * scripts/_migrate-action-plan.sql (Etapa 10 — Checkpoint 11: action_plans refatorada)
 --   * scripts/_migrate-policies.sql    (Etapa 11 — Checkpoint 12: policies + policy_versions + Company.slug)
 --   * scripts/_migrate-ripd-v2.sql     (Etapa 12 — Checkpoint 13: ripds refatorada + ripd_versions)
+--   * scripts/_migrate-terceiros.sql   (Etapa 13 — Checkpoint 14 G1: operators + operator_process_links)
+--   * scripts/_migrate-terceiros-assessment.sql (Etapa 14 — Checkpoint 14 G2: operator_assessments)
 -- ============================================================
 
 BEGIN;
@@ -575,6 +577,130 @@ CREATE UNIQUE INDEX IF NOT EXISTS "ripd_versions_ripdId_version_key"
 CREATE INDEX IF NOT EXISTS "ripd_versions_ripdId_approvedAt_idx"
   ON "ripd_versions"("ripdId", "approvedAt");
 
+-- ====================================================================
+-- ETAPA 13 — Checkpoint 14 G1: Gestão de Terceiros (operators +
+-- operator_process_links). Inspirado nos materiais da Denise — modelo
+-- com 6 critérios ANPD pra régua de risco do contrato.
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "operators" (
+  "id"                              TEXT PRIMARY KEY,
+  "companyId"                       TEXT NOT NULL,
+  "name"                            TEXT NOT NULL,
+  "tradeName"                       TEXT,
+  "cnpj"                            TEXT,
+  "country"                         TEXT DEFAULT 'Brasil',
+  "operatorType"                    TEXT,
+  "description"                     TEXT,
+  "notes"                           TEXT,
+  "relationType"                    TEXT NOT NULL DEFAULT 'INDEFINIDO',
+  "classificationAnswers"           JSONB,
+  "thirdPartyDpoName"               TEXT,
+  "thirdPartyDpoEmail"              TEXT,
+  "thirdPartyDpoPhone"              TEXT,
+  "responsibleId"                   TEXT,
+  "confidentialityTermSignedAt"     TIMESTAMP(3),
+  "confidentialityTermAttachment"   TEXT,
+  "contractLabel"                   TEXT,
+  "contractSignedAt"                TIMESTAMP(3),
+  "contractExpiresAt"               TIMESTAMP(3),
+  "contractLastReviewedAt"          TIMESTAMP(3),
+  "contractStatus"                  TEXT NOT NULL DEFAULT 'SEM_CONTRATO',
+  "largaEscala"                     BOOLEAN NOT NULL DEFAULT false,
+  "afetaTitulares"                  BOOLEAN NOT NULL DEFAULT false,
+  "novasTecnologias"                BOOLEAN NOT NULL DEFAULT false,
+  "vigilanciaPublica"               BOOLEAN NOT NULL DEFAULT false,
+  "decisaoAutomatizada"             BOOLEAN NOT NULL DEFAULT false,
+  "dadosSensiveis"                  BOOLEAN NOT NULL DEFAULT false,
+  "contractRiskClass"               TEXT NOT NULL DEFAULT 'BAIXO',
+  "recommendedClause"               TEXT NOT NULL DEFAULT 'INDEFINIDO',
+  "hasPrivacyClause"                BOOLEAN NOT NULL DEFAULT false,
+  "hasIncidentClause"               BOOLEAN NOT NULL DEFAULT false,
+  "incidentNotificationDays"        INTEGER,
+  "permitsSubcontracting"           BOOLEAN NOT NULL DEFAULT false,
+  "permitsInternationalTransfer"    BOOLEAN NOT NULL DEFAULT false,
+  "isStandardMinute"                BOOLEAN NOT NULL DEFAULT false,
+  "contractAttachments"             JSONB NOT NULL DEFAULT '[]'::jsonb,
+  "createdById"                     TEXT NOT NULL,
+  "createdAt"                       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"                       TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "operators_companyId_fkey"
+    FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE,
+  CONSTRAINT "operators_createdById_fkey"
+    FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION,
+  CONSTRAINT "operators_responsibleId_fkey"
+    FOREIGN KEY ("responsibleId") REFERENCES "users"("id") ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS "operators_companyId_relationType_idx"
+  ON "operators"("companyId", "relationType");
+CREATE INDEX IF NOT EXISTS "operators_companyId_contractRiskClass_idx"
+  ON "operators"("companyId", "contractRiskClass");
+CREATE INDEX IF NOT EXISTS "operators_companyId_contractStatus_idx"
+  ON "operators"("companyId", "contractStatus");
+
+CREATE TABLE IF NOT EXISTS "operator_process_links" (
+  "id"                  TEXT PRIMARY KEY,
+  "operatorId"          TEXT NOT NULL,
+  "dataInventoryId"     TEXT NOT NULL,
+  "activityDescription" TEXT,
+  "createdAt"           TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "operator_process_links_operatorId_fkey"
+    FOREIGN KEY ("operatorId") REFERENCES "operators"("id") ON DELETE CASCADE,
+  CONSTRAINT "operator_process_links_dataInventoryId_fkey"
+    FOREIGN KEY ("dataInventoryId") REFERENCES "data_inventories"("id") ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "operator_process_links_operatorId_dataInventoryId_key"
+  ON "operator_process_links"("operatorId", "dataInventoryId");
+CREATE INDEX IF NOT EXISTS "operator_process_links_dataInventoryId_idx"
+  ON "operator_process_links"("dataInventoryId");
+
+-- ====================================================================
+-- ETAPA 14 — Checkpoint 14 G2: Avaliação de Terceiros via Formulário
+-- (operator_assessments). Inspirado no XLSX modelo da Denise — 52
+-- perguntas em 7 blocos, com pontuação Cyber e LGPD separadas.
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "operator_assessments" (
+  "id"                       TEXT PRIMARY KEY,
+  "operatorId"               TEXT NOT NULL,
+  "label"                    TEXT,
+  "status"                   TEXT NOT NULL DEFAULT 'PENDENTE',
+  "publicToken"              TEXT,
+  "sentAt"                   TIMESTAMP(3),
+  "thirdPartyStartedAt"      TIMESTAMP(3),
+  "thirdPartyCompletedAt"    TIMESTAMP(3),
+  "thirdPartyAnswers"        JSONB NOT NULL DEFAULT '{}'::jsonb,
+  "dpoNotes"                 JSONB NOT NULL DEFAULT '{}'::jsonb,
+  "reviewedById"             TEXT,
+  "reviewedAt"               TIMESTAMP(3),
+  "cyberScore"               INTEGER NOT NULL DEFAULT 0,
+  "cyberMax"                 INTEGER NOT NULL DEFAULT 0,
+  "cyberPercentage"          DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "cyberRiskClass"           TEXT,
+  "lgpdScore"                INTEGER NOT NULL DEFAULT 0,
+  "lgpdMax"                  INTEGER NOT NULL DEFAULT 0,
+  "lgpdPercentage"           DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "lgpdRiskClass"            TEXT,
+  "overallPercentage"        DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "overallRiskClass"         TEXT,
+  "createdById"              TEXT NOT NULL,
+  "createdAt"                TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"                TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "operator_assessments_operatorId_fkey"
+    FOREIGN KEY ("operatorId") REFERENCES "operators"("id") ON DELETE CASCADE,
+  CONSTRAINT "operator_assessments_createdById_fkey"
+    FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION,
+  CONSTRAINT "operator_assessments_reviewedById_fkey"
+    FOREIGN KEY ("reviewedById") REFERENCES "users"("id") ON DELETE SET NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "operator_assessments_publicToken_key"
+  ON "operator_assessments"("publicToken")
+  WHERE "publicToken" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "operator_assessments_operatorId_status_idx"
+  ON "operator_assessments"("operatorId", "status");
+CREATE INDEX IF NOT EXISTS "operator_assessments_publicToken_idx"
+  ON "operator_assessments"("publicToken");
+
 COMMIT;
 
 -- ====================================================================
@@ -617,6 +743,16 @@ SELECT 'ripds.data (jsonb)', EXISTS (SELECT 1 FROM information_schema.columns
   WHERE table_name='ripds' AND column_name='data' AND data_type='jsonb');
 SELECT 'ripd_versions (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='ripd_versions');
+SELECT 'operators (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='operators');
+SELECT 'operators.contractRiskClass', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='operators' AND column_name='contractRiskClass');
+SELECT 'operator_process_links (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='operator_process_links');
+SELECT 'operator_assessments (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='operator_assessments');
+SELECT 'operator_assessments.publicToken', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='operator_assessments' AND column_name='publicToken');
 
 \echo ''
 \echo '=== Inventários por status ==='

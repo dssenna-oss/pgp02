@@ -95,6 +95,14 @@ model User {
   approvedRipds        Ripd[]        @relation("RipdApprovedBy")
   approvedRipdVersions RipdVersion[] @relation("RipdVersionApprovedBy")
 
+  // Gestão de Terceiros (Checkpoint 14) — operadores que cadastrei e
+  // operadores onde sou o responsável interno
+  createdOperators     Operator[]    @relation("OperatorCreatedBy")
+  responsibleOperators Operator[]    @relation("OperatorResponsible")
+  // Avaliações de terceiros (G2) — quem criou e quem revisou
+  createdAssessments   OperatorAssessment[] @relation("AssessmentCreatedBy")
+  reviewedAssessments  OperatorAssessment[] @relation("AssessmentReviewedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -142,6 +150,7 @@ model Company {
   actionPlans       ActionPlan[]
   policies          Policy[]
   ripds            Ripd[]
+  operators        Operator[]
   documents        Document[]
   incidents        Incident[]
   phaseDocuments   PhaseDocument[]
@@ -233,6 +242,10 @@ model DataInventory {
   // processo pode ter 0..N RIPDs (raro ter mais de 1 ativo, mas
   // versões + arquivados acumulam).
   ripds Ripd[]
+
+  // Operadores/Terceiros vinculados a este processo (Checkpoint 14).
+  // Cada vínculo descreve qual atividade o operador faz no processo.
+  operatorLinks OperatorProcessLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -805,6 +818,231 @@ model RipdVersion {
   @@unique([ripdId, version])
   @@index([ripdId, approvedAt])
   @@map("ripd_versions")
+}
+
+/// Operador / Terceiro / Fornecedor — Gestão de Terceiros (Checkpoint 14).
+///
+/// Inspirado na metodologia da Denise (consultoria PGP) — substitui o
+/// inventário-de-terceiros em XLSX por entidade estruturada com régua
+/// de risco automatizada (6 critérios ANPD), checklist de cláusulas
+/// LGPD, vínculo com processos do Inventário, e workflow de avaliação.
+///
+/// Posição (`relationType`):
+///   - "INDEFINIDO"      — encarregado ainda não classificou
+///   - "OPERADOR"        — terceiro trata dados em nome da Company
+///   - "CONTROLADOR"     — terceiro é outro controlador
+///   - "CO_CONTROLADOR"  — controladoria conjunta (decisões comuns/convergentes)
+///
+/// Régua de risco do CONTRATO (6 critérios ANPD — não confundir com
+/// avaliação do operador via Formulário em G2):
+///   - Critério geral:    largaEscala + afetaTitulares
+///   - Critério específico: novasTecnologias + vigilanciaPublica +
+///                          decisaoAutomatizada + dadosSensiveis
+///   - Cálculo: geral × específico ≥ 1 → ALTO;
+///              geral OU específico ≥ 1 → MEDIO; nenhum → BAIXO
+///
+/// Cláusula recomendada: derivada de (relationType + contractRiskClass)
+/// — engine em `lib/operadores-risco-contrato.ts`. Templates em G3.
+model Operator {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // ----- Identificação -----
+  /// Razão social do terceiro
+  name            String
+  tradeName       String?
+  cnpj            String?
+  /// País sede (pra detectar transferência internacional). Default "Brasil".
+  country         String?  @default("Brasil")
+  /// Categorização livre (CLOUD/PAGAMENTOS/MARKETING/RH/AUDITORIA/
+  /// LOGISTICA/TI/JURIDICO/SAUDE/OUTRO). Apenas pra filtros — não
+  /// influencia regras.
+  operatorType    String?
+  description     String?  @db.Text
+  notes           String?  @db.Text
+
+  // ----- Posição na relação (decisão 5: checklist + DPO confirma) -----
+  /// "INDEFINIDO" | "OPERADOR" | "CONTROLADOR" | "CO_CONTROLADOR"
+  relationType    String   @default("INDEFINIDO")
+  /// Respostas do checklist de classificação (auto-sugestão).
+  /// Estrutura: { o1: bool, o2: bool, ..., c1: bool, ... }
+  /// Detalhe das perguntas em `lib/operadores-helpers.ts`.
+  classificationAnswers Json?
+
+  // ----- Contato do terceiro (DPO/responsável LGPD) -----
+  thirdPartyDpoName  String?
+  thirdPartyDpoEmail String?
+  thirdPartyDpoPhone String?
+
+  // ----- Responsável interno -----
+  /// User da Company que cuida deste operador (gerente do contrato).
+  responsibleId   String?
+  responsible     User?    @relation("OperatorResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  // ----- Termo de Confidencialidade (decisão 6 — campo simples) -----
+  confidentialityTermSignedAt    DateTime?
+  /// Path no Vercel Blob (PDF do termo assinado).
+  confidentialityTermAttachment  String?
+
+  // ----- Contrato (1 ativo por operador; histórico fica como pendência) -----
+  contractLabel        String?
+  contractSignedAt     DateTime?
+  contractExpiresAt    DateTime?
+  contractLastReviewedAt DateTime?
+  /// "VIGENTE" | "VENCENDO_90D" | "VENCIDO" | "EM_RENOVACAO" |
+  /// "SEM_CONTRATO" | "NAO_APLICAVEL"
+  /// "VENCENDO_90D" é calculado on-demand a partir de contractExpiresAt.
+  contractStatus       String   @default("SEM_CONTRATO")
+
+  // ----- Régua de risco do CONTRATO (6 critérios ANPD) -----
+  largaEscala          Boolean  @default(false)
+  afetaTitulares       Boolean  @default(false)
+  novasTecnologias     Boolean  @default(false)
+  vigilanciaPublica    Boolean  @default(false)
+  decisaoAutomatizada  Boolean  @default(false)
+  dadosSensiveis       Boolean  @default(false)
+  /// Calculado a partir dos 6 booleanos. Persistido pra filtros/index.
+  /// "ALTO" | "MEDIO" | "BAIXO"
+  contractRiskClass    String   @default("BAIXO")
+
+  /// Cláusula recomendada (calculada). Templates em G3.
+  /// "ROBUSTA" | "SIMPLES" | "CC" | "CLIENTE_OPERADOR" | "MINUTA" |
+  /// "INDEFINIDO"
+  recommendedClause    String   @default("INDEFINIDO")
+
+  // ----- Cláusulas presentes no contrato atual (checklist do XLSX modelo) -----
+  hasPrivacyClause            Boolean  @default(false)
+  hasIncidentClause           Boolean  @default(false)
+  /// Prazo (em dias) pra notificação de incidente (se contrato exige).
+  incidentNotificationDays    Int?
+  permitsSubcontracting       Boolean  @default(false)
+  permitsInternationalTransfer Boolean @default(false)
+  /// Indica se o contrato segue minuta padrão da empresa.
+  isStandardMinute            Boolean  @default(false)
+
+  /// Anexos do contrato: PDF principal + DPA + evidências.
+  /// Estrutura: [{ name, url, uploadedAt, kind: "CONTRATO" | "DPA" |
+  ///              "EVIDENCIA" | "OUTRO" }]
+  contractAttachments         Json     @default("[]")
+
+  // ----- Avaliação do terceiro (G2 — Formulário) -----
+  assessments OperatorAssessment[]
+
+  // ----- Vínculo com processos do Inventário -----
+  processLinks    OperatorProcessLink[]
+
+  // ----- Auditoria -----
+  createdById     String
+  createdBy       User     @relation("OperatorCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId, relationType])
+  @@index([companyId, contractRiskClass])
+  @@index([companyId, contractStatus])
+  @@map("operators")
+}
+
+/// Vínculo M:N entre Operator e DataInventory — cada linha indica que
+/// um operador trata dados em um processo específico do Inventário,
+/// com descrição opcional da atividade exata.
+model OperatorProcessLink {
+  id                  String   @id @default(cuid())
+  operatorId          String
+  operator            Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  dataInventoryId     String
+  dataInventory       DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+
+  /// Atividade específica que o operador faz nesse processo
+  /// (ex: "Hospedagem do banco de dados de clientes").
+  activityDescription String?  @db.Text
+
+  createdAt           DateTime @default(now())
+
+  @@unique([operatorId, dataInventoryId])
+  @@index([dataInventoryId])
+  @@map("operator_process_links")
+}
+
+/// Avaliação de Terceiro — formulário de risco preenchido pelo
+/// próprio terceiro (link público com token, sem auth) e revisado
+/// pelo encarregado.
+///
+/// Catálogo das 52 perguntas em `lib/operadores-formulario.ts` (7
+/// blocos, tags CYBER/LGPD/CYBER_LGPD).
+/// Engine de pontuação em `lib/operadores-pontuacao.ts` — calcula
+/// scores Cyber e LGPD SEPARADOS, classificando em ALTO/MEDIO/BAIXO
+/// com base em % do gabarito.
+///
+/// Fluxo:
+///   1. DPO cria → status=PENDENTE
+///   2. DPO "envia pra terceiro" → gera publicToken, status=AGUARDANDO_TERCEIRO
+///   3. Terceiro acessa `/avaliacao-terceiro/<token>` (sem auth) e
+///      preenche → status segue AGUARDANDO_TERCEIRO até clicar
+///      "Finalizar"
+///   4. Terceiro finaliza → status=RESPONDIDO + thirdPartyCompletedAt
+///   5. DPO revisa, anota, finaliza → status=REVISADO + scores
+///      consolidados (cyberScore, lgpdScore, percentages, riskClasses)
+model OperatorAssessment {
+  id              String   @id @default(cuid())
+  operatorId      String
+  operator        Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  /// Rótulo opcional (ex: "Avaliação 2026", "Renovação")
+  label           String?
+
+  /// "PENDENTE" | "AGUARDANDO_TERCEIRO" | "RESPONDIDO" | "REVISADO" | "CANCELADO"
+  status          String   @default("PENDENTE")
+
+  /// Token URL-safe do link público. Único — funciona como "chave"
+  /// pra autenticação sem login do terceiro. Revogar = setar null.
+  publicToken     String?  @unique
+
+  /// Quando DPO enviou pro terceiro (token gerado).
+  sentAt          DateTime?
+  /// Quando terceiro abriu o link pela 1ª vez.
+  thirdPartyStartedAt   DateTime?
+  /// Quando terceiro clicou em "Finalizar".
+  thirdPartyCompletedAt DateTime?
+
+  /// Respostas do terceiro:
+  ///   { qid: { answer: "S" | "N" | "NA", evidence?: string, comment?: string } }
+  /// Tipado por `FormResponses` em `lib/operadores-formulario.ts`.
+  thirdPartyAnswers     Json     @default("{}")
+
+  // ----- Revisão pelo DPO -----
+  /// Notas do DPO por pergunta:
+  ///   { qid: "comentário do DPO" }
+  dpoNotes              Json     @default("{}")
+
+  reviewedById          String?
+  reviewedBy            User?    @relation("AssessmentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt            DateTime?
+
+  // ----- Pontuação consolidada (calculada ao revisar) -----
+  cyberScore            Int      @default(0)
+  cyberMax              Int      @default(0)
+  cyberPercentage       Float    @default(0)
+  cyberRiskClass        String?  // ALTO | MEDIO | BAIXO
+
+  lgpdScore             Int      @default(0)
+  lgpdMax               Int      @default(0)
+  lgpdPercentage        Float    @default(0)
+  lgpdRiskClass         String?
+
+  overallPercentage     Float    @default(0)
+  overallRiskClass      String?
+
+  // ----- Auditoria -----
+  createdById     String
+  createdBy       User     @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([operatorId, status])
+  @@index([publicToken])
+  @@map("operator_assessments")
 }
 
 model Document {

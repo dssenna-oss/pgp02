@@ -30,6 +30,7 @@ export const POLICY_TYPE = {
   POLITICA_RETENCAO: "POLITICA_RETENCAO",
   POLITICA_TREINAMENTO: "POLITICA_TREINAMENTO",
   POLITICA_TRANSFERENCIA: "POLITICA_TRANSFERENCIA",
+  POLITICA_AVALIACAO_TERCEIROS: "POLITICA_AVALIACAO_TERCEIROS",
   OUTRA: "OUTRA",
 } as const;
 export type PolicyType = (typeof POLICY_TYPE)[keyof typeof POLICY_TYPE];
@@ -59,6 +60,7 @@ export function policyTypeLabel(t: string | null | undefined): string {
     case "POLITICA_RETENCAO":            return "Política de Retenção e Descarte";
     case "POLITICA_TREINAMENTO":         return "Política de Treinamento";
     case "POLITICA_TRANSFERENCIA":       return "Política de Transferência Internacional";
+    case "POLITICA_AVALIACAO_TERCEIROS": return "Política de Avaliação de Terceiros";
     case "OUTRA":                        return "Outra";
     default:                             return "—";
   }
@@ -75,6 +77,7 @@ export function policyTypeShortLabel(t: string | null | undefined): string {
     case "POLITICA_RETENCAO":            return "Retenção";
     case "POLITICA_TREINAMENTO":         return "Treinamento";
     case "POLITICA_TRANSFERENCIA":       return "Transferência Int.";
+    case "POLITICA_AVALIACAO_TERCEIROS": return "Aval. de Terceiros";
     case "OUTRA":                        return "Outra";
     default:                             return "—";
   }
@@ -149,6 +152,7 @@ export function defaultSlugForType(t: string): string {
     case "POLITICA_RETENCAO":            return "retencao-descarte";
     case "POLITICA_TREINAMENTO":         return "treinamento";
     case "POLITICA_TRANSFERENCIA":       return "transferencia-internacional";
+    case "POLITICA_AVALIACAO_TERCEIROS": return "avaliacao-terceiros";
     default:                             return "outra";
   }
 }
