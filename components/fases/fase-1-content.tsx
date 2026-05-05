@@ -8,6 +8,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function Fase1Content() {
   // Definir o checklist da Fase 1
@@ -129,12 +131,25 @@ export default function Fase1Content() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="fase-1" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="fase-1" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="fase-1" 
+      <PhaseSection
+        phase="fase-1"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral da fase"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="fase-1"
+        noCard
         defaultContent={`
           <p class="text-gray-700 dark:text-gray-300">
             Essa segunda etapa serve principalmente para as grandes empresas. Contudo, sendo a PJ empresa 
@@ -168,18 +183,37 @@ export default function Fase1Content() {
           </div>
         `}
       />
+      </PhaseSection>
 
       {/* Orientações sobre a fase */}
       <PhaseInfoManager phase="fase-1" section="howto" />
 
-      {/* Considerações sobre a fase */}
-      <PhaseChecklist phase="fase-1" sections={checklistSections} />
+      {/* Checklist de Implementação */}
+      <PhaseSection
+        phase="fase-1"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="fase-1" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="fase-1" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="fase-1" />
+      <PhaseSection
+        phase="fase-1"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="fase-1" noCard />
+      </PhaseSection>
     </div>
   );
 }

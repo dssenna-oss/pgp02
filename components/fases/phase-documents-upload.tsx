@@ -46,9 +46,11 @@ type SortOption = "name-asc" | "name-desc" | "date-asc" | "date-desc" | "type-as
 
 interface PhaseDocumentsUploadProps {
   phase: string;
+  /** Se true, não renderiza Card próprio (usado dentro de PhaseSection). */
+  noCard?: boolean;
 }
 
-export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProps) {
+export default function PhaseDocumentsUpload({ phase, noCard = false }: PhaseDocumentsUploadProps) {
   const { data: session } = useSession() || {};
   const [documents, setDocuments] = useState<PhaseDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -286,35 +288,57 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
     return doc.fileType?.toUpperCase() || "Arquivo";
   }
 
+  // Quando dentro de PhaseSection, evita Card duplo (PhaseSection já fornece
+  // o card externo com título). Renderizamos o conteúdo direto + ações inline.
+  const Wrapper = noCard ? "div" : Card;
+  const Header = noCard ? "div" : CardHeader;
+  const Content = noCard ? "div" : CardContent;
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <span>Documentação da Fase</span>
-              </CardTitle>
-              <CardDescription>
-                E-books, textos, PDFs e vídeos relacionados a esta fase
-                {!isAdmin && (
-                  <span className="block mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" />
-                    Apenas o administrador pode fazer upload de documentos
-                  </span>
-                )}
-              </CardDescription>
+      <Wrapper>
+        {!noCard && (
+          <Header>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <span>Documentação da Fase</span>
+                </CardTitle>
+                <CardDescription>
+                  E-books, textos, PDFs e vídeos relacionados a esta fase
+                  {!isAdmin && (
+                    <span className="block mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" />
+                      Apenas o administrador pode fazer upload de documentos
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              {isAdmin && (
+                <Button onClick={() => setShowUploadDialog(true)} className="self-start sm:self-auto">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Fazer Upload
+                </Button>
+              )}
             </div>
-            {isAdmin && (
-              <Button onClick={() => setShowUploadDialog(true)} className="self-start sm:self-auto">
-                <Upload className="h-4 w-4 mr-2" />
-                Fazer Upload
-              </Button>
-            )}
+          </Header>
+        )}
+        {noCard && isAdmin && (
+          <div className="flex justify-end mb-3">
+            <Button onClick={() => setShowUploadDialog(true)} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Fazer Upload
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+        )}
+        {noCard && !isAdmin && (
+          <p className="mb-3 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+            <ShieldAlert className="h-3 w-3" />
+            Apenas o administrador pode fazer upload de documentos
+          </p>
+        )}
+        <Content>
           {loading ? (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
@@ -455,8 +479,8 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
               </ul>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </Content>
+      </Wrapper>
 
       {/* Visualização do documento selecionado */}
       {selectedDocument && (

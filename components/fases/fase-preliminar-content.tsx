@@ -9,6 +9,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function FasePrelimimarContent() {
   // Definir o checklist da Fase Preliminar
@@ -104,12 +106,25 @@ export default function FasePrelimimarContent() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="preliminar" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="preliminar" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="preliminar" 
+      <PhaseSection
+        phase="preliminar"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral · objetivos · investimentos sugeridos"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="preliminar"
+        noCard
         defaultContent={`
 <p class="text-gray-700 dark:text-gray-300">
             Esta primeira etapa ocorre basicamente para conscientizar a diretoria da Empresa sobre a 
@@ -142,12 +157,22 @@ export default function FasePrelimimarContent() {
           </ul>
         `}
       />
+      </PhaseSection>
 
       {/* Considerações sobre a fase */}
-      <PhaseDescriptionManager 
-        phase="preliminar" 
+      <PhaseSection
+        phase="preliminar"
         section="consideracoes"
         title="Considerações sobre a fase"
+        icon="💭"
+        subtitle="Cultura, treinamento, governança, evolução"
+        accent="violet"
+      >
+      <PhaseDescriptionManager
+        phase="preliminar"
+        section="consideracoes"
+        title="Considerações sobre a fase"
+        noCard
         defaultContent={`
           <h3 class="text-2xl font-bold mb-4">🎯 Objetivo da Fase Preliminar</h3>
           <p class="text-gray-700 dark:text-gray-300 mb-6">
@@ -309,14 +334,34 @@ export default function FasePrelimimarContent() {
         `}
       />
 
+      </PhaseSection>
+
       {/* Checklist de Implementação */}
-      <PhaseChecklist phase="preliminar" sections={checklistSections} />
+      <PhaseSection
+        phase="preliminar"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="preliminar" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="preliminar" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="preliminar" />
+      <PhaseSection
+        phase="preliminar"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="preliminar" noCard />
+      </PhaseSection>
     </div>
   );
 }

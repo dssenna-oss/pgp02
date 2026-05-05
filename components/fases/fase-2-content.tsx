@@ -9,6 +9,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function Fase2Content() {
   // Definir o checklist da Fase 2
@@ -171,12 +173,25 @@ export default function Fase2Content() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="fase-2" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="fase-2" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="fase-2" 
+      <PhaseSection
+        phase="fase-2"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral da fase"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="fase-2"
+        noCard
         defaultContent={`
 <p class="text-gray-700 dark:text-gray-300">
             Antes de iniciar o mapeamento detalhado, é fundamental fazer um diagnóstico da situação 
@@ -218,18 +233,37 @@ export default function Fase2Content() {
           </p>
         `}
       />
+      </PhaseSection>
 
       {/* Orientações sobre a fase */}
       <PhaseInfoManager phase="fase-2" section="howto" />
 
-      {/* Considerações sobre a fase */}
-      <PhaseChecklist phase="fase-2" sections={checklistSections} />
+      {/* Checklist de Implementação */}
+      <PhaseSection
+        phase="fase-2"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="fase-2" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="fase-2" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="fase-2" />
+      <PhaseSection
+        phase="fase-2"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="fase-2" noCard />
+      </PhaseSection>
     </div>
   );
 }

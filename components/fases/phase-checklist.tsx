@@ -25,6 +25,8 @@ interface ChecklistSection {
 interface PhaseChecklistProps {
   phase: string;
   sections: ChecklistSection[];
+  /** Se true, não renderiza Card próprio (usado dentro de PhaseSection). */
+  noCard?: boolean;
 }
 
 // Função para converter HTML para texto simples
@@ -81,7 +83,7 @@ const textToHtml = (text: string): string => {
   return html;
 };
 
-export default function PhaseChecklist({ phase, sections: initialSections }: PhaseChecklistProps) {
+export default function PhaseChecklist({ phase, sections: initialSections, noCard = false }: PhaseChecklistProps) {
   const { data: session } = useSession() || {};
   const [sections, setSections] = useState<ChecklistSection[]>(initialSections);
   const [loading, setLoading] = useState(true);
@@ -320,9 +322,16 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
 
   const progress = calculateProgress();
 
+  // Quando dentro de PhaseSection, evita Card duplo: usa div + componentes
+  // de header simulados (sem Card wrapper). PhaseSection já fornece o card
+  // externo + título principal.
+  const Wrapper = noCard ? "div" : Card;
+  const Header = noCard ? "div" : CardHeader;
+  const Content = noCard ? "div" : CardContent;
+
   return (
-    <Card>
-      <CardHeader>
+    <Wrapper className={noCard ? "" : undefined}>
+      <Header className={noCard ? "mb-3" : undefined}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <CardTitle className="flex items-center gap-2 flex-wrap">
@@ -392,9 +401,9 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
             </div>
           </div>
         )}
-      </CardHeader>
-      
-      <CardContent className="space-y-6">
+      </Header>
+
+      <Content className="space-y-6">
         {editing ? (
           <div className="space-y-4">
             <div>
@@ -483,7 +492,7 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
             </div>
           ))
         )}
-      </CardContent>
-    </Card>
+      </Content>
+    </Wrapper>
   );
 }

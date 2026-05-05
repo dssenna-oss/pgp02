@@ -9,6 +9,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function Fase7Content() {
   // Definir o checklist da Fase 7
@@ -315,12 +317,25 @@ export default function Fase7Content() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="fase-7" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="fase-7" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="fase-7" 
+      <PhaseSection
+        phase="fase-7"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral da fase"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="fase-7"
+        noCard
         defaultContent={`
 <p class="text-gray-700 dark:text-gray-300">
             A conformidade com a LGPD não é um projeto com início, meio e fim, mas um processo contínuo. 
@@ -388,18 +403,37 @@ export default function Fase7Content() {
           </div>
         `}
       />
+      </PhaseSection>
 
       {/* Orientações sobre a fase */}
       <PhaseInfoManager phase="fase-7" section="howto" />
 
-      {/* Considerações sobre a fase */}
-      <PhaseChecklist phase="fase-7" sections={checklistSections} />
+      {/* Checklist de Implementação */}
+      <PhaseSection
+        phase="fase-7"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="fase-7" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="fase-7" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="fase-7" />
+      <PhaseSection
+        phase="fase-7"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="fase-7" noCard />
+      </PhaseSection>
     </div>
   );
 }

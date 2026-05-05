@@ -9,6 +9,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function Fase5Content() {
   // Definir o checklist da Fase 5
@@ -217,12 +219,25 @@ export default function Fase5Content() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="fase-5" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="fase-5" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="fase-5" 
+      <PhaseSection
+        phase="fase-5"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral da fase"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="fase-5"
+        noCard
         defaultContent={`
 <p class="text-gray-700 dark:text-gray-300">
             Com base nos riscos e lacunas identificadas na Fase 3, esta etapa consiste em criar um 
@@ -259,18 +274,37 @@ export default function Fase5Content() {
           </div>
         `}
       />
+      </PhaseSection>
 
       {/* Orientações sobre a fase */}
       <PhaseInfoManager phase="fase-5" section="howto" />
 
-      {/* Considerações sobre a fase */}
-      <PhaseChecklist phase="fase-5" sections={checklistSections} />
+      {/* Checklist de Implementação */}
+      <PhaseSection
+        phase="fase-5"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="fase-5" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="fase-5" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="fase-5" />
+      <PhaseSection
+        phase="fase-5"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="fase-5" noCard />
+      </PhaseSection>
     </div>
   );
 }

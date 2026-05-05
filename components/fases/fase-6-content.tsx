@@ -9,6 +9,8 @@ import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
 import PhaseEbooksManager from "./phase-ebooks-manager";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
 
 export default function Fase6Content() {
   // Definir o checklist da Fase 6
@@ -302,6 +304,9 @@ export default function Fase6Content() {
         </p>
       </div>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="fase-6" />
+
       {/* E-books Interativos */}
       <PhaseEbooksManager phase="fase-6" />
 
@@ -309,9 +314,19 @@ export default function Fase6Content() {
       <PhaseInfoManager phase="fase-6" section="howto" />
 
       {/* Considerações sobre a fase - Objetivos e orientações */}
-      <PhaseDescriptionManager 
-        phase="fase-6" 
+      <PhaseSection
+        phase="fase-6"
         section="consideracoes"
+        title="Considerações sobre a fase"
+        icon="💭"
+        subtitle="Reflexões estratégicas e operacionais"
+        accent="violet"
+      >
+      <PhaseDescriptionManager
+        phase="fase-6"
+        section="consideracoes"
+        title="Considerações sobre a fase"
+        noCard
         defaultContent={`
           <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
             <h3 class="text-xl font-bold text-blue-900 dark:text-blue-100 mb-4">🎯 Objetivos da Fase 6 - Execução</h3>
@@ -398,15 +413,34 @@ export default function Fase6Content() {
           </div>
         `}
       />
+      </PhaseSection>
 
-      {/* Considerações sobre a fase */}
-      <PhaseChecklist phase="fase-6" sections={checklistSections} />
+      {/* Checklist de Implementação */}
+      <PhaseSection
+        phase="fase-6"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="fase-6" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="fase-6" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="fase-6" />
+      <PhaseSection
+        phase="fase-6"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="fase-6" noCard />
+      </PhaseSection>
     </div>
   );
 }
