@@ -107,12 +107,12 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5 text-purple-600" />
-            Coloque em prática
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
+            <ExternalLink className="h-5 w-5 text-purple-600 flex-shrink-0" />
+            <span>Coloque em prática</span>
             {!isAdmin && links.length > 0 && (
-              <span className="text-xs text-gray-500 ml-2 font-normal">
+              <span className="text-xs text-gray-500 font-normal inline-flex items-center">
                 <Lock className="h-3 w-3 inline mr-1" />
                 Gerenciado pelo Administrador
               </span>
@@ -123,6 +123,7 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
               variant="outline"
               size="sm"
               onClick={() => setEditing(true)}
+              className="self-start sm:self-auto"
             >
               <Edit2 className="h-4 w-4 mr-2" />
               {links.length > 0 ? "Editar" : "Adicionar"}

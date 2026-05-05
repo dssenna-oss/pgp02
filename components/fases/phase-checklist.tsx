@@ -341,13 +341,14 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
               </p>
             )}
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:flex-wrap">
             {!editing && isAdmin && (
               <>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={startHtmlEdit}
+                  className="w-full sm:w-auto"
                 >
                   <Code className="h-4 w-4 mr-2" />
                   Editar HTML
@@ -356,6 +357,7 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
                   variant="outline"
                   size="sm"
                   onClick={startTextEdit}
+                  className="w-full sm:w-auto"
                 >
                   <Type className="h-4 w-4 mr-2" />
                   Editar texto
@@ -366,7 +368,7 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
               <Button
                 onClick={saveChecklistState}
                 disabled={saving}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -419,11 +421,11 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
                 </p>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 onClick={saveChecklistHtml}
                 disabled={saving}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -436,6 +438,7 @@ export default function PhaseChecklist({ phase, sections: initialSections }: Pha
                 variant="outline"
                 onClick={cancelEdit}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar

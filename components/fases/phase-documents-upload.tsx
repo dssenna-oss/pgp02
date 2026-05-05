@@ -339,11 +339,11 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
             <>
               {/* Barra de ordenação */}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <div className="flex items-center gap-2 flex-wrap min-w-0 w-full sm:w-auto">
                   <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
                   <Label htmlFor="sort" className="text-sm font-medium">Ordenar por:</Label>
                   <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                    <SelectTrigger id="sort" className="w-[180px] max-w-full">
+                    <SelectTrigger id="sort" className="w-full sm:w-[180px] max-w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -366,25 +366,25 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
                 {getSortedDocuments().map((doc) => (
                   <div
                     key={doc.id}
-                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer ${
-                      selectedDocument?.id === doc.id 
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                    className={`flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:gap-2 ${
+                      selectedDocument?.id === doc.id
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                         : "border-gray-200 dark:border-gray-700"
                     }`}
                     onClick={() => setSelectedDocument(doc)}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 w-full">
                       <div className="text-2xl flex-shrink-0">{getFileIcon(doc)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                        <p className="font-medium text-gray-900 dark:text-white break-words">
                           {doc.title}
                         </p>
                         {doc.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 break-words line-clamp-2">
                             {doc.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-500">
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-500 flex-wrap">
                           <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
                             {getFileTypeName(doc)}
                           </span>
@@ -395,7 +395,7 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-2">
+                    <div className="flex items-center gap-2 self-end sm:self-auto sm:ml-2 flex-shrink-0">
                       <Button
                         size="sm"
                         variant={selectedDocument?.id === doc.id ? "default" : "outline"}

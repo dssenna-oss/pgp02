@@ -141,11 +141,11 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
                 💡 Exemplo: https://heyzine.com/flip-book/XXXXXX.html
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 onClick={() => savePhaseInfo("heyzine")}
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -161,6 +161,7 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
                   loadPhaseInfo();
                 }}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
@@ -256,11 +257,11 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
                 💡 Dica: Use números ou marcadores para organizar as etapas (ex: 1., 2., 3. ou • item)
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 onClick={() => savePhaseInfo("howto")}
                 disabled={saving}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
               >
                 {saving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -276,6 +277,7 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
                   loadPhaseInfo();
                 }}
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar

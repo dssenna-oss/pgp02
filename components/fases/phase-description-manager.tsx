@@ -183,11 +183,12 @@ export default function PhaseDescriptionManager({
           </CardTitle>
 
           {isAdmin && !editing && (
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-col gap-2 w-full sm:w-auto sm:flex-row sm:flex-wrap">
               <Button
                 onClick={startHtmlEdit}
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto"
               >
                 <Code className="h-4 w-4 mr-2" />
                 Editar HTML
@@ -196,6 +197,7 @@ export default function PhaseDescriptionManager({
                 onClick={startTextEdit}
                 variant="outline"
                 size="sm"
+                className="w-full sm:w-auto"
               >
                 <Type className="h-4 w-4 mr-2" />
                 Editar texto
@@ -230,11 +232,11 @@ export default function PhaseDescriptionManager({
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 onClick={saveDescription}
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
                 {saving ? (
                   <>
@@ -248,11 +250,12 @@ export default function PhaseDescriptionManager({
                   </>
                 )}
               </Button>
-              
+
               <Button
                 onClick={cancelEdit}
                 variant="outline"
                 disabled={saving}
+                className="w-full sm:w-auto"
               >
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
