@@ -32,7 +32,8 @@ import {
   FileText as FileTextIcon,
   FileCheck2,
   Handshake,
-  Sparkles
+  Sparkles,
+  GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -327,6 +328,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/incidentes",
       icon: AlertTriangle,
       // Visível pra DPO + Contribuidor (Contribuidor vê só os próprios)
+    },
+    {
+      name: "Capacitação",
+      description: "Programa de treinamentos LGPD (Art. 41§2º · 50)",
+      href: "/dashboard/capacitacao",
+      icon: GraduationCap,
+      // Visível pra todos (Contribuidor visualiza, DPO gerencia)
     },
     {
       name: "Bases Legais",

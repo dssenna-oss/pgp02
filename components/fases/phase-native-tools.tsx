@@ -23,6 +23,7 @@ import {
   Lightbulb,
   Users,
   UserCheck,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
  *
  * Hoje suporta:
  *   - entendendo-pgp → Maturidade do PGP + Política do PGP (Checkpoint 15 / Opção 1)
+ *   - preliminar → Capacitação LGPD (Checkpoint 18)
  *   - fase-1 → Formação das Equipes (Contribuidores)
  *   - fase-2 → Diagnóstico de Privacidade (Checkpoint 10)
  *   - fase-3 → Inventário + Análise de Riscos
@@ -51,6 +53,9 @@ import { cn } from "@/lib/utils";
 export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "entendendo-pgp") {
     return <EntendendoPgpTools />;
+  }
+  if (phase === "preliminar") {
+    return <FasePreliminarTools />;
   }
   if (phase === "fase-1") {
     return <Fase1Tools />;
@@ -82,6 +87,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 export function phaseHasNativeTools(phase: string): boolean {
   return (
     phase === "entendendo-pgp" ||
+    phase === "preliminar" ||
     phase === "fase-1" ||
     phase === "fase-2" ||
     phase === "fase-3" ||
@@ -258,6 +264,154 @@ function EntendendoPgpTools() {
             ? "Esta tela é trabalhada pelo DPO da organização."
             : !politicaPgp
               ? "Crie o documento mater do programa a partir do template oficial em Políticas. Sem ele, o programa não tem declaração formal."
+              : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase Preliminar — Capacitação LGPD (Checkpoint 18)
+// ============================================================
+
+interface CapacitacaoResp {
+  items: Array<{ id: string; status: string; eixo: string; audience: string }>;
+  stats: {
+    total: number;
+    byStatus: { PLANEJADO: number; REALIZADO: number; CANCELADO: number };
+    nextScheduled: { title: string; scheduledAt: string } | null;
+    eixosCovered: number;
+    audiencesCovered: number;
+    withEvidence: number;
+  };
+}
+
+function FasePreliminarTools() {
+  const [data, setData] = useState<CapacitacaoResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/capacitacao", { cache: "no-store" });
+        if (res.ok) {
+          setData(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = data?.stats.total ?? 0;
+  const realizados = data?.stats.byStatus.REALIZADO ?? 0;
+  const planejados = data?.stats.byStatus.PLANEJADO ?? 0;
+  const eixosCovered = data?.stats.eixosCovered ?? 0;
+  const audiencesCovered = data?.stats.audiencesCovered ?? 0;
+  const withEvidence = data?.stats.withEvidence ?? 0;
+  const next = data?.stats.nextScheduled ?? null;
+
+  // Cor:
+  //   - neutral: zero eventos
+  //   - success: 5/5 eixos cobertos com pelo menos 1 realizado
+  //   - warning: tem eventos mas faltam eixos
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : total === 0
+      ? "neutral"
+      : eixosCovered === 5
+        ? "success"
+        : "warning";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<GraduationCap className="h-6 w-6" />}
+        iconColor="text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40"
+        title="Capacitação LGPD"
+        description="Registro temporal de evidências do programa de capacitação. Organizado em 5 eixos: Onboarding, Pílulas de Conhecimento, Prática/Gamificação, Departamental e Monitoramento. Base: Art. 41§2º I, 50, 6º VIII, 52§1º VIII LGPD."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: total > 0 ? "Abrir Capacitação" : "Iniciar programa",
+          href: "/dashboard/capacitacao",
+        }}
+        stats={
+          forbidden
+            ? []
+            : data && total > 0
+              ? [
+                  {
+                    label: "evento(s) cadastrado(s)",
+                    value: total,
+                    icon: <GraduationCap className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: "realizado(s)",
+                    value: realizados,
+                    color: realizados > 0 ? "emerald" : "default",
+                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                  },
+                  ...(planejados > 0
+                    ? [
+                        {
+                          label: "planejado(s)",
+                          value: planejados,
+                          color: "blue" as const,
+                          icon: <Clock className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  {
+                    label: "eixos cobertos (de 5)",
+                    value: eixosCovered,
+                    color: eixosCovered === 5 ? ("emerald" as const) : ("amber" as const),
+                    icon: <Target className="h-3.5 w-3.5" />,
+                  },
+                  ...(audiencesCovered > 0
+                    ? [
+                        {
+                          label: "públicos atendidos (de 7)",
+                          value: audiencesCovered,
+                          color: audiencesCovered >= 5 ? ("emerald" as const) : ("blue" as const),
+                          icon: <Users className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(withEvidence > 0
+                    ? [
+                        {
+                          label: "com evidência anexada",
+                          value: withEvidence,
+                          color: "emerald" as const,
+                          icon: <FileText className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(next
+                    ? [
+                        {
+                          label: `próxima: ${next.title.slice(0, 40)}${next.title.length > 40 ? "…" : ""}`,
+                          value: new Date(next.scheduledAt).toLocaleDateString("pt-BR"),
+                          color: "blue" as const,
+                          icon: <CalendarDays className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : total === 0
+              ? "Nenhum evento cadastrado. Use \"Importar checklist\" na tela de Capacitação pra gerar 18 tarefas dos 5 eixos, ou cadastre o primeiro evento manualmente."
               : undefined
         }
       />
