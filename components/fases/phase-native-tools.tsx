@@ -19,6 +19,8 @@ import {
   Sparkles,
   TrendingUp,
   AlertTriangle,
+  BarChart3,
+  Lightbulb,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,7 @@ import { cn } from "@/lib/utils";
  *
  * Hoje suporta:
  *   - entendendo-pgp → Maturidade do PGP + Política do PGP (Checkpoint 15 / Opção 1)
+ *   - fase-2 → Diagnóstico de Privacidade (Checkpoint 10)
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
@@ -45,6 +48,9 @@ import { cn } from "@/lib/utils";
 export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "entendendo-pgp") {
     return <EntendendoPgpTools />;
+  }
+  if (phase === "fase-2") {
+    return <Fase2Tools />;
   }
   if (phase === "fase-3") {
     return <Fase3Tools />;
@@ -70,6 +76,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 export function phaseHasNativeTools(phase: string): boolean {
   return (
     phase === "entendendo-pgp" ||
+    phase === "fase-2" ||
     phase === "fase-3" ||
     phase === "fase-4" ||
     phase === "fase-5" ||
@@ -244,6 +251,145 @@ function EntendendoPgpTools() {
             ? "Esta tela é trabalhada pelo DPO da organização."
             : !politicaPgp
               ? "Crie o documento mater do programa a partir do template oficial em Políticas. Sem ele, o programa não tem declaração formal."
+              : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 2 — Diagnóstico de Privacidade (Checkpoint 10)
+// ============================================================
+
+interface DiagnosticoResp {
+  score: {
+    overall: number | null;
+    sub: Record<
+      "INVENTARIO" | "BASES" | "RISCOS" | "GAP",
+      { value: number | null; detail: string; label: string; weight: number }
+    >;
+    maturityLabel: string;
+  };
+  recommendations: Array<{ priority: "ALTA" | "MEDIA" | "BAIXA" }>;
+  raw: {
+    totalProcessos: number;
+    aprovados: number;
+    riscosAlto: number;
+    gapNaoAderente: number;
+  };
+}
+
+function Fase2Tools() {
+  const [diag, setDiag] = useState<DiagnosticoResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/diagnostico", { cache: "no-store" });
+        if (res.ok) {
+          setDiag(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const overall = diag?.score.overall ?? null;
+  const maturity = diag?.score.maturityLabel ?? "—";
+  const recs = diag?.recommendations.length ?? 0;
+  const recsAlta = diag?.recommendations.filter((r) => r.priority === "ALTA").length ?? 0;
+
+  // Identifica o pilar mais crítico (menor score) pra destacar
+  const subScores = diag
+    ? Object.values(diag.score.sub).filter((s) => s.value != null) as Array<{
+        value: number;
+        label: string;
+      }>
+    : [];
+  const pilarCritico = subScores.length > 0
+    ? subScores.reduce((min, s) => (s.value < min.value ? s : min), subScores[0])
+    : null;
+
+  // Cor da borda esquerda do card
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : overall == null
+      ? "neutral"
+      : overall >= 70
+        ? "success"
+        : overall >= 40
+          ? "warning"
+          : "warning";
+
+  // Cor do score no stat (vermelho < 40, amber 40-70, verde >= 70)
+  const scoreColor: StatColor = overall == null
+    ? "default"
+    : overall >= 70
+      ? "emerald"
+      : overall >= 40
+        ? "amber"
+        : "red";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<BarChart3 className="h-6 w-6" />}
+        iconColor="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40"
+        title="Diagnóstico de Privacidade"
+        description="Score consolidado (0-100) baseado em 4 pilares: GAP Analysis (40%), Análise de Riscos (30%), Bases Legais (20%) e Inventário (10%). Mostra a maturidade da organização e gera recomendações priorizadas pro Plano de Ação."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: overall != null ? "Abrir Diagnóstico" : "Calcular diagnóstico",
+          href: "/dashboard/diagnostico",
+        }}
+        stats={
+          forbidden
+            ? []
+            : diag && overall != null
+              ? [
+                  {
+                    label: `maturidade: ${maturity.toLowerCase()}`,
+                    value: `${overall}/100`,
+                    color: scoreColor,
+                    icon: <TrendingUp className="h-3.5 w-3.5" />,
+                  },
+                  ...(pilarCritico
+                    ? [
+                        {
+                          label: `pilar mais fraco: ${pilarCritico.label}`,
+                          value: `${pilarCritico.value}%`,
+                          color: pilarCritico.value < 50 ? ("red" as const) : ("amber" as const),
+                          icon: <Target className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(recs > 0
+                    ? [
+                        {
+                          label: `recomendação(ões)${recsAlta > 0 ? ` (${recsAlta} prioridade alta)` : ""}`,
+                          value: recs,
+                          color: recsAlta > 0 ? ("amber" as const) : ("default" as const),
+                          icon: <Lightbulb className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : overall == null
+              ? "Sem dados suficientes ainda. Comece pelo Inventário (Fase 3) e depois GAP Analysis (Fase 4) — o diagnóstico é gerado automaticamente."
               : undefined
         }
       />
