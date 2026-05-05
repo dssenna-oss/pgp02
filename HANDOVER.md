@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-05 (CP16 backlog + CP18 Capacitação) · **Branch:** `claude/recursing-nash-10eacb` (worktree)
+> **Última sessão:** 2026-05-05 (CP16 backlog + CP18 Capacitação + CP19 refino UX) · **Branch:** `claude/recursing-nash-10eacb` (worktree)
 >
-> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas (Etapa 18 = `capacitacao_eventos`; Etapa 19 = `incident_data_inventories` + `incident_operators`).
-> **`origin/main`:** ✅ Pushados (último: `fdb8a84` — F2/F3 vínculos M:N).
+> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas (Etapa 18 = `capacitacao_eventos`; Etapa 19 = `incident_data_inventories` + `incident_operators`). CP19 não tem schema novo.
+> **`origin/main`:** ✅ Pushados (último: `6f7138c` — TOC sticky + reading progress).
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05 (após restore PITR). `DATABASE_URL` atualizada no Vercel + `.env` local.
 
@@ -27,6 +27,35 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 ## 🆕 O que foi feito na sessão 2026-05-05 (em prod ao push)
 
 ### Features novas
+
+-20. **Refino UX das Fases (Checkpoint 19) — 5 fatias** — COMPLETO
+   - **Problema atacado**: páginas de Fase tinham ~4000px verticais; conteúdos extensos cansavam o usuário.
+   - **Resultado**: redução de ~85% da altura inicial (~600px com tudo recolhido) + navegação muito mais ágil. Sem schema novo — só refino de UI.
+   - **Componentes novos** em `components/fases/`:
+     - `phase-section.tsx` — wrapper accordion reusável (4 grandes sanfonas: Descrição/Considerações/Checklist/Documentação) com borda colorida (`accent`), animação grid-rows smooth, persistência via `usePhaseSectionState`
+     - `phase-toolbar.tsx` — botões "Recolher tudo / Expandir tudo" + atalhos `E`/`C`
+     - `html-sub-accordion.tsx` — parser HTML que detecta múltiplos `<h4>` e quebra em sub-sanfonas com toolbar mini ("Expandir todos · X de N expandido(s)"). Bullets coloridos rotacionando 6 paletas. Fallback se < 2 h4s.
+     - `phase-toc.tsx` — índice lateral sticky em desktop xl+ com IntersectionObserver (highlight reativo da seção visível) + smooth-scroll
+     - `phase-reading-progress.tsx` — barra fina (3px) no topo com gradiente blue→violet, position fixed, atualiza em scroll
+   - **Helper novo** `lib/phase-ui-state.ts`:
+     - `usePhaseSectionState(phase, section, defaultOpen)` — hook que persiste open/closed em localStorage por (phase, section)
+     - `bulkPhaseSections(phase, "expand"|"collapse")` — dispara CustomEvent global pra Recolher/Expandir tudo simultaneamente
+   - **Modificações nos managers existentes** (prop `noCard` que evita Card duplo):
+     - `phase-description-manager.tsx` — usa HtmlSubAccordion no modo noCard. EditingForm extraído como sub-componente reusável.
+     - `phase-checklist.tsx` — modo noCard ganha barra de progresso por categoria, accordion por categoria, toggle "Esconder concluídos", borda emerald quando 100%
+     - `phase-documents-upload.tsx` — modo noCard ganha busca textual + filtro de tipo (PDF/Doc/Excel/Vídeo) + toggle ☰ Tabela / ▦ Cards (default tabela). Tabela compacta com 5 colunas (Documento/Tipo/Tamanho/Data/Ações).
+   - **Aplicado em 9 fases** (entendendo-pgp + preliminar + 1-7):
+     - PhaseToolbar logo após o hero
+     - 4 PhaseSections envolvendo as seções principais (com `accent` colorido)
+     - PhaseTOC à direita (xl+) + PhaseReadingProgress no topo
+     - PhaseEbooksManager / PhasePracticalLinks / PhaseInfoManager mantidos sem accordion (sempre visíveis)
+     - Estado por fase é independente — usuário pode deixar Descrição aberta na Fase 3 e recolhida na Fase 4
+   - **5 fatias de commit**:
+     - `ce31560` — Foundation (PhaseSection + PhaseToolbar + persistência + atalhos)
+     - `e76c9a0` — Sub-accordion h4
+     - `f8dde9c` — Checklist com progresso/accordion
+     - `fcd781a` — Documentação compacta
+     - `6f7138c` — TOC sticky + reading progress
 
 -19. **Capacitação LGPD (Checkpoint 18)** — COMPLETO
    - **Schema novo (Etapa 18)**: `model CapacitacaoEvento` com 5 eixos (ONBOARDING/PILULAS/PRATICA/DEPARTAMENTAL/MONITORAMENTO), 9 tipos (palestra/workshop/treinamento/email/video/campanha/simulado/quiz/outro), 7 públicos (geral/RH+marketing/TI+segurança/externos/diretoria/atendimento/novos colaboradores), 5 recorrências (único/mensal/trimestral/semestral/anual). Vínculos polimórficos opcionais com `Operator` (capacitação direcionada a terceiro) e `Incident` (capacitação corretiva pós-incidente). Migration aplicada Neon.
@@ -418,7 +447,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 15 | ~~**Declaração formal do PGP (Opção 1)**~~ — A: Template "Política do PGP" (11º template, documento mater) + B: Painel executivo de Maturidade do PGP (5 pilares ponderados, 5 níveis qualitativos, status das 8 fases, pendências críticas, export PDF) + C: 2 cards no "Coloque em prática" do Entendendo o PGP. Sem schema novo. | ✅ FEITO 2026-05-05 |
 | 16 | ~~**Incidentes**~~ — Refatorou Incident legado, IncidentCommunication, workflow 7 estados + severidade ALTO/MEDIO + prazo 72h, DOCX ANPD (Res. 15/2024) + DOCX titulares (Art. 48 §1º), UI lista+editor 6 abas + banner regressivo, plug Plano (origem INCIDENTE) + Maturidade (Fase 7 viva), badge sidebar pulsante, card Fase 7. **Backlog encerrado nesta sessão**: E3 (timeline visual — 7ª aba) + H (sino sidebar agregador + form emergência) + F2/F3 (M:N Inventário/Operador). | ✅ FEITO 2026-05-05 (A+B+C+D+E1+E2+E3+F1+F2+F3+F4+F5+G1+H) |
 | 18 | ~~**Capacitação LGPD**~~ — Mini-app na Fase Preliminar pra registro temporal de evidências. Schema com 5 eixos (Onboarding/Pílulas/Prática/Departamental/Monitoramento) + 7 públicos + vínculos polimórficos com Operator e Incident. Catálogo de 18 tarefas pré-cadastradas. APIs CRUD + upload Blob + import-tasks idempotente + DOCX consolidado pra ANPD. UI completa com filtros, cronograma, modal cadastro, sidebar dedicado. | ✅ FEITO 2026-05-05 |
-| 19+ | Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética · Outros refinos | depois |
+| 19 | ~~**Refino UX das Fases (5 fatias)**~~ — Reduz ~85% altura inicial das páginas de fase. Accordion mestre nas 4 seções (Descrição/Considerações/Checklist/Documentação) com persistência em localStorage. Sub-accordion automático em conteúdo extenso (parser de h4). Checklist com barra de progresso por categoria + toggle "esconder concluídos". Documentação como tabela compacta com busca/filtro/view toggle. TOC sticky lateral (IntersectionObserver) + reading progress no topo. Atalhos E/C. Aplicado nas 9 fases. Sem schema novo. | ✅ FEITO 2026-05-05 |
+| 20+ | Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética · Modo leitura overlay · Outros refinos | depois |
 
 ---
 
@@ -497,6 +527,7 @@ Se rotacionar de novo: atualizar AMBOS antes de redeploy. Vercel build usa direc
 | `lib/capacitacao-helpers.ts` | Catálogos (5 eixos + 9 tipos + 7 públicos + 5 recorrências) + DTO + stats (cobertura por eixo/público) |
 | `lib/capacitacao-tasks-catalog.ts` | 18 tarefas pré-cadastradas pra "Importar checklist" (3+3+3+4+3 + 2 estratégicas) |
 | `lib/capacitacao-docx-export.ts` | Relatório consolidado de evidências DOCX (Art. 52 §1º VIII — atenuante) |
+| `lib/phase-ui-state.ts` | Hook `usePhaseSectionState` (persiste open/closed em localStorage) + `bulkPhaseSections` (CustomEvent global) — CP19 |
 
 ### Componentes reusáveis novos
 
@@ -507,6 +538,11 @@ Se rotacionar de novo: atualizar AMBOS antes de redeploy. Vercel build usa direc
 | `components/incidentes/quick-incident-modal.tsx` | Form emergência compacto acessível de qualquer tela (H) |
 | `components/dashboard/notification-bell.tsx` | Sino agregador de notificações no header sidebar (incidentes/RIPDs/operadores) |
 | `components/capacitacao/capacitacao-content.tsx` | UI completa da Capacitação (KPIs, tabs por eixo, lista/cronograma, modal cadastro) |
+| `components/fases/phase-section.tsx` | Wrapper accordion reusável das 4 seções de fase (CP19) |
+| `components/fases/phase-toolbar.tsx` | Botões "Recolher/Expandir tudo" + atalhos E/C (CP19) |
+| `components/fases/html-sub-accordion.tsx` | Parser HTML que quebra conteúdo por `<h4>` em sub-sanfonas (CP19) |
+| `components/fases/phase-toc.tsx` | Índice lateral sticky com IntersectionObserver (CP19) |
+| `components/fases/phase-reading-progress.tsx` | Barra fina no topo com % de scroll (CP19) |
 | `components/inventario/analise-riscos-content.tsx` | Tela individual de Análise de Riscos |
 | `components/riscos/riscos-dashboard-content.tsx` | Dashboard consolidado de riscos |
 | `components/inventario/bases-legais-dashboard-content.tsx` | Dashboard consolidado de Bases Legais |
@@ -562,7 +598,7 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 
 ## 🔥 Resumo executivo
 
-Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + Checkpoint 18 (Capacitação) + cards faltantes das Fases 1 e 2. Mais bug fixes Vercel build pós-CP15 e recovery completo do banco Neon após incidente operacional. Tudo em produção:
+Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + Checkpoint 18 (Capacitação) + Checkpoint 19 (Refino UX das Fases — 5 fatias) + cards faltantes das Fases 1 e 2. Mais bug fixes Vercel build pós-CP15 e recovery completo do banco Neon após incidente operacional. Tudo em produção:
 
 - ✅ **Checkpoint 16** — Incidentes (MVP A+B+C+D+E1+E2+E3+F1+F2+F3+F4+F5+G1+H — fechado completo)
   - **MVP**: workflow 7 estados · severidade ALTO/MEDIO disparam ANPD · prazo regressivo 72h com 3 níveis · DOCX ANPD (Res. 15/2024) + DOCX titulares (Art. 48 §1º) · UI 7 abas (Identificação · Dados · Técnico · Risco · Comunicações · **Timeline** · Encerramento)
@@ -570,6 +606,7 @@ Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + C
   - **F2/F3 — Vínculos M:N** com Inventário e Operadores via chips clicáveis (substitui texto livre)
   - **H — Sino** agregador no header sidebar + form emergência acessível de qualquer tela
 - ✅ **Checkpoint 18** — Capacitação LGPD: schema com 5 eixos (Onboarding/Pílulas/Prática/Departamental/Monitoramento) + 7 públicos · 18 tarefas pré-cadastradas pra "Importar checklist" · APIs CRUD + upload Blob + DOCX consolidado · UI completa com filtros e cronograma · sidebar dedicado · card Fase Preliminar
+- ✅ **Checkpoint 19** — Refino UX das Fases (5 fatias): accordion mestre + sub-accordion h4 + checklist com progresso + documentação compacta + TOC sticky + reading progress. Redução ~85% da altura inicial. Aplicado nas 9 fases. 1.683 linhas em 5 commits.
 - ✅ **Cards faltantes das Fases**: Fase 1 (Contribuidores) e Fase 2 (Diagnóstico) plugados — agora todas as 9 fases têm ferramenta nativa
 - ✅ **Bug fixes Vercel build**: 5 erros TypeScript pré-existentes corrigidos (forum/route.ts companyId · politicas/diff route diff v9 · scripts validation)
 - ✅ **Recovery Neon**: incidente com `--force-reset` resolvido via PITR; senha rotacionada; lição registrada em armadilhas
