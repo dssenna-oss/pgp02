@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { diffWordsWithSpace, diffLines } from "diff";
+import { diffWords, diffLines, type Change } from "diff";
 import { prisma } from "@/lib/db";
 import { loadPolicyAuth } from "@/lib/policies-helpers";
 
@@ -80,7 +80,7 @@ export async function GET(
   // Calcula 2 tipos de diff:
   // 1) word-level — pra mostrar texto inline com adições/remoções coloridas
   // 2) line-level — pra contagem agregada (linhas adicionadas/removidas)
-  const wordDiff = diffWordsWithSpace(a.content, b.content);
+  const wordDiff = diffWords(a.content, b.content);
   const lineDiff = diffLines(a.content, b.content);
 
   let added = 0;
@@ -97,7 +97,7 @@ export async function GET(
     sameContent,
     stats: { addedLines: added, removedLines: removed },
     /** Word diff: array de {value, added?, removed?}. Se não added/removed, é igual. */
-    parts: wordDiff.map((p) => ({
+    parts: wordDiff.map((p: Change) => ({
       value: p.value,
       added: p.added ?? false,
       removed: p.removed ?? false,

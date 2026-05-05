@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
 
   const totalDMsCount = await prisma.forumPost.count({
     where: {
-      companyId: user.companyId,
+      companyId: user.companyId ?? undefined,
       active: true,
       recipientId: user.id, // só DMs onde EU sou destinatário
     },
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     where: {
       userId: user.id,
       post: {
-        companyId: user.companyId,
+        companyId: user.companyId ?? undefined,
         active: true,
         recipientId: user.id,
       },
