@@ -257,6 +257,9 @@ model DataInventory {
   // Cada vínculo descreve qual atividade o operador faz no processo.
   operatorLinks OperatorProcessLink[]
 
+  // Incidentes envolvendo este processo (Checkpoint 16 / F2)
+  incidents IncidentDataInventory[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -963,6 +966,12 @@ model Operator {
   // sobre cláusulas contratuais, treinamento de obrigações LGPD).
   capacitacaoEventos CapacitacaoEvento[]
 
+  // ----- Vínculo com Incidentes (Checkpoint 16 / F3) -----
+  // Incidentes em que este operador esteve envolvido (vazamento via
+  // prestador, falha contratual, etc.). Útil pra responsabilidade
+  // solidária e métricas por terceiro.
+  incidents IncidentOperator[]
+
   // ----- Auditoria -----
   createdById     String
   createdBy       User     @relation("OperatorCreatedBy", fields: [createdById], references: [id])
@@ -1204,6 +1213,14 @@ model Incident {
   /// (ex: treinamento de phishing após incidente por engenharia social).
   capacitacaoEventos CapacitacaoEvento[]
 
+  // ----- Vínculos M:N com Inventário e Operadores (Checkpoint 16 / F2-F3) -----
+  /// Processos do Inventário afetados por este incidente. Permite consultar
+  /// "quais incidentes envolveram o Sistema CRM?" sem texto livre.
+  dataInventories   IncidentDataInventory[]
+  /// Operadores (terceiros) envolvidos no incidente (vazamento via prestador,
+  /// falha em fornecedor, etc.). Útil pra responsabilidade solidária.
+  affectedOperatorsList IncidentOperator[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1236,6 +1253,42 @@ model IncidentCommunication {
 
   @@index([incidentId])
   @@map("incident_communications")
+}
+
+// ============================================================
+// IncidentDataInventory (Checkpoint 16 / F2) — vínculo M:N
+// Incidente <-> Processo do Inventário
+// ============================================================
+// Permite consultar "quais incidentes envolveram este processo?" e
+// "quais processos foram afetados pelo incidente X?". Sem texto livre.
+model IncidentDataInventory {
+  incidentId      String
+  incident        Incident      @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  dataInventoryId String
+  dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@id([incidentId, dataInventoryId])
+  @@index([dataInventoryId])
+  @@map("incident_data_inventories")
+}
+
+// ============================================================
+// IncidentOperator (Checkpoint 16 / F3) — vínculo M:N
+// Incidente <-> Operador (Terceiro)
+// ============================================================
+// Permite consultar "quais incidentes envolveram este terceiro?" pra
+// avaliar responsabilidade solidária e renegociar contratos.
+model IncidentOperator {
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([incidentId, operatorId])
+  @@index([operatorId])
+  @@map("incident_operators")
 }
 
 model Account {

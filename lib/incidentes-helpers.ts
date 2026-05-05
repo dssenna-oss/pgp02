@@ -331,6 +331,22 @@ export interface IncidentDTO {
   // Comunicações
   communications: ReadonlyArray<IncidentCommunicationDTO>;
 
+  // Vínculos M:N (Checkpoint 16 / F2-F3)
+  /** Processos do Inventário formalmente vinculados a este incidente. */
+  linkedInventories: ReadonlyArray<{
+    id: string;
+    serviceName: string;
+    setor: string | null;
+    status: string;
+  }>;
+  /** Operadores (terceiros) formalmente vinculados a este incidente. */
+  linkedOperators: ReadonlyArray<{
+    id: string;
+    name: string;
+    relationType: string;
+    contractRiskClass: string;
+  }>;
+
   // Derivados
   /** Prazo regressivo de 72h desde detectedAt; null se já notificou. */
   anpdDeadline: DeadlineInfo | null;
@@ -380,6 +396,15 @@ interface IncidentRow {
     createdById: string | null;
     createdBy?: { id: string; name: string | null; email: string } | null;
     createdAt: Date;
+  }>;
+  /** Vínculos M:N — Inventário (F2) e Operadores (F3). */
+  dataInventories?: ReadonlyArray<{
+    dataInventoryId: string;
+    dataInventory?: { id: string; serviceName: string; setor: string | null; status: string };
+  }>;
+  affectedOperatorsList?: ReadonlyArray<{
+    operatorId: string;
+    operator?: { id: string; name: string; relationType: string; contractRiskClass: string };
   }>;
   createdAt: Date;
   updatedAt: Date;
@@ -433,6 +458,24 @@ export function incidentToDTO(i: IncidentRow): IncidentDTO {
         createdBy: c.createdBy ?? null,
         createdAt: c.createdAt.toISOString(),
       })) ?? [],
+    linkedInventories:
+      i.dataInventories
+        ?.filter((j) => j.dataInventory)
+        .map((j) => ({
+          id: j.dataInventory!.id,
+          serviceName: j.dataInventory!.serviceName,
+          setor: j.dataInventory!.setor,
+          status: j.dataInventory!.status,
+        })) ?? [],
+    linkedOperators:
+      i.affectedOperatorsList
+        ?.filter((j) => j.operator)
+        .map((j) => ({
+          id: j.operator!.id,
+          name: j.operator!.name,
+          relationType: j.operator!.relationType,
+          contractRiskClass: j.operator!.contractRiskClass,
+        })) ?? [],
     anpdDeadline: deadline,
     anpdCommunicationRequired: anpdRequired,
     createdAt: i.createdAt.toISOString(),
@@ -670,6 +713,26 @@ export const INCIDENT_FULL_INCLUDE = {
     orderBy: { createdAt: "desc" as const },
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
+    },
+  },
+  // Vínculos M:N (Checkpoint 16 / F2-F3)
+  dataInventories: {
+    include: {
+      dataInventory: {
+        select: { id: true, serviceName: true, setor: true, status: true },
+      },
+    },
+  },
+  affectedOperatorsList: {
+    include: {
+      operator: {
+        select: {
+          id: true,
+          name: true,
+          relationType: true,
+          contractRiskClass: true,
+        },
+      },
     },
   },
 } as const;

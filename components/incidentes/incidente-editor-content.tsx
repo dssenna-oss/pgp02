@@ -73,6 +73,16 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
   // Form state local — espelha o DTO
   const [form, setForm] = useState<Partial<IncidentDTO>>({});
 
+  // Vínculos M:N (Checkpoint 16 / F2-F3)
+  const [linkedInventoryIds, setLinkedInventoryIds] = useState<string[]>([]);
+  const [linkedOperatorIds, setLinkedOperatorIds] = useState<string[]>([]);
+  const [availableInventories, setAvailableInventories] = useState<
+    Array<{ id: string; serviceName: string; setor: string | null; status: string }>
+  >([]);
+  const [availableOperators, setAvailableOperators] = useState<
+    Array<{ id: string; name: string; relationType: string; contractRiskClass: string }>
+  >([]);
+
   const load = async () => {
     try {
       setLoading(true);
@@ -90,6 +100,13 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
       const j = await r.json();
       setIncident(j.incident);
       setForm(j.incident);
+      // Inicializa arrays M:N a partir do DTO
+      setLinkedInventoryIds(
+        (j.incident.linkedInventories ?? []).map((x: { id: string }) => x.id),
+      );
+      setLinkedOperatorIds(
+        (j.incident.linkedOperators ?? []).map((x: { id: string }) => x.id),
+      );
     } catch (e) {
       console.error(e);
       setError("Erro ao carregar incidente");
@@ -97,6 +114,36 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
       setLoading(false);
     }
   };
+
+  // Carrega lista de inventários/operadores disponíveis pra plugar nos vínculos
+  // (independente do incident — sob demanda na 1ª render).
+  useEffect(() => {
+    (async () => {
+      try {
+        const [invRes, opRes] = await Promise.all([
+          fetch("/api/inventario").catch(() => null),
+          fetch("/api/operadores").catch(() => null),
+        ]);
+        if (invRes?.ok) {
+          const invs = await invRes.json();
+          // Aceita tanto array direto quanto { items: [...] }
+          const list: Array<{ id: string; serviceName: string; setor: string | null; status: string }> = Array.isArray(invs)
+            ? invs
+            : invs.items ?? [];
+          setAvailableInventories(list);
+        }
+        if (opRes?.ok) {
+          const ops = await opRes.json();
+          const list: Array<{ id: string; name: string; relationType: string; contractRiskClass: string }> = Array.isArray(ops)
+            ? ops
+            : ops.items ?? [];
+          setAvailableOperators(list);
+        }
+      } catch {
+        // silencioso
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     void load();
@@ -153,6 +200,10 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
       if (userIsDPO && form.detectedAt && form.detectedAt !== incident.detectedAt) {
         payload.detectedAt = form.detectedAt;
       }
+      // Vínculos M:N (Checkpoint 16 / F2-F3)
+      payload.linkedInventoryIds = linkedInventoryIds;
+      payload.linkedOperatorIds = linkedOperatorIds;
+
       const r = await fetch(`/api/incidents/${incidentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -165,6 +216,12 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
       const j = await r.json();
       setIncident(j.incident);
       setForm(j.incident);
+      setLinkedInventoryIds(
+        (j.incident.linkedInventories ?? []).map((x: { id: string }) => x.id),
+      );
+      setLinkedOperatorIds(
+        (j.incident.linkedOperators ?? []).map((x: { id: string }) => x.id),
+      );
       toast.success("Incidente salvo");
       notifySidebarRefresh();
     } catch (e: any) {
@@ -617,17 +674,116 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
             onChange={(v) => updateField("attackVector", v as any)}
             help="Phishing, erro humano, falha técnica, acesso indevido, etc."
           />
+
+          {/* ===== Vínculos M:N — Inventário (F2) ===== */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Processos do Inventário afetados
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Vincule formalmente quais processos aprovados foram impactados.
+              Útil pra rastreabilidade e RIPD pós-incidente.
+            </p>
+            {availableInventories.length === 0 ? (
+              <p className="text-xs italic text-gray-500">Nenhum processo no Inventário ainda.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {availableInventories.map((inv) => {
+                  const selected = linkedInventoryIds.includes(inv.id);
+                  return (
+                    <button
+                      key={inv.id}
+                      type="button"
+                      onClick={() => {
+                        setLinkedInventoryIds((prev) =>
+                          selected ? prev.filter((x) => x !== inv.id) : [...prev, inv.id],
+                        );
+                      }}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        selected
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:border-blue-400"
+                      }`}
+                      title={`${inv.serviceName}${inv.setor ? ` · ${inv.setor}` : ""}`}
+                    >
+                      {selected && "✓ "}
+                      {inv.serviceName}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {linkedInventoryIds.length > 0 && (
+              <p className="text-xs text-blue-700 dark:text-blue-400">
+                {linkedInventoryIds.length} processo(s) vinculado(s).
+              </p>
+            )}
+          </div>
+
           <FieldArea
-            label="Sistemas e ativos afetados"
+            label="Sistemas e ativos afetados (notas adicionais)"
             value={form.affectedSystems ?? ""}
             onChange={(v) => updateField("affectedSystems", v as any)}
-            help="Bancos, sistemas, integrações, endpoints impactados."
+            help="Detalhes técnicos extras: bancos, integrações, endpoints, etc."
           />
+
+          {/* ===== Vínculos M:N — Operadores (F3) ===== */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Operadores (terceiros) envolvidos
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Vincule operadores de Gestão de Terceiros. Útil pra avaliar
+              responsabilidade solidária (Art. 42 LGPD) e renegociar contratos.
+            </p>
+            {availableOperators.length === 0 ? (
+              <p className="text-xs italic text-gray-500">Nenhum operador cadastrado.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {availableOperators.map((op) => {
+                  const selected = linkedOperatorIds.includes(op.id);
+                  const riskColor =
+                    op.contractRiskClass === "ALTO"
+                      ? "border-red-300"
+                      : op.contractRiskClass === "MEDIO"
+                        ? "border-amber-300"
+                        : "border-gray-300 dark:border-gray-700";
+                  return (
+                    <button
+                      key={op.id}
+                      type="button"
+                      onClick={() => {
+                        setLinkedOperatorIds((prev) =>
+                          selected ? prev.filter((x) => x !== op.id) : [...prev, op.id],
+                        );
+                      }}
+                      className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                        selected
+                          ? "bg-amber-600 text-white border-amber-600"
+                          : `bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 ${riskColor} hover:border-amber-400`
+                      }`}
+                      title={`${op.name} · ${op.relationType} · risco ${op.contractRiskClass}`}
+                    >
+                      {selected && "✓ "}
+                      {op.name}
+                      {op.contractRiskClass === "ALTO" && !selected && " ⚠"}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {linkedOperatorIds.length > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {linkedOperatorIds.length} operador(es) vinculado(s).
+              </p>
+            )}
+          </div>
+
           <FieldArea
-            label="Operadores/terceiros envolvidos"
+            label="Operadores/terceiros — notas adicionais"
             value={form.affectedOperators ?? ""}
             onChange={(v) => updateField("affectedOperators", v as any)}
-            help="Fornecedores que tratam dados afetados (texto livre nesta versão; M:N em refino futuro)."
+            help="Detalhes contextuais sobre o envolvimento dos terceiros (texto livre)."
           />
         </TabsContent>
 

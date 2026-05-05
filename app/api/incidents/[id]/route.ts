@@ -227,18 +227,100 @@ export async function PATCH(
     data.affectedSubjectsCount = sanitizeInt(body.affectedSubjectsCount);
   }
 
-  if (Object.keys(data).length === 0) {
+  // ----- Vínculos M:N (Checkpoint 16 / F2-F3) -----
+  // Aceita arrays linkedInventoryIds e linkedOperatorIds — sync (substitui).
+  // Validação: cada id precisa pertencer à mesma companyId.
+  let linkedInventoryIds: string[] | null = null;
+  let linkedOperatorIds: string[] | null = null;
+
+  if (
+    "linkedInventoryIds" in body &&
+    Array.isArray(body.linkedInventoryIds)
+  ) {
+    const ids = body.linkedInventoryIds.filter(
+      (x: unknown) => typeof x === "string" && x,
+    ) as string[];
+    if (ids.length > 0) {
+      const valid = await prisma.dataInventory.findMany({
+        where: { id: { in: ids }, companyId: user.companyId },
+        select: { id: true },
+      });
+      linkedInventoryIds = valid.map((v) => v.id);
+    } else {
+      linkedInventoryIds = [];
+    }
+  }
+
+  if ("linkedOperatorIds" in body && Array.isArray(body.linkedOperatorIds)) {
+    const ids = body.linkedOperatorIds.filter(
+      (x: unknown) => typeof x === "string" && x,
+    ) as string[];
+    if (ids.length > 0) {
+      const valid = await prisma.operator.findMany({
+        where: { id: { in: ids }, companyId: user.companyId },
+        select: { id: true },
+      });
+      linkedOperatorIds = valid.map((v) => v.id);
+    } else {
+      linkedOperatorIds = [];
+    }
+  }
+
+  if (
+    Object.keys(data).length === 0 &&
+    linkedInventoryIds == null &&
+    linkedOperatorIds == null
+  ) {
     return NextResponse.json(
       { error: "Nenhum campo válido para atualizar" },
       { status: 400 }
     );
   }
 
-  const updated = await prisma.incident.update({
-    where: { id: params.id },
-    data,
-    include: INCIDENT_FULL_INCLUDE,
+  // Sync M:N em transação junto do update principal pra atomicidade
+  const updated = await prisma.$transaction(async (tx) => {
+    if (Object.keys(data).length > 0) {
+      await tx.incident.update({
+        where: { id: params.id },
+        data,
+      });
+    }
+    if (linkedInventoryIds !== null) {
+      // Substitui completamente: remove tudo + cria os novos
+      await tx.incidentDataInventory.deleteMany({
+        where: { incidentId: params.id },
+      });
+      if (linkedInventoryIds.length > 0) {
+        await tx.incidentDataInventory.createMany({
+          data: linkedInventoryIds.map((dataInventoryId) => ({
+            incidentId: params.id,
+            dataInventoryId,
+          })),
+        });
+      }
+    }
+    if (linkedOperatorIds !== null) {
+      await tx.incidentOperator.deleteMany({
+        where: { incidentId: params.id },
+      });
+      if (linkedOperatorIds.length > 0) {
+        await tx.incidentOperator.createMany({
+          data: linkedOperatorIds.map((operatorId) => ({
+            incidentId: params.id,
+            operatorId,
+          })),
+        });
+      }
+    }
+    return tx.incident.findUnique({
+      where: { id: params.id },
+      include: INCIDENT_FULL_INCLUDE,
+    });
   });
+
+  if (!updated) {
+    return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+  }
 
   return NextResponse.json({ incident: incidentToDTO(updated as any) });
 }
