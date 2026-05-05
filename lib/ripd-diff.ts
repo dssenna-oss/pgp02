@@ -150,6 +150,30 @@ function computeListChanges(
   a: RipdData,
   b: RipdData
 ): ListItemDiff[] | undefined {
+  if (sec.hasList === "operatorsList") {
+    return diffByKey(
+      a.s1.operatorsList,
+      b.s1.operatorsList,
+      (o) => o.id,
+      (o) => `${o.name}${o.cnpj ? ` (${o.cnpj})` : ""}`,
+      (oldO, newO) => {
+        const parts: string[] = [];
+        if (oldO.relationType !== newO.relationType) {
+          parts.push(`posição: ${oldO.relationType} → ${newO.relationType}`);
+        }
+        if (oldO.contractStatus !== newO.contractStatus) {
+          parts.push(`contrato: ${oldO.contractStatus} → ${newO.contractStatus}`);
+        }
+        if (oldO.contractRiskClass !== newO.contractRiskClass) {
+          parts.push(`risco contrato: ${oldO.contractRiskClass} → ${newO.contractRiskClass}`);
+        }
+        if ((oldO.activityDescription ?? "") !== (newO.activityDescription ?? "")) {
+          parts.push("atividade editada");
+        }
+        return parts.join("; ");
+      },
+    );
+  }
   if (sec.hasList === "risks") {
     return diffByKey(
       a.s6.risks,

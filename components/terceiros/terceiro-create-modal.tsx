@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,14 +22,32 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: (id: string) => void;
+  /** Pré-preenche a razão social (Checkpoint 14 G4 — auto-import). */
+  prefillName?: string;
+  /** Vincula automaticamente ao processo do Inventário ao criar. */
+  linkInventoryId?: string;
+  /** Texto livre da atividade neste processo (vai pra OperatorProcessLink). */
+  linkActivityDescription?: string;
 }
 
-export default function TerceiroCreateModal({ open, onClose, onCreated }: Props) {
+export default function TerceiroCreateModal({
+  open,
+  onClose,
+  onCreated,
+  prefillName,
+  linkInventoryId,
+  linkActivityDescription,
+}: Props) {
   const [name, setName] = useState("");
   const [tradeName, setTradeName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [operatorType, setOperatorType] = useState<string>("");
   const [creating, setCreating] = useState(false);
+
+  // Sempre que o modal abre com prefillName novo, popula o campo
+  useEffect(() => {
+    if (open && prefillName) setName(prefillName);
+  }, [open, prefillName]);
 
   const reset = () => {
     setName("");
@@ -54,6 +72,8 @@ export default function TerceiroCreateModal({ open, onClose, onCreated }: Props)
           tradeName: tradeName.trim() || null,
           cnpj: cnpj.trim() || null,
           operatorType: operatorType || null,
+          linkInventoryId: linkInventoryId || undefined,
+          linkActivityDescription: linkActivityDescription || undefined,
         }),
       });
       if (!r.ok) {

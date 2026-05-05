@@ -58,6 +58,19 @@ type InventoryForPrepop = {
     description: string | null;
     mitigationPlan: string | null;
   }>;
+  /** Operadores vinculados a este processo (Checkpoint 14 G4). */
+  operatorLinks: ReadonlyArray<{
+    activityDescription: string | null;
+    operator: {
+      id: string;
+      name: string;
+      cnpj: string | null;
+      country: string | null;
+      relationType: string;
+      contractStatus: string;
+      contractRiskClass: string;
+    };
+  }>;
 };
 
 const PREPOP_INCLUDE = {
@@ -68,6 +81,21 @@ const PREPOP_INCLUDE = {
       status: { not: "ELIMINADO" },
     },
     orderBy: { riskCode: "asc" as const },
+  },
+  operatorLinks: {
+    include: {
+      operator: {
+        select: {
+          id: true,
+          name: true,
+          cnpj: true,
+          country: true,
+          relationType: true,
+          contractStatus: true,
+          contractRiskClass: true,
+        },
+      },
+    },
   },
 } as const;
 
@@ -163,7 +191,20 @@ export function buildRipdData(
     email: inv.company.dpoEmail ?? "",
     phone: inv.company.dpoPhone ?? "",
   };
+  // Texto livre legado vem do campo "compartilhamento" do Inventário —
+  // serve como complemento descritivo. A lista estruturada `operatorsList`
+  // (Checkpoint 14 G4) é a fonte primária pros documentos.
   base.s1.operators = inv.sharing ?? "";
+  base.s1.operatorsList = inv.operatorLinks.map((l) => ({
+    id: l.operator.id,
+    name: l.operator.name,
+    cnpj: l.operator.cnpj ?? "",
+    relationType: l.operator.relationType,
+    activityDescription: l.activityDescription ?? "",
+    contractStatus: l.operator.contractStatus,
+    contractRiskClass: l.operator.contractRiskClass,
+    country: l.operator.country ?? "",
+  }));
 
   // ----- Seção 2: Descrição do projeto/processo -----
   base.s2 = {

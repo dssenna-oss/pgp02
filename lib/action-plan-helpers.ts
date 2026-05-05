@@ -23,6 +23,7 @@ export const ACTION_ORIGIN = {
   GAP: "GAP",
   RISCO: "RISCO",
   BASES: "BASES",
+  OPERADOR: "OPERADOR",
 } as const;
 export type ActionOrigin = (typeof ACTION_ORIGIN)[keyof typeof ACTION_ORIGIN];
 
@@ -52,11 +53,12 @@ export const VALID_STATUSES = new Set(Object.values(ACTION_STATUS));
 
 export function originLabel(o: string | null | undefined): string {
   switch (o) {
-    case "MANUAL": return "Manual";
-    case "GAP":    return "GAP Analysis";
-    case "RISCO":  return "Análise de Riscos";
-    case "BASES":  return "Bases Legais";
-    default:       return "—";
+    case "MANUAL":   return "Manual";
+    case "GAP":      return "GAP Analysis";
+    case "RISCO":    return "Análise de Riscos";
+    case "BASES":    return "Bases Legais";
+    case "OPERADOR": return "Gestão de Terceiros";
+    default:         return "—";
   }
 }
 
@@ -93,6 +95,8 @@ export function originBadgeClass(o: string | null | undefined): string {
       return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800";
     case "BASES":
       return "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-800";
+    case "OPERADOR":
+      return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800";
     default:
       return "bg-gray-50 text-gray-700 border-gray-300";
   }
@@ -139,6 +143,7 @@ export interface ActionPlanDTO {
   refGapCode: string | null;
   refRiskId: string | null;
   refInventoryId: string | null;
+  refOperatorId: string | null;
   /** Label legível pra UI (ex: "GAP #002", "Risco BR em Sistema RH"). */
   refLabel: string | null;
   /** URL pra clicar e abrir o item de origem. Pode ser null. */
@@ -166,6 +171,7 @@ interface ActionPlanRow {
   refGapCode: string | null;
   refRiskId: string | null;
   refInventoryId: string | null;
+  refOperatorId: string | null;
   assigneeId: string | null;
   assignee: { id: string; name: string | null; email: string } | null;
   dueDate: Date | null;
@@ -183,6 +189,7 @@ export function actionToDTO(
   refResolver?: {
     gapDomainByCode?: Record<string, string>;
     inventoryById?: Record<string, string>;
+    operatorById?: Record<string, string>;
   },
 ): ActionPlanDTO {
   const refLabel = computeRefLabel(a, refResolver);
@@ -202,6 +209,7 @@ export function actionToDTO(
     refGapCode: a.refGapCode,
     refRiskId: a.refRiskId,
     refInventoryId: a.refInventoryId,
+    refOperatorId: a.refOperatorId,
     refLabel,
     refHref,
     assigneeId: a.assigneeId,
@@ -223,6 +231,7 @@ function computeRefLabel(
   resolver?: {
     gapDomainByCode?: Record<string, string>;
     inventoryById?: Record<string, string>;
+    operatorById?: Record<string, string>;
   },
 ): string | null {
   if (a.origin === "GAP" && a.refGapCode) {
@@ -238,6 +247,10 @@ function computeRefLabel(
     const name = resolver?.inventoryById?.[a.refInventoryId];
     return name ? `Bases legais — ${name}` : `Bases legais (processo)`;
   }
+  if (a.origin === "OPERADOR" && a.refOperatorId) {
+    const name = resolver?.operatorById?.[a.refOperatorId];
+    return name ? `Operador — ${name}` : `Operador / Terceiro`;
+  }
   return null;
 }
 
@@ -250,6 +263,9 @@ function computeRefHref(a: ActionPlanRow): string | null {
   }
   if (a.origin === "BASES" && a.refInventoryId) {
     return `/dashboard/inventario/${a.refInventoryId}/bases-legais`;
+  }
+  if (a.origin === "OPERADOR" && a.refOperatorId) {
+    return `/dashboard/terceiros/${a.refOperatorId}`;
   }
   return null;
 }
@@ -324,7 +340,7 @@ export function computeActionStats(
     total: actions.length,
     byStatus: { A_FAZER: 0, EM_ANDAMENTO: 0, CONCLUIDA: 0, CANCELADA: 0 },
     byPriority: { ALTA: 0, MEDIA: 0, BAIXA: 0 },
-    byOrigin: { MANUAL: 0, GAP: 0, RISCO: 0, BASES: 0 },
+    byOrigin: { MANUAL: 0, GAP: 0, RISCO: 0, BASES: 0, OPERADOR: 0 },
     overdue: 0,
     dueSoon: 0,
   };

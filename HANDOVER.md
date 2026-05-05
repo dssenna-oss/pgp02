@@ -1,9 +1,9 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-04 (Checkpoint 14 G1+G2+G3 — Gestão de Terceiros · **G4 pendente** pra próxima sessão)
+> **Última sessão:** 2026-05-04 (Checkpoint 14 G4 — Integrações Gestão de Terceiros · **fechou Checkpoint 14 inteiro**)
 >
-> **Migração Neon:** ✅ Etapas 2 → 14 aplicadas em prod.
-> **`origin/main`:** ✅ HEAD = `a91f7d0` (Checkpoint 14 G1+G2+G3).
+> **Migração Neon:** ✅ Etapas 2 → 14 aplicadas em prod. **Etapa 15 PENDENTE** — `_migrate-action-plan-operator.sql` precisa ser aplicada.
+> **`origin/main`:** Pendente (commit do G4 ainda não pushado).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -26,7 +26,33 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ### Features novas
 
--13. **Gestão de Terceiros (Checkpoint 14 — G1+G2+G3 completos · G4 pendente)** — EM ANDAMENTO
+-14. **Gestão de Terceiros — G4 Integrações (Checkpoint 14 fechado)** — COMPLETO
+   - **Schema (Etapa 15)**: `action_plans.refOperatorId` (4ª ref polimórfica) + índice `companyId,refOperatorId`. Migration nova `_migrate-action-plan-operator.sql` + adicionada ao consolidado.
+   - **Plug Plano de Ação**:
+     - Novo valor de enum `ACTION_ORIGIN.OPERADOR` em `lib/action-plan-helpers.ts` + label "Gestão de Terceiros" + classe Tailwind blue.
+     - `actionToDTO` aceita `operatorById` no resolver pra computar `refLabel` "Operador — {nome}" e `refHref` `/dashboard/terceiros/{id}`.
+     - `POST /api/plano-acao` aceita `refOperatorId` + dedup 409 por `(OPERADOR, refOperatorId)`.
+     - `POST /api/plano-acao/import` agora também varre `Operator` da org e gera ações automáticas pra: contrato VENCIDO/SEM_CONTRATO (ALTA), cláusulas faltando em OPERADOR (MEDIA), risco contratual ALTO (ALTA), última avaliação overall ALTO (ALTA), formulário enviado há +30d sem resposta. 1 ação por operador (não 1 por problema) — descrição lista todos os pontos. Idempotente via `seenOperator`.
+     - `<AddToActionPlanButton>` ganhou `OPERADOR` no enum `origin` + prop `refOperatorId`. Plugado no header de `/dashboard/terceiros/[id]` (DPO-only) — só aparece quando `hasOperatorIssues(op)` (vencido / sem contrato / cláusulas faltando / risco ALTO).
+   - **Plug RIPD Seção 1**:
+     - `RipdData.s1` ganhou novo campo `operatorsList: ReadonlyArray<{id, name, cnpj, relationType, activityDescription, contractStatus, contractRiskClass, country}>` (lista estruturada vinda de `OperatorProcessLink`). Campo `operators` (texto livre) preservado como complemento.
+     - `prepopulateRipdFromInventory` puxa `operatorLinks.operator` do DataInventory e popula `operatorsList`.
+     - `RIPD_SECTIONS[s1]` ganhou `hasList: "operatorsList"`. Hint do campo `operators` mudou pra "complemento descritivo".
+     - Editor (`ripd-editor-content.tsx`) tem novo `<OperatorsList>` que renderiza tabela com badges (posição, risco, status do contrato, transferência internacional) + link "Abrir →" pra `/dashboard/terceiros/{id}`.
+     - DOCX export (`ripd-docx-export.ts`) ganhou `renderOperatorsTable` com 7 colunas (Operador, CNPJ, Posição, País, Risco contrato, Status contrato, Atividade).
+     - Diff engine (`ripd-diff.ts`) compara `operatorsList` por `id`, detecta mudanças em posição/contrato/risco/atividade.
+     - **Compatibilidade**: `normalizeRipdData()` em `ripd-helpers.ts` garante que RIPDs antigos sem `operatorsList` recebem array vazio na leitura. Aplicado em `ripdToDTO`.
+   - **Auto-import Inventário→Operador**:
+     - `GET /api/operadores/suggestions` lista processos APROVADOS com `sharing` preenchido SEM `OperatorProcessLink`. Filtra respostas negativas ("não compartilhado", "nenhum", "n/a", "—", "sem", etc.). Heurística de extração de candidatos a razão social: split por vírgula/ponto-vírgula/" e "/" com "/" para "; stopwords (contador, cliente, fornecedor, interno, etc.) filtradas.
+     - Banner em `/dashboard/terceiros` (DPO-only): card por processo, lista até 5 candidatos como botões "Cadastrar 'X'" — clicar abre o modal de criação pré-preenchido + flag `linkInventoryId` que vincula o processo automaticamente.
+     - `POST /api/operadores` aceita `linkInventoryId` + `linkActivityDescription` opcionais → cria `OperatorProcessLink` no mesmo request (Contribuidor só consegue se for processo próprio).
+     - Modal de criação (`terceiro-create-modal.tsx`) aceita `prefillName`, `linkInventoryId`, `linkActivityDescription`.
+   - **Sidebar badge + 3º card Fase 6**:
+     - `GET /api/operadores/pending-count` devolve count de operadores com pendência crítica (vencido/sem contrato/risco ALTO/avaliação overall ALTO). Aplica `operatorAccessFilter` (DPO=tudo, Contribuidor=processos próprios).
+     - `dashboard-layout.tsx`: novo polling de 60s + state `operatorsPending` + badge âmbar (`bg-amber-500`) ao lado de "Gestão de Terceiros".
+     - `phase-native-tools.tsx`: `Fase6Tools` agora tem grid `xl:grid-cols-3` + novo `<TerceirosCardTools>` com KPIs (terceiros / risco ALTO / vencidos / vencendo 90d).
+
+-13. **Gestão de Terceiros (Checkpoint 14 — G1+G2+G3)** — COMPLETO
    - **Schema novo (Etapas 13 + 14)**: `Operator` (entidade jurídica + contrato embutido — incluindo régua de risco do contrato baseada em 6 critérios ANPD) + `OperatorProcessLink` (M:N com `DataInventory`) + `OperatorAssessment` (formulário de avaliação com workflow de 5 estados e publicToken único)
    - **`lib/operadores-helpers.ts`**: enums (RelationType, ContractStatus, ContractRiskClass, RecommendedClause), DTOs, auth gate (DPO edita; Contribuidor visualiza com escopo limitado a processos próprios), checklist de classificação Operador/Controlador (10 perguntas em 2 blocos com sugestão automática)
    - **`lib/operadores-risco-contrato.ts`**: engine pura — 6 critérios ANPD → ALTO/MEDIO/BAIXO. Geral × Específico ≥ 1 = ALTO; geral OU específico ≥ 1 = MEDIO; nenhum = BAIXO. Recomendação de cláusula combina com `relationType`
@@ -216,6 +242,7 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 | 12 | `_migrate-ripd-v2.sql` | ripds refatorada + ripd_versions (Checkpoint 13 — RIPD v2 institucional) | ✅ | ✅ |
 | 13 | `_migrate-terceiros.sql` | operators + operator_process_links (Checkpoint 14 G1) | ✅ | ✅ |
 | 14 | `_migrate-terceiros-assessment.sql` | operator_assessments + publicToken único (Checkpoint 14 G2) | ✅ | ✅ |
+| 15 | `_migrate-action-plan-operator.sql` | action_plans.refOperatorId (Checkpoint 14 G4 — Plano ↔ Operadores) | ✅ | ⚠️ pendente |
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 
@@ -243,7 +270,7 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 11 | ~~**Plano de Ação institucional**~~ — `/dashboard/plano-acao` com 3 tabs (Em aberto / Concluídas / Cronograma), KPIs, filtros (origem/prioridade/busca), CRUD completo (DPO) + status/notes (Contribuidor responsável). Botão "Importar pendentes" cria ações em massa de GAP/Riscos/Bases (idempotente). **D3**: botão "Adicionar ao Plano" plugado em Diagnóstico (cada recomendação), GAP (controle NAO_ADERENTE/PARCIAL com PM) e Detalhamento de Risco individual (status IDENTIFICADO). XLSX export. POST com dedup 409 por ref. | ✅ FEITO 2026-05-04 |
 | 12 | ~~**Políticas**~~ — `/dashboard/politicas` com 9 templates oficiais (Aviso Externo, Privacidade Interna, Norma, Termos, Cookies, Terceiros, Retenção, Treinamento, Transferência Internacional + Outra). Editor markdown com preview ao vivo. URL pública `/p/<slug>/<policySlug>` sem auth. Versionamento (snapshot a cada publicação). **Exportação DOCX** (parser markdown→docx) **+ PDF** (window.print) **+ Diff** entre versões (jsdiff word-level). Plug-in card "Coloque em prática" da Fase 6. | ✅ FEITO 2026-05-04 (E1+E2+E3+E4+E5) |
 | 13 | ~~**RIPD v2 institucional**~~ — `/dashboard/ripd` com lista + KPIs + filtros + banner DPO destacado. Editor com 8 abas verticais (estrutura conforme Guia ANPD), pré-população automática a partir de processo do Inventário (puxa Inventário + Riscos + GAP + Plano). Fluxo Contribuidor → DPO com aprovação/rejeição. Versionamento por snapshot, modal histórico, diff word-level entre versões (jsdiff + diff estrutural de listas). Exportação DOCX (docx-js) + PDF print-friendly. Sidebar com badge azul de pendentes. Plug-in card "Coloque em prática" da Fase 6 (2º card ao lado de Políticas). | ✅ FEITO 2026-05-04 (F1+F2+F3+F4) |
-| 14 | **Gestão de Terceiros** — `/dashboard/terceiros` com lista + KPIs por risco + 2 banners DPO (vencidos/sem contrato e vencendo 90d) + filtros (Posição × Risco) + busca. Editor com 6 abas: Identificação · Posição (checklist + sugestão Operador/Controlador automática) · Risco do contrato (6 critérios ANPD → Alto/Médio/Baixo) · Contrato (vigência + 5 cláusulas LGPD + termo confidencialidade + 2 uploaders Vercel Blob) · Processos vinculados (M:N com Inventário) · Avaliação de risco (formulário público com 52 perguntas em 7 blocos enviado ao terceiro via token; pontuação Cyber+LGPD separadas; revisão pelo DPO). Botão "Baixar cláusula (.docx)" gera aditivo automaticamente preenchido (5 modelos: Robusta/Simples/CC/Cliente Op/Minuta). 10º template Política de Avaliação de Terceiros adicionado ao Checkpoint 12. **G4 pendente:** auto-import do `sharing` do Inventário; plug Plano de Ação; plug Seção 1 do RIPD; 3º card Fase 6; badge sidebar. | 🟡 G1+G2+G3 FEITOS · G4 pendente |
+| 14 | ~~**Gestão de Terceiros**~~ — G1+G2+G3: operadores + contratos + régua ANPD + formulário público de avaliação + 5 cláusulas DOCX + 10º template Política. **G4 (integrações)**: auto-import Inventário→Operador (banner em `/dashboard/terceiros` com sugestões de processos APROVADOS com `sharing` sem operadores vinculados); plug Plano de Ação (origem `OPERADOR` + import gera ações automáticas pra vencidos/sem cláusulas/risco ALTO/avaliação ALTO + botão `<AddToActionPlanButton>` no header do operador); plug RIPD Seção 1 (lista estruturada `s1.operatorsList` com tabela em DOCX + diff word-level + render no editor com link cruzado); 3º card "Gestão de Terceiros" no Fase 6 (xl:grid-cols-3); badge sidebar âmbar com count de pendências críticas. | ✅ FEITO 2026-05-04 (G1+G2+G3+G4) |
 | 15+ | Segurança · Incidentes · Modelo PGP — _Termos de Uso já está em Políticas (`TERMOS_USO`); Contratos com Operadores está no Checkpoint 14_ | depois |
 
 ---
@@ -373,10 +400,10 @@ Sessão 2026-05-04 entregou Checkpoints 6, 7, 8, 10, 11, 12, **13** + polimentos
 - ✅ **Checkpoint 11** — Plano de Ação institucional (3 tabs, dedup polimórfico, XLSX, integração 3 telas)
 - ✅ **Checkpoint 12** — Políticas LGPD (9 templates, editor split, URL pública, versionamento, DOCX + PDF + Diff)
 - ✅ **Checkpoint 13** — RIPD v2 institucional (8 seções estruturadas, fluxo Contribuidor → DPO, versionamento, diff word-level, DOCX + PDF, plug Fase 6)
-- 🟡 **Checkpoint 14 G1+G2+G3** — Gestão de Terceiros (operadores + contratos + régua de risco ANPD + formulário público de avaliação com pontuação Cyber/LGPD + 5 cláusulas DOCX + 10º template Política). **G4 pendente:** integrações com Inventário/Plano de Ação/RIPD/Fase 6.
+- ✅ **Checkpoint 14** — Gestão de Terceiros completa (G1+G2+G3+G4):
+  - **G1+G2+G3**: operadores + contratos + régua de risco ANPD + formulário público de avaliação Cyber+LGPD + 5 cláusulas DOCX + 10º template Política.
+  - **G4 (integrações)**: auto-import Inventário→Operador via banner com sugestões; plug Plano de Ação (origem OPERADOR com import idempotente + dedup polimórfico + botão "Adicionar ao Plano" no header do operador quando há pendência); plug RIPD Seção 1 (lista estruturada `s1.operatorsList` com tabela DOCX + diff estrutural + link cruzado); 3º card Fase 6 + badge sidebar âmbar.
 - ✅ Polimentos GAP C1/C2/C3/C4/C5 (comparar versões, exportar PDF, filtro por domínio, aceitar tudo, notas)
-- ✅ Schema Neon: Etapas 2 → 14 todas aplicadas e validadas em prod
-
-**Próxima sub-sessão imediata:** Checkpoint 14 G4 — integrações + plug Fase 6 + badge sidebar (~3h, em sessão nova com contexto fresco).
+- ⚠️ **Schema Neon: Etapa 15 (`_migrate-action-plan-operator.sql`) pendente** — aplicar antes do próximo deploy: `psql "<NEON_URL>" -f scripts/_migrate-action-plan-operator.sql`. Etapas 2 → 14 já estão em prod.
 
 **Próxima fronteira (Checkpoint 15+):** Segurança · Incidentes · Modelo PGP. (Termos de Uso já está em Políticas; Contratos com Operadores está no Checkpoint 14.)

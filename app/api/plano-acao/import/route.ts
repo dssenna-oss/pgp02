@@ -18,12 +18,14 @@ import { decodeSeverity } from "@/lib/riscos-catalog";
  *   - GAP: controles NAO_ADERENTE / PARCIAL com Ponto de Melhoria preenchido
  *   - Riscos: status IDENTIFICADO sem mitigação documentada
  *   - Bases Legais: processos APROVADOS sem base legal preenchida
+ *   - Operadores (Checkpoint 14 G4): contrato vencido / sem cláusulas /
+ *     score ALTO em avaliação / sem contrato
  *
  * Cria 1 ActionPlan por item pendente, com `origin` e refs preenchidos.
  * **Idempotente**: pula items que já têm ActionPlan correspondente
  * (mesmo origin + mesma ref) — não duplica se rodar 2 vezes seguidas.
  *
- * Devolve { created: N, skipped: N, byOrigin: { GAP, RISCO, BASES } }
+ * Devolve { created: N, skipped: N, byOrigin: { GAP, RISCO, BASES, OPERADOR } }
  */
 export async function POST(_request: NextRequest) {
   const r = await loadActionPlanAuth(/* requireDPO */ true);
@@ -31,18 +33,19 @@ export async function POST(_request: NextRequest) {
   const { user } = r;
 
   // 1) Carregar TUDO em paralelo
-  const [existingActions, gapAnswers, risks, inventories] = await Promise.all([
+  const [existingActions, gapAnswers, risks, inventories, operators] = await Promise.all([
     // Pra dedup: chaves já existentes
     prisma.actionPlan.findMany({
       where: {
         companyId: user.companyId,
-        origin: { in: ["GAP", "RISCO", "BASES"] },
+        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR"] },
       },
       select: {
         origin: true,
         refGapCode: true,
         refRiskId: true,
         refInventoryId: true,
+        refOperatorId: true,
       },
     }),
     prisma.gapAnswer.findMany({
@@ -79,16 +82,42 @@ export async function POST(_request: NextRequest) {
         legalBasisSensitive: true,
       },
     }),
+    prisma.operator.findMany({
+      where: { companyId: user.companyId },
+      select: {
+        id: true,
+        name: true,
+        contractStatus: true,
+        contractExpiresAt: true,
+        contractRiskClass: true,
+        relationType: true,
+        hasPrivacyClause: true,
+        hasIncidentClause: true,
+        assessments: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: {
+            status: true,
+            overallRiskClass: true,
+            cyberRiskClass: true,
+            lgpdRiskClass: true,
+            sentAt: true,
+          },
+        },
+      },
+    }),
   ]);
 
   // Sets pra dedup rápido
   const seenGap = new Set<string>();
   const seenRisk = new Set<string>();
   const seenBases = new Set<string>();
+  const seenOperator = new Set<string>();
   for (const a of existingActions) {
     if (a.origin === "GAP" && a.refGapCode) seenGap.add(a.refGapCode);
     if (a.origin === "RISCO" && a.refRiskId) seenRisk.add(a.refRiskId);
     if (a.origin === "BASES" && a.refInventoryId) seenBases.add(a.refInventoryId);
+    if (a.origin === "OPERADOR" && a.refOperatorId) seenOperator.add(a.refOperatorId);
   }
 
   // Cache do catálogo do GAP pra título amigável
@@ -105,6 +134,7 @@ export async function POST(_request: NextRequest) {
     refGapCode?: string;
     refRiskId?: string;
     refInventoryId?: string;
+    refOperatorId?: string;
     priority: string;
     status: string;
     createdById: string;
@@ -181,6 +211,95 @@ export async function POST(_request: NextRequest) {
     });
   }
 
+  // ---------- OPERADORES (Checkpoint 14 G4) ----------
+  // Sinaliza problemas dos terceiros como ações automáticas.
+  // 1 ação por operador (não 1 por problema): título descreve o pior caso,
+  // descrição lista todos os pontos. Idempotente via seenOperator.
+  for (const op of operators) {
+    if (seenOperator.has(op.id)) continue;
+    const issues: string[] = [];
+    let priority: string = ACTION_PRIORITY.MEDIA;
+    let urgency = "";
+
+    // 1) Contrato
+    const expiresAt = op.contractExpiresAt;
+    const now = Date.now();
+    const expired =
+      op.contractStatus === "VENCIDO" ||
+      (expiresAt && expiresAt.getTime() < now);
+    const noContract = op.contractStatus === "SEM_CONTRATO";
+    if (expired) {
+      issues.push("Contrato VENCIDO — renovar urgente.");
+      urgency = "Contrato vencido";
+      priority = ACTION_PRIORITY.ALTA;
+    } else if (noContract) {
+      issues.push("Sem contrato cadastrado — formalizar.");
+      if (!urgency) urgency = "Sem contrato";
+      priority = ACTION_PRIORITY.ALTA;
+    }
+
+    // 2) Cláusulas (só pra OPERADOR, onde a Denise exige cláusula LGPD)
+    if (op.relationType === "OPERADOR") {
+      const missingClauses: string[] = [];
+      if (!op.hasPrivacyClause) missingClauses.push("privacidade");
+      if (!op.hasIncidentClause) missingClauses.push("notificação de incidente");
+      if (missingClauses.length > 0) {
+        issues.push(
+          `Faltam cláusulas obrigatórias no contrato: ${missingClauses.join(", ")}.`,
+        );
+        if (!urgency) urgency = "Cláusulas pendentes";
+        if (priority !== ACTION_PRIORITY.ALTA) priority = ACTION_PRIORITY.MEDIA;
+      }
+    }
+
+    // 3) Risco do contrato (régua ANPD)
+    if (op.contractRiskClass === "ALTO") {
+      issues.push(
+        "Contrato classificado como risco ALTO pela régua ANPD — revisar critérios e elevar controles.",
+      );
+      if (!urgency) urgency = "Risco ALTO";
+      if (priority !== ACTION_PRIORITY.ALTA) priority = ACTION_PRIORITY.ALTA;
+    }
+
+    // 4) Avaliação de terceiro (formulário público)
+    const lastAssess = op.assessments[0];
+    if (lastAssess) {
+      if (lastAssess.overallRiskClass === "ALTO") {
+        issues.push(
+          `Última avaliação de risco do terceiro classificada como ALTO (Cyber: ${lastAssess.cyberRiskClass ?? "—"}, LGPD: ${lastAssess.lgpdRiskClass ?? "—"}).`,
+        );
+        if (!urgency) urgency = "Avaliação ALTO";
+        priority = ACTION_PRIORITY.ALTA;
+      }
+      // Avaliação enviada e parada há +30 dias sem resposta
+      if (
+        lastAssess.status === "AGUARDANDO_TERCEIRO" &&
+        lastAssess.sentAt &&
+        now - lastAssess.sentAt.getTime() > 30 * 24 * 60 * 60 * 1000
+      ) {
+        issues.push(
+          `Formulário de avaliação enviado ao terceiro há mais de 30 dias sem resposta.`,
+        );
+        if (!urgency) urgency = "Formulário pendente";
+      }
+    }
+
+    if (issues.length === 0) continue;
+
+    toCreate.push({
+      companyId: user.companyId,
+      title: urgency
+        ? `Operador "${op.name}": ${urgency}`
+        : `Revisar operador "${op.name}"`,
+      description: `Pontos identificados na Gestão de Terceiros:\n\n• ${issues.join("\n• ")}`,
+      origin: ACTION_ORIGIN.OPERADOR,
+      refOperatorId: op.id,
+      priority,
+      status: ACTION_STATUS.A_FAZER,
+      createdById: user.id,
+    });
+  }
+
   // 2) Criar tudo (idempotente — só os novos)
   let created = 0;
   if (toCreate.length > 0) {
@@ -193,11 +312,13 @@ export async function POST(_request: NextRequest) {
     skipped:
       gapAnswers.filter((a) => a.pontoMelhoria?.trim() && seenGap.has(a.controlCode)).length +
       risks.filter((r) => seenRisk.has(r.id)).length +
-      inventories.filter((i) => seenBases.has(i.id)).length,
+      inventories.filter((i) => seenBases.has(i.id)).length +
+      operators.filter((o) => seenOperator.has(o.id)).length,
     byOrigin: {
       GAP: toCreate.filter((t) => t.origin === ACTION_ORIGIN.GAP).length,
       RISCO: toCreate.filter((t) => t.origin === ACTION_ORIGIN.RISCO).length,
       BASES: toCreate.filter((t) => t.origin === ACTION_ORIGIN.BASES).length,
+      OPERADOR: toCreate.filter((t) => t.origin === ACTION_ORIGIN.OPERADOR).length,
     },
   });
 }

@@ -93,9 +93,23 @@ export interface RipdData {
       email: string;
       phone: string;
     };
-    /** Operadores e terceiros envolvidos (texto livre, vem de
-     *  DataInventory.sharing). */
+    /** Operadores e terceiros envolvidos — texto livre legado.
+     *  Desde Checkpoint 14 G4 fica como complemento; a lista
+     *  estruturada `operatorsList` é a fonte primária. */
     operators: string;
+    /** Lista estruturada de operadores vinda da Gestão de Terceiros
+     *  (Checkpoint 14 G4). Pré-populada a partir de `OperatorProcessLink`
+     *  do processo. Vazio = nenhum operador cadastrado pra esse processo. */
+    operatorsList: ReadonlyArray<{
+      id: string;
+      name: string;
+      cnpj: string;
+      relationType: string;          // OPERADOR | CONTROLADOR | CO_CONTROLADOR | INDEFINIDO
+      activityDescription: string;   // o que esse operador faz neste processo
+      contractStatus: string;
+      contractRiskClass: string;
+      country: string;
+    }>;
   };
 
   /** Seção 2 — Descrição do projeto/processo */
@@ -192,6 +206,37 @@ export interface RipdData {
   };
 }
 
+/**
+ * Normaliza um RipdData lido do banco. Garante que campos novos
+ * (adicionados em versões posteriores do schema) existam mesmo em
+ * documentos antigos. Idempotente.
+ *
+ * Principais migrações:
+ *   - Checkpoint 14 G4: garante `s1.operatorsList` (array).
+ */
+export function normalizeRipdData(raw: any): RipdData {
+  const base = emptyRipdData();
+  if (!raw || typeof raw !== "object") return base;
+  const out: any = { ...base, ...raw };
+  // Seções podem vir parciais — garantir defaults
+  out.s1 = { ...base.s1, ...(raw.s1 ?? {}) };
+  out.s1.controller = { ...base.s1.controller, ...(raw.s1?.controller ?? {}) };
+  out.s1.dpo = { ...base.s1.dpo, ...(raw.s1?.dpo ?? {}) };
+  if (!Array.isArray(out.s1.operatorsList)) out.s1.operatorsList = [];
+  out.s2 = { ...base.s2, ...(raw.s2 ?? {}) };
+  out.s3 = { ...base.s3, ...(raw.s3 ?? {}) };
+  out.s4 = { ...base.s4, ...(raw.s4 ?? {}) };
+  out.s5 = { ...base.s5, ...(raw.s5 ?? {}) };
+  out.s6 = { ...base.s6, ...(raw.s6 ?? {}) };
+  if (!Array.isArray(out.s6.risks)) out.s6.risks = [];
+  out.s7 = { ...base.s7, ...(raw.s7 ?? {}) };
+  if (!Array.isArray(out.s7.existingControls)) out.s7.existingControls = [];
+  if (!Array.isArray(out.s7.plannedActions)) out.s7.plannedActions = [];
+  out.s8 = { ...base.s8, ...(raw.s8 ?? {}) };
+  out.v = 1;
+  return out as RipdData;
+}
+
 /** RipdData vazio (todos os campos como string vazia / arrays vazios).
  *  Usado pra criar RIPDs avulsos sem inventoryId. */
 export function emptyRipdData(): RipdData {
@@ -201,6 +246,7 @@ export function emptyRipdData(): RipdData {
       controller: { name: "", cnpj: "", address: "", legalRepresentative: "" },
       dpo: { name: "", email: "", phone: "" },
       operators: "",
+      operatorsList: [],
     },
     s2: { name: "", description: "", objective: "", responsibleArea: "" },
     s3: {
@@ -300,11 +346,12 @@ export function ripdToDTO(r: RipdRow): RipdDTO {
     inventory: r.inventory ?? null,
     title: r.title,
     status: r.status as RipdStatus,
-    data: (r.data ?? emptyRipdData()) as RipdData,
+    data: normalizeRipdData(r.data),
     rejectionNote: r.rejectionNote,
     approvedBy: r.approvedBy ?? null,
     approvedAt: r.approvedAt ? r.approvedAt.toISOString() : null,
-    publishedContent: (r.publishedContent ?? null) as RipdData | null,
+    publishedContent:
+      r.publishedContent != null ? normalizeRipdData(r.publishedContent) : null,
     publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
     publishedVersionNum: r.publishedVersionNum,
     createdBy: r.createdBy ?? null,

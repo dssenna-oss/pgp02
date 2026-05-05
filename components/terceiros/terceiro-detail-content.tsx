@@ -55,6 +55,7 @@ import {
 } from "@/lib/operadores-helpers";
 import TerceiroAssessmentSection from "./terceiro-assessment-section";
 import TerceiroAttachmentUpload, { type AttachmentItem } from "./terceiro-attachment-upload";
+import AddToActionPlanButton from "@/components/plano-acao/add-to-action-plan-button";
 
 interface Props {
   operatorId: string;
@@ -339,6 +340,17 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
           )}
         </div>
         <div className="flex flex-wrap gap-2 flex-shrink-0">
+          {canEdit && hasOperatorIssues(op) && (
+            <AddToActionPlanButton
+              title={buildOperatorActionTitle(op)}
+              description={buildOperatorActionDescription(op)}
+              origin="OPERADOR"
+              refOperatorId={op.id}
+              priority={operatorActionPriority(op)}
+              variant="outline"
+              size="sm"
+            />
+          )}
           {canEdit && op.recommendedClause !== "INDEFINIDO" && (
             <Button
               variant="outline"
@@ -1226,4 +1238,61 @@ function SectionProcesses({
       )}
     </div>
   );
+}
+
+// ============================================================
+// Helpers — Plano de Ação (Checkpoint 14 G4)
+// ============================================================
+// Detectam pendências do operador pra exibir o botão "Adicionar ao
+// Plano" e construir o conteúdo da ação. Mesma lógica do import em
+// `app/api/plano-acao/import/route.ts`, mas resumida pra UI.
+
+function operatorIssues(op: OperatorDTO): string[] {
+  const out: string[] = [];
+  const expired =
+    op.contractStatus === "VENCIDO" ||
+    (op.contractExpiresAt && new Date(op.contractExpiresAt).getTime() < Date.now());
+  const noContract = op.contractStatus === "SEM_CONTRATO";
+  if (expired) out.push("Contrato VENCIDO — renovar urgente.");
+  else if (noContract) out.push("Sem contrato cadastrado — formalizar.");
+  if (op.relationType === "OPERADOR") {
+    const missing: string[] = [];
+    if (!op.hasPrivacyClause) missing.push("privacidade");
+    if (!op.hasIncidentClause) missing.push("notificação de incidente");
+    if (missing.length > 0) {
+      out.push(`Faltam cláusulas obrigatórias: ${missing.join(", ")}.`);
+    }
+  }
+  if (op.contractRiskClass === "ALTO") {
+    out.push("Contrato classificado como risco ALTO pela régua ANPD.");
+  }
+  return out;
+}
+
+function hasOperatorIssues(op: OperatorDTO): boolean {
+  return operatorIssues(op).length > 0;
+}
+
+function buildOperatorActionTitle(op: OperatorDTO): string {
+  const issues = operatorIssues(op);
+  if (issues.length === 0) return `Revisar operador "${op.name}"`;
+  const first = issues[0].split(" — ")[0].split(":")[0];
+  return `Operador "${op.name}": ${first}`;
+}
+
+function buildOperatorActionDescription(op: OperatorDTO): string {
+  const issues = operatorIssues(op);
+  if (issues.length === 0) return "Operador sem pendências críticas.";
+  return `Pontos identificados na Gestão de Terceiros:\n\n• ${issues.join("\n• ")}`;
+}
+
+function operatorActionPriority(op: OperatorDTO): "ALTA" | "MEDIA" | "BAIXA" {
+  if (
+    op.contractStatus === "VENCIDO" ||
+    op.contractStatus === "SEM_CONTRATO" ||
+    op.contractRiskClass === "ALTO"
+  ) {
+    return "ALTA";
+  }
+  return "MEDIA";
 }

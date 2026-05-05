@@ -21,6 +21,7 @@
 --   * scripts/_migrate-ripd-v2.sql     (Etapa 12 — Checkpoint 13: ripds refatorada + ripd_versions)
 --   * scripts/_migrate-terceiros.sql   (Etapa 13 — Checkpoint 14 G1: operators + operator_process_links)
 --   * scripts/_migrate-terceiros-assessment.sql (Etapa 14 — Checkpoint 14 G2: operator_assessments)
+--   * scripts/_migrate-action-plan-operator.sql (Etapa 15 — Checkpoint 14 G4: action_plans.refOperatorId)
 -- ============================================================
 
 BEGIN;
@@ -701,6 +702,15 @@ CREATE INDEX IF NOT EXISTS "operator_assessments_operatorId_status_idx"
 CREATE INDEX IF NOT EXISTS "operator_assessments_publicToken_idx"
   ON "operator_assessments"("publicToken");
 
+-- ====================================================================
+-- ETAPA 15 — Plano de Ação ganha ref pra Operadores (Checkpoint 14 G4)
+-- ====================================================================
+
+ALTER TABLE "action_plans"
+  ADD COLUMN IF NOT EXISTS "refOperatorId" TEXT;
+CREATE INDEX IF NOT EXISTS "action_plans_companyId_refOperatorId_idx"
+  ON "action_plans"("companyId", "refOperatorId");
+
 COMMIT;
 
 -- ====================================================================
@@ -753,6 +763,8 @@ SELECT 'operator_assessments (table)', EXISTS (SELECT 1 FROM information_schema.
   WHERE table_name='operator_assessments');
 SELECT 'operator_assessments.publicToken', EXISTS (SELECT 1 FROM information_schema.columns
   WHERE table_name='operator_assessments' AND column_name='publicToken');
+SELECT 'action_plans.refOperatorId', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='action_plans' AND column_name='refOperatorId');
 
 \echo ''
 \echo '=== Inventários por status ==='

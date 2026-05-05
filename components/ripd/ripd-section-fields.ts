@@ -46,8 +46,8 @@ export interface SectionDef {
   shortTitle: string;
   intro: string;
   fields: ReadonlyArray<SectionField>;
-  /** Tem lista anexa (riscos / controles / ações)? */
-  hasList?: "risks" | "existingControls" | "plannedActions";
+  /** Tem lista anexa (riscos / controles / ações / operadores)? */
+  hasList?: "risks" | "existingControls" | "plannedActions" | "operatorsList";
 }
 
 export const RIPD_SECTIONS: ReadonlyArray<SectionDef> = [
@@ -58,7 +58,8 @@ export const RIPD_SECTIONS: ReadonlyArray<SectionDef> = [
     title: "Identificação dos agentes de tratamento",
     shortTitle: "Agentes",
     intro:
-      "Quem é o controlador, quem é o encarregado (DPO), e quais terceiros (operadores) participam do tratamento. Vem pré-preenchido com os dados da sua empresa cadastrada.",
+      "Quem é o controlador, quem é o encarregado (DPO), e quais terceiros (operadores) participam do tratamento. Vem pré-preenchido com os dados da sua empresa cadastrada e da Gestão de Terceiros.",
+    hasList: "operatorsList",
     fields: [
       { path: "s1.controller.name",                label: "Nome do controlador",        kind: "text",     prepop: true, width: "half" },
       { path: "s1.controller.cnpj",                label: "CNPJ",                       kind: "text",     prepop: true, width: "half" },
@@ -69,11 +70,11 @@ export const RIPD_SECTIONS: ReadonlyArray<SectionDef> = [
       { path: "s1.dpo.phone",                      label: "Telefone do DPO",            kind: "text",     prepop: true, width: "half" },
       {
         path: "s1.operators",
-        label: "Operadores e terceiros envolvidos",
+        label: "Observações sobre operadores e terceiros (texto livre)",
         kind: "textarea",
-        hint: "Empresas e fornecedores que tratam dados em nome do controlador. Vem do campo \"Compartilhamento\" do processo.",
+        hint: "Complemento descritivo. A lista estruturada acima vem da Gestão de Terceiros e é a fonte primária pros documentos.",
         prepop: true,
-        rows: 4,
+        rows: 3,
       },
     ],
   },

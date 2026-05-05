@@ -15,6 +15,8 @@ import {
   Clock,
   Building2,
   ShieldAlert,
+  Sparkles,
+  X,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,17 @@ import TerceiroCreateModal from "./terceiro-create-modal";
 interface ApiResponse {
   items: OperatorDTO[];
   stats: OperatorStats;
+}
+
+interface SuggestionItem {
+  inventoryId: string;
+  serviceName: string;
+  sharingText: string;
+  suggestedNames: string[];
+}
+
+interface SuggestionsResponse {
+  items: SuggestionItem[];
 }
 
 const RELATION_FILTERS = [
@@ -61,16 +74,34 @@ export default function TerceirosListContent() {
   const [riskFilter, setRiskFilter] = useState<string>("ALL");
   const [showCreate, setShowCreate] = useState(false);
 
+  // Sugestões de auto-import do Inventário (Checkpoint 14 G4)
+  const [suggestions, setSuggestions] = useState<SuggestionItem[] | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [prefill, setPrefill] = useState<{
+    name: string;
+    inventoryId: string;
+    activityDescription: string;
+  } | null>(null);
+
   const refresh = async () => {
     setLoading(true);
     try {
-      const r = await fetch("/api/operadores", { cache: "no-store" });
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
+      const [rOps, rSugg] = await Promise.all([
+        fetch("/api/operadores", { cache: "no-store" }),
+        fetch("/api/operadores/suggestions", { cache: "no-store" }),
+      ]);
+      if (!rOps.ok) {
+        const err = await rOps.json().catch(() => ({}));
         toast.error(err.error ?? "Erro ao carregar operadores");
         return;
       }
-      setData(await r.json());
+      setData(await rOps.json());
+      if (rSugg.ok) {
+        const j = (await rSugg.json()) as SuggestionsResponse;
+        setSuggestions(j.items);
+      } else {
+        setSuggestions([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -160,6 +191,98 @@ export default function TerceirosListContent() {
             </CardContent>
           </Card>
         )}
+      {/* Banner de sugestões — Inventário→Operador (Checkpoint 14 G4) */}
+      {userIsDPO && suggestions && suggestions.length > 0 && showSuggestions && (
+        <Card className="border-blue-300 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-md flex-shrink-0">
+                <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-blue-900 dark:text-blue-200">
+                  {suggestions.length} processo(s) sugerem operadores não cadastrados
+                </p>
+                <p className="text-sm text-blue-800 dark:text-blue-300 mt-0.5">
+                  Detectamos processos APROVADOS no Inventário com
+                  compartilhamento de dados declarado, mas sem nenhum operador
+                  vinculado aqui. Cadastre os terceiros pra fechar o ciclo.
+                </p>
+                <div className="mt-3 space-y-2">
+                  {suggestions.slice(0, 5).map((s) => (
+                    <div
+                      key={s.inventoryId}
+                      className="bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 rounded-md p-3"
+                    >
+                      <p className="font-medium text-sm">
+                        Processo:{" "}
+                        <span className="font-semibold">{s.serviceName}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        Compartilhamento declarado: "{s.sharingText}"
+                      </p>
+                      {s.suggestedNames.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {s.suggestedNames.map((name) => (
+                            <Button
+                              key={name}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs"
+                              onClick={() =>
+                                setPrefill({
+                                  name,
+                                  inventoryId: s.inventoryId,
+                                  activityDescription: `Atividade declarada no compartilhamento do processo "${s.serviceName}".`,
+                                })
+                              }
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Cadastrar "{name}"
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                      {s.suggestedNames.length === 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs mt-2"
+                          onClick={() =>
+                            setPrefill({
+                              name: "",
+                              inventoryId: s.inventoryId,
+                              activityDescription: `Atividade declarada no compartilhamento do processo "${s.serviceName}".`,
+                            })
+                          }
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Cadastrar terceiro deste processo
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {suggestions.length > 5 && (
+                    <p className="text-xs text-blue-700 dark:text-blue-300 italic">
+                      + {suggestions.length - 5} processo(s) com sugestões…
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowSuggestions(false)}
+                title="Ocultar sugestões"
+                className="text-blue-700 dark:text-blue-300"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {userIsDPO &&
         data?.stats &&
         data.stats.expiringSoon > 0 && (
@@ -298,14 +421,21 @@ export default function TerceirosListContent() {
         </div>
       )}
 
-      {/* Modal de criação */}
+      {/* Modal de criação (manual ou auto-import) */}
       <TerceiroCreateModal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
+        open={showCreate || prefill !== null}
+        onClose={() => {
+          setShowCreate(false);
+          setPrefill(null);
+        }}
         onCreated={(id) => {
           setShowCreate(false);
+          setPrefill(null);
           window.location.assign(`/dashboard/terceiros/${id}`);
         }}
+        prefillName={prefill?.name}
+        linkInventoryId={prefill?.inventoryId}
+        linkActivityDescription={prefill?.activityDescription}
       />
     </div>
   );

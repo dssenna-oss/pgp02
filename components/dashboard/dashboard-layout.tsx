@@ -70,6 +70,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * Polling 60s; refresh imediato via `notifySidebarRefresh()`.
    */
   const [ripdPending, setRipdPending] = useState<number | null>(null);
+  /**
+   * Operadores com pendência crítica (Checkpoint 14 G4):
+   * contrato vencido, sem contrato, risco contratual ALTO, ou avaliação
+   * mais recente com risco geral ALTO. Polling 60s.
+   */
+  const [operatorsPending, setOperatorsPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -127,22 +133,36 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchOperatorsPending = async () => {
+      try {
+        const r = await fetch("/api/operadores/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setOperatorsPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
       void fetchRipdPending();
+      void fetchOperatorsPending();
     };
 
     refreshAll();
     const taskId = setInterval(fetchAlerts, 60000);
     const forumId = setInterval(fetchForumUnread, 30000);
     const ripdId = setInterval(fetchRipdPending, 60000);
+    const opsId = setInterval(fetchOperatorsPending, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
       clearInterval(taskId);
       clearInterval(forumId);
       clearInterval(ripdId);
+      clearInterval(opsId);
       offEvent();
     };
   }, []);
@@ -405,6 +425,15 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     ripdPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex-shrink-0">
                         {ripdPending}
+                      </span>
+                    )}
+                  {/* Badge de operadores com pendência crítica
+                      (vencido / sem contrato / risco ALTO / avaliação ALTO). */}
+                  {item.href === "/dashboard/terceiros" &&
+                    operatorsPending !== null &&
+                    operatorsPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {operatorsPending}
                       </span>
                     )}
                 </span>

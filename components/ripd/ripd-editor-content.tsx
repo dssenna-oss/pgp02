@@ -34,6 +34,7 @@ import {
   GitCompare,
   FileDown,
   Printer,
+  Handshake,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -812,7 +813,10 @@ function SectionForm({
 }) {
   return (
     <div className="space-y-5">
-      {/* Lista anexa (Seção 6: riscos / Seção 7: controles + ações) */}
+      {/* Lista anexa (Seção 1: operadores / Seção 6: riscos / Seção 7: controles + ações) */}
+      {section.hasList === "operatorsList" && (
+        <OperatorsList operators={data.s1.operatorsList} ripdInventoryId={ripd.inventoryId} />
+      )}
       {section.hasList === "risks" && (
         <RisksList risks={data.s6.risks} />
       )}
@@ -896,6 +900,126 @@ function FieldRenderer({
 // ============================================================
 // Listas anexas (riscos da S6 / controles+ações da S7)
 // ============================================================
+
+function OperatorsList({
+  operators,
+  ripdInventoryId,
+}: {
+  operators: RipdData["s1"]["operatorsList"];
+  ripdInventoryId: string | null;
+}) {
+  if (operators.length === 0) {
+    return (
+      <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
+        <CardContent className="p-4 text-sm text-blue-900 dark:text-blue-200 flex items-start gap-2">
+          <Handshake className="h-4 w-4 flex-shrink-0 mt-0.5" />
+          <p>
+            Nenhum operador/terceiro vinculado a este processo na{" "}
+            <Link
+              href="/dashboard/terceiros"
+              className="underline font-medium"
+              target="_blank"
+            >
+              Gestão de Terceiros
+            </Link>
+            . Se este processo envolve fornecedores que tratam dados em nome
+            da organização, cadastre-os pra preencher esta seção
+            automaticamente.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold flex items-center gap-2">
+        <Handshake className="h-4 w-4 text-blue-500" />
+        Operadores e terceiros vinculados ({operators.length})
+        <span className="text-xs font-normal text-muted-foreground">
+          — da Gestão de Terceiros
+        </span>
+      </p>
+      <div className="grid gap-2">
+        {operators.map((o) => (
+          <Card key={o.id} className="border-l-4 border-l-blue-400">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <Badge variant="outline" className="text-[10px]">
+                  {o.relationType === "OPERADOR"
+                    ? "Operador"
+                    : o.relationType === "CONTROLADOR"
+                      ? "Outro Controlador"
+                      : o.relationType === "CO_CONTROLADOR"
+                        ? "Co-controladoria"
+                        : "A classificar"}
+                </Badge>
+                {o.contractRiskClass && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px]",
+                      o.contractRiskClass === "ALTO" &&
+                        "bg-red-50 text-red-700 border-red-300",
+                      o.contractRiskClass === "MEDIO" &&
+                        "bg-amber-50 text-amber-700 border-amber-300",
+                      o.contractRiskClass === "BAIXO" &&
+                        "bg-emerald-50 text-emerald-700 border-emerald-300",
+                    )}
+                  >
+                    Risco {o.contractRiskClass}
+                  </Badge>
+                )}
+                {o.contractStatus && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {o.contractStatus.replace(/_/g, " ")}
+                  </Badge>
+                )}
+                {o.country && o.country.toLowerCase() !== "brasil" && (
+                  <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-800 border-amber-300">
+                    {o.country} (transferência internacional)
+                  </Badge>
+                )}
+              </div>
+              <p className="font-medium text-sm flex items-center gap-1.5">
+                {o.name}
+                {o.cnpj && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    · {o.cnpj}
+                  </span>
+                )}
+                <Link
+                  href={`/dashboard/terceiros/${o.id}`}
+                  className="text-xs text-blue-600 hover:underline ml-auto"
+                  target="_blank"
+                >
+                  Abrir →
+                </Link>
+              </p>
+              {o.activityDescription && (
+                <p className="text-sm mt-1 text-muted-foreground">
+                  Atividade neste processo: {o.activityDescription}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      {ripdInventoryId && (
+        <p className="text-xs text-muted-foreground italic">
+          Pra adicionar/remover operadores, vá em{" "}
+          <Link
+            href="/dashboard/terceiros"
+            className="underline"
+            target="_blank"
+          >
+            Gestão de Terceiros
+          </Link>{" "}
+          e vincule o processo lá.
+        </p>
+      )}
+    </div>
+  );
+}
 
 function RisksList({ risks }: { risks: RipdData["s6"]["risks"] }) {
   if (risks.length === 0) {

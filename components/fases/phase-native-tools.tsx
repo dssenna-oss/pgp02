@@ -15,6 +15,7 @@ import {
   CalendarDays,
   FileText,
   FileCheck2,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,7 @@ import { cn } from "@/lib/utils";
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
  *   - fase-5 → Plano de Ação institucional
- *   - fase-6 → Políticas LGPD + RIPD institucional
+ *   - fase-6 → Políticas LGPD + RIPD institucional + Gestão de Terceiros
  *
  * Pra adicionar uma nova fase, basta criar uma branch no switch principal
  * que renderize os cards relevantes (idealmente em arquivos separados quando
@@ -556,9 +557,10 @@ interface RipdResp {
 
 function Fase6Tools() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <PoliticasCard />
       <RipdCardTools />
+      <TerceirosCardTools />
     </div>
   );
 }
@@ -750,6 +752,121 @@ function RipdCardTools() {
       emptyHint={
         total === 0
           ? "Crie o RIPD pros processos de alto risco: cadastre, vincule a um processo aprovado do Inventário e o documento nasce 80% pré-preenchido."
+          : undefined
+      }
+    />
+  );
+}
+
+// ============================================================
+// TerceirosCardTools — Gestão de Terceiros (3º card Fase 6, Checkpoint 14 G4)
+// ============================================================
+
+interface TerceirosResp {
+  items: Array<{
+    id: string;
+    relationType: string;
+    contractRiskClass: string;
+    contractStatus: string;
+  }>;
+  stats: {
+    total: number;
+    byRelation: Record<string, number>;
+    byRiskClass: Record<string, number>;
+    byContractStatus: Record<string, number>;
+    expiringSoon: number;
+    needsAttention: number;
+  };
+}
+
+function TerceirosCardTools() {
+  const [data, setData] = useState<TerceirosResp | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Visível pra DPO + Contribuidor (escopo aplicado server-side)
+        const res = await fetch("/api/operadores");
+        if (res.ok) setData(await res.json());
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = data?.stats.total ?? 0;
+  const alto = data?.stats.byRiskClass.ALTO ?? 0;
+  const needsAttention = data?.stats.needsAttention ?? 0;
+  const expiringSoon = data?.stats.expiringSoon ?? 0;
+
+  // Cor: neutral=zero; warning=tem pendência crítica ou risco alto;
+  // success=tudo ok
+  const color: ToolCardColor =
+    total === 0
+      ? "neutral"
+      : needsAttention > 0 || alto > 0 || expiringSoon > 0
+        ? "warning"
+        : "success";
+
+  return (
+    <ToolCard
+      icon={<Handshake className="h-6 w-6" />}
+      iconColor="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40"
+      title="Gestão de Terceiros"
+      description="Cadastro de operadores com régua de risco ANPD, cláusulas contratuais automáticas e formulário público de avaliação Cyber+LGPD enviado ao próprio terceiro."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: total > 0 ? "Abrir Gestão de Terceiros" : "Cadastrar primeiro terceiro",
+        href: "/dashboard/terceiros",
+      }}
+      stats={
+        data && total > 0
+          ? [
+              {
+                label: "terceiros",
+                value: total,
+                icon: <Handshake className="h-3.5 w-3.5" />,
+              },
+              ...(alto > 0
+                ? [
+                    {
+                      label: "risco ALTO",
+                      value: alto,
+                      color: "red" as const,
+                      icon: <AlertCircle className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+              ...(needsAttention > 0
+                ? [
+                    {
+                      label: "vencidos / sem contrato",
+                      value: needsAttention,
+                      color: "red" as const,
+                      icon: <AlertCircle className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+              ...(expiringSoon > 0
+                ? [
+                    {
+                      label: "vencendo (90d)",
+                      value: expiringSoon,
+                      color: "amber" as const,
+                      icon: <Clock className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+            ]
+          : []
+      }
+      emptyHint={
+        total === 0
+          ? "Cadastre os fornecedores que tratam dados pessoais. A régua ANPD classifica cada contrato (alto/médio/baixo) e sugere a cláusula adequada."
           : undefined
       }
     />

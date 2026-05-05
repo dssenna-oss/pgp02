@@ -604,10 +604,11 @@ model GapSnapshot {
 ///   - GAP (controles NAO_ADERENTE/PARCIAL com Ponto de Melhoria)
 ///   - Riscos (status IDENTIFICADO sem mitigação)
 ///   - Bases Legais (processos APROVADOS sem base legal)
+///   - Operadores (contrato vencido / sem cláusulas / score ALTO / formulário pendente)
 ///
-/// Refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`): só 1 fica
-/// preenchido por linha, conforme `origin`. Quando `origin = MANUAL`, todas
-/// as refs ficam null.
+/// Refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`/`refOperatorId`):
+/// só 1 fica preenchido por linha, conforme `origin`. Quando `origin = MANUAL`,
+/// todas as refs ficam null.
 model ActionPlan {
   id          String  @id @default(cuid())
   companyId   String
@@ -618,12 +619,13 @@ model ActionPlan {
   description String? @db.Text
   notes       String? @db.Text
 
-  /// Origem: MANUAL | GAP | RISCO | BASES
+  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR
   origin      String  @default("MANUAL")
   /// Refs polimórficos pra rastrear de onde a ação saiu
   refGapCode      String? // GapAnswer.controlCode
   refRiskId       String? // ProcessRisk.id
   refInventoryId  String? // DataInventory.id
+  refOperatorId   String? // Operator.id (Checkpoint 14 G4)
 
   /// Responsável formal (User da org); null = ainda sem responsável
   assigneeId  String?
@@ -646,6 +648,7 @@ model ActionPlan {
   @@index([companyId, status])
   @@index([companyId, assigneeId])
   @@index([companyId, dueDate])
+  @@index([companyId, refOperatorId])
   @@map("action_plans")
 }
 

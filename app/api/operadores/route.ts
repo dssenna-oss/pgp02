@@ -124,5 +124,41 @@ export async function POST(request: NextRequest) {
     include: FULL_INCLUDE,
   });
 
-  return NextResponse.json({ operator: operatorToDTO(created) }, { status: 201 });
+  // Vínculo inicial com processo do Inventário (Checkpoint 14 G4 —
+  // auto-import a partir da sugestão "Cadastrar como Operador").
+  // O DPO/Contribuidor só consegue passar `linkInventoryId` se tiver
+  // acesso ao processo (validamos abaixo).
+  if (body?.linkInventoryId) {
+    const invId = String(body.linkInventoryId);
+    const inv = await prisma.dataInventory.findFirst({
+      where: { id: invId, companyId: user.companyId },
+      select: { id: true, createdById: true },
+    });
+    if (inv) {
+      // Contribuidor só pode vincular processos próprios
+      const allowed = user.isDPO || inv.createdById === user.id;
+      if (allowed) {
+        await prisma.operatorProcessLink.create({
+          data: {
+            operatorId: created.id,
+            dataInventoryId: invId,
+            activityDescription: body.linkActivityDescription
+              ? String(body.linkActivityDescription).slice(0, 1000)
+              : null,
+          },
+        });
+      }
+    }
+  }
+
+  // Re-buscar com processLinks atualizados pra UI mostrar o vínculo
+  const final = await prisma.operator.findUnique({
+    where: { id: created.id },
+    include: FULL_INCLUDE,
+  });
+
+  return NextResponse.json(
+    { operator: final ? operatorToDTO(final) : operatorToDTO(created) },
+    { status: 201 },
+  );
 }

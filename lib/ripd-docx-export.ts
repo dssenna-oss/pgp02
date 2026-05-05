@@ -163,8 +163,10 @@ export async function buildRipdDocx(input: RipdDocxInput): Promise<Buffer> {
       );
     }
 
-    // Listas anexas (Seção 6 ou 7)
-    if (sec.hasList === "risks") {
+    // Listas anexas (Seção 1: operadores / Seção 6: riscos / Seção 7: controles + ações)
+    if (sec.hasList === "operatorsList") {
+      children.push(...renderOperatorsTable(input.data.s1.operatorsList));
+    } else if (sec.hasList === "risks") {
       children.push(...renderRisksTable(input.data.s6.risks));
     } else if (sec.hasList === "existingControls") {
       children.push(...renderControlsTable(input.data.s7.existingControls));
@@ -468,6 +470,93 @@ function renderActionsTable(
     new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
     new Paragraph({ children: [new TextRun({ text: " " })] }),
   ];
+}
+
+function renderOperatorsTable(
+  operators: RipdData["s1"]["operatorsList"],
+): (Paragraph | Table)[] {
+  const heading = new Paragraph({
+    heading: HeadingLevel.HEADING_3,
+    spacing: { before: 200, after: 120 },
+    children: [
+      new TextRun({
+        text: `Operadores e terceiros vinculados (${operators.length})`,
+        bold: true,
+        size: 22,
+        color: "333333",
+      }),
+    ],
+  });
+  if (operators.length === 0) {
+    return [
+      heading,
+      new Paragraph({
+        spacing: { after: 160 },
+        children: [
+          new TextRun({
+            text: "Nenhum operador/terceiro vinculado a este processo na Gestão de Terceiros.",
+            italics: true,
+            color: "888888",
+            size: 22,
+          }),
+        ],
+      }),
+    ];
+  }
+  const rows: TableRow[] = [];
+  rows.push(
+    new TableRow({
+      tableHeader: true,
+      children: [
+        "Operador",
+        "CNPJ",
+        "Posição",
+        "País",
+        "Risco contrato",
+        "Status contrato",
+        "Atividade no processo",
+      ].map(
+        (h) =>
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: h, bold: true, size: 20 })],
+              }),
+            ],
+          }),
+      ),
+    }),
+  );
+  for (const o of operators) {
+    rows.push(
+      new TableRow({
+        children: [
+          textCell(o.name, { bold: true }),
+          textCell(o.cnpj || "—"),
+          textCell(positionLabel(o.relationType)),
+          textCell(o.country || "—"),
+          textCell(o.contractRiskClass || "—"),
+          textCell(o.contractStatus.replace(/_/g, " ") || "—"),
+          textCell(o.activityDescription || "—"),
+        ],
+      }),
+    );
+  }
+  return [
+    heading,
+    new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows }),
+    new Paragraph({ children: [new TextRun({ text: " " })] }),
+  ];
+}
+
+function positionLabel(t: string): string {
+  switch (t) {
+    case "OPERADOR":       return "Operador";
+    case "CONTROLADOR":    return "Outro Controlador";
+    case "CO_CONTROLADOR": return "Co-controladoria";
+    case "INDEFINIDO":     return "A classificar";
+    default:               return t;
+  }
 }
 
 function textCell(text: string, opts?: { bold?: boolean }): TableCell {
