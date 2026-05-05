@@ -21,6 +21,8 @@ import {
   AlertTriangle,
   BarChart3,
   Lightbulb,
+  Users,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +32,7 @@ import { cn } from "@/lib/utils";
  *
  * Hoje suporta:
  *   - entendendo-pgp → Maturidade do PGP + Política do PGP (Checkpoint 15 / Opção 1)
+ *   - fase-1 → Formação das Equipes (Contribuidores)
  *   - fase-2 → Diagnóstico de Privacidade (Checkpoint 10)
  *   - fase-3 → Inventário + Análise de Riscos
  *   - fase-4 → GAP Analysis
@@ -48,6 +51,9 @@ import { cn } from "@/lib/utils";
 export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "entendendo-pgp") {
     return <EntendendoPgpTools />;
+  }
+  if (phase === "fase-1") {
+    return <Fase1Tools />;
   }
   if (phase === "fase-2") {
     return <Fase2Tools />;
@@ -76,6 +82,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 export function phaseHasNativeTools(phase: string): boolean {
   return (
     phase === "entendendo-pgp" ||
+    phase === "fase-1" ||
     phase === "fase-2" ||
     phase === "fase-3" ||
     phase === "fase-4" ||
@@ -252,6 +259,147 @@ function EntendendoPgpTools() {
             : !politicaPgp
               ? "Crie o documento mater do programa a partir do template oficial em Políticas. Sem ele, o programa não tem declaração formal."
               : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 1 — Formação das Equipes (Contribuidores)
+// ============================================================
+
+interface ContribuidoresResp {
+  contribuidores: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+    setor: string | null;
+    isActive: boolean;
+    _count: { createdInventories: number };
+  }>;
+}
+
+function Fase1Tools() {
+  const [data, setData] = useState<ContribuidoresResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/dpo/contribuidores", { cache: "no-store" });
+        if (res.ok) {
+          setData(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = data?.contribuidores.length ?? 0;
+  const ativos = data?.contribuidores.filter((c) => c.isActive).length ?? 0;
+  const participaram = data?.contribuidores.filter(
+    (c) => c._count.createdInventories > 0,
+  ).length ?? 0;
+  const inativos = total - ativos;
+
+  // Quantos setores diferentes têm contribuidores cadastrados (cobertura)
+  const setoresCobertos = data
+    ? new Set(
+        data.contribuidores
+          .filter((c) => c.isActive && c.setor)
+          .map((c) => c.setor),
+      ).size
+    : 0;
+
+  // Cor da borda esquerda:
+  //   - neutral: 0 contribuidores
+  //   - success: tem ativos E pelo menos 1 já participou do Inventário
+  //   - warning: tem ativos mas ninguém participou ainda OU tem inativos
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : total === 0
+      ? "neutral"
+      : ativos > 0 && participaram > 0
+        ? "success"
+        : "warning";
+
+  return (
+    <div className="grid grid-cols-1 gap-4">
+      <ToolCard
+        icon={<Users className="h-6 w-6" />}
+        iconColor="text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/40"
+        title="Formação das Equipes"
+        description="Cadastro dos colaboradores que vão atuar no programa — contribuidores responsáveis por mapear os processos do próprio setor no Inventário. O DPO Principal/Substituto cria as contas e o sistema gera senha temporária de primeiro acesso."
+        progressColor={color}
+        loading={loading}
+        primaryAction={{
+          label: total > 0 ? "Gerenciar contribuidores" : "Cadastrar primeiro contribuidor",
+          href: "/dashboard/contribuidores",
+        }}
+        stats={
+          forbidden
+            ? []
+            : data && total > 0
+              ? [
+                  {
+                    label: "contribuidor(es) cadastrado(s)",
+                    value: total,
+                    icon: <Users className="h-3.5 w-3.5" />,
+                  },
+                  {
+                    label: "ativo(s)",
+                    value: ativos,
+                    color: ativos > 0 ? "emerald" : "default",
+                    icon: <UserCheck className="h-3.5 w-3.5" />,
+                  },
+                  ...(participaram > 0
+                    ? [
+                        {
+                          label: "já participaram do Inventário",
+                          value: participaram,
+                          color: "emerald" as const,
+                          icon: <ClipboardList className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(setoresCobertos > 0
+                    ? [
+                        {
+                          label: `setor(es) com contribuidor`,
+                          value: setoresCobertos,
+                          color: "blue" as const,
+                          icon: <Target className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(inativos > 0
+                    ? [
+                        {
+                          label: "inativo(s)",
+                          value: inativos,
+                          color: "amber" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : []
+        }
+        emptyHint={
+          forbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : total === 0
+              ? "Nenhum contribuidor cadastrado. Cadastre pelo menos 1 colaborador por setor pra delegar o mapeamento dos processos no Inventário."
+              : ativos > 0 && participaram === 0
+                ? undefined
+                : undefined
         }
       />
     </div>
