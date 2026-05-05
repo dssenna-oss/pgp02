@@ -41,6 +41,8 @@ import { roleLabel, isDPO } from "@/lib/auth-helpers";
 import NotificationBell from "./notification-bell";
 import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
+import TourProvider from "@/components/tour/tour-provider";
+import TourFloatingButton from "@/components/tour/tour-floating-button";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
 const APP_BRAND = "LGPD - PGP";
@@ -207,11 +209,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/entendendo-pgp", 
       icon: BookOpen
     },
-    { 
-      name: "🚩 Fase Preliminar", 
+    {
+      name: "🚩 Fase Preliminar",
       description: "📝 Sensibilização e Engajamento",
-      href: "/dashboard/fase-preliminar", 
-      icon: Shield
+      href: "/dashboard/fase-preliminar",
+      icon: Shield,
+      tourId: "nav-fase-preliminar",
     },
     { 
       name: "🚩 Fase 1", 
@@ -274,6 +277,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/riscos",
       icon: ShieldAlert,
       dpoOnly: true,
+      tourId: "nav-riscos",
     },
     {
       name: "GAP Analysis",
@@ -295,6 +299,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/maturidade-pgp",
       icon: Sparkles,
       dpoOnly: true,
+      tourId: "nav-maturidade",
     },
     {
       name: "Plano de Ação",
@@ -302,6 +307,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/plano-acao",
       icon: Target,
       // Visível também pra Contribuidor (vê só ações onde é responsável)
+      tourId: "nav-plano-acao",
     },
     {
       name: "Políticas",
@@ -309,6 +315,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/politicas",
       icon: FileTextIcon,
       dpoOnly: true,
+      tourId: "nav-politicas",
     },
     {
       name: "RIPD",
@@ -430,7 +437,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 bg-white dark:bg-gray-800 overflow-y-auto">
+      <nav
+        data-tour-id={mobile ? undefined : "sidebar"}
+        className="flex-1 px-4 py-4 space-y-1 bg-white dark:bg-gray-800 overflow-y-auto"
+      >
         {navigation
           .filter((item) => {
             // Filtrar itens admin (sistema CMS — só super admin antigo)
@@ -450,6 +460,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
             <Link
               key={item.name}
               href={item.href}
+              data-tour-id={!mobile && (item as any).tourId ? (item as any).tourId : undefined}
               className={cn(
                 "flex items-start gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
@@ -539,6 +550,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
   );
 
   return (
+    <TourProvider>
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block bg-white dark:bg-gray-800 shadow-sm relative z-20">
@@ -616,6 +628,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           onClose={() => setQuickIncidentOpen(false)}
         />
       )}
+
+      {/* Botão flutuante "Fazer tour guiado" (Checkpoint 20 / Fatia 1) */}
+      <TourFloatingButton />
     </div>
+    </TourProvider>
   );
 }

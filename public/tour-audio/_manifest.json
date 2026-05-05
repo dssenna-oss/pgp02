@@ -1,0 +1,66 @@
+{
+  "01-welcome": {
+    "id": "01-welcome",
+    "text": "Olá! Bem-vindo ao Programa de Governança em Privacidade. Este tour vai te apresentar as principais funcionalidades em poucos minutos. Você pode pausar ou pular a qualquer momento.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:44.774Z",
+    "bytes": 184782
+  },
+  "02-sidebar": {
+    "id": "02-sidebar",
+    "text": "Esta é a sua barra de navegação. Por aqui você acessa todas as ferramentas do programa: as fases didáticas, o inventário de processos, a análise de riscos, e os instrumentos formais.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:46.575Z",
+    "bytes": 208187
+  },
+  "03-fases": {
+    "id": "03-fases",
+    "text": "O programa é dividido em fases sequenciais, da preliminar até a sétima. Cada fase tem conteúdo didático, checklist, documentação e uma ferramenta nativa pra colocar em prática. Avance no seu ritmo.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:48.776Z",
+    "bytes": 248311
+  },
+  "04-riscos": {
+    "id": "04-riscos",
+    "text": "A partir do Inventário, o sistema gera análise de riscos, GAP Analysis e diagnóstico de privacidade automaticamente. Você não precisa preencher tudo manualmente.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:50.438Z",
+    "bytes": 182274
+  },
+  "05-plano": {
+    "id": "05-plano",
+    "text": "Cada pendência identificada vira uma ação no Plano de Ação. Acompanhe prazos, responsáveis, prioridades, e exporte evidências para a auditoria da ANPD.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:51.953Z",
+    "bytes": 174333
+  },
+  "06-politicas": {
+    "id": "06-politicas",
+    "text": "Quando o programa amadurece, você publica políticas, RIPDs, contratos com terceiros e a Política do PGP — todos os documentos exigidos pela ANPD.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:53.542Z",
+    "bytes": 195648
+  },
+  "07-maturidade": {
+    "id": "07-maturidade",
+    "text": "O Painel de Maturidade mostra o estágio do programa em tempo real, com cinco pilares ponderados, status das oito fases e pendências críticas pra resolver.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:54.911Z",
+    "bytes": 156360
+  },
+  "08-fechamento": {
+    "id": "08-fechamento",
+    "text": "Você pode refazer este tour a qualquer momento pelo botão flutuante no canto inferior direito. Boas práticas e ótima jornada no PGP!",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-05T23:30:56.335Z",
+    "bytes": 149673
+  }
+}
