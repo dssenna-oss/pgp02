@@ -69,13 +69,13 @@ export async function GET(req: NextRequest) {
 
   // Stats agregadas
   const totalPublicCount = await prisma.forumPost.count({
-    where: { companyId: user.companyId, active: true, recipientId: null },
+    where: { companyId: user.companyId ?? undefined, active: true, recipientId: null },
   });
   const myPublicReadsCount = await prisma.forumPostRead.count({
     where: {
       userId: user.id,
       post: {
-        companyId: user.companyId,
+        companyId: user.companyId ?? undefined,
         active: true,
         recipientId: null,
       },
