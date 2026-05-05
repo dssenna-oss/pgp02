@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { ListChecks, Loader2, Save, Edit2, X, Lock, Code, Type } from "lucide-react";
+import { ListChecks, Loader2, Save, Edit2, X, Lock, Code, Type, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 
@@ -91,6 +91,10 @@ export default function PhaseChecklist({ phase, sections: initialSections, noCar
   const [editing, setEditing] = useState(false);
   const [editMode, setEditMode] = useState<'html' | 'text'>('html'); // Novo estado para controlar modo de edição
   const [editableContent, setEditableContent] = useState("");
+
+  // CP19 Fatia 3 — UI: esconder concluídos + accordion por seção (só noCard)
+  const [hideCompleted, setHideCompleted] = useState(false);
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
   
   // Verifica se o usuário é administrador
   const isAdmin = session?.user?.email === "clubedoservidor@protonmail.com";
@@ -98,6 +102,38 @@ export default function PhaseChecklist({ phase, sections: initialSections, noCar
   useEffect(() => {
     loadChecklistState();
   }, [phase]);
+
+  // Default: 1ª seção aberta. Quando sections muda (depois de loadChecklistState),
+  // re-aplica esse default se ainda não tiver nenhum estado.
+  useEffect(() => {
+    if (sections.length > 0 && openSections.size === 0) {
+      setOpenSections(new Set([sections[0].id]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections.length]);
+
+  // Toggle accordion de uma seção do checklist
+  function toggleSection(id: string) {
+    setOpenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function expandAllSections() {
+    setOpenSections(new Set(sections.map((s) => s.id)));
+  }
+  function collapseAllSections() {
+    setOpenSections(new Set());
+  }
+
+  // Stats por seção (pra header com progresso individual)
+  function sectionStats(section: ChecklistSection): { done: number; total: number; pct: number } {
+    const total = section.items.length;
+    const done = section.items.filter((i) => i.checked).length;
+    return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
+  }
 
   const loadChecklistState = async () => {
     try {
@@ -454,14 +490,127 @@ export default function PhaseChecklist({ phase, sections: initialSections, noCar
               </Button>
             </div>
           </div>
+        ) : noCard ? (
+          // CP19 Fatia 3 — Render compacto: barra de progresso global,
+          // toggle "Esconder concluídos", accordion por categoria com
+          // contador "X/Y" e barra de progresso individual no header.
+          <div className="space-y-3">
+            {/* Toolbar mini: hide completed + expand/collapse all sections */}
+            <div className="flex flex-wrap items-center gap-3 text-xs pb-2 border-b dark:border-gray-700">
+              <label className="flex items-center gap-1.5 cursor-pointer text-gray-600 dark:text-gray-400">
+                <Checkbox
+                  checked={hideCompleted}
+                  onCheckedChange={(c) => setHideCompleted(!!c)}
+                  className="h-3.5 w-3.5"
+                />
+                Esconder concluídos
+              </label>
+              <span className="text-gray-300 dark:text-gray-700">·</span>
+              <button type="button" onClick={expandAllSections} className="text-blue-600 dark:text-blue-400 hover:underline">
+                Expandir todas
+              </button>
+              <button type="button" onClick={collapseAllSections} className="text-gray-600 dark:text-gray-400 hover:underline">
+                Recolher todas
+              </button>
+            </div>
+
+            {/* Sections como sub-accordions */}
+            {sections.map((section) => {
+              const stats = sectionStats(section);
+              const isOpen = openSections.has(section.id);
+              const isComplete = stats.total > 0 && stats.done === stats.total;
+              const visibleItems = hideCompleted
+                ? section.items.filter((i) => !i.checked)
+                : section.items;
+              return (
+                <div
+                  key={section.id}
+                  className={`border dark:border-gray-700 rounded-md overflow-hidden ${
+                    isComplete ? "border-emerald-300 dark:border-emerald-900/50" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    aria-expanded={isOpen}
+                    className="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                  >
+                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100 flex-1 min-w-0 break-words">
+                      {section.title}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-xs font-medium ${
+                          isComplete
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        {stats.done}/{stats.total}
+                      </span>
+                      <div className="hidden sm:block w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full transition-all ${
+                            isComplete ? "bg-emerald-500" : stats.done > 0 ? "bg-blue-500" : "bg-gray-400"
+                          }`}
+                          style={{ width: `${stats.pct}%` }}
+                        />
+                      </div>
+                      <ChevronDownIcon open={isOpen} />
+                    </div>
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ease-in-out ${
+                      isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-4 pb-3 pt-1 space-y-1.5">
+                        {visibleItems.length === 0 && (
+                          <p className="text-xs italic text-gray-500 dark:text-gray-400">
+                            {hideCompleted ? "Tudo concluído nesta categoria 🎉" : "Sem itens"}
+                          </p>
+                        )}
+                        {visibleItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-start space-x-2.5 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            <Checkbox
+                              id={item.id}
+                              checked={item.checked}
+                              onCheckedChange={(checked) =>
+                                handleCheckboxChange(section.id, item.id, checked as boolean)
+                              }
+                              className="mt-0.5"
+                            />
+                            <label
+                              htmlFor={item.id}
+                              className={`text-sm cursor-pointer flex-1 ${
+                                item.checked
+                                  ? "text-gray-500 dark:text-gray-400 line-through"
+                                  : "text-gray-700 dark:text-gray-300"
+                              }`}
+                            >
+                              {item.label}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          // Exibir checklist interativo com checkboxes
+          // Render legado (modo Card sem noCard)
           sections.map((section) => (
             <div key={section.id} className="space-y-3">
               <h4 className="font-semibold text-lg text-gray-900 dark:text-white">
                 {section.title}
               </h4>
-              
+
               <div className="space-y-3 pl-2">
                 {section.items.map((item) => (
                   <div
@@ -494,5 +643,14 @@ export default function PhaseChecklist({ phase, sections: initialSections, noCar
         )}
       </Content>
     </Wrapper>
+  );
+}
+
+// Sub-componente local — chevron rotacionado
+function ChevronDownIcon({ open }: { open: boolean }) {
+  return (
+    <ChevronDown
+      className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+    />
   );
 }
