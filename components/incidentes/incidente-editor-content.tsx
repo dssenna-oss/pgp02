@@ -33,7 +33,9 @@ import {
   Download,
   Loader2,
   History,
+  Activity,
 } from "lucide-react";
+import IncidentTimeline from "./incident-timeline";
 import { isDPO } from "@/lib/auth-helpers";
 import { notifySidebarRefresh } from "@/lib/sidebar-events";
 import {
@@ -484,6 +486,10 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
           <TabsTrigger value="tecnico">Técnico</TabsTrigger>
           <TabsTrigger value="risco">Risco</TabsTrigger>
           <TabsTrigger value="comm">Comunicações</TabsTrigger>
+          <TabsTrigger value="timeline">
+            <Activity className="h-3.5 w-3.5 mr-1" />
+            Timeline
+          </TabsTrigger>
           <TabsTrigger value="encerramento">Encerramento</TabsTrigger>
         </TabsList>
 
@@ -835,6 +841,21 @@ export default function IncidenteEditorContent({ session, incidentId }: Props) {
                 </Button>
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        {/* ----- Timeline (E3) ----- */}
+        <TabsContent value="timeline" className="space-y-4 mt-4">
+          <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/30">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Activity className="h-4 w-4 text-blue-600" />
+              Linha do Tempo do Incidente
+            </h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+              Eventos do ciclo de vida agregados em ordem cronológica decrescente.
+              Útil pra apresentar à ANPD ou auditoria como evidência da resposta.
+            </p>
+            <IncidentTimeline incident={incident} />
           </div>
         </TabsContent>
 
