@@ -23,14 +23,40 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email e senha são obrigatórios");
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          },
-          include: {
-            company: true
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            },
+            include: {
+              company: true
+            }
+          });
+        } catch (err: any) {
+          // Diferencia falha de conexão (banco offline / credenciais do
+          // DB erradas / pooler caído) de credenciais de USUÁRIO inválidas.
+          // Sem isso, qualquer indisponibilidade do banco aparece como
+          // "Credenciais inválidas" e leva o usuário a achar que digitou
+          // senha errada quando o problema é infra.
+          const code = err?.code;
+          const msg = String(err?.message ?? "");
+          if (
+            code === "P1001" ||  // Can't reach database server
+            code === "P1002" ||  // Database connection timed out
+            code === "P1008" ||  // Operations timed out
+            code === "P1010" ||  // User was denied access
+            code === "P1017" ||  // Server closed the connection
+            msg.includes("reach database") ||
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("timed out")
+          ) {
+            console.error("[auth] Banco indisponível durante login:", code || msg);
+            throw new Error("Banco de dados indisponível. Tente novamente em alguns segundos ou contate o administrador.");
           }
-        });
+          // Erro genuinamente inesperado — propaga sem mascarar.
+          throw err;
+        }
 
         if (!user || !user.password) {
           throw new Error("Credenciais inválidas");
