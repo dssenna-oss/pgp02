@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -729,9 +729,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       {/* Botão flutuante "Fazer tour guiado" (Checkpoint 20 / Fatia 1) */}
       <TourFloatingButton />
 
-      {/* Busca global Spotlight nas Fases (Ctrl+K) — CP25 */}
+      {/* Busca global Spotlight nas Fases (Ctrl+K) — CP25.
+          Suspense em volta do DeepLink: useSearchParams() exige boundary
+          no Next.js 14.2 pra builds estáticos não falharem. */}
       <PhaseSearchModal />
-      <PhaseSearchDeepLink />
+      <Suspense fallback={null}>
+        <PhaseSearchDeepLink />
+      </Suspense>
     </div>
     </TourProvider>
   );

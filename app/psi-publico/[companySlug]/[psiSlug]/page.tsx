@@ -17,9 +17,9 @@ import { TEXTAREA_FIELDS, CONTROL_LABELS } from "@/lib/psi-diff";
 export default async function PublicPsiPage({
   params,
 }: {
-  params: { companySlug: string; psiSlug: string };
+  params: Promise<{ companySlug: string; psiSlug: string }>;
 }) {
-  const { companySlug, psiSlug } = params;
+  const { companySlug, psiSlug } = await params;
 
   const company = await prisma.company.findUnique({
     where: { slug: companySlug },
@@ -176,9 +176,9 @@ function FieldRow({ label, value }: { label: string; value: string }) {
 export async function generateMetadata({
   params,
 }: {
-  params: { companySlug: string; psiSlug: string };
+  params: Promise<{ companySlug: string; psiSlug: string }>;
 }) {
-  const { companySlug, psiSlug } = params;
+  const { companySlug, psiSlug } = await params;
   const company = await prisma.company.findUnique({
     where: { slug: companySlug },
     select: { id: true, companyName: true, tradeName: true },
