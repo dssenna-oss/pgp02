@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
-import LiaEditorPlaceholder from "@/components/lia/lia-editor-placeholder";
+import LiaEditorContent from "@/components/lia/lia-editor-content";
 
 export default async function LiaEditorPage({
   params,
@@ -14,7 +14,7 @@ export default async function LiaEditorPage({
 
   return (
     <DashboardLayout session={session}>
-      <LiaEditorPlaceholder liaId={params.id} />
+      <LiaEditorContent liaId={params.id} />
     </DashboardLayout>
   );
 }
