@@ -138,6 +138,16 @@ export interface MaturityInput {
     /** Controles delegados à TI ainda sem resposta final. */
     delegadosTi: number;
   };
+
+  /** PSI — Política de Segurança da Informação (Checkpoint 26).
+   * Documento institucional. Não vira pilar separado; aparece como
+   * pendência crítica se a empresa não tem PSI aprovada. */
+  psi: {
+    total: number;
+    aprovadas: number;
+    rascunhos: number;
+    emRevisao: number;
+  };
 }
 
 // ============================================================
@@ -815,6 +825,23 @@ function computeCriticalPending(
       message:
         "Avaliação de Maturidade Cibernética NIST CSF ainda não foi iniciada. Recomendado complementar a avaliação LGPD.",
       href: "/dashboard/maturidade-cyber",
+    });
+  }
+
+  // PSI (Checkpoint 26) — pendências críticas
+  if (i.psi.aprovadas === 0) {
+    out.push({
+      severity: "alta",
+      message:
+        "Política de Segurança da Informação (PSI) ainda não aprovada — exigida pelo Art. 50 §1º LGPD como parte do programa de governança.",
+      href: "/dashboard/psi",
+    });
+  }
+  if (i.psi.emRevisao > 0) {
+    out.push({
+      severity: "media",
+      message: `${i.psi.emRevisao} PSI(s) aguardando revisão do DPO.`,
+      href: "/dashboard/psi",
     });
   }
 

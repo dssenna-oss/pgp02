@@ -363,6 +363,9 @@ export interface PsiDTO {
   publishedAt: string | null;
   publishedVersionNum: number | null;
   publicSlug: string | null;
+  /** URL pública /psi-publico/<companySlug>/<psiSlug> — null se não aprovada
+   *  ou empresa não tem slug. */
+  publicUrl: string | null;
   createdBy: { id: string; name: string | null; email: string } | null;
   createdAt: string;
   updatedAt: string;
@@ -384,6 +387,7 @@ interface PsiRow {
   publishedAt: Date | null;
   publishedVersionNum: number | null;
   publicSlug: string | null;
+  company?: { slug: string | null } | null;
   createdBy?: { id: string; name: string | null; email: string } | null;
   createdAt: Date;
   updatedAt: Date;
@@ -394,6 +398,11 @@ interface PsiRow {
 export function psiToDTO(r: PsiRow): PsiDTO {
   const data = normalizePsiData(r.data);
   const versionCount = r._count?.versions ?? r.versions?.length ?? 0;
+  // URL pública só faz sentido se a PSI foi aprovada E a empresa tem slug
+  const publicUrl =
+    r.status === "APROVADO" && r.publicSlug && r.company?.slug
+      ? `/psi-publico/${r.company.slug}/${r.publicSlug}`
+      : null;
   return {
     id: r.id,
     companyId: r.companyId,
@@ -408,6 +417,7 @@ export function psiToDTO(r: PsiRow): PsiDTO {
     publishedAt: r.publishedAt ? r.publishedAt.toISOString() : null,
     publishedVersionNum: r.publishedVersionNum,
     publicSlug: r.publicSlug,
+    publicUrl,
     createdBy: r.createdBy ?? null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
@@ -419,6 +429,7 @@ export function psiToDTO(r: PsiRow): PsiDTO {
 export const PSI_FULL_INCLUDE = {
   approvedBy: { select: { id: true, name: true, email: true } },
   createdBy: { select: { id: true, name: true, email: true } },
+  company: { select: { slug: true } },
   _count: { select: { versions: true } },
 } as const;
 

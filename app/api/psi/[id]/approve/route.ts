@@ -8,6 +8,7 @@ import {
   canApprovePsi,
   PSI_FULL_INCLUDE,
 } from "@/lib/psi-helpers";
+import { ensureCompanySlug } from "@/lib/policies-helpers";
 
 /**
  * POST /api/psi/[id]/approve
@@ -67,6 +68,9 @@ export async function POST(
 
   const nextVersionNum = (psi.publishedVersionNum ?? 0) + 1;
   const now = new Date();
+
+  // Garante que a empresa tem slug (necessário pra gerar URL pública)
+  await ensureCompanySlug(user.companyId);
 
   const updated = await prisma.$transaction(async (tx) => {
     await tx.psiVersion.create({

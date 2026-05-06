@@ -32,6 +32,7 @@ import {
   ShieldCheck,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -426,6 +427,18 @@ export default function PsiEditorContent({ psiId }: PsiEditorContentProps) {
                 <Printer className="h-4 w-4" />
                 PDF
               </Button>
+              {psi.publicUrl && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(psi.publicUrl!, "_blank")}
+                  className="gap-1 border-cyan-300 text-cyan-700 hover:bg-cyan-50 dark:border-cyan-700 dark:text-cyan-300"
+                  title="URL pública sem auth — copie e divulgue pra colaboradores"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Página pública
+                </Button>
+              )}
             </div>
           </div>
 
