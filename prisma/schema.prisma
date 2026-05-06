@@ -105,6 +105,11 @@ model User {
   createdCyberSnapshots  CyberSnapshot[]   @relation("CyberSnapshotCreatedBy")
   delegatedCyberQuestions CyberAnswer[]    @relation("CyberDelegatedTo")
 
+  // PSI — Política de Segurança da Informação (Checkpoint 26)
+  createdPsis         Psi[]         @relation("PsiCreatedBy")
+  approvedPsis        Psi[]         @relation("PsiApprovedBy")
+  approvedPsiVersions PsiVersion[]  @relation("PsiVersionApprovedBy")
+
   // Gestão de Terceiros (Checkpoint 14) — operadores que cadastrei e
   // operadores onde sou o responsável interno
   createdOperators     Operator[]    @relation("OperatorCreatedBy")
@@ -169,6 +174,7 @@ model Company {
   actionPlans       ActionPlan[]
   policies          Policy[]
   lias              Lia[]
+  psis              Psi[]
   cyberAnswers      CyberAnswer[]
   cyberSnapshots    CyberSnapshot[]
   ripds            Ripd[]
@@ -1925,3 +1931,89 @@ model CyberSnapshot {
   @@map("cyber_snapshots")
 }
 
+/// =============================================================
+/// PSI — Política de Segurança da Informação (Checkpoint 26)
+/// =============================================================
+///
+/// Documento institucional formal que descreve as medidas técnicas e
+/// organizacionais de segurança da informação. Cumpre LGPD Art. 50 §1º
+/// (programa de governança) e referencia ISO/IEC 27001/27002 + NIST CSF.
+///
+/// 7 seções estruturadas (vide `lib/psi-templates.ts`):
+///   1. Governança e Responsabilidades
+///   2. Gestão de Ativos
+///   3. Controle de Acesso
+///   4. Criptografia e Proteção de Dados
+///   5. Segurança Física e Ambiental
+///   6. Gestão de Incidentes (referencia mini-app de Incidentes CP16)
+///   7. Continuidade e Recuperação
+///
+/// Workflow: Contribuidor → DPO (igual RIPD/LIA/Políticas).
+/// Versionamento por snapshot a cada aprovação (PsiVersion).
+/// Pré-população opcional dos scores do NIST CSF (CP22).
+model Psi {
+  id                  String       @id @default(cuid())
+  companyId           String
+  company             Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Título do documento (ex.: "PSI v2026.1 — ACME Tecnologia").
+  title               String
+
+  /// "RASCUNHO" | "EM_REVISAO" | "APROVADO" | "ARQUIVADO"
+  status              String       @default("RASCUNHO")
+
+  /// Conteúdo das 7 seções — ver PsiData em lib/psi-helpers.ts.
+  data                Json
+
+  /// Nota do DPO ao rejeitar (volta o doc pra RASCUNHO).
+  rejectionNote       String?      @db.Text
+
+  // ---------- Aprovação ----------
+  approvedById        String?
+  approvedBy          User?        @relation("PsiApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt          DateTime?
+
+  // ---------- Versionamento (snapshot a cada aprovação) ----------
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+
+  /// Slug único pra URL pública `/psi/<companySlug>/<psiSlug>`.
+  /// Reusado a cada nova versão da MESMA PSI.
+  publicSlug          String?      @unique
+
+  versions            PsiVersion[]
+
+  // ---------- Auditoria ----------
+  createdById         String
+  createdBy           User         @relation("PsiCreatedBy", fields: [createdById], references: [id])
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdById])
+  @@map("psis")
+}
+
+/// Snapshot de uma versão aprovada da PSI. 1 linha = 1 aprovação.
+/// Preserva o conteúdo congelado pra histórico, comparação word-level e rollback.
+model PsiVersion {
+  id           String   @id @default(cuid())
+  psiId        String
+  psi          Psi      @relation(fields: [psiId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version      Int
+  /// Conteúdo congelado (mesma estrutura JSON de Psi.data).
+  content      Json
+  /// Changelog opcional descrito pelo DPO ao aprovar.
+  changeLog    String?  @db.Text
+
+  approvedAt   DateTime @default(now())
+  approvedById String
+  approvedBy   User     @relation("PsiVersionApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([psiId, version])
+  @@index([psiId, approvedAt])
+  @@map("psi_versions")
+}
