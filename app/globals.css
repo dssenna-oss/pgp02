@@ -332,3 +332,19 @@
 .pgp-tour-word.spoken {
   color: rgba(224, 231, 255, 0.55);
 }
+
+/* CP25 — Highlight pesquisável nas Fases. Pulsa amarelo por ~4s
+   após chegar via deep-link da busca global, depois desaparece. */
+.pgp-search-deep-highlight {
+  background-color: rgba(253, 224, 71, 0.85); /* amber-300 */
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.45);
+  animation: pgp-search-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pgp-search-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.45); }
+  50%      { box-shadow: 0 0 0 4px rgba(253, 224, 71, 0.20); }
+}

@@ -33,7 +33,8 @@ import {
   FileCheck2,
   Handshake,
   Sparkles,
-  GraduationCap
+  GraduationCap,
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -43,6 +44,8 @@ import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
 import TourProvider from "@/components/tour/tour-provider";
 import TourFloatingButton from "@/components/tour/tour-floating-button";
+import PhaseSearchModal from "@/components/fases/phase-search-modal";
+import PhaseSearchDeepLink from "@/components/fases/phase-search-deeplink";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
 const APP_BRAND = "LGPD - PGP";
@@ -444,6 +447,20 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
               que é quem tem ações sobre incidentes/RIPDs/operadores. */}
           {isDPO(session?.user?.role) && <NotificationBell />}
         </div>
+        {/* Busca global nas Fases (CP25) — abre modal Spotlight tipo Cmd+K. */}
+        <button
+          onClick={() => window.dispatchEvent(new Event("pgp:open-phase-search"))}
+          className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-xs font-medium text-gray-700 dark:text-gray-200 transition-colors"
+          title="Buscar nas Fases (Ctrl+K)"
+        >
+          <span className="flex items-center gap-2">
+            <Search className="h-3.5 w-3.5" />
+            Buscar nas Fases…
+          </span>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-500">
+            Ctrl K
+          </kbd>
+        </button>
         {/* Botão de emergência (Checkpoint 16 / H) — DPO pode acionar de
             qualquer tela; modal compacto cria incidente em segundos. */}
         {isDPO(session?.user?.role) && (
@@ -675,6 +692,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
 
       {/* Botão flutuante "Fazer tour guiado" (Checkpoint 20 / Fatia 1) */}
       <TourFloatingButton />
+
+      {/* Busca global Spotlight nas Fases (Ctrl+K) — CP25 */}
+      <PhaseSearchModal />
+      <PhaseSearchDeepLink />
     </div>
     </TourProvider>
   );

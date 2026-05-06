@@ -307,7 +307,11 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
 
   // Renderizar apenas seção Como Proceder
   if (section === "howto") {
-    return <HowToProceedSection />;
+    return (
+      <div data-phase-section-id="howto" className="scroll-mt-4">
+        <HowToProceedSection />
+      </div>
+    );
   }
 
   // Renderizar ambas as seções (comportamento padrão)
