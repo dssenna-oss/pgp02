@@ -34,8 +34,7 @@ import {
   Handshake,
   Sparkles,
   GraduationCap,
-  Search,
-  Lock
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -100,13 +99,6 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * Polling 60s.
    */
   const [liasPending, setLiasPending] = useState<number | null>(null);
-  /**
-   * PSIs pedindo ação do usuário (Checkpoint 26):
-   *   - DPO: PSIs em EM_REVISAO aguardando aprovação
-   *   - Contribuidor: PSIs próprias devolvidas com `rejectionNote`
-   * Polling 60s.
-   */
-  const [psisPending, setPsisPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -197,17 +189,6 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
-    const fetchPsisPending = async () => {
-      try {
-        const r = await fetch("/api/psi/pending-count", { cache: "no-store" });
-        if (!r.ok) return;
-        const j = await r.json();
-        if (!active) return;
-        setPsisPending(j.count ?? 0);
-      } catch {
-        // silencioso
-      }
-    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
@@ -215,7 +196,6 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       void fetchOperatorsPending();
       void fetchIncidentsPending();
       void fetchLiasPending();
-      void fetchPsisPending();
     };
 
     refreshAll();
@@ -381,13 +361,6 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/lia",
       icon: Scale,
       // Visível pra DPO + Contribuidor (DPO aprova; Contribuidor cria rascunho)
-    },
-    {
-      name: "PSI",
-      description: "Política de Segurança da Informação (LGPD Art. 50 + ISO 27001)",
-      href: "/dashboard/psi",
-      icon: Lock,
-      // Visível pra DPO + Contribuidor (DPO aprova; Contribuidor edita rascunho)
     },
     {
       name: "Gestão de Terceiros",
@@ -604,15 +577,6 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     liasPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-violet-500 text-white text-[10px] font-bold flex-shrink-0">
                         {liasPending}
-                      </span>
-                    )}
-                  {/* Badge de PSIs pedindo ação (CP26):
-                      DPO → contagem em EM_REVISAO; Contribuidor → próprias devolvidas. */}
-                  {item.href === "/dashboard/psi" &&
-                    psisPending !== null &&
-                    psisPending > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-cyan-600 text-white text-[10px] font-bold flex-shrink-0">
-                        {psisPending}
                       </span>
                     )}
                 </span>
