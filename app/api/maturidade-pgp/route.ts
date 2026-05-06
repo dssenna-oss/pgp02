@@ -64,7 +64,6 @@ export async function GET(_request: NextRequest) {
     incidents,
     lias,
     cyberAnswers,
-    psis,
   ] = await Promise.all([
     prisma.dataInventory.findMany({
       where: { companyId },
@@ -146,10 +145,6 @@ export async function GET(_request: NextRequest) {
     prisma.cyberAnswer.findMany({
       where: { companyId },
       select: { controlCode: true, aderencia: true },
-    }),
-    prisma.psi.findMany({
-      where: { companyId },
-      select: { status: true },
     }),
   ]);
 
@@ -363,12 +358,6 @@ export async function GET(_request: NextRequest) {
         delegadosTi: cyberAnswers.filter((c) => c.aderencia === "DELEGADO_TI").length,
       };
     })(),
-    psi: {
-      total: psis.length,
-      aprovadas: psis.filter((p) => p.status === "APROVADO").length,
-      rascunhos: psis.filter((p) => p.status === "RASCUNHO").length,
-      emRevisao: psis.filter((p) => p.status === "EM_REVISAO").length,
-    },
   };
 
   const result = computePgpMaturity(input);

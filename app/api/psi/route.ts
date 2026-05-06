@@ -12,8 +12,6 @@ import {
   generateUniquePsiSlug,
 } from "@/lib/psi-helpers";
 import { buildPsiSeed } from "@/lib/psi-templates";
-import { computeCyberScore } from "@/lib/cyber-helpers";
-import { enrichPsiWithCyber } from "@/lib/psi-prepopulate";
 
 /**
  * GET /api/psi
@@ -78,7 +76,6 @@ export async function POST(request: NextRequest) {
   }
 
   const useSeed = body?.useSeed !== false; // default true
-  const useNistData = body?.useNistData !== false; // default true
 
   // Pré-popula com template baseado no nome da empresa
   let data = emptyPsiData();
@@ -88,18 +85,6 @@ export async function POST(request: NextRequest) {
       select: { companyName: true },
     });
     data = buildPsiSeed(company?.companyName ?? null);
-
-    // Enriquece com dados da Maturidade Cibernética NIST CSF (CP22), se houver
-    if (useNistData) {
-      const cyberAnswers = await prisma.cyberAnswer.findMany({
-        where: { companyId: user.companyId },
-        select: { controlCode: true, aderencia: true },
-      });
-      if (cyberAnswers.length > 0) {
-        const score = computeCyberScore(cyberAnswers);
-        data = enrichPsiWithCyber(data, score);
-      }
-    }
   }
 
   const publicSlug = await generateUniquePsiSlug(title);
