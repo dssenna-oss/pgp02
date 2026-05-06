@@ -1,0 +1,4 @@
+# Arquivos uploadados localmente (fallback de dev sem Vercel Blob).
+# Não commitar — ficam só na máquina do dev. Em produção usa Vercel Blob.
+*
+!.gitignore
