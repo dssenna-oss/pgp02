@@ -95,6 +95,11 @@ model User {
   approvedRipds        Ripd[]        @relation("RipdApprovedBy")
   approvedRipdVersions RipdVersion[] @relation("RipdVersionApprovedBy")
 
+  // LIA — Avaliação de Legítimo Interesse (Checkpoint 21)
+  createdLias         Lia[]         @relation("LiaCreatedBy")
+  approvedLias        Lia[]         @relation("LiaApprovedBy")
+  approvedLiaVersions LiaVersion[]  @relation("LiaVersionApprovedBy")
+
   // Gestão de Terceiros (Checkpoint 14) — operadores que cadastrei e
   // operadores onde sou o responsável interno
   createdOperators     Operator[]    @relation("OperatorCreatedBy")
@@ -158,6 +163,7 @@ model Company {
   gapSnapshots      GapSnapshot[]
   actionPlans       ActionPlan[]
   policies          Policy[]
+  lias              Lia[]
   ripds            Ripd[]
   operators        Operator[]
   documents        Document[]
@@ -252,6 +258,10 @@ model DataInventory {
   // processo pode ter 0..N RIPDs (raro ter mais de 1 ativo, mas
   // versões + arquivados acumulam).
   ripds Ripd[]
+
+  // LIAs vinculados ao processo (Checkpoint 21). Tipicamente 0..1 ativo
+  // por processo (1 LIA aprovada cobre o tratamento). Histórico acumula.
+  lias  Lia[]
 
   // Operadores/Terceiros vinculados a este processo (Checkpoint 14).
   // Cada vínculo descreve qual atividade o operador faz no processo.
@@ -837,6 +847,92 @@ model RipdVersion {
   @@unique([ripdId, version])
   @@index([ripdId, approvedAt])
   @@map("ripd_versions")
+}
+
+/// LIA — Avaliação de Legítimo Interesse (Checkpoint 21).
+///
+/// Documenta o teste de balanceamento exigido pelo Art. 10 §3º LGPD quando
+/// a base legal escolhida é o Art. 7º IX (legítimo interesse do controlador).
+///
+/// Estrutura clássica em 3 etapas (modelo ANPD/GDPR):
+///   1. Finalidade   — o interesse é legítimo, lícito e específico?
+///   2. Necessidade  — o tratamento é necessário? Há alternativa menos invasiva?
+///                     Bloqueante: dados sensíveis ou de crianças/adolescentes
+///                     vetam Art. 7º IX (Arts. 11 e 14 LGPD).
+///   3. Balanceamento — o interesse prevalece sobre direitos/expectativas
+///                       do titular? Quais salvaguardas mitigam impactos?
+///
+/// Workflow idêntico ao RIPD/Políticas:
+///   RASCUNHO → EM_REVISAO → APROVADO → ARQUIVADO  (cada aprovação cria LiaVersion)
+///   EM_REVISAO → RASCUNHO via rejeição com `rejectionNote`
+///
+/// `data` (JSON) é tipado por `LiaData` em `lib/lia-helpers.ts`.
+model Lia {
+  id                  String         @id @default(cuid())
+  companyId           String
+  company             Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Processo do Inventário origem do tratamento (opcional — LIAs avulsos
+  /// permitidos, mas o normal é estarem vinculados). SetNull se o processo
+  /// for excluído pra preservar histórico.
+  inventoryId         String?
+  inventory           DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  title               String
+
+  /// "RASCUNHO" | "EM_REVISAO" | "APROVADO" | "ARQUIVADO"
+  status              String         @default("RASCUNHO")
+
+  /// Conteúdo das 3 etapas — ver LiaData em lib/lia-helpers.ts
+  data                Json
+
+  /// Nota do DPO ao rejeitar (volta pra RASCUNHO).
+  rejectionNote       String?        @db.Text
+
+  // ---------- Aprovação ----------
+  approvedById        String?
+  approvedBy          User?          @relation("LiaApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt          DateTime?
+
+  // ---------- Versionamento (snapshot a cada aprovação) ----------
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+  versions            LiaVersion[]
+
+  // ---------- Auditoria ----------
+  createdById         String
+  createdBy           User           @relation("LiaCreatedBy", fields: [createdById], references: [id])
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdById])
+  @@index([inventoryId])
+  @@map("lias")
+}
+
+/// Snapshot de uma versão aprovada da LIA. 1 linha = 1 aprovação.
+/// Preserva o conteúdo congelado pra histórico, comparação word-level e rollback.
+model LiaVersion {
+  id           String   @id @default(cuid())
+  liaId        String
+  lia          Lia      @relation(fields: [liaId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version      Int
+  /// Conteúdo congelado (mesma estrutura JSON do Lia.data)
+  content      Json
+  /// Changelog opcional descrito pelo DPO ao aprovar.
+  changeLog    String?  @db.Text
+
+  approvedAt   DateTime @default(now())
+  approvedById String
+  approvedBy   User     @relation("LiaVersionApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([liaId, version])
+  @@index([liaId, approvedAt])
+  @@map("lia_versions")
 }
 
 /// Operador / Terceiro / Fornecedor — Gestão de Terceiros (Checkpoint 14).

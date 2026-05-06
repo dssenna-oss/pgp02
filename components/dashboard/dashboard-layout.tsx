@@ -89,6 +89,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * 72h em estado WARN (≤24h) ou CRITICAL (vencido). Polling 60s.
    */
   const [incidentsPending, setIncidentsPending] = useState<number | null>(null);
+  /**
+   * LIAs pedindo ação do usuário (Checkpoint 21):
+   *   - DPO: LIAs em EM_REVISAO aguardando aprovação
+   *   - Contribuidor: LIAs próprias devolvidas com `rejectionNote`
+   * Polling 60s.
+   */
+  const [liasPending, setLiasPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -168,12 +175,24 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchLiasPending = async () => {
+      try {
+        const r = await fetch("/api/lia/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setLiasPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
       void fetchRipdPending();
       void fetchOperatorsPending();
       void fetchIncidentsPending();
+      void fetchLiasPending();
     };
 
     refreshAll();
@@ -182,6 +201,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     const ripdId = setInterval(fetchRipdPending, 60000);
     const opsId = setInterval(fetchOperatorsPending, 60000);
     const incidentsId = setInterval(fetchIncidentsPending, 60000);
+    const liaId = setInterval(fetchLiasPending, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
@@ -190,6 +210,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       clearInterval(ripdId);
       clearInterval(opsId);
       clearInterval(incidentsId);
+      clearInterval(liaId);
       offEvent();
     };
   }, []);
@@ -323,6 +344,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/ripd",
       icon: FileCheck2,
       // Visível pra DPO + Contribuidor (cada um vê o que pode editar)
+    },
+    {
+      name: "LIA",
+      description: "Avaliação de Legítimo Interesse (Art. 7º IX)",
+      href: "/dashboard/lia",
+      icon: Scale,
+      // Visível pra DPO + Contribuidor (DPO aprova; Contribuidor cria rascunho)
     },
     {
       name: "Gestão de Terceiros",
@@ -516,6 +544,15 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     incidentsPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold flex-shrink-0 animate-pulse">
                         {incidentsPending}
+                      </span>
+                    )}
+                  {/* Badge de LIAs pedindo ação:
+                      DPO → contagem em EM_REVISAO; Contribuidor → próprias devolvidas. */}
+                  {item.href === "/dashboard/lia" &&
+                    liasPending !== null &&
+                    liasPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-violet-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {liasPending}
                       </span>
                     )}
                 </span>
