@@ -1,9 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-06 (CP19 refino UX + CP20 tour onboarding ElevenLabs + **CP21 LIA — Avaliação de Legítimo Interesse**) · **Branch:** `claude/inspiring-khorana-0a97d2` (worktree)
+> **Última sessão:** 2026-05-06 (CP25 Highlights pesquisáveis ✅ + CP26 PSI tentado/revertido) · **Branch:** `claude/laughing-feistel-0db9bb` (worktree)
 >
-> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas. **Etapa 20 (LIA) aplicada local; falta aplicar no Neon antes do push.** CP19 e CP20 não têm schema novo.
-> **`origin/main`:** ✅ último push CP20 (commits `ccdf191`, `65ebcc6`, `99fa3b5`). CP21 em branch local (3 commits) pendendo aplicação no Neon + validação visual.
+> **Em prod (`origin/main`)**: tudo até CP25 (`4e04b4e`) + Suspense fix (`bfa5721`) + 3 reverts de CP26 (`a61a58d`/`1e82e68`/`cec78cb`) + cleanup (`36333ac`). Vercel verde.
+>
+> **CP26 (PSI) — REVERTIDO mas código preservado no histórico do git** (`f93b7fe`/`732fa4e`/`8160898`). Pra retomar: `git revert` dos 3 reverts → PSI volta. Falta aplicar a Etapa 23 (`scripts/_migrate-psi.sql`) no Neon antes — esse foi o ponto de bloqueio. Detalhes do que foi entregue/revertido na seção CP26 abaixo.
+>
+> **Migração Neon:** ✅ Etapas 2 → 22 aplicadas. **Etapa 23 (PSI) NÃO aplicada** (CP26 ficou em hold).
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
@@ -24,6 +27,51 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-06 — tarde (CP25 ✅ em prod + CP26 PSI revertido)
+
+### CP25 — Busca textual Spotlight nas Fases (Ctrl+K) ✅ em prod
+
+Mini-modal estilo Spotlight acessível de qualquer tela. Varre Descrição + Considerações + Checklist + Documentação das 9 fases (~45k chars de conteúdo). Resultados agrupados por fase, snippet com termo em amarelo, click abre a fase + expande seção + scroll. Engine: `lib/phase-search.ts`. Catálogo gerado de defaults hardcoded: `scripts/generate-phase-content-index.ts` → `lib/phase-content-index.ts`. UI: `components/fases/phase-search-modal.tsx` + `phase-search-deeplink.tsx`. Plug no `dashboard-layout.tsx`. Sem schema. **Limitação conhecida**: highlight `<mark>` in-page após navegação é best-effort (pode ser sobrescrito pelo `dangerouslySetInnerHTML` do `HtmlSubAccordion`).
+
+### CP26 — PSI (Política de Segurança da Informação) — TENTADO E REVERTIDO
+
+**Foi entregue mas não chegou em prod.** Código preservado no git (commits `f93b7fe`/`732fa4e`/`8160898`) e revertido por `a61a58d`/`1e82e68`/`cec78cb`. Pra retomar é só `git revert` dos reverts.
+
+**O que foi feito (preservado no histórico)**:
+- Schema novo (Etapa 23): `psis` + `psi_versions` (paralelo ao RIPD/LIA)
+- 7 seções estruturadas (Governança · Ativos · Acesso · Criptografia · Físico · Incidentes · Continuidade) com textareas + controles checkbox
+- 8 APIs (CRUD + workflow Contribuidor→DPO + versions + pending-count + export DOCX + diff)
+- UI completa: lista, editor 8 abas (cabeçalho + 7 seções), modais de aprovar/rejeitar, versions, diff word-level, PDF print-friendly
+- Pré-população automática do NIST CSF (CP22): mapeia funções → seções, anota scores no texto, auto-marca controles aplicados quando função tem score ≥ 70%
+- URL pública sem auth `/psi-publico/<companySlug>/<psiSlug>` com layout institucional + tabela de controles
+- 5º card na Fase 6 (grid 2x3 — Políticas + RIPD + Terceiros + LIA + PSI)
+- Pendência crítica no Painel de Maturidade do PGP quando empresa não tem PSI aprovada (Art. 50 §1º LGPD)
+
+**Por que reverteu**: tentei aplicar a Etapa 23 no Neon e travamos:
+1. Vercel CLI `env pull` não expõe valores marcados "Sensitive" (DATABASE_URL fica vazio)
+2. SQL Editor do Neon abriu confusão visual com tabs residuais de execuções anteriores ("1: ALTER · 2: ALTER · 3: ERROR" do `ALTER ROLE` antigo) — gerou alarme falso e desconfiança
+3. Após várias tentativas falhas, user (justamente) pediu pra reverter
+
+**Como retomar PSI no futuro (caminho limpo proposto)**:
+- Opção A: Vercel CLI device login (já feito hoje — token ainda válido na máquina), MAS env pull não expõe sensíveis, então precisaria copiar URL manualmente
+- Opção B: SQL Editor Neon com NEW Untitled tab vazia (não reusar uma com histórico) — basta `cat scripts/_migrate-psi.sql`, paste, Run, ler resultado novo
+- Opção C: criar API key no Neon Console e usar via REST/CLI (mais limpo pra automatizar)
+- Opção D: criar uma rota one-shot tipo `/api/admin/run-migration` protegida por header secreto que aplica a migration via Prisma (mais invasivo mas 100% autônomo)
+
+### CP25 build fix (`bfa5721`) — preservado em prod
+
+CP25 introduziu `useSearchParams()` no `PhaseSearchDeepLink` plugado no `DashboardLayout`. Sem `<Suspense>` em volta, o `next build` falha durante "Generating static pages" com `useSearchParams() should be wrapped in a suspense boundary` em qualquer página estática que use o layout. Quebrou os deploys de CP25 E CP26. Fix: envolver em `<Suspense fallback={null}>`. **Lição registrada**: rodar `npm run build` LOCAL antes de cada push — `tsc --noEmit` não pega esse erro (ele só aparece na fase de geração estática).
+
+### Limpeza (`36333ac`)
+
+Removidos scripts utilitários consumidos:
+- `scripts/_create-admin.ts` (recovery PITR de 2026-05-05, banco já estável)
+- `scripts/_run-etapa18.ts` + `_run-etapa19.ts` (já aplicados no Neon)
+
+`.gitignore` ganhou `.vercel` (criado por `vercel link` da sessão).
 
 ---
 
@@ -578,7 +626,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 23 | ~~**Modo leitura overlay (CP19 polish)**~~ — Botão "📖 Modo leitura" no PhaseToolbar abre overlay tela cheia tipo Notion/Medium pra ler conteúdo da fase com tipografia serif espaçada. 3 temas (sépia/claro/escuro) + 3 tamanhos de fonte, persistência localStorage. Captura conteúdo das `<PhaseSection>` via DOM (sem API nova). Atalhos Esc/+/−. Sem schema novo. | ✅ FEITO 2026-05-06 |
 | 24 | ~~**Kanban checklist (CP19 polish)**~~ — Toggle Lista/Kanban dentro da seção Checklist das fases. Modo Kanban tem 3 colunas (Pendente/Em andamento/Feito) com drag-drop nativo HTML5. Estado persistido no `checklistState` existente (mesmo campo) usando string status em vez de boolean — retrocompat automática (load detecta string ou boolean). Cards mostram label + título da seção de origem. Persistência localStorage por fase pra preferência de modo. Sem schema novo, sem API nova. | ✅ FEITO 2026-05-06 |
 | 25 | ~~**Busca textual Spotlight nas Fases**~~ — Modal Cmd+K acessível de qualquer tela com botão fixo na sidebar. Varre Descrição + Considerações + Checklist + Documentação das 9 fases (45k chars de conteúdo extraídos via gerador `scripts/generate-phase-content-index.ts` dos `defaultContent` hardcoded). API `/api/phase-search?q=`. Resultados agrupados por fase com snippet + termo destacado em amarelo. Click → abre fase, expande seção (via localStorage), scroll suave. Sem schema novo. **Limitação conhecida**: o highlight `<mark>` in-page após navegação é best-effort — pode ser apagado pelo `dangerouslySetInnerHTML` do `HtmlSubAccordion` que rerenderiza a árvore (tentei MutationObserver pra reaplicar mas nem sempre vence a corrida com hidratação do React). Não é bloqueante porque o user já viu o snippet destacado no modal antes de clicar. | ✅ FEITO 2026-05-06 (em prod) |
-| 26+ | Segurança institucional (PSI) · Outros refinos | depois |
+| 26 | **PSI — Política de Segurança da Informação** — Mini-app (3 fatias: schema+APIs+lista / editor 7 abas + DOCX/PDF/diff + 5º card Fase 6 / NIST + URL pública + Maturidade). Entregue 2026-05-06 mas REVERTIDO no mesmo dia por bloqueio na aplicação Neon. Código preservado no git (commits `f93b7fe`/`732fa4e`/`8160898`). | 🟡 EM HOLD — retomar com Etapa 23 Neon aplicada (ver seção CP26 acima) |
+| 27+ | Outros refinos · Próximas features a definir | depois |
 
 ---
 
@@ -699,6 +748,8 @@ Se rotacionar de novo: atualizar AMBOS antes de redeploy. Vercel build usa direc
 12. **Neon tem 2 endpoints distintos pra cada branch**: `<id>.<region>.neon.tech` (direct, pra DDL/migrations) e `<id>-pooler.<region>.neon.tech` (pooler PgBouncer, pra runtime). Prisma CLI prefere direct; runtime serverless prefere pooler. `channel_binding=require` quebra Prisma 6.7 — remover do query string.
 13. **Vercel typecheck inclui `scripts/`** — `// @ts-nocheck` é válido pra arquivos legados. Rodar `npx tsc --noEmit` LOCAL antes do push pra evitar ciclos de fixes incrementais.
 14. **`prisma db execute --stdin` tem bug com pipe no Windows** (interpreta backslashes como escape SQL). Pra rodar SQL direto via Prisma no Windows, escrever um TS com `$executeRawUnsafe` e rodar via ts-node — padrão usado em `scripts/_run-etapa{17,18,19}.ts`.
+15. **`tsc --noEmit` NÃO pega `useSearchParams()` sem `<Suspense>` em layout compartilhado** — esse erro só aparece em `next build` na fase "Generating static pages", e quebra TODAS as páginas estáticas que herdam o layout. Sempre rodar `npm run build` LOCAL antes do push (não apenas typecheck). Aconteceu no CP25 (`bfa5721` foi o fix), e foi a causa indireta do bloqueio do CP26.
+16. **Vercel CLI `env pull` NÃO expõe valores marcados como "Sensitive"** — `vercel env pull` produz arquivo com `DATABASE_URL=""` (vazio) pra envs marcadas como sensíveis. `vercel env run` também não injeta os valores reais. Pra automatizar migrations no Neon, alternativas: API key Neon, SQL Editor manual, ou rota one-shot `/api/admin/run-migration` no próprio app.
 
 ---
 
@@ -716,17 +767,16 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 
 1. ~~**Rotacionar senha do Neon**~~ ✅ FEITO em 2026-05-05 (durante recovery PITR pós-incidente operacional)
 2. **Revogar PAT temporário do GitHub** se ainda estiver ativo
-3. **Validar prod** após o último deploy (`fdb8a84`): acessar https://lgpd-pgp.vercel.app e conferir `/dashboard/incidentes/[id]` (Timeline + multi-select Inventário/Operadores) + `/dashboard/capacitacao` (página nova) + sino no header
-4. **Limpar scripts utilitários temporários** quando não precisar mais:
-   - `scripts/_create-admin.ts` (recovery)
-   - `scripts/_reset-admin-password.ts` (recovery)
-   - `scripts/_run-etapa18.ts` e `_run-etapa19.ts` (já aplicados)
-   - `scripts/_check-tables.ts` e `_check-etapa17.ts` (não commitados — só dev)
-5. **Atualizar `MEMORY.md`** com entradas pra CP18 (Capacitação) e fechamento do CP16
+3. **Validação visual em prod** (rápida, quando logar): conferir que `/dashboard` carrega · sidebar tem "Buscar nas Fases…" com `Ctrl K` · Ctrl+K abre o Spotlight (CP25) · Fase 6 mostra 4 cards (Políticas/RIPD/Terceiros/LIA — sem PSI) · sidebar não tem item PSI. App em https://lgpd-pgp.vercel.app
+4. ~~**Limpar scripts utilitários temporários**~~ ✅ FEITO em 2026-05-06 (commit `36333ac`): removidos `_create-admin.ts`, `_run-etapa18.ts`, `_run-etapa19.ts`. `_reset-admin-password.ts`/`_check-tables.ts`/`_check-etapa17.ts` não existiam mais.
+5. ~~**Atualizar `MEMORY.md`**~~ entradas CP16/CP18 já existiam.
+6. **Retomar PSI (CP26)** quando estiver tranquilo pra mexer no Neon. Caminho: aplicar `scripts/_migrate-psi.sql` no Neon → `git revert` dos 3 reverts (`a61a58d`/`1e82e68`/`cec78cb`) → push.
 
 ---
 
 ## 🔥 Resumo executivo
+
+**Sessão 2026-05-06 (tarde)**: entregou CP25 (Highlights pesquisáveis Ctrl+K) ✅ em prod + tentou CP26 (PSI) e revertiu por bloqueio na aplicação Neon. Limpeza de scripts utilitários (3 arquivos) commitada. Lições novas registradas como armadilhas #15 (`tsc` não pega `useSearchParams` sem Suspense — só `npm run build`) e #16 (`vercel env pull` não expõe sensíveis). PSI fica em hold com código preservado no git.
 
 Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + Checkpoint 18 (Capacitação) + Checkpoint 19 (Refino UX das Fases — 5 fatias) + cards faltantes das Fases 1 e 2. Mais bug fixes Vercel build pós-CP15 e recovery completo do banco Neon após incidente operacional. Tudo em produção:
 
@@ -742,7 +792,7 @@ Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + C
 - ✅ **Recovery Neon**: incidente com `--force-reset` resolvido via PITR; senha rotacionada; lição registrada em armadilhas
 - ✅ Schema Neon: Etapas 2 → 19 todas aplicadas e validadas em prod
 
-**Próxima fronteira (Checkpoint 19+):** Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética. O PGP institucional está cumprido pela combinação Política do PGP + Painel de Maturidade + Capacitação LGPD (CP15+CP18) + Incidentes completo (CP16).
+**Próxima fronteira (Checkpoint 27+):** Retomar PSI (CP26) quando aplicação Neon estiver desbloqueada · refinos diversos. O PGP institucional já está cumprido por Política do PGP + Painel de Maturidade + Capacitação + Incidentes + LIA + Cyber NIST + busca textual.
 
 ---
 
