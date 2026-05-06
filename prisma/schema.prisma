@@ -100,6 +100,11 @@ model User {
   approvedLias        Lia[]         @relation("LiaApprovedBy")
   approvedLiaVersions LiaVersion[]  @relation("LiaVersionApprovedBy")
 
+  // Maturidade Cibernética — NIST CSF (Checkpoint 22)
+  cyberAnswers           CyberAnswer[]
+  createdCyberSnapshots  CyberSnapshot[]   @relation("CyberSnapshotCreatedBy")
+  delegatedCyberQuestions CyberAnswer[]    @relation("CyberDelegatedTo")
+
   // Gestão de Terceiros (Checkpoint 14) — operadores que cadastrei e
   // operadores onde sou o responsável interno
   createdOperators     Operator[]    @relation("OperatorCreatedBy")
@@ -164,6 +169,8 @@ model Company {
   actionPlans       ActionPlan[]
   policies          Policy[]
   lias              Lia[]
+  cyberAnswers      CyberAnswer[]
+  cyberSnapshots    CyberSnapshot[]
   ripds            Ripd[]
   operators        Operator[]
   documents        Document[]
@@ -1825,5 +1832,91 @@ model CapacitacaoEvento {
   @@index([operatorId])
   @@index([incidentId])
   @@map("capacitacao_eventos")
+}
+
+/// Maturidade Cibernética — Avaliação NIST CSF (Checkpoint 22).
+///
+/// Diferente do GAP Analysis (Checkpoint 9) que mede aderência LGPD em
+/// 119 controles, aqui medimos segurança da informação em geral via
+/// NIST Cybersecurity Framework v1.1 (5 funções × ~16 categorias × ~80
+/// subcategorias). Catálogo em `lib/cyber-catalog.ts` (gerado/manual).
+///
+/// Modelo de avaliação igual ao GAP:
+///   - 1 resposta por controle (CyberAnswer) com aderência + ponto melhoria
+///   - Snapshots imutáveis pra histórico (CyberSnapshot)
+///
+/// Mitigações UX (combo 2+6+7+9+11+16):
+///   - Opção extra "DELEGADO_TI" (delegado ao responsável técnico) com
+///     `delegatedToId` apontando pro user de TI que recebeu o pedido.
+///   - Opção "NAO_APLICA" pra controles que não cabem na realidade da org.
+///   - Pré-população: alguns controles vêm marcados como ADERENTE com
+///     `evidenceFrom` apontando pra outro Checkpoint (CP9 GAP, CP16
+///     Incidentes, CP18 Capacitação) — economia de retrabalho.
+model CyberAnswer {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Código do controle no catálogo NIST (ex.: "ID.AM-1", "PR.AC-3").
+  controlCode   String
+
+  /// "ADERENTE" | "PARCIAL" | "NAO_ADERENTE" | "NAO_APLICA" | "DELEGADO_TI"
+  aderencia     String
+
+  /// Texto livre — gap específico (preenchido em PARCIAL/NAO_ADERENTE).
+  pontoMelhoria String?  @db.Text
+
+  /// Texto livre — evidência da aderência (preenchido em ADERENTE).
+  evidence      String?  @db.Text
+
+  /// Quando pré-populado de outro Checkpoint, indica origem.
+  /// Valores: "GAP" | "INCIDENTES" | "CAPACITACAO" | "TERCEIROS" | null
+  evidenceFrom  String?
+
+  /// Quando aderencia="DELEGADO_TI": user que recebeu a delegação.
+  delegatedToId String?
+  delegatedTo   User?    @relation("CyberDelegatedTo", fields: [delegatedToId], references: [id], onDelete: SetNull)
+  delegatedAt   DateTime?
+  /// Prazo opcional pra TI responder.
+  delegatedDue  DateTime?
+
+  // Auditoria
+  answeredById  String
+  answeredBy    User     @relation(fields: [answeredById], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, controlCode])
+  @@index([companyId, aderencia])
+  @@index([delegatedToId])
+  @@map("cyber_answers")
+}
+
+/// Snapshot imutável de uma avaliação NIST congelada (igual GapSnapshot).
+/// Útil pra comparar evolução ao longo do tempo, exportar versões
+/// históricas pra auditoria, e voltar atrás se preciso.
+model CyberSnapshot {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Nome amigável (ex.: "Q1 2026 — Pré-auditoria ISO").
+  name        String
+  /// Texto livre — contexto/motivação do snapshot.
+  description String?  @db.Text
+
+  /// Snapshot completo das respostas no momento da criação. JSON com
+  /// formato: `{ controlCode: { aderencia, pontoMelhoria, evidence, ... } }`
+  answers     Json
+
+  /// Score consolidado calculado e congelado (0-100 + por função).
+  score       Json
+
+  createdById String
+  createdBy   User     @relation("CyberSnapshotCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("cyber_snapshots")
 }
 

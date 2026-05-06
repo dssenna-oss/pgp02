@@ -8,10 +8,7 @@
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
 >
-> **⚠️ PROD COM AUTH QUEBRADO (2026-05-06):** senha do Neon foi alterada via SQL (`ALTER ROLE neondb_owner WITH PASSWORD 'NovaSenhaForte_PgP_2026'`) mas o Vercel `DATABASE_URL` ainda usa a senha antiga (`npg_gi9FIPlVnd2N`). 2 caminhos pra resolver:
-> 1. **Reverter a senha** rodando `ALTER ROLE neondb_owner WITH PASSWORD 'npg_gi9FIPlVnd2N';` no SQL Editor do Neon. Prod volta a funcionar imediatamente.
-> 2. **Atualizar Vercel** Environment Variables → `DATABASE_URL` substituindo só a parte da senha pra `NovaSenhaForte_PgP_2026` + Redeploy.
-> User parou aqui em 2026-05-06 sem decidir. Próxima sessão: validar com user antes de mexer em prod.
+> **🔐 Tentativa de rotação de senha Neon (2026-05-06) — REVERTIDA:** durante a sessão eu empurrei o user a rodar `ALTER ROLE neondb_owner WITH PASSWORD 'NovaSenhaForte_PgP_2026'` antes de ter o Vercel pronto, o que quebrou prod. Revertido com novo `ALTER ROLE` pra senha original `npg_gi9FIPlVnd2N`. **Prod está saudável.** Lição: ao rotacionar credenciais, atualizar o Vercel ANTES do reset (ou orquestrar simultaneamente via API) — não apenas dar SQL pro user e dizer "agora vai no Vercel". Senhas atuais expostas no histórico desta sessão: `npg_gi9FIPlVnd2N` (atual em prod) + `NovaSenhaForte_PgP_2026` (revertida, não vale mais). Próxima sessão: planejar a rotação como operação atômica antes de propor.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)

@@ -25,6 +25,7 @@ import {
   UserCheck,
   GraduationCap,
   Scale,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -642,7 +643,7 @@ function Fase2Tools() {
         : "red";
 
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <ToolCard
         icon={<BarChart3 className="h-6 w-6" />}
         iconColor="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/40"
@@ -696,7 +697,98 @@ function Fase2Tools() {
               : undefined
         }
       />
+      <CyberCardTools />
     </div>
+  );
+}
+
+// CyberCardTools — Maturidade Cibernética (Checkpoint 22 / Fatia 1)
+// Companheiro do Diagnóstico de Privacidade na Fase 2.
+function CyberCardTools() {
+  const [data, setData] = useState<{
+    score: { overall: number; level: string; answered: number; totalControls: number };
+    stats: { delegatedToTi: number; blockedQuestions: number };
+  } | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/cyber", { cache: "no-store" });
+        if (res.ok) setData(await res.json());
+        else if (res.status === 403) setForbidden(true);
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const overall = data?.score.overall ?? null;
+  const answered = data?.score.answered ?? 0;
+  const total = data?.score.totalControls ?? 80;
+  const blocked = data?.stats.blockedQuestions ?? 0;
+
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : overall == null || answered === 0
+      ? "neutral"
+      : overall >= 70
+        ? "success"
+        : "warning";
+
+  return (
+    <ToolCard
+      icon={<Shield className="h-6 w-6" />}
+      iconColor="text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-950/40"
+      title="Maturidade Cibernética"
+      description="Avaliação NIST CSF (80 controles em 5 funções: Identificar, Proteger, Detectar, Responder, Recuperar). Mede a postura de segurança da informação da organização e complementa o Diagnóstico de Privacidade."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: answered > 0 ? "Continuar avaliação" : "Iniciar avaliação",
+        href: "/dashboard/maturidade-cyber",
+      }}
+      stats={
+        forbidden
+          ? []
+          : data && answered > 0
+            ? [
+                {
+                  label: "score NIST",
+                  value: `${overall}/100`,
+                  color: (overall ?? 0) >= 70 ? "emerald" : (overall ?? 0) >= 40 ? "amber" : "red",
+                  icon: <TrendingUp className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "respondidos",
+                  value: `${answered}/${total}`,
+                  color: "default",
+                  icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                },
+                ...(blocked > 0
+                  ? [
+                      {
+                        label: "não aderentes",
+                        value: blocked,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+      }
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : answered === 0
+            ? "Avaliação ainda não iniciada. Os 80 controles cobrem práticas de segurança da informação complementares ao GAP Analysis (que mede LGPD)."
+            : undefined
+      }
+    />
   );
 }
 

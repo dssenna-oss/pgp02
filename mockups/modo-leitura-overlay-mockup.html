@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Modo Leitura Overlay</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; }
+  .reader-content { font-family: Georgia, "Iowan Old Style", "Times New Roman", serif; }
+  .reader-content p { margin-bottom: 1.4em; line-height: 1.85; }
+  .reader-content h2 { font-size: 1.5em; font-weight: 600; margin-top: 2em; margin-bottom: 0.6em; letter-spacing: -0.01em; }
+  .reader-content h3 { font-size: 1.2em; font-weight: 600; margin-top: 1.6em; margin-bottom: 0.4em; }
+  .reader-content ul { padding-left: 1.5em; margin-bottom: 1.4em; }
+  .reader-content li { margin-bottom: 0.5em; line-height: 1.7; }
+  .fade-in { animation: fadeIn 0.25s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- App mockado de fundo (a tela de Fase normal) -->
+<div class="flex">
+  <aside class="w-56 bg-white border-r border-slate-200 p-3 hidden lg:block min-h-screen">
+    <div class="flex items-center gap-2 px-2 py-3 border-b border-slate-100 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">P</div>
+      <div class="text-sm font-semibold text-slate-800">LGPD - PGP</div>
+    </div>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📊 Dashboard</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs bg-indigo-50 text-indigo-700">🚩 Fase 3</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📋 Inventário</a>
+  </aside>
+
+  <main class="flex-1 p-6 max-w-5xl">
+    <h1 class="text-3xl font-bold mb-2">🚩 Fase 3 — Mapeamento e Análise de Riscos</h1>
+    <p class="text-slate-600 mb-4">Mapeamento completo dos processos de tratamento de dados pessoais.</p>
+
+    <!-- Toolbar com NOVO botão "Modo leitura" destacado -->
+    <div class="flex items-center gap-2 mb-6">
+      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700">⤓ Expandir tudo</button>
+      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-gray-100 text-gray-700">⤒ Recolher tudo</button>
+      <button id="openReader" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-md bg-violet-100 text-violet-800 ring-2 ring-violet-300 ring-offset-2 font-medium">
+        📖 Modo leitura
+        <span class="bg-violet-200 text-violet-900 px-1 rounded text-[10px] ml-1">novo</span>
+      </button>
+    </div>
+
+    <div class="bg-white rounded-lg border p-5 space-y-4 text-sm text-slate-700">
+      <h3 class="font-semibold text-base">Descrição da Fase</h3>
+      <p>Esta fase combina o mapeamento detalhado de todos os processos de tratamento de dados pessoais com a análise dos riscos associados a cada tratamento.</p>
+      <p class="text-slate-400 italic">[conteúdo continua… clica no botão "📖 Modo leitura" pra ver em tela cheia]</p>
+    </div>
+  </main>
+</div>
+
+<!-- ===== READER OVERLAY ===== -->
+<div id="reader" class="fixed inset-0 z-50 hidden bg-amber-50 fade-in" style="background: #faf6ed;">
+  <!-- Top bar -->
+  <div class="sticky top-0 backdrop-blur bg-amber-50/90 border-b border-amber-200/50 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2 text-sm text-amber-900">
+      <span>📖</span>
+      <span class="font-medium">Modo leitura</span>
+      <span class="text-amber-700/60">·</span>
+      <span class="text-amber-700/80">Fase 3 — Mapeamento e Análise de Riscos</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Tipografia controls -->
+      <div class="flex items-center gap-1 text-amber-900">
+        <button class="px-2 py-1 rounded hover:bg-amber-200/50 text-xs">A−</button>
+        <button class="px-2 py-1 rounded hover:bg-amber-200/50 text-base">A</button>
+        <button class="px-2 py-1 rounded hover:bg-amber-200/50 text-lg">A+</button>
+      </div>
+      <!-- Theme toggle -->
+      <div class="flex items-center gap-1 text-amber-900">
+        <button class="px-2 py-1 rounded ring-1 ring-amber-700/30" title="Sépia">📜</button>
+        <button class="px-2 py-1 rounded hover:bg-amber-200/50" title="Claro">☀</button>
+        <button class="px-2 py-1 rounded hover:bg-amber-200/50" title="Escuro">🌙</button>
+      </div>
+      <button id="closeReader" class="px-3 py-1.5 rounded-md bg-amber-900 text-amber-50 text-xs">Fechar (Esc)</button>
+    </div>
+  </div>
+
+  <!-- Reading area -->
+  <div class="overflow-y-auto h-[calc(100vh-56px)]">
+    <article class="reader-content max-w-2xl mx-auto px-8 py-12 text-amber-950" style="font-size: 19px;">
+      <h2 style="margin-top: 0">Descrição da Fase</h2>
+      <p>Esta fase combina o mapeamento detalhado de todos os processos de tratamento de dados pessoais com a análise dos riscos associados a cada tratamento.</p>
+
+      <h3>Parte 1: Mapeamento de Processos</h3>
+      <p>O mapeamento deve documentar para cada processo de tratamento:</p>
+      <ul>
+        <li>Quais dados pessoais são coletados;</li>
+        <li>Como são coletados (formulários, contratos, sistemas);</li>
+        <li>Para que finalidade são utilizados;</li>
+        <li>Qual a base legal (consentimento, contrato, obrigação legal etc.);</li>
+        <li>Onde são armazenados e por quanto tempo;</li>
+        <li>Quem tem acesso a esses dados;</li>
+        <li>Com quem são compartilhados;</li>
+        <li>Como são descartados ao fim do ciclo.</li>
+      </ul>
+
+      <h3>Parte 2: Análise de Riscos</h3>
+      <p>Para cada processo mapeado, avalie os riscos de segurança e privacidade. Considere riscos de vazamento ou acesso não autorizado, adequação das medidas de segurança existentes, vulnerabilidades técnicas e organizacionais, impacto potencial sobre os titulares em caso de incidente, e riscos regulatórios e reputacionais.</p>
+
+      <p class="bg-amber-100/60 border-l-4 border-amber-500 px-4 py-3 rounded-r" style="margin-top: 2em;">
+        <strong>⚠️ Importante:</strong> O mapeamento deve incluir <em>todos</em> os departamentos da empresa. Cada área trata dados de forma diferente e todas devem estar em conformidade.
+      </p>
+
+      <h3>Resultado Esperado</h3>
+      <p>Ao final desta fase, a empresa deve ter um <strong>Inventário de Dados</strong> completo e um <strong>Relatório de Análise de Riscos</strong>, documentando todo o ciclo de vida dos dados pessoais e os riscos associados a cada tratamento.</p>
+
+      <hr class="my-12 border-amber-300/50" />
+
+      <p class="text-sm text-amber-700/70 italic text-center">
+        Tempo estimado de leitura: 6 minutos · Pressione <kbd class="bg-amber-200/50 px-1.5 py-0.5 rounded">Esc</kbd> pra voltar
+      </p>
+    </article>
+  </div>
+</div>
+
+<script>
+  document.getElementById('openReader').addEventListener('click', () => {
+    document.getElementById('reader').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  });
+  document.getElementById('closeReader').addEventListener('click', () => {
+    document.getElementById('reader').classList.add('hidden');
+    document.body.style.overflow = '';
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.getElementById('reader').classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+  });
+</script>
+
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-[60]">
+  <strong>📝 Mockup interativo:</strong> clique no botão violeta "📖 Modo leitura" pra ver o overlay em ação.
+  Tela cheia, fonte serif, sépia confortável, controles A−/A+ e tema (sépia/claro/escuro). Tecla Esc fecha.
+</div>
+
+</body>
+</html>

@@ -323,6 +323,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       tourId: "nav-maturidade",
     },
     {
+      name: "Maturidade Cibernética",
+      description: "Avaliação NIST CSF de segurança da informação",
+      href: "/dashboard/maturidade-cyber",
+      icon: Shield,
+      dpoOnly: true,
+    },
+    {
       name: "Plano de Ação",
       description: "Ações institucionais com responsável e prazo",
       href: "/dashboard/plano-acao",

@@ -25,6 +25,7 @@
 --   * scripts/_migrate-terceiros-adequacao.sql (Etapa 16 — Checkpoint 14 H1: lgpdComplianceStatus + contractOriginalDate)
 --   * scripts/_migrate-incidents.sql (Etapa 17 — Checkpoint 16: Incidentes refatorado + IncidentCommunication + action_plans.refIncidentId)
 --   * scripts/_migrate-lia.sql (Etapa 20 — Checkpoint 21: LIA (lias + lia_versions))
+--   * scripts/_migrate-cyber.sql (Etapa 21 — Checkpoint 22: Maturidade Cibernética NIST (cyber_answers + cyber_snapshots))
 -- ============================================================
 
 BEGIN;
@@ -965,6 +966,75 @@ CREATE UNIQUE INDEX IF NOT EXISTS "lia_versions_liaId_version_key"
   ON "lia_versions"("liaId", "version");
 CREATE INDEX IF NOT EXISTS "lia_versions_liaId_approvedAt_idx"
   ON "lia_versions"("liaId", "approvedAt");
+
+-- ====================================================================
+-- Etapa 21 — Maturidade Cibernética NIST CSF (Checkpoint 22)
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "cyber_answers" (
+  "id"            TEXT PRIMARY KEY,
+  "companyId"     TEXT NOT NULL,
+  "controlCode"   TEXT NOT NULL,
+  "aderencia"     TEXT NOT NULL,
+  "pontoMelhoria" TEXT,
+  "evidence"      TEXT,
+  "evidenceFrom"  TEXT,
+  "delegatedToId" TEXT,
+  "delegatedAt"   TIMESTAMP(3),
+  "delegatedDue"  TIMESTAMP(3),
+  "answeredById"  TEXT NOT NULL,
+  "createdAt"     TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"     TIMESTAMP(3) NOT NULL
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cyber_answers_companyId_fkey') THEN
+    ALTER TABLE "cyber_answers" ADD CONSTRAINT "cyber_answers_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cyber_answers_delegatedToId_fkey') THEN
+    ALTER TABLE "cyber_answers" ADD CONSTRAINT "cyber_answers_delegatedToId_fkey"
+      FOREIGN KEY ("delegatedToId") REFERENCES "users"(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cyber_answers_answeredById_fkey') THEN
+    ALTER TABLE "cyber_answers" ADD CONSTRAINT "cyber_answers_answeredById_fkey"
+      FOREIGN KEY ("answeredById") REFERENCES "users"(id) ON DELETE NO ACTION;
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "cyber_answers_companyId_controlCode_key"
+  ON "cyber_answers"("companyId", "controlCode");
+CREATE INDEX IF NOT EXISTS "cyber_answers_companyId_aderencia_idx"
+  ON "cyber_answers"("companyId", "aderencia");
+CREATE INDEX IF NOT EXISTS "cyber_answers_delegatedToId_idx"
+  ON "cyber_answers"("delegatedToId");
+
+CREATE TABLE IF NOT EXISTS "cyber_snapshots" (
+  "id"          TEXT PRIMARY KEY,
+  "companyId"   TEXT NOT NULL,
+  "name"        TEXT NOT NULL,
+  "description" TEXT,
+  "answers"     JSONB NOT NULL,
+  "score"       JSONB NOT NULL,
+  "createdById" TEXT NOT NULL,
+  "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cyber_snapshots_companyId_fkey') THEN
+    ALTER TABLE "cyber_snapshots" ADD CONSTRAINT "cyber_snapshots_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cyber_snapshots_createdById_fkey') THEN
+    ALTER TABLE "cyber_snapshots" ADD CONSTRAINT "cyber_snapshots_createdById_fkey"
+      FOREIGN KEY ("createdById") REFERENCES "users"(id) ON DELETE NO ACTION;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "cyber_snapshots_companyId_createdAt_idx"
+  ON "cyber_snapshots"("companyId", "createdAt");
 
 COMMIT;
 
