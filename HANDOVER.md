@@ -1,12 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-05 / 2026-05-06 (CP19 refino UX + **CP20 tour de onboarding com narração ElevenLabs**) · **Branch:** `claude/inspiring-khorana-0a97d2` (worktree)
+> **Última sessão:** 2026-05-06 (CP19 refino UX + CP20 tour onboarding ElevenLabs + **CP21 LIA — Avaliação de Legítimo Interesse**) · **Branch:** `claude/inspiring-khorana-0a97d2` (worktree)
 >
-> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas. CP19 e CP20 não têm schema novo.
-> **`origin/main`:** ✅ último push CP19 = `6f7138c`. CP20 ainda em branch local pra revisão visual antes do push.
+> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas. **Etapa 20 (LIA) aplicada local; falta aplicar no Neon antes do push.** CP19 e CP20 não têm schema novo.
+> **`origin/main`:** ✅ último push CP20 (commits `ccdf191`, `65ebcc6`, `99fa3b5`). CP21 em branch local (3 commits) pendendo aplicação no Neon + validação visual.
 >
-> **🔐 Senha Neon:** rotacionada em 2026-05-05 (após restore PITR). `DATABASE_URL` atualizada no Vercel + `.env` local.
-> **🔐 ElevenLabs API key:** adicionada em `.env` local (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID=Bella`, `ELEVENLABS_MODEL_ID=eleven_multilingual_v2`). **PENDENTE:** rotacionar a key e atualizar Vercel após validação visual em prod (a atual foi colada no chat e está no histórico da sessão).
+> **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
+> **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -25,7 +25,71 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-06 (CP20 — em branch, ainda não pushado)
+## 🆕 O que foi feito na sessão 2026-05-06 (CP21 LIA — em branch, pendente Neon + push)
+
+### LIA — Avaliação de Legítimo Interesse (Checkpoint 21) — 3 fatias
+
+**Problema atacado**: a LGPD (Art. 10 §3º) exige que qualquer tratamento que use o Art. 7º IX como base legal seja documentado por uma Avaliação de Legítimo Interesse — teste de finalidade, necessidade e balanceamento. Sem esse documento, o uso da base é vulnerável a questionamento da ANPD. O app não tinha suporte estruturado pra isso.
+
+**Resultado**: mini-app completo com workflow Contribuidor→DPO, versionamento, DOCX/PDF/diff, integrações em 5 lugares (Inventário, Bases Legais, Plano de Ação, RIPD, Maturidade), seguindo paridade com RIPD/Políticas.
+
+#### Fatia 1 (commit `fbd3f18`) — Schema + APIs CRUD + Lista
+- **Schema novo (Etapa 20)**: `lias` + `lia_versions` (tabelas paralelas a `ripds`/`ripd_versions`). Migration `scripts/_migrate-lia.sql` idempotente, aplicada local.
+- **`lib/lia-helpers.ts`**: enum `LIA_STATUS`, `LiaData` com 3 etapas estruturadas (Finalidade · Necessidade · Balanceamento), `liaIsBlocked` (detecta dados sensíveis Art. 11 ou crianças/adolescentes Art. 14 — vetam Art. 7º IX), `liaCompleteness` (0..1 por etapa), `computeLiaStats`, auth gate (DPO + Contribuidor) com `liaAccessFilter`.
+- **`lib/lia-templates.ts`**: estrutura declarativa de perguntas — labels, dicas, tipos (textarea/radio/checkbox-group), tom das opções (ok/warning/danger), marcador `blocking` pras 2 verificações estruturais (s2.dadosSensiveis e s2.criancaAdolescente).
+- **APIs (8 rotas)**: GET/POST `/api/lia` · GET/PATCH/DELETE `/api/lia/[id]` · POST `/submit` (RASCUNHO→EM_REVISAO com guarda dupla: recusa se verificações estruturais não respondidas OU se bloqueio detectado) · POST `/approve` (cria LiaVersion + atualiza publishedContent; recusa se bloqueio) · POST `/reject` (volta com `rejectionNote`) · GET `/versions` · GET `/pending-count`.
+- **UI** `/dashboard/lia` (`LiaListContent`): hero violeta + banner DPO em fila + banner LIAs bloqueadas + 4 KPIs + busca/filtros + cards com completeness % + modal criar com seleção opcional de processo do Inventário.
+- **Sidebar**: item "LIA" (ícone Scale) + badge violeta de pendentes (DPO=EM_REVISAO; Contribuidor=próprias devolvidas), polling 60s.
+- **Mockup HTML standalone** (`mockups/lia-editor-mockup.html`) aprovado pelo user antes de codar.
+
+#### Fatia 2 (commit `42b50e2`) — Editor + DOCX + Diff + PDF + Fase 6
+- **`components/lia/lia-editor-content.tsx`**: editor com auto-save 1.2s, stepper visual + tabs sincronizadas, banner vermelho destacado quando bloqueio estrutural, renderização declarativa via `LIA_TEMPLATE` (textareas + radios coloridos por tom + checkbox-groups), workflow buttons contextuais (Enviar/Aprovar/Rejeitar/Arquivar/Excluir/Salvar), modais Aprovar (com changelog) e Rejeitar (motivo obrigatório), exibe rejection note do DPO em RASCUNHO.
+- **`components/lia/lia-versions-modal.tsx`**: lista LiaVersion com badge "Atual publicada".
+- **`components/lia/lia-diff-modal.tsx`**: comparar 2 versões (current/published/v<N>) — word-level highlight pra textareas (jsdiff), side-by-side antes/depois pra radios/checkboxes, stats compactos.
+- **`components/lia/lia-pdf-view.tsx`** + `app/dashboard/lia/[id]/pdf/page.tsx`: print-friendly A4, capa + 3 etapas + decisão final destacada (verde/vermelho) + box de bloqueio Art. 11/14.
+- **`lib/lia-diff.ts`** (engine pura): `buildLiaDiff(a, b)` — pra cada pergunta do template, compara valores; textareas usam diffWords; radios mostram label da opção (não o `value`); checkboxes lista chaves marcadas.
+- **`lib/lia-docx-export.ts`** (engine pura): `buildLiaDocx()` com docx-js — capa institucional, box vermelho de bloqueio quando aplicável, etapas H1, perguntas H3, radios coloridos por tom, tabelas pra checkbox-groups, decisão final em caixa colorida.
+- **APIs**: GET `/api/lia/[id]/export?source=published|current` · GET `/api/lia/[id]/diff?a=&b=`.
+- **Plug Fase 6** (`Fase6Tools` em `phase-native-tools.tsx`): grid agora 2x2 com 4 cards — Políticas + RIPD + Terceiros + **LIA**. Card LIA com KPIs (LIAs/aprovadas/em revisão/em rascunho/bloqueadas), warning quando há bloqueada.
+
+#### Fatia 3 (commit `_______`) — Integrações
+- **`usesLegitimateInterest(legalBasis)`** em `lia-helpers.ts`: regex tolerante a variações ("art. 7º IX", "Art 7 IX", "legítimo interesse", "inciso IX").
+- **Origem `LIA` em `action-plan-helpers.ts`**: enum + label "Legítimo Interesse" + badge violeta + `computeRefLabel`/`computeRefHref` apontando pra `/dashboard/lia`. Reusa `refInventoryId` (sem coluna nova).
+- **Auto-import `/api/plano-acao/import`**: detecta processos APROVADOS com `usesLegitimateInterest` && sem LIA cadastrada → cria 1 ação "Documentar LIA" (prioridade ALTA, idempotente via `seenLia` + `inventoriesWithLia`).
+- **`<LiaInventoryBanner>`** (componente reusável): plugado no editor `/dashboard/inventario/[id]/bases-legais`. 4 estados visuais reativos a `legalBasis` em tempo real:
+  - âmbar: "Esta base exige LIA documentada — Criar LIA"
+  - azul: "LIA em rascunho/revisão — Continuar"
+  - verde: "LIA aprovada vN — Ver LIA"
+  - vermelho: "LIA bloqueada (Art. 11/14)"
+- **Badge na consolidada `/dashboard/bases-legais`**: lookup de LIAs por inventoryId no row do processo. Badge contextual (LIA pendente / em revisão / aprovada / bloqueada) ao lado dos badges de completeness existentes.
+- **Maturidade do PGP** (`lib/maturidade-pgp.ts` + `app/api/maturidade-pgp/route.ts`): nova entrada `lia` no `MaturityInput` (total/aprovadas/rascunhos/emRevisao/bloqueadas/semLia). Pendências críticas adicionadas:
+  - ALTA — LIAs bloqueadas (base errada — Art. 11/14)
+  - ALTA — Processos 7º IX sem LIA documentada
+  - MEDIA — LIAs em revisão aguardando DPO
+- **RIPD pré-população (`lib/ripd-prepopulate.ts`)**: quando há LIA APROVADA pro processo, a Seção 4 do RIPD ganha:
+  - `legalBasis`: anexo "[Fundamentado pela LIA vN aprovada em DD/MM/AAAA]"
+  - `necessityJustification`: pré-preenchido com `s2.estritamenteNecessario` da LIA
+  - `proportionalityJustification`: pré-preenchido com `s3.decisaoJustificativa`
+
+#### Smoke test passou
+- POST cria LIA → 100% completude após PATCH com 3 etapas → approve → status APROVADO + v1.
+- DOCX export 200 (11.194 bytes, content-type docx).
+- Diff word-level: edição "mensal"→"trimestral" detectada com `parts[]`.
+- 4º card LIA aparece na Fase 6 em grid 2x2.
+- Cenário forçado (legalBasis="Art. 7º IX" + sem LIA): auto-import criou 1 ação `LIA`, Maturidade flagged `semLia: 1`, mensagem crítica "1 processo(s) usam Art. 7º IX sem LIA documentada".
+- Banner UI com texto "Esta base exige LIA documentada" presente no DOM ao acessar `/dashboard/inventario/[id]/bases-legais`.
+- Badge "LIA pendente" presente em `/dashboard/bases-legais`.
+- Cenário revertido (legalBasis voltou + ação LIA órfã apagada).
+- Typecheck zerado em todas as fatias.
+
+#### Pendências CP21
+- [ ] **Aplicar Etapa 20 no Neon** antes do push: `psql.exe "<NEON_URL>" -f scripts/_migrate-lia.sql`
+- [ ] **Validar visualmente** após push (criar LIA em prod, percorrer 3 etapas, exportar DOCX, ver banner em /bases-legais).
+- [ ] **Atualizar consolidado** `scripts/_migrate-prod-neon.sql` com Etapa 20 pra deployments futuros.
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-06 (CP20 — em prod)
 
 ### Tour de onboarding com narração ElevenLabs (Checkpoint 20) — 3 fatias
 
@@ -507,7 +571,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 18 | ~~**Capacitação LGPD**~~ — Mini-app na Fase Preliminar pra registro temporal de evidências. Schema com 5 eixos (Onboarding/Pílulas/Prática/Departamental/Monitoramento) + 7 públicos + vínculos polimórficos com Operator e Incident. Catálogo de 18 tarefas pré-cadastradas. APIs CRUD + upload Blob + import-tasks idempotente + DOCX consolidado pra ANPD. UI completa com filtros, cronograma, modal cadastro, sidebar dedicado. | ✅ FEITO 2026-05-05 |
 | 19 | ~~**Refino UX das Fases (5 fatias)**~~ — Reduz ~85% altura inicial das páginas de fase. Accordion mestre nas 4 seções (Descrição/Considerações/Checklist/Documentação) com persistência em localStorage. Sub-accordion automático em conteúdo extenso (parser de h4). Checklist com barra de progresso por categoria + toggle "esconder concluídos". Documentação como tabela compacta com busca/filtro/view toggle. TOC sticky lateral (IntersectionObserver) + reading progress no topo. Atalhos E/C. Aplicado nas 9 fases. Sem schema novo. | ✅ FEITO 2026-05-05 |
 | 20 | ~~**Tour de onboarding com narração ElevenLabs (3 fatias)**~~ — Tour mestre 8 passos auto-disparado no 1º login + 9 mini-tours por fase (3 passos cada) disparados manualmente pelo botão no PhaseToolbar. Voz Bella ElevenLabs `eleven_multilingual_v2` em pt-BR. Spotlight escurecedor + setinha pulsante + painel violeta com player + transcrição com palavra atual destacada. Persistência por scriptId em localStorage (sem schema novo). Card de configuração + botão "Resetar progresso". 35 MP3s gerados (~5k chars dos 100k Creator). | ✅ FEITO 2026-05-06 |
-| 21+ | Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética · Modo leitura overlay · Outros refinos | depois |
+| 21 | ~~**LIA — Avaliação de Legítimo Interesse (3 fatias)**~~ — Schema novo (Etapa 20) `lias` + `lia_versions`. Mini-app paralelo a RIPD/Políticas: workflow Contribuidor→DPO, versionamento, DOCX/PDF/diff, 3 etapas estruturadas (Finalidade · Necessidade · Balanceamento), 2 verificações bloqueantes (Art. 11/14 vetam Art. 7º IX), auto-save, 8 APIs. Integrações: 4º card Fase 6, banner reativo no editor de Bases Legais, badge na consolidada, origem LIA + auto-import no Plano de Ação, pendências críticas no Painel de Maturidade, pré-população do RIPD Seção 4 com LIA aprovada. | ✅ FEITO 2026-05-06 (local; pendente Neon + push) |
+| 22+ | Segurança institucional (PSI) · Avaliação de Maturidade Cibernética · Modo leitura overlay · Outros refinos | depois |
 
 ---
 

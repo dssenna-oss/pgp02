@@ -14,6 +14,7 @@ import {
   computeAnpdDeadline,
   requiresAnpdCommunication,
 } from "@/lib/incidentes-helpers";
+import { usesLegitimateInterest, liaIsBlocked, normalizeLiaData } from "@/lib/lia-helpers";
 
 /**
  * GET /api/maturidade-pgp
@@ -59,6 +60,7 @@ export async function GET(_request: NextRequest) {
     teamUsers,
     company,
     incidents,
+    lias,
   ] = await Promise.all([
     prisma.dataInventory.findMany({
       where: { companyId },
@@ -132,6 +134,10 @@ export async function GET(_request: NextRequest) {
         detectedAt: true,
         anpdNotifiedAt: true,
       },
+    }),
+    prisma.lia.findMany({
+      where: { companyId },
+      select: { status: true, inventoryId: true, data: true },
     }),
   ]);
 
@@ -280,6 +286,35 @@ export async function GET(_request: NextRequest) {
     };
   })();
 
+  // LIA (Checkpoint 21) — KPIs derivados pra pendências críticas no Painel
+  const liaStats = (() => {
+    const inventoriesWithLia = new Set<string>();
+    let bloqueadas = 0;
+    for (const l of lias) {
+      if (l.inventoryId) inventoriesWithLia.add(l.inventoryId);
+      try {
+        if (liaIsBlocked(normalizeLiaData(l.data))) bloqueadas += 1;
+      } catch {
+        // Se data tá corrompido, ignora
+      }
+    }
+    // Quantos processos APROVADOS usam Art. 7º IX e ainda não têm LIA
+    const semLia = aprovadosInv.filter(
+      (inv) =>
+        (usesLegitimateInterest(inv.legalBasis) ||
+          usesLegitimateInterest(inv.legalBasisSensitive)) &&
+        !inventoriesWithLia.has(inv.id),
+    ).length;
+    return {
+      total: lias.length,
+      aprovadas: lias.filter((l) => l.status === "APROVADO").length,
+      rascunhos: lias.filter((l) => l.status === "RASCUNHO").length,
+      emRevisao: lias.filter((l) => l.status === "EM_REVISAO").length,
+      bloqueadas,
+      semLia,
+    };
+  })();
+
   const input: MaturityInput = {
     diagnosticoScore,
     inventario: {
@@ -305,6 +340,7 @@ export async function GET(_request: NextRequest) {
     terceiros: terceirosStats,
     equipe: equipeStats,
     incidentes: incidentesStats,
+    lia: liaStats,
   };
 
   const result = computePgpMaturity(input);

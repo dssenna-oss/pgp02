@@ -24,6 +24,7 @@
 --   * scripts/_migrate-action-plan-operator.sql (Etapa 15 — Checkpoint 14 G4: action_plans.refOperatorId)
 --   * scripts/_migrate-terceiros-adequacao.sql (Etapa 16 — Checkpoint 14 H1: lgpdComplianceStatus + contractOriginalDate)
 --   * scripts/_migrate-incidents.sql (Etapa 17 — Checkpoint 16: Incidentes refatorado + IncidentCommunication + action_plans.refIncidentId)
+--   * scripts/_migrate-lia.sql (Etapa 20 — Checkpoint 21: LIA (lias + lia_versions))
 -- ============================================================
 
 BEGIN;
@@ -889,6 +890,82 @@ END $$;
 CREATE INDEX IF NOT EXISTS "action_plans_companyId_refIncidentId_idx"
   ON "action_plans"("companyId", "refIncidentId");
 
+-- ====================================================================
+-- Etapa 20 — LIA (Avaliação de Legítimo Interesse / Checkpoint 21)
+-- ====================================================================
+
+CREATE TABLE IF NOT EXISTS "lias" (
+  "id"                  TEXT PRIMARY KEY,
+  "companyId"           TEXT NOT NULL,
+  "inventoryId"         TEXT,
+  "title"               TEXT NOT NULL,
+  "status"              TEXT NOT NULL DEFAULT 'RASCUNHO',
+  "data"                JSONB NOT NULL,
+  "rejectionNote"       TEXT,
+  "approvedById"        TEXT,
+  "approvedAt"          TIMESTAMP(3),
+  "publishedContent"    JSONB,
+  "publishedAt"         TIMESTAMP(3),
+  "publishedVersionNum" INTEGER,
+  "createdById"         TEXT NOT NULL,
+  "createdAt"           TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt"           TIMESTAMP(3) NOT NULL
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lias_companyId_fkey') THEN
+    ALTER TABLE "lias" ADD CONSTRAINT "lias_companyId_fkey"
+      FOREIGN KEY ("companyId") REFERENCES "companies"(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lias_inventoryId_fkey') THEN
+    ALTER TABLE "lias" ADD CONSTRAINT "lias_inventoryId_fkey"
+      FOREIGN KEY ("inventoryId") REFERENCES "data_inventories"(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lias_approvedById_fkey') THEN
+    ALTER TABLE "lias" ADD CONSTRAINT "lias_approvedById_fkey"
+      FOREIGN KEY ("approvedById") REFERENCES "users"(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lias_createdById_fkey') THEN
+    ALTER TABLE "lias" ADD CONSTRAINT "lias_createdById_fkey"
+      FOREIGN KEY ("createdById") REFERENCES "users"(id) ON DELETE NO ACTION;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "lias_companyId_status_idx"
+  ON "lias"("companyId", "status");
+CREATE INDEX IF NOT EXISTS "lias_companyId_createdById_idx"
+  ON "lias"("companyId", "createdById");
+CREATE INDEX IF NOT EXISTS "lias_inventoryId_idx"
+  ON "lias"("inventoryId");
+
+CREATE TABLE IF NOT EXISTS "lia_versions" (
+  "id"           TEXT PRIMARY KEY,
+  "liaId"        TEXT NOT NULL,
+  "version"      INTEGER NOT NULL,
+  "content"      JSONB NOT NULL,
+  "changeLog"    TEXT,
+  "approvedAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "approvedById" TEXT NOT NULL
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lia_versions_liaId_fkey') THEN
+    ALTER TABLE "lia_versions" ADD CONSTRAINT "lia_versions_liaId_fkey"
+      FOREIGN KEY ("liaId") REFERENCES "lias"(id) ON DELETE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lia_versions_approvedById_fkey') THEN
+    ALTER TABLE "lia_versions" ADD CONSTRAINT "lia_versions_approvedById_fkey"
+      FOREIGN KEY ("approvedById") REFERENCES "users"(id) ON DELETE NO ACTION;
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "lia_versions_liaId_version_key"
+  ON "lia_versions"("liaId", "version");
+CREATE INDEX IF NOT EXISTS "lia_versions_liaId_approvedAt_idx"
+  ON "lia_versions"("liaId", "approvedAt");
+
 COMMIT;
 
 -- ====================================================================
@@ -959,6 +1036,10 @@ SELECT 'incident_communications (table)', EXISTS (SELECT 1 FROM information_sche
   WHERE table_name='incident_communications');
 SELECT 'action_plans.refIncidentId', EXISTS (SELECT 1 FROM information_schema.columns
   WHERE table_name='action_plans' AND column_name='refIncidentId');
+SELECT 'lias (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='lias');
+SELECT 'lia_versions (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='lia_versions');
 
 \echo ''
 \echo '=== Inventários por status ==='

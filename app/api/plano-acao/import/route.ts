@@ -10,6 +10,7 @@ import {
 } from "@/lib/action-plan-helpers";
 import { GAP_CONTROLS } from "@/lib/gap-catalog";
 import { decodeSeverity } from "@/lib/riscos-catalog";
+import { usesLegitimateInterest } from "@/lib/lia-helpers";
 
 /**
  * POST /api/plano-acao/import
@@ -33,12 +34,12 @@ export async function POST(_request: NextRequest) {
   const { user } = r;
 
   // 1) Carregar TUDO em paralelo
-  const [existingActions, gapAnswers, risks, inventories, operators, incidents] = await Promise.all([
+  const [existingActions, gapAnswers, risks, inventories, operators, incidents, lias] = await Promise.all([
     // Pra dedup: chaves já existentes
     prisma.actionPlan.findMany({
       where: {
         companyId: user.companyId,
-        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR", "INCIDENTE"] },
+        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR", "INCIDENTE", "LIA"] },
       },
       select: {
         origin: true,
@@ -125,6 +126,12 @@ export async function POST(_request: NextRequest) {
         containmentMeasures: true,
       },
     }),
+    // LIAs existentes em qualquer status — pra detectar processos
+    // 7º IX que ainda não têm LIA documentada (CP21 Fatia 3).
+    prisma.lia.findMany({
+      where: { companyId: user.companyId },
+      select: { id: true, inventoryId: true, status: true },
+    }),
   ]);
 
   // Sets pra dedup rápido
@@ -133,12 +140,23 @@ export async function POST(_request: NextRequest) {
   const seenBases = new Set<string>();
   const seenOperator = new Set<string>();
   const seenIncident = new Set<string>();
+  const seenLia = new Set<string>();
   for (const a of existingActions) {
     if (a.origin === "GAP" && a.refGapCode) seenGap.add(a.refGapCode);
     if (a.origin === "RISCO" && a.refRiskId) seenRisk.add(a.refRiskId);
     if (a.origin === "BASES" && a.refInventoryId) seenBases.add(a.refInventoryId);
     if (a.origin === "OPERADOR" && a.refOperatorId) seenOperator.add(a.refOperatorId);
     if (a.origin === "INCIDENTE" && a.refIncidentId) seenIncident.add(a.refIncidentId);
+    if (a.origin === "LIA" && a.refInventoryId) seenLia.add(a.refInventoryId);
+  }
+
+  // Processos que JÁ têm LIA cadastrada (qualquer status) — não precisam
+  // de ação "Documentar LIA". Se a LIA está em rascunho/revisão, está
+  // no fluxo; se aprovada, está concluída; se arquivada, foi concluído
+  // por outra base e não precisa repetir.
+  const inventoriesWithLia = new Set<string>();
+  for (const l of lias) {
+    if (l.inventoryId) inventoriesWithLia.add(l.inventoryId);
   }
 
   // Cache do catálogo do GAP pra título amigável
@@ -380,6 +398,34 @@ export async function POST(_request: NextRequest) {
     });
   }
 
+  // ---------- LIA (Checkpoint 21 Fatia 3) ----------
+  // Processo APROVADO usando Art. 7º IX (legítimo interesse) sem LIA
+  // cadastrada → cria 1 ação "Documentar LIA". Idempotente (seenLia +
+  // inventoriesWithLia).
+  for (const inv of inventories) {
+    if (seenLia.has(inv.id)) continue;
+    if (inventoriesWithLia.has(inv.id)) continue;
+    const usesLia =
+      usesLegitimateInterest(inv.legalBasis) ||
+      usesLegitimateInterest(inv.legalBasisSensitive);
+    if (!usesLia) continue;
+
+    toCreate.push({
+      companyId: user.companyId,
+      title: `Documentar LIA — "${inv.serviceName}"`,
+      description:
+        "Este processo usa Art. 7º IX da LGPD (legítimo interesse) como base legal. " +
+        "O Art. 10 §3º exige que o controlador documente a Avaliação de Legítimo Interesse (LIA), " +
+        "com teste de finalidade, necessidade e balanceamento dos direitos do titular. " +
+        "Sem essa documentação, o uso da base é vulnerável a questionamento da ANPD.",
+      origin: ACTION_ORIGIN.LIA,
+      refInventoryId: inv.id,
+      priority: ACTION_PRIORITY.ALTA,
+      status: ACTION_STATUS.A_FAZER,
+      createdById: user.id,
+    });
+  }
+
   // 2) Criar tudo (idempotente — só os novos)
   let created = 0;
   if (toCreate.length > 0) {
@@ -394,13 +440,20 @@ export async function POST(_request: NextRequest) {
       risks.filter((r) => seenRisk.has(r.id)).length +
       inventories.filter((i) => seenBases.has(i.id)).length +
       operators.filter((o) => seenOperator.has(o.id)).length +
-      incidents.filter((i) => seenIncident.has(i.id)).length,
+      incidents.filter((i) => seenIncident.has(i.id)).length +
+      inventories.filter(
+        (i) =>
+          (usesLegitimateInterest(i.legalBasis) ||
+            usesLegitimateInterest(i.legalBasisSensitive)) &&
+          (seenLia.has(i.id) || inventoriesWithLia.has(i.id)),
+      ).length,
     byOrigin: {
       GAP: toCreate.filter((t) => t.origin === ACTION_ORIGIN.GAP).length,
       RISCO: toCreate.filter((t) => t.origin === ACTION_ORIGIN.RISCO).length,
       BASES: toCreate.filter((t) => t.origin === ACTION_ORIGIN.BASES).length,
       OPERADOR: toCreate.filter((t) => t.origin === ACTION_ORIGIN.OPERADOR).length,
       INCIDENTE: toCreate.filter((t) => t.origin === ACTION_ORIGIN.INCIDENTE).length,
+      LIA: toCreate.filter((t) => t.origin === ACTION_ORIGIN.LIA).length,
     },
   });
 }

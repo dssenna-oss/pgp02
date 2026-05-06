@@ -152,7 +152,20 @@ export async function prepopulateRipdFromInventory(
     orderBy: [{ priority: "asc" }, { dueDate: "asc" }],
   });
 
-  return buildRipdData(inv, gapAnswers, actions);
+  // LIA — Avaliação de Legítimo Interesse aprovada vinculada (Checkpoint 21).
+  // Se existe LIA APROVADA pra este processo, fundamentamos as
+  // justificativas de necessidade/proporcionalidade da Seção 4 do RIPD
+  // a partir dela.
+  const lia = await prisma.lia.findFirst({
+    where: { companyId, inventoryId, status: "APROVADO" },
+    select: {
+      publishedVersionNum: true,
+      publishedAt: true,
+      publishedContent: true,
+    },
+  });
+
+  return buildRipdData(inv, gapAnswers, actions, lia);
 }
 
 // ============================================================
@@ -172,10 +185,17 @@ interface ActionLite {
   dueDate: Date | null;
 }
 
+interface LiaLite {
+  publishedVersionNum: number | null;
+  publishedAt: Date | null;
+  publishedContent: any;
+}
+
 export function buildRipdData(
   inv: InventoryForPrepop,
   gapAnswers: ReadonlyArray<GapAnswerLite>,
-  actions: ReadonlyArray<ActionLite>
+  actions: ReadonlyArray<ActionLite>,
+  lia?: LiaLite | null
 ): RipdData {
   const base = emptyRipdData();
 
@@ -225,12 +245,33 @@ export function buildRipdData(
   };
 
   // ----- Seção 4: Finalidade e bases legais -----
+  // Quando há LIA APROVADA pra este processo, fundamentamos a base legal
+  // com referência à LIA e pré-populamos as justificativas usando o
+  // conteúdo aprovado dos testes de necessidade e balanceamento.
+  let legalBasis = combineLegalBasis(inv.legalBasis, inv.previsaoLegal);
+  let necessityJustification = "";
+  let proportionalityJustification = "";
+  if (lia?.publishedContent) {
+    const liaData = lia.publishedContent as any;
+    const dateLabel = lia.publishedAt
+      ? ` em ${new Date(lia.publishedAt).toLocaleDateString("pt-BR")}`
+      : "";
+    legalBasis = legalBasis
+      ? `${legalBasis}\n\n[Fundamentado pela LIA v${lia.publishedVersionNum} aprovada${dateLabel}.]`
+      : `Art. 7º IX (legítimo interesse) — LIA v${lia.publishedVersionNum} aprovada${dateLabel}.`;
+    if (typeof liaData?.s2?.estritamenteNecessario === "string") {
+      necessityJustification = liaData.s2.estritamenteNecessario.trim();
+    }
+    if (typeof liaData?.s3?.decisaoJustificativa === "string") {
+      proportionalityJustification = liaData.s3.decisaoJustificativa.trim();
+    }
+  }
   base.s4 = {
     purposes: inv.purpose ?? "",
-    legalBasis: combineLegalBasis(inv.legalBasis, inv.previsaoLegal),
+    legalBasis,
     sensitiveBasis: inv.legalBasisSensitive ?? "",
-    necessityJustification: "",          // preenchido pelo usuário
-    proportionalityJustification: "",    // preenchido pelo usuário
+    necessityJustification,
+    proportionalityJustification,
   };
 
   // ----- Seção 5: Ciclo de vida dos dados -----

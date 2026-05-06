@@ -225,6 +225,32 @@ export function liaIsBlocked(data: LiaData): boolean {
 }
 
 /**
+ * Detecta se a string de base legal informada usa Art. 7º IX (legítimo
+ * interesse). Como a `DataInventory.legalBasis` é texto livre, usamos
+ * regex tolerante a variações ("art. 7 IX", "Art 7º, IX", "legítimo
+ * interesse", "inciso IX").
+ *
+ * Casos atendidos (todos retornam true):
+ *   - "Art. 7º IX"
+ *   - "Art. 7, IX"
+ *   - "Art 7° IX"
+ *   - "art. 7 inciso IX"
+ *   - "legítimo interesse"
+ *   - "Legitimo Interesse do controlador"
+ */
+export function usesLegitimateInterest(legalBasis: string | null | undefined): boolean {
+  if (!legalBasis) return false;
+  const text = legalBasis.toLowerCase();
+  // Match: "leg[íi]timo interesse"
+  if (/leg[íi]timo\s+interesse/.test(text)) return true;
+  // Match: "art. 7º IX" e variações (com ou sem º/°/ponto/vírgula)
+  if (/art\.?\s*7[º°]?[,\s]+(?:inciso\s+)?ix\b/.test(text)) return true;
+  // Match: "inciso IX" sozinho perto de "art. 7"
+  if (/art\.?\s*7[º°]?/.test(text) && /\binciso\s+ix\b/.test(text)) return true;
+  return false;
+}
+
+/**
  * Calcula completude da LIA por etapa (0..1) — usado pra mostrar
  * indicador visual no editor e exigir todas preenchidas antes de submeter.
  */

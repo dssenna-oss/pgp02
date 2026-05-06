@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { usesLegitimateInterest, type LiaDTO } from "@/lib/lia-helpers";
 
 interface InventoryItem {
   id: string;
@@ -77,6 +78,7 @@ export default function BasesLegaisDashboardContent({
   session: any;
 }) {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [liasByInventory, setLiasByInventory] = useState<Record<string, LiaDTO>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"all" | "missing" | "partial" | "complete">(
@@ -86,15 +88,35 @@ export default function BasesLegaisDashboardContent({
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch("/api/inventario", { cache: "no-store" });
+        // Em paralelo: inventário + LIAs (LIAs respeita escopo do papel)
+        const [r, lr] = await Promise.all([
+          fetch("/api/inventario", { cache: "no-store" }),
+          fetch("/api/lia", { cache: "no-store" }),
+        ]);
         if (!r.ok) {
           toast.error("Erro ao carregar processos");
           return;
         }
         const list = await r.json();
-        setItems(
-          (list as any[]).filter((p) => p.status === "APROVADO")
-        );
+        setItems((list as any[]).filter((p) => p.status === "APROVADO"));
+
+        // Indexa as LIAs ATIVAS (não-arquivadas) por inventoryId — preferindo
+        // a aprovada quando há mais de uma. Permite badge contextual no card.
+        if (lr.ok) {
+          const lj = await lr.json();
+          const map: Record<string, LiaDTO> = {};
+          for (const lia of (lj.items ?? []) as LiaDTO[]) {
+            if (!lia.inventoryId) continue;
+            const existing = map[lia.inventoryId];
+            // Prefere APROVADA > EM_REVISAO > RASCUNHO > ARQUIVADO
+            const rank = (s: string) =>
+              s === "APROVADO" ? 4 : s === "EM_REVISAO" ? 3 : s === "RASCUNHO" ? 2 : 1;
+            if (!existing || rank(lia.status) > rank(existing.status)) {
+              map[lia.inventoryId] = lia;
+            }
+          }
+          setLiasByInventory(map);
+        }
       } catch {
         toast.error("Erro de rede");
       } finally {
@@ -253,7 +275,13 @@ export default function BasesLegaisDashboardContent({
               Nenhum processo nessa categoria.
             </p>
           ) : (
-            filtered.map((r) => <ProcessLegalRow key={r.id} row={r} />)
+            filtered.map((r) => (
+              <ProcessLegalRow
+                key={r.id}
+                row={r}
+                lia={liasByInventory[r.id] ?? null}
+              />
+            ))
           )}
         </TabsContent>
       </Tabs>
@@ -305,7 +333,13 @@ function StatCard({
 // ProcessLegalRow
 // ============================================================
 
-function ProcessLegalRow({ row }: { row: ProcessRow }) {
+function ProcessLegalRow({
+  row,
+  lia,
+}: {
+  row: ProcessRow;
+  lia: LiaDTO | null;
+}) {
   const borderCls =
     row.completeness === "complete"
       ? "border-l-emerald-500"
@@ -317,6 +351,9 @@ function ProcessLegalRow({ row }: { row: ProcessRow }) {
   const hasSensitive = !!row.legalBasisSensitive;
   const hasPrevisao = !!row.previsaoLegal;
   const sensitivePending = row.hasSensitiveData && !hasSensitive;
+  const usesLia =
+    usesLegitimateInterest(row.legalBasis) ||
+    usesLegitimateInterest(row.legalBasisSensitive);
 
   return (
     <Link
@@ -350,6 +387,28 @@ function ProcessLegalRow({ row }: { row: ProcessRow }) {
             {row.completeness === "missing" && (
               <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100">
                 <ShieldAlert className="h-3 w-3 mr-1" /> Sem base legal
+              </Badge>
+            )}
+            {/* Badge LIA contextual (CP21 Fatia 3) — só pra processos
+                que usam Art. 7º IX. Mostra status da avaliação ou ausência. */}
+            {usesLia && lia?.blocked && (
+              <Badge className="bg-red-100 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800 hover:bg-red-100">
+                <ShieldAlert className="h-3 w-3 mr-1" /> LIA bloqueada (Art. 11/14)
+              </Badge>
+            )}
+            {usesLia && !lia?.blocked && lia?.status === "APROVADO" && (
+              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> LIA aprovada
+              </Badge>
+            )}
+            {usesLia && !lia?.blocked && lia && lia.status !== "APROVADO" && (
+              <Badge className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 hover:bg-blue-100">
+                LIA {lia.status === "EM_REVISAO" ? "em revisão" : lia.status === "RASCUNHO" ? "em rascunho" : "arquivada"}
+              </Badge>
+            )}
+            {usesLia && !lia && (
+              <Badge className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 hover:bg-amber-100">
+                <AlertCircle className="h-3 w-3 mr-1" /> LIA pendente
               </Badge>
             )}
           </div>

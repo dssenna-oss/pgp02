@@ -109,6 +109,19 @@ export interface MaturityInput {
     /** Vencidos (passou dos 72h sem comunicar ANPD) */
     overdueDeadline: number;
   };
+
+  /** LIA — Avaliações de Legítimo Interesse (Checkpoint 21). Não vira pilar
+   * separado pra não rebalancear pesos; aparece como pendências críticas. */
+  lia: {
+    total: number;
+    aprovadas: number;
+    rascunhos: number;
+    emRevisao: number;
+    /** LIAs com bloqueio estrutural (Art. 11/14 detectado). Crítico. */
+    bloqueadas: number;
+    /** Processos APROVADOS que usam Art. 7º IX e ainda NÃO têm LIA cadastrada. */
+    semLia: number;
+  };
 }
 
 // ============================================================
@@ -723,6 +736,30 @@ function computeCriticalPending(
       severity: "media",
       message: `${additional} incidente(s) de severidade ALTO/MEDIO sem comunicação à ANPD.`,
       href: "/dashboard/incidentes",
+    });
+  }
+
+  // LIA (Checkpoint 21) — bloqueio estrutural é o pior caso (base legal
+  // errada); ausência de LIA pra processo 7º IX vem em seguida.
+  if (i.lia.bloqueadas > 0) {
+    out.push({
+      severity: "alta",
+      message: `${i.lia.bloqueadas} LIA(s) com bloqueio estrutural — processo usa Art. 7º IX mas trata dados sensíveis ou de crianças/adolescentes (Art. 11/14). Mude a base legal.`,
+      href: "/dashboard/lia",
+    });
+  }
+  if (i.lia.semLia > 0) {
+    out.push({
+      severity: "alta",
+      message: `${i.lia.semLia} processo(s) usam Art. 7º IX (legítimo interesse) sem LIA documentada (Art. 10 §3º LGPD).`,
+      href: "/dashboard/lia",
+    });
+  }
+  if (i.lia.emRevisao > 0) {
+    out.push({
+      severity: "media",
+      message: `${i.lia.emRevisao} LIA(s) aguardando revisão do DPO.`,
+      href: "/dashboard/lia",
     });
   }
 
