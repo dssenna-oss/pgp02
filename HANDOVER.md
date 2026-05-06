@@ -7,6 +7,11 @@
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
+>
+> **⚠️ PROD COM AUTH QUEBRADO (2026-05-06):** senha do Neon foi alterada via SQL (`ALTER ROLE neondb_owner WITH PASSWORD 'NovaSenhaForte_PgP_2026'`) mas o Vercel `DATABASE_URL` ainda usa a senha antiga (`npg_gi9FIPlVnd2N`). 2 caminhos pra resolver:
+> 1. **Reverter a senha** rodando `ALTER ROLE neondb_owner WITH PASSWORD 'npg_gi9FIPlVnd2N';` no SQL Editor do Neon. Prod volta a funcionar imediatamente.
+> 2. **Atualizar Vercel** Environment Variables → `DATABASE_URL` substituindo só a parte da senha pra `NovaSenhaForte_PgP_2026` + Redeploy.
+> User parou aqui em 2026-05-06 sem decidir. Próxima sessão: validar com user antes de mexer em prod.
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
