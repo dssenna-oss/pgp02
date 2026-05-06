@@ -26,6 +26,7 @@ import {
   GraduationCap,
   Scale,
   Shield,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1299,13 +1300,30 @@ interface LiaResp {
   };
 }
 
+interface PsiResp {
+  items: Array<{
+    id: string;
+    status: string;
+    completeness: number;
+    createdBy: { id: string } | null;
+  }>;
+  stats: {
+    total: number;
+    byStatus: { RASCUNHO: number; EM_REVISAO: number; APROVADO: number; ARQUIVADO: number };
+    awaitingReview: number;
+    myDrafts: number;
+    approved: number;
+  };
+}
+
 function Fase6Tools() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <PoliticasCard />
       <RipdCardTools />
       <TerceirosCardTools />
       <LiaCardTools />
+      <PsiCardTools />
     </div>
   );
 }
@@ -1607,6 +1625,99 @@ function LiaCardTools() {
           : blocked > 0
             ? "Há LIAs apontando dados sensíveis ou de crianças. Mude a base legal desses processos antes de aprovar."
             : undefined
+      }
+    />
+  );
+}
+
+// ============================================================
+// PsiCardTools — Política de Segurança da Informação (5º card Fase 6, CP26)
+// ============================================================
+
+function PsiCardTools() {
+  const [data, setData] = useState<PsiResp | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/psi");
+        if (res.ok) setData(await res.json());
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = data?.stats.total ?? 0;
+  const aprovadas = data?.stats.byStatus.APROVADO ?? 0;
+  const emRevisao = data?.stats.byStatus.EM_REVISAO ?? 0;
+  const rascunhos = data?.stats.byStatus.RASCUNHO ?? 0;
+
+  // Cor: success se tem PSI aprovada e nada pendente; warning se tem
+  // pendência; neutral se vazio.
+  const color: ToolCardColor =
+    total === 0
+      ? "neutral"
+      : aprovadas > 0 && rascunhos === 0 && emRevisao === 0
+        ? "success"
+        : "warning";
+
+  return (
+    <ToolCard
+      icon={<Lock className="h-6 w-6" />}
+      iconColor="text-cyan-600 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/40"
+      title="PSI"
+      description="Política de Segurança da Informação — documento institucional formal cumprindo LGPD Art. 50 §1º + ISO/IEC 27001/27002. 7 seções (Governança, Ativos, Acesso, Criptografia, Físico, Incidentes, Continuidade)."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: total > 0 ? "Abrir PSIs" : "Criar primeira PSI",
+        href: "/dashboard/psi",
+      }}
+      stats={
+        data && total > 0
+          ? [
+              {
+                label: "PSIs",
+                value: total,
+                icon: <Lock className="h-3.5 w-3.5" />,
+              },
+              {
+                label: "aprovadas",
+                value: aprovadas,
+                color: "emerald",
+                icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+              },
+              ...(emRevisao > 0
+                ? [
+                    {
+                      label: "em revisão",
+                      value: emRevisao,
+                      color: "blue" as const,
+                      icon: <Clock className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+              ...(rascunhos > 0
+                ? [
+                    {
+                      label: "em rascunho",
+                      value: rascunhos,
+                      color: "amber" as const,
+                      icon: <AlertCircle className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []),
+            ]
+          : []
+      }
+      emptyHint={
+        total === 0
+          ? "Crie a PSI da organização — documento mater de segurança que aponta as medidas técnicas e organizacionais. Pré-popula com sugestões ISO 27001/27002."
+          : undefined
       }
     />
   );
