@@ -122,6 +122,22 @@ export interface MaturityInput {
     /** Processos APROVADOS que usam Art. 7º IX e ainda NÃO têm LIA cadastrada. */
     semLia: number;
   };
+
+  /** Maturidade Cibernética NIST CSF (Checkpoint 22). Não vira pilar
+   * pra preservar pesos atuais (40/20/15/15/10); aparece como
+   * pendências críticas se houver dados. */
+  cyber: {
+    /** Total de controles do catálogo NIST. */
+    totalControles: number;
+    /** Quantos foram respondidos (qualquer aderência). */
+    respondidos: number;
+    /** Score consolidado 0-100 ou null se sem respostas. */
+    score: number | null;
+    /** Controles NAO_ADERENTE (precisa correção). */
+    naoAderentes: number;
+    /** Controles delegados à TI ainda sem resposta final. */
+    delegadosTi: number;
+  };
 }
 
 // ============================================================
@@ -760,6 +776,45 @@ function computeCriticalPending(
       severity: "media",
       message: `${i.lia.emRevisao} LIA(s) aguardando revisão do DPO.`,
       href: "/dashboard/lia",
+    });
+  }
+
+  // Maturidade Cibernética (Checkpoint 22) — pendências críticas
+  if (i.cyber.respondidos > 0 && i.cyber.score != null) {
+    if (i.cyber.score < 30) {
+      out.push({
+        severity: "alta",
+        message: `Maturidade cibernética está em estágio inicial (score ${i.cyber.score}/100). Risco de incidente cyber elevado.`,
+        href: "/dashboard/maturidade-cyber",
+      });
+    } else if (i.cyber.score < 50) {
+      out.push({
+        severity: "media",
+        message: `Maturidade cibernética em desenvolvimento (score ${i.cyber.score}/100). Plano de melhoria recomendado.`,
+        href: "/dashboard/maturidade-cyber",
+      });
+    }
+  }
+  if (i.cyber.naoAderentes >= 5) {
+    out.push({
+      severity: "alta",
+      message: `${i.cyber.naoAderentes} controle(s) NIST marcado(s) como não aderente — gaps de segurança da informação documentados.`,
+      href: "/dashboard/maturidade-cyber",
+    });
+  }
+  if (i.cyber.delegadosTi >= 10) {
+    out.push({
+      severity: "media",
+      message: `${i.cyber.delegadosTi} controle(s) NIST delegado(s) à TI aguardando resposta. Acompanhe.`,
+      href: "/dashboard/maturidade-cyber",
+    });
+  }
+  if (i.cyber.respondidos === 0 && i.cyber.totalControles > 0) {
+    out.push({
+      severity: "media",
+      message:
+        "Avaliação de Maturidade Cibernética NIST CSF ainda não foi iniciada. Recomendado complementar a avaliação LGPD.",
+      href: "/dashboard/maturidade-cyber",
     });
   }
 

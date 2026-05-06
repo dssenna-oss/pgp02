@@ -26,6 +26,7 @@ export const ACTION_ORIGIN = {
   OPERADOR: "OPERADOR",
   INCIDENTE: "INCIDENTE",
   LIA: "LIA",
+  CYBER: "CYBER",
 } as const;
 export type ActionOrigin = (typeof ACTION_ORIGIN)[keyof typeof ACTION_ORIGIN];
 
@@ -62,6 +63,7 @@ export function originLabel(o: string | null | undefined): string {
     case "OPERADOR":  return "Gestão de Terceiros";
     case "INCIDENTE": return "Incidente";
     case "LIA":       return "Legítimo Interesse";
+    case "CYBER":     return "Maturidade Cibernética";
     default:          return "—";
   }
 }
@@ -105,6 +107,8 @@ export function originBadgeClass(o: string | null | undefined): string {
       return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800";
     case "LIA":
       return "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-800";
+    case "CYBER":
+      return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800";
     default:
       return "bg-gray-50 text-gray-700 border-gray-300";
   }
@@ -153,6 +157,7 @@ export interface ActionPlanDTO {
   refInventoryId: string | null;
   refOperatorId: string | null;
   refIncidentId: string | null;
+  refCyberCode: string | null;
   /** Label legível pra UI (ex: "GAP #002", "Risco BR em Sistema RH"). */
   refLabel: string | null;
   /** URL pra clicar e abrir o item de origem. Pode ser null. */
@@ -182,6 +187,7 @@ interface ActionPlanRow {
   refInventoryId: string | null;
   refOperatorId: string | null;
   refIncidentId: string | null;
+  refCyberCode: string | null;
   assigneeId: string | null;
   assignee: { id: string; name: string | null; email: string } | null;
   dueDate: Date | null;
@@ -222,6 +228,7 @@ export function actionToDTO(
     refInventoryId: a.refInventoryId,
     refOperatorId: a.refOperatorId,
     refIncidentId: a.refIncidentId,
+    refCyberCode: a.refCyberCode,
     refLabel,
     refHref,
     assigneeId: a.assigneeId,
@@ -272,6 +279,9 @@ function computeRefLabel(
     const name = resolver?.inventoryById?.[a.refInventoryId];
     return name ? `LIA — ${name}` : `LIA (processo)`;
   }
+  if (a.origin === "CYBER" && a.refCyberCode) {
+    return `Cyber NIST — ${a.refCyberCode}`;
+  }
   return null;
 }
 
@@ -293,6 +303,9 @@ function computeRefHref(a: ActionPlanRow): string | null {
   }
   if (a.origin === "LIA") {
     return `/dashboard/lia`;
+  }
+  if (a.origin === "CYBER") {
+    return `/dashboard/maturidade-cyber`;
   }
   return null;
 }
@@ -367,7 +380,7 @@ export function computeActionStats(
     total: actions.length,
     byStatus: { A_FAZER: 0, EM_ANDAMENTO: 0, CONCLUIDA: 0, CANCELADA: 0 },
     byPriority: { ALTA: 0, MEDIA: 0, BAIXA: 0 },
-    byOrigin: { MANUAL: 0, GAP: 0, RISCO: 0, BASES: 0, OPERADOR: 0, INCIDENTE: 0, LIA: 0 },
+    byOrigin: { MANUAL: 0, GAP: 0, RISCO: 0, BASES: 0, OPERADOR: 0, INCIDENTE: 0, LIA: 0, CYBER: 0 },
     overdue: 0,
     dueSoon: 0,
   };

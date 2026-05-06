@@ -11,6 +11,7 @@ import {
 import { GAP_CONTROLS } from "@/lib/gap-catalog";
 import { decodeSeverity } from "@/lib/riscos-catalog";
 import { usesLegitimateInterest } from "@/lib/lia-helpers";
+import { getCyberControl, cyberFunctionLabel } from "@/lib/cyber-catalog";
 
 /**
  * POST /api/plano-acao/import
@@ -34,12 +35,12 @@ export async function POST(_request: NextRequest) {
   const { user } = r;
 
   // 1) Carregar TUDO em paralelo
-  const [existingActions, gapAnswers, risks, inventories, operators, incidents, lias] = await Promise.all([
+  const [existingActions, gapAnswers, risks, inventories, operators, incidents, lias, cyberAnswers] = await Promise.all([
     // Pra dedup: chaves já existentes
     prisma.actionPlan.findMany({
       where: {
         companyId: user.companyId,
-        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR", "INCIDENTE", "LIA"] },
+        origin: { in: ["GAP", "RISCO", "BASES", "OPERADOR", "INCIDENTE", "LIA", "CYBER"] },
       },
       select: {
         origin: true,
@@ -48,6 +49,7 @@ export async function POST(_request: NextRequest) {
         refInventoryId: true,
         refOperatorId: true,
         refIncidentId: true,
+        refCyberCode: true,
       },
     }),
     prisma.gapAnswer.findMany({
@@ -132,6 +134,12 @@ export async function POST(_request: NextRequest) {
       where: { companyId: user.companyId },
       select: { id: true, inventoryId: true, status: true },
     }),
+    // Cyber NIST — controles NAO_ADERENTE com ponto de melhoria viram
+    // ações automáticas no Plano (CP22 Fatia 3).
+    prisma.cyberAnswer.findMany({
+      where: { companyId: user.companyId, aderencia: "NAO_ADERENTE" },
+      select: { controlCode: true, pontoMelhoria: true, evidence: true },
+    }),
   ]);
 
   // Sets pra dedup rápido
@@ -141,6 +149,7 @@ export async function POST(_request: NextRequest) {
   const seenOperator = new Set<string>();
   const seenIncident = new Set<string>();
   const seenLia = new Set<string>();
+  const seenCyber = new Set<string>();
   for (const a of existingActions) {
     if (a.origin === "GAP" && a.refGapCode) seenGap.add(a.refGapCode);
     if (a.origin === "RISCO" && a.refRiskId) seenRisk.add(a.refRiskId);
@@ -148,6 +157,7 @@ export async function POST(_request: NextRequest) {
     if (a.origin === "OPERADOR" && a.refOperatorId) seenOperator.add(a.refOperatorId);
     if (a.origin === "INCIDENTE" && a.refIncidentId) seenIncident.add(a.refIncidentId);
     if (a.origin === "LIA" && a.refInventoryId) seenLia.add(a.refInventoryId);
+    if (a.origin === "CYBER" && a.refCyberCode) seenCyber.add(a.refCyberCode);
   }
 
   // Processos que JÁ têm LIA cadastrada (qualquer status) — não precisam
@@ -175,6 +185,7 @@ export async function POST(_request: NextRequest) {
     refInventoryId?: string;
     refOperatorId?: string;
     refIncidentId?: string;
+    refCyberCode?: string;
     priority: string;
     status: string;
     createdById: string;
@@ -398,6 +409,35 @@ export async function POST(_request: NextRequest) {
     });
   }
 
+  // ---------- CYBER NIST (Checkpoint 22 Fatia 3) ----------
+  // Cada CyberAnswer com NAO_ADERENTE vira 1 ação no Plano. Prioridade
+  // ALTA porque "não aderente" em segurança da informação é gap real.
+  // Idempotente via seenCyber.
+  for (const ca of cyberAnswers) {
+    if (seenCyber.has(ca.controlCode)) continue;
+    const ctrl = getCyberControl(ca.controlCode);
+    if (!ctrl) continue; // catálogo mudou — ignora
+    const fnLabel = cyberFunctionLabel(ctrl.function);
+    const titleSnippet = truncate(ca.pontoMelhoria || ctrl.question, 100);
+    toCreate.push({
+      companyId: user.companyId,
+      title: `Cyber ${ca.controlCode}: ${titleSnippet}`,
+      description:
+        `Função NIST: ${fnLabel}\n` +
+        `Categoria: ${ctrl.category}\n` +
+        `Pergunta: ${ctrl.question}\n\n` +
+        (ca.pontoMelhoria
+          ? `Ponto de melhoria registrado: ${ca.pontoMelhoria}\n\n`
+          : "") +
+        `Referência NIST original: ${ctrl.nistRef}`,
+      origin: ACTION_ORIGIN.CYBER,
+      refCyberCode: ca.controlCode,
+      priority: ACTION_PRIORITY.ALTA,
+      status: ACTION_STATUS.A_FAZER,
+      createdById: user.id,
+    });
+  }
+
   // ---------- LIA (Checkpoint 21 Fatia 3) ----------
   // Processo APROVADO usando Art. 7º IX (legítimo interesse) sem LIA
   // cadastrada → cria 1 ação "Documentar LIA". Idempotente (seenLia +
@@ -446,7 +486,8 @@ export async function POST(_request: NextRequest) {
           (usesLegitimateInterest(i.legalBasis) ||
             usesLegitimateInterest(i.legalBasisSensitive)) &&
           (seenLia.has(i.id) || inventoriesWithLia.has(i.id)),
-      ).length,
+      ).length +
+      cyberAnswers.filter((c) => seenCyber.has(c.controlCode)).length,
     byOrigin: {
       GAP: toCreate.filter((t) => t.origin === ACTION_ORIGIN.GAP).length,
       RISCO: toCreate.filter((t) => t.origin === ACTION_ORIGIN.RISCO).length,
@@ -454,6 +495,7 @@ export async function POST(_request: NextRequest) {
       OPERADOR: toCreate.filter((t) => t.origin === ACTION_ORIGIN.OPERADOR).length,
       INCIDENTE: toCreate.filter((t) => t.origin === ACTION_ORIGIN.INCIDENTE).length,
       LIA: toCreate.filter((t) => t.origin === ACTION_ORIGIN.LIA).length,
+      CYBER: toCreate.filter((t) => t.origin === ACTION_ORIGIN.CYBER).length,
     },
   });
 }

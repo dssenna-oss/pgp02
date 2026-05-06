@@ -157,6 +157,8 @@ export async function POST(request: NextRequest) {
       dedupWhere.refOperatorId = String(body.refOperatorId);
     } else if (origin === "INCIDENTE" && body.refIncidentId) {
       dedupWhere.refIncidentId = String(body.refIncidentId);
+    } else if (origin === "CYBER" && body.refCyberCode) {
+      dedupWhere.refCyberCode = String(body.refCyberCode);
     }
     // Só checa se ao menos uma ref aplicável foi fornecida
     if (
@@ -164,7 +166,8 @@ export async function POST(request: NextRequest) {
       dedupWhere.refRiskId ||
       dedupWhere.refInventoryId ||
       dedupWhere.refOperatorId ||
-      dedupWhere.refIncidentId
+      dedupWhere.refIncidentId ||
+      dedupWhere.refCyberCode
     ) {
       const existing = await prisma.actionPlan.findFirst({
         where: dedupWhere,
@@ -219,6 +222,7 @@ export async function POST(request: NextRequest) {
       refInventoryId: body.refInventoryId ? String(body.refInventoryId) : null,
       refOperatorId: body.refOperatorId ? String(body.refOperatorId) : null,
       refIncidentId: body.refIncidentId ? String(body.refIncidentId) : null,
+      refCyberCode: body.refCyberCode ? String(body.refCyberCode) : null,
       assigneeId: body.assigneeId ?? null,
       dueDate,
       priority,

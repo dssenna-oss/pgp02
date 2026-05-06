@@ -26,6 +26,7 @@
 --   * scripts/_migrate-incidents.sql (Etapa 17 — Checkpoint 16: Incidentes refatorado + IncidentCommunication + action_plans.refIncidentId)
 --   * scripts/_migrate-lia.sql (Etapa 20 — Checkpoint 21: LIA (lias + lia_versions))
 --   * scripts/_migrate-cyber.sql (Etapa 21 — Checkpoint 22: Maturidade Cibernética NIST (cyber_answers + cyber_snapshots))
+--   * scripts/_migrate-action-plan-cyber.sql (Etapa 22 — Checkpoint 22 Fatia 3: action_plans.refCyberCode)
 -- ============================================================
 
 BEGIN;
@@ -1035,6 +1036,16 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS "cyber_snapshots_companyId_createdAt_idx"
   ON "cyber_snapshots"("companyId", "createdAt");
+
+-- ====================================================================
+-- Etapa 22 — action_plans.refCyberCode (Checkpoint 22 / Fatia 3)
+-- ====================================================================
+
+ALTER TABLE "action_plans"
+  ADD COLUMN IF NOT EXISTS "refCyberCode" TEXT;
+
+CREATE INDEX IF NOT EXISTS "action_plans_companyId_refCyberCode_idx"
+  ON "action_plans"("companyId", "refCyberCode");
 
 COMMIT;
 

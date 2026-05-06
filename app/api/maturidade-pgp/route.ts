@@ -15,6 +15,8 @@ import {
   requiresAnpdCommunication,
 } from "@/lib/incidentes-helpers";
 import { usesLegitimateInterest, liaIsBlocked, normalizeLiaData } from "@/lib/lia-helpers";
+import { computeCyberScore } from "@/lib/cyber-helpers";
+import { TOTAL_CYBER_CONTROLS } from "@/lib/cyber-catalog";
 
 /**
  * GET /api/maturidade-pgp
@@ -61,6 +63,7 @@ export async function GET(_request: NextRequest) {
     company,
     incidents,
     lias,
+    cyberAnswers,
   ] = await Promise.all([
     prisma.dataInventory.findMany({
       where: { companyId },
@@ -138,6 +141,10 @@ export async function GET(_request: NextRequest) {
     prisma.lia.findMany({
       where: { companyId },
       select: { status: true, inventoryId: true, data: true },
+    }),
+    prisma.cyberAnswer.findMany({
+      where: { companyId },
+      select: { controlCode: true, aderencia: true },
     }),
   ]);
 
@@ -341,6 +348,16 @@ export async function GET(_request: NextRequest) {
     equipe: equipeStats,
     incidentes: incidentesStats,
     lia: liaStats,
+    cyber: (() => {
+      const score = cyberAnswers.length > 0 ? computeCyberScore(cyberAnswers) : null;
+      return {
+        totalControles: TOTAL_CYBER_CONTROLS,
+        respondidos: cyberAnswers.length,
+        score: score?.overall ?? null,
+        naoAderentes: cyberAnswers.filter((c) => c.aderencia === "NAO_ADERENTE").length,
+        delegadosTi: cyberAnswers.filter((c) => c.aderencia === "DELEGADO_TI").length,
+      };
+    })(),
   };
 
   const result = computePgpMaturity(input);

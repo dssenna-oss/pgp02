@@ -649,7 +649,7 @@ model ActionPlan {
   description String? @db.Text
   notes       String? @db.Text
 
-  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR | INCIDENTE
+  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR | INCIDENTE | LIA | CYBER
   origin      String  @default("MANUAL")
   /// Refs polimórficos pra rastrear de onde a ação saiu
   refGapCode      String? // GapAnswer.controlCode
@@ -658,6 +658,10 @@ model ActionPlan {
   refOperatorId   String? // Operator.id (Checkpoint 14 G4)
   refIncidentId   String? // Incident.id (Checkpoint 16 F1)
   refIncident     Incident? @relation("ActionPlanIncident", fields: [refIncidentId], references: [id], onDelete: SetNull)
+  /// Cyber NIST controlCode (Checkpoint 22 / Fatia 3). String simples — não
+  /// há FK porque o catálogo NIST é em código TS (lib/cyber-catalog.ts), não
+  /// uma tabela. A consistência é validada na criação da ação.
+  refCyberCode    String?
 
   /// Responsável formal (User da org); null = ainda sem responsável
   assigneeId  String?
@@ -682,6 +686,7 @@ model ActionPlan {
   @@index([companyId, dueDate])
   @@index([companyId, refOperatorId])
   @@index([companyId, refIncidentId])
+  @@index([companyId, refCyberCode])
   @@map("action_plans")
 }
 
