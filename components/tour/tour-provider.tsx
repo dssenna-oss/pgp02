@@ -20,6 +20,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { TourScriptId, TourState, TourStep } from "@/lib/tour/tour-types";
 import { MASTER_TOUR } from "@/lib/tour/master-script";
+import { PHASE_TOURS } from "@/lib/tour/phase-scripts";
 import {
   markTourCompleted,
   markTourSkipped,
@@ -27,6 +28,12 @@ import {
 } from "@/lib/tour/tour-storage";
 import TourSpotlight from "./tour-spotlight";
 import TourPanel from "./tour-panel";
+
+/** Resolve o roteiro a partir do ID. Único ponto de mapeamento. */
+function resolveScript(id: TourScriptId): TourStep[] {
+  if (id === "master") return MASTER_TOUR;
+  return PHASE_TOURS[id] ?? [];
+}
 
 interface TourContextValue extends TourState {
   start: (scriptId?: TourScriptId) => void;
@@ -69,8 +76,7 @@ export default function TourProvider({ children }: TourProviderProps) {
 
   const start = useCallback(
     (id: TourScriptId = "master") => {
-      // Por enquanto só temos o roteiro mestre. Futuro: por fase + por papel.
-      const source = id === "master" ? MASTER_TOUR : MASTER_TOUR;
+      const source = resolveScript(id);
       const available = filterAvailableSteps(source);
       if (available.length === 0) return;
       setScriptId(id);

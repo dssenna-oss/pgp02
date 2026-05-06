@@ -62,5 +62,221 @@
     "modelId": "eleven_multilingual_v2",
     "generatedAt": "2026-05-05T23:30:56.335Z",
     "bytes": 149673
+  },
+  "entendendo-pgp-01-intro": {
+    "id": "entendendo-pgp-01-intro",
+    "text": "Bem-vindo ao Entendendo o PGP. Aqui você conhece os fundamentos do Programa de Governança em Privacidade. É o ponto de partida pra entender o aplicativo.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:43.909Z",
+    "bytes": 146747
+  },
+  "entendendo-pgp-02-conteudo": {
+    "id": "entendendo-pgp-02-conteudo",
+    "text": "O conteúdo didático explica os princípios da LGPD, os papéis envolvidos e as etapas do programa de governança. Comece por aqui se for sua primeira vez.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:45.589Z",
+    "bytes": 170571
+  },
+  "entendendo-pgp-03-pratica": {
+    "id": "entendendo-pgp-03-pratica",
+    "text": "Aqui você acessa o Painel de Maturidade e a Política do PGP — os dois instrumentos que mostram o estágio atual do seu programa em tempo real.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:47.145Z",
+    "bytes": 148001
+  },
+  "fase-preliminar-01-intro": {
+    "id": "fase-preliminar-01-intro",
+    "text": "Bem-vindo à Fase Preliminar. Aqui você organiza a sensibilização e a capacitação da equipe sobre a LGPD. É o pré-requisito pras outras fases.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:48.547Z",
+    "bytes": 158032
+  },
+  "fase-preliminar-02-conteudo": {
+    "id": "fase-preliminar-02-conteudo",
+    "text": "O conteúdo didático aborda como engajar a diretoria, o RH e os colaboradores antes de começar o trabalho técnico do mapeamento.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:50.042Z",
+    "bytes": 142986
+  },
+  "fase-preliminar-03-pratica": {
+    "id": "fase-preliminar-03-pratica",
+    "text": "Registre eventos de capacitação em cinco eixos: onboarding, pílulas, prática, departamental e monitoramento. Tudo pra atender o artigo cinquenta e dois da LGPD.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:51.613Z",
+    "bytes": 191469
+  },
+  "fase-1-01-intro": {
+    "id": "fase-1-01-intro",
+    "text": "Bem-vindo à Fase um — Formação das Equipes. Aqui você estrutura quem faz o que no programa: encarregado, comitê e colaboradores.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:53.057Z",
+    "bytes": 141314
+  },
+  "fase-1-02-conteudo": {
+    "id": "fase-1-02-conteudo",
+    "text": "O conteúdo explica as responsabilidades de cada papel envolvido e como nomeá-los formalmente dentro da organização.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:54.252Z",
+    "bytes": 118326
+  },
+  "fase-1-03-pratica": {
+    "id": "fase-1-03-pratica",
+    "text": "Cadastre os contribuidores da organização, vincule a setores e veja quem participa do mapeamento de processos da Fase três.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:55.828Z",
+    "bytes": 122924
+  },
+  "fase-2-01-intro": {
+    "id": "fase-2-01-intro",
+    "text": "Bem-vindo à Fase dois — Diagnóstico de Privacidade. Aqui você mede a maturidade atual da organização antes de começar a executar.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:57.341Z",
+    "bytes": 145075
+  },
+  "fase-2-02-conteudo": {
+    "id": "fase-2-02-conteudo",
+    "text": "O conteúdo explica o que avaliar e como interpretar os resultados do diagnóstico inicial.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:15:58.690Z",
+    "bytes": 85725
+  },
+  "fase-2-03-pratica": {
+    "id": "fase-2-03-pratica",
+    "text": "Gere o Diagnóstico de Privacidade — score de zero a cem com quatro pilares ponderados e recomendações priorizadas pra ação.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:00.126Z",
+    "bytes": 134208
+  },
+  "fase-3-01-intro": {
+    "id": "fase-3-01-intro",
+    "text": "Bem-vindo à Fase três — Mapeamento e Análise de Riscos. Esta é a fase mais densa do programa. Aqui nasce o coração do PGP.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:01.473Z",
+    "bytes": 142986
+  },
+  "fase-3-02-conteudo": {
+    "id": "fase-3-02-conteudo",
+    "text": "O conteúdo cobre como entrevistar setores, documentar processos de tratamento e identificar riscos a cada operação com dados pessoais.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:03.009Z",
+    "bytes": 154688
+  },
+  "fase-3-03-pratica": {
+    "id": "fase-3-03-pratica",
+    "text": "Alimente o Inventário de Processos e a Análise de Riscos. Os dados aqui alimentam todas as ferramentas seguintes do programa.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:04.308Z",
+    "bytes": 140896
+  },
+  "fase-4-01-intro": {
+    "id": "fase-4-01-intro",
+    "text": "Bem-vindo à Fase quatro — GAP Analysis. Aqui você compara o estado atual da organização com as práticas exigidas pela LGPD.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:05.733Z",
+    "bytes": 153435
+  },
+  "fase-4-02-conteudo": {
+    "id": "fase-4-02-conteudo",
+    "text": "O conteúdo apresenta os domínios e controles avaliados pela matriz oficial usada pelo programa.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:06.938Z",
+    "bytes": 106623
+  },
+  "fase-4-03-pratica": {
+    "id": "fase-4-03-pratica",
+    "text": "Responda os cento e dezenove controles do GAP, organizados em vinte e oito domínios. O sistema gera score, recomendações e snapshots históricos.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:08.500Z",
+    "bytes": 160122
+  },
+  "fase-5-01-intro": {
+    "id": "fase-5-01-intro",
+    "text": "Bem-vindo à Fase cinco — Plano de Ação. Aqui você organiza as pendências detectadas em uma lista priorizada e rastreável.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:09.744Z",
+    "bytes": 134626
+  },
+  "fase-5-02-conteudo": {
+    "id": "fase-5-02-conteudo",
+    "text": "O conteúdo explica como definir responsáveis, prazos e prioridades pra cada ação institucional do programa.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:10.925Z",
+    "bytes": 108713
+  },
+  "fase-5-03-pratica": {
+    "id": "fase-5-03-pratica",
+    "text": "Importe ações do GAP, riscos e bases legais; depois acompanhe pelo cronograma com exportação pra Excel pra apresentar à diretoria.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:12.247Z",
+    "bytes": 139224
+  },
+  "fase-6-01-intro": {
+    "id": "fase-6-01-intro",
+    "text": "Bem-vindo à Fase seis — Execução. Aqui você publica os documentos formais exigidos pela ANPD.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:13.451Z",
+    "bytes": 114146
+  },
+  "fase-6-02-conteudo": {
+    "id": "fase-6-02-conteudo",
+    "text": "O conteúdo aborda os onze instrumentos do programa: políticas, RIPDs, contratos com terceiros e a Política do PGP.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:14.796Z",
+    "bytes": 145075
+  },
+  "fase-6-03-pratica": {
+    "id": "fase-6-03-pratica",
+    "text": "Gere políticas a partir de templates oficiais, conduza RIPDs estruturados e gerencie operadores com avaliação de risco.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:16.067Z",
+    "bytes": 129611
+  },
+  "fase-7-01-intro": {
+    "id": "fase-7-01-intro",
+    "text": "Bem-vindo à Fase sete — Monitoramento. Aqui o programa entra em modo contínuo de resposta a eventos críticos.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:17.265Z",
+    "bytes": 122088
+  },
+  "fase-7-02-conteudo": {
+    "id": "fase-7-02-conteudo",
+    "text": "O conteúdo explica como detectar incidentes, comunicar à ANPD em até setenta e duas horas e notificar os titulares afetados.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:18.644Z",
+    "bytes": 147583
+  },
+  "fase-7-03-pratica": {
+    "id": "fase-7-03-pratica",
+    "text": "Registre incidentes com workflow de sete estados, gere a comunicação à ANPD em formato Word e mantenha a timeline de evidências pra auditoria.",
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "modelId": "eleven_multilingual_v2",
+    "generatedAt": "2026-05-06T00:16:20.092Z",
+    "bytes": 163884
   }
 }

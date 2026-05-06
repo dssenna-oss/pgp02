@@ -105,6 +105,7 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
   }
 
   return (
+    <div data-tour-id="phase-practical">
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -350,5 +351,6 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

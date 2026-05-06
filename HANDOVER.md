@@ -1,11 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-05 (CP16 backlog + CP18 Capacitação + CP19 refino UX) · **Branch:** `claude/recursing-nash-10eacb` (worktree)
+> **Última sessão:** 2026-05-05 / 2026-05-06 (CP19 refino UX + **CP20 tour de onboarding com narração ElevenLabs**) · **Branch:** `claude/inspiring-khorana-0a97d2` (worktree)
 >
-> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas (Etapa 18 = `capacitacao_eventos`; Etapa 19 = `incident_data_inventories` + `incident_operators`). CP19 não tem schema novo.
-> **`origin/main`:** ✅ Pushados (último: `6f7138c` — TOC sticky + reading progress).
+> **Migração Neon:** ✅ Etapas 2 → 19 aplicadas. CP19 e CP20 não têm schema novo.
+> **`origin/main`:** ✅ último push CP19 = `6f7138c`. CP20 ainda em branch local pra revisão visual antes do push.
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05 (após restore PITR). `DATABASE_URL` atualizada no Vercel + `.env` local.
+> **🔐 ElevenLabs API key:** adicionada em `.env` local (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID=Bella`, `ELEVENLABS_MODEL_ID=eleven_multilingual_v2`). **PENDENTE:** rotacionar a key e atualizar Vercel após validação visual em prod (a atual foi colada no chat e está no histórico da sessão).
 
 App em **produção:** https://lgpd-pgp.vercel.app
 Repo: https://github.com/dssenna-oss/pgp02 (público)
@@ -21,6 +22,63 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-06 (CP20 — em branch, ainda não pushado)
+
+### Tour de onboarding com narração ElevenLabs (Checkpoint 20) — 3 fatias
+
+**Problema atacado**: novo usuário entra no app e não sabe por onde começar. As 9 fases + 20+ ferramentas formam uma surface area densa pra primeiro contato.
+
+**Resultado**: tour guiado de 3 minutos com narração premium (voz Bella ElevenLabs `eleven_multilingual_v2` em pt-BR), spotlight escurecendo o resto da tela e destacando o item da sidebar atual, painel lateral com player + transcrição com palavra atual destacada. Auto-disparo no 1º login. Mais 9 mini-tours por fase (~1min cada).
+
+**Sem schema novo** — toda persistência via `localStorage`. Decisão validada com user (single-user na prática).
+
+#### Fatia 1 (commit `ccdf191`) — Infra + tour mestre 8 passos
+
+- **5 componentes novos** em `components/tour/`:
+  - `tour-provider.tsx` — Context + state machine (start/end/next/prev/togglePlay) + filtragem automática de passos cujo target não existe na DOM (item DPO-only ausente pra Contribuidor é pulado).
+  - `tour-spotlight.tsx` — escurecimento via `box-shadow inset 9999px` no elemento alvo + setinha SVG pulsante.
+  - `tour-panel.tsx` — painel violeta fixo 380px com player + transcrição animada + botões Anterior/Pular/Próximo.
+  - `tour-floating-button.tsx` — botão "🎙️ Fazer tour guiado" canto inferior direito.
+- **2 helpers** em `lib/tour/`: `tour-types.ts` (`TourStep`, `TourState`, `TourScriptId`) + `master-script.ts` (8 passos do roteiro mestre).
+- **CSS** novo em `app/globals.css`: `.pgp-tour-spotlit`, anel pulsante, animação da setinha, ondas do áudio, highlight de palavra ativa.
+- **Plug** no `dashboard-layout.tsx`: `data-tour-id` em `sidebar` + `nav-fase-preliminar` + `nav-riscos` + `nav-plano-acao` + `nav-politicas` + `nav-maturidade`. Provider envolve o root return; FloatingButton aparece quando tour está fechado.
+- **Atalhos**: Espaço play/pause · → próximo · ← anterior · Esc sair.
+- **Áudios reais da Bella** em `public/tour-audio/` — gerados via `scripts/generate-tour-audio.ts` (idempotente; manifesto compara texto+voiceId+modelId).
+- **Mockup HTML standalone** em `mockups/tour-onboarding-mockup.html` aprovado pelo user antes da implementação real.
+
+#### Fatia 2 (commit `65ebcc6`) — Auto-disparo + persistência localStorage
+
+- **Helper** `lib/tour/tour-storage.ts`: `loadTourState`, `markTourCompleted`, `markTourSkipped`, `resetTourState`, `shouldAutoStart`, `hasEverInteracted`.
+- **Auto-disparo no 1º login**: TourProvider tenta abrir o tour mestre quando `shouldAutoStart("master")` retorna true. Aguarda a sidebar montar (até 5s, polling 250ms) antes de disparar pra evitar race com o filtro de targets ausentes.
+- **Regras de persistência**:
+  - Concluir o passo 8 marca `completedAt` em `pgp:tour-state:master`.
+  - Pular tour / Esc / × marcam `skippedAt` (mas só se ainda não tem `completedAt` — conclusão vence desistência).
+  - Se nem `completedAt` nem `skippedAt`, auto-abre na próxima visita.
+- **Botão flutuante muda label dinamicamente**: "🎙️ Fazer tour guiado" (1ª vez) → "🔁 Refazer tour" (após interação).
+- **Card "Tour guiado com narração" em `/dashboard/configuracoes`**: status colorido (concluído verde / pulado âmbar / nunca cinza) + botões "Refazer tour" e "Resetar progresso" (limpa localStorage; útil pra testar e revisar).
+
+#### Fatia 3 (commit `_______` — pendente push) — 9 tours por fase
+
+- **9 roteiros** em `lib/tour/phase-scripts.ts` (3 passos cada = 27 áudios extra):
+  - `entendendo-pgp` · `fase-preliminar` · `fase-1` ... `fase-7`
+  - Cada tour tem 3 passos: **Sobre esta fase** (sem spotlight) · **Conteúdo didático** (spotlight em `[data-phase-section-id="descricao"]`) · **Coloque em prática** (spotlight em `[data-tour-id="phase-practical"]`).
+- **Tipos atualizados**: `TourScriptId = "master" | "entendendo-pgp" | "fase-preliminar" | "fase-1" | ... | "fase-7"`.
+- **Provider resolve scripts via map**: nova função `resolveScript(id)` que retorna o array de steps pelo ID.
+- **`<PhaseTourButton phase={phase} />`** em `components/tour/phase-tour-button.tsx`: botão violeta pequeno "🎙️ Tour desta fase" / "🔁 Refazer tour" plugado dentro do `PhaseToolbar` (CP19) ao lado dos botões Expandir/Recolher tudo. Aparece automaticamente em todas as 9 fases sem precisar tocar em nenhuma.
+- **`<div data-tour-id="phase-practical">`** envolve o `<Card>` "Coloque em prática" do `PhasePracticalLinks` — alvo do passo 3 dos tours de fase.
+- **Persistência por fase é independente**: `pgp:tour-state:fase-3` é separado de `pgp:tour-state:fase-4`. Cada fase tem seu próprio "completed/skipped".
+- **Não auto-disparam** os tours de fase — só o mestre tem auto-disparo. Botão tem que ser clicado.
+- **MP3s gerados**: 27 novos áudios (3.382 chars consumidos do plano Creator, total acumulado ~5k chars dos 100k mensais).
+- **Smoke test passou** em fase-3: 3 passos rolaram, áudios certos, spotlights acertaram, completedAt gravado em localStorage.
+
+#### Pendências CP20
+
+- [ ] **Validação visual em prod** após push (recarregar `/dashboard/fase-3` → clicar "Tour desta fase" → ouvir Bella).
+- [ ] **Rotacionar API key ElevenLabs** (a atual foi colada no chat) → atualizar `.env` local + Vercel.
+- [ ] **Documentar voz alternativa**: se quiser trocar de Bella pra outra (ex.: Rachel), só mudar `ELEVENLABS_VOICE_ID` em `.env` e re-rodar `npx ts-node scripts/generate-tour-audio.ts`. Manifesto força regeneração ao detectar mudança de voz.
 
 ---
 
@@ -448,7 +506,8 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 16 | ~~**Incidentes**~~ — Refatorou Incident legado, IncidentCommunication, workflow 7 estados + severidade ALTO/MEDIO + prazo 72h, DOCX ANPD (Res. 15/2024) + DOCX titulares (Art. 48 §1º), UI lista+editor 6 abas + banner regressivo, plug Plano (origem INCIDENTE) + Maturidade (Fase 7 viva), badge sidebar pulsante, card Fase 7. **Backlog encerrado nesta sessão**: E3 (timeline visual — 7ª aba) + H (sino sidebar agregador + form emergência) + F2/F3 (M:N Inventário/Operador). | ✅ FEITO 2026-05-05 (A+B+C+D+E1+E2+E3+F1+F2+F3+F4+F5+G1+H) |
 | 18 | ~~**Capacitação LGPD**~~ — Mini-app na Fase Preliminar pra registro temporal de evidências. Schema com 5 eixos (Onboarding/Pílulas/Prática/Departamental/Monitoramento) + 7 públicos + vínculos polimórficos com Operator e Incident. Catálogo de 18 tarefas pré-cadastradas. APIs CRUD + upload Blob + import-tasks idempotente + DOCX consolidado pra ANPD. UI completa com filtros, cronograma, modal cadastro, sidebar dedicado. | ✅ FEITO 2026-05-05 |
 | 19 | ~~**Refino UX das Fases (5 fatias)**~~ — Reduz ~85% altura inicial das páginas de fase. Accordion mestre nas 4 seções (Descrição/Considerações/Checklist/Documentação) com persistência em localStorage. Sub-accordion automático em conteúdo extenso (parser de h4). Checklist com barra de progresso por categoria + toggle "esconder concluídos". Documentação como tabela compacta com busca/filtro/view toggle. TOC sticky lateral (IntersectionObserver) + reading progress no topo. Atalhos E/C. Aplicado nas 9 fases. Sem schema novo. | ✅ FEITO 2026-05-05 |
-| 20+ | Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética · Modo leitura overlay · Outros refinos | depois |
+| 20 | ~~**Tour de onboarding com narração ElevenLabs (3 fatias)**~~ — Tour mestre 8 passos auto-disparado no 1º login + 9 mini-tours por fase (3 passos cada) disparados manualmente pelo botão no PhaseToolbar. Voz Bella ElevenLabs `eleven_multilingual_v2` em pt-BR. Spotlight escurecedor + setinha pulsante + painel violeta com player + transcrição com palavra atual destacada. Persistência por scriptId em localStorage (sem schema novo). Card de configuração + botão "Resetar progresso". 35 MP3s gerados (~5k chars dos 100k Creator). | ✅ FEITO 2026-05-06 |
+| 21+ | Segurança institucional (PSI) · LIA (Legítimo Interesse) · Avaliação de Maturidade Cibernética · Modo leitura overlay · Outros refinos | depois |
 
 ---
 

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { ChevronsDown, ChevronsUp, Keyboard } from "lucide-react";
 import { bulkPhaseSections } from "@/lib/phase-ui-state";
+import PhaseTourButton from "@/components/tour/phase-tour-button";
 
 /**
  * Toolbar das páginas de Fase (CP19 — refino UX) — botões de Recolher tudo
@@ -47,6 +48,7 @@ export default function PhaseToolbar({ phase }: { phase: string }) {
         <ChevronsUp className="h-3.5 w-3.5" />
         Recolher tudo
       </button>
+      <PhaseTourButton phase={phase} />
       <span
         className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400 ml-auto"
         title="Atalhos disponíveis"

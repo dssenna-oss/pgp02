@@ -21,9 +21,82 @@ import "dotenv/config";
 import { writeFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-// Roteiro inline pra evitar problema de ESM resolver com .ts extension.
-// Mantenha sincronizado com `lib/tour/master-script.ts`.
-const MASTER_TOUR: { id: string; text: string }[] = [
+// Roteiros inline pra evitar problema de ESM resolver com .ts extension.
+// Mantenha sincronizado com `lib/tour/master-script.ts` e
+// `lib/tour/phase-scripts.ts`.
+type AudioStep = { id: string; text: string };
+
+function buildPhaseScript(
+  scriptId: string,
+  intro: string,
+  conteudo: string,
+  pratica: string
+): AudioStep[] {
+  return [
+    { id: `${scriptId}-01-intro`, text: intro },
+    { id: `${scriptId}-02-conteudo`, text: conteudo },
+    { id: `${scriptId}-03-pratica`, text: pratica },
+  ];
+}
+
+const PHASE_TOURS: Record<string, AudioStep[]> = {
+  "entendendo-pgp": buildPhaseScript(
+    "entendendo-pgp",
+    "Bem-vindo ao Entendendo o PGP. Aqui você conhece os fundamentos do Programa de Governança em Privacidade. É o ponto de partida pra entender o aplicativo.",
+    "O conteúdo didático explica os princípios da LGPD, os papéis envolvidos e as etapas do programa de governança. Comece por aqui se for sua primeira vez.",
+    "Aqui você acessa o Painel de Maturidade e a Política do PGP — os dois instrumentos que mostram o estágio atual do seu programa em tempo real."
+  ),
+  "fase-preliminar": buildPhaseScript(
+    "fase-preliminar",
+    "Bem-vindo à Fase Preliminar. Aqui você organiza a sensibilização e a capacitação da equipe sobre a LGPD. É o pré-requisito pras outras fases.",
+    "O conteúdo didático aborda como engajar a diretoria, o RH e os colaboradores antes de começar o trabalho técnico do mapeamento.",
+    "Registre eventos de capacitação em cinco eixos: onboarding, pílulas, prática, departamental e monitoramento. Tudo pra atender o artigo cinquenta e dois da LGPD."
+  ),
+  "fase-1": buildPhaseScript(
+    "fase-1",
+    "Bem-vindo à Fase um — Formação das Equipes. Aqui você estrutura quem faz o que no programa: encarregado, comitê e colaboradores.",
+    "O conteúdo explica as responsabilidades de cada papel envolvido e como nomeá-los formalmente dentro da organização.",
+    "Cadastre os contribuidores da organização, vincule a setores e veja quem participa do mapeamento de processos da Fase três."
+  ),
+  "fase-2": buildPhaseScript(
+    "fase-2",
+    "Bem-vindo à Fase dois — Diagnóstico de Privacidade. Aqui você mede a maturidade atual da organização antes de começar a executar.",
+    "O conteúdo explica o que avaliar e como interpretar os resultados do diagnóstico inicial.",
+    "Gere o Diagnóstico de Privacidade — score de zero a cem com quatro pilares ponderados e recomendações priorizadas pra ação."
+  ),
+  "fase-3": buildPhaseScript(
+    "fase-3",
+    "Bem-vindo à Fase três — Mapeamento e Análise de Riscos. Esta é a fase mais densa do programa. Aqui nasce o coração do PGP.",
+    "O conteúdo cobre como entrevistar setores, documentar processos de tratamento e identificar riscos a cada operação com dados pessoais.",
+    "Alimente o Inventário de Processos e a Análise de Riscos. Os dados aqui alimentam todas as ferramentas seguintes do programa."
+  ),
+  "fase-4": buildPhaseScript(
+    "fase-4",
+    "Bem-vindo à Fase quatro — GAP Analysis. Aqui você compara o estado atual da organização com as práticas exigidas pela LGPD.",
+    "O conteúdo apresenta os domínios e controles avaliados pela matriz oficial usada pelo programa.",
+    "Responda os cento e dezenove controles do GAP, organizados em vinte e oito domínios. O sistema gera score, recomendações e snapshots históricos."
+  ),
+  "fase-5": buildPhaseScript(
+    "fase-5",
+    "Bem-vindo à Fase cinco — Plano de Ação. Aqui você organiza as pendências detectadas em uma lista priorizada e rastreável.",
+    "O conteúdo explica como definir responsáveis, prazos e prioridades pra cada ação institucional do programa.",
+    "Importe ações do GAP, riscos e bases legais; depois acompanhe pelo cronograma com exportação pra Excel pra apresentar à diretoria."
+  ),
+  "fase-6": buildPhaseScript(
+    "fase-6",
+    "Bem-vindo à Fase seis — Execução. Aqui você publica os documentos formais exigidos pela ANPD.",
+    "O conteúdo aborda os onze instrumentos do programa: políticas, RIPDs, contratos com terceiros e a Política do PGP.",
+    "Gere políticas a partir de templates oficiais, conduza RIPDs estruturados e gerencie operadores com avaliação de risco."
+  ),
+  "fase-7": buildPhaseScript(
+    "fase-7",
+    "Bem-vindo à Fase sete — Monitoramento. Aqui o programa entra em modo contínuo de resposta a eventos críticos.",
+    "O conteúdo explica como detectar incidentes, comunicar à ANPD em até setenta e duas horas e notificar os titulares afetados.",
+    "Registre incidentes com workflow de sete estados, gere a comunicação à ANPD em formato Word e mantenha a timeline de evidências pra auditoria."
+  ),
+};
+
+const MASTER_TOUR: AudioStep[] = [
   {
     id: "01-welcome",
     text: "Olá! Bem-vindo ao Programa de Governança em Privacidade. Este tour vai te apresentar as principais funcionalidades em poucos minutos. Você pode pausar ou pular a qualquer momento.",
@@ -133,10 +206,16 @@ async function main() {
   let skipped = 0;
   let totalChars = 0;
 
-  console.log(`Tour mestre: ${MASTER_TOUR.length} passos.`);
+  // Concatena tour mestre + 9 tours por fase pra gerar tudo numa rodada.
+  const ALL_STEPS: AudioStep[] = [
+    ...MASTER_TOUR,
+    ...Object.values(PHASE_TOURS).flat(),
+  ];
+
+  console.log(`Total: ${ALL_STEPS.length} passos (mestre + 9 fases).`);
   console.log(`Voz: ${VOICE_ID} · Modelo: ${MODEL_ID}\n`);
 
-  for (const step of MASTER_TOUR) {
+  for (const step of ALL_STEPS) {
     const outPath = path.join(OUTPUT_DIR, `${step.id}.mp3`);
     const existingEntry = manifest[step.id];
     const fileExists = existsSync(outPath);
