@@ -25,20 +25,32 @@ interface SidebarExpansionContextValue {
   setExpandedHref: (href: string | null) => void;
   /** Atalho `expandedHref !== null` — usado pra esconder o TOC lateral. */
   hasExpansion: boolean;
+  /**
+   * `true` depois do provider ter lido o localStorage (mount client-side).
+   * Children (SidebarNavItem) usam pra adiar o auto-expand baseado em
+   * `isActive` até a hidratação acabar — evita race condition em que o
+   * navItem chamaria `setExpandedHref(href-novo)` antes do provider
+   * sobrescrever com o `saved` antigo do localStorage.
+   */
+  hydrated: boolean;
 }
 
 const SidebarExpansionContext = createContext<SidebarExpansionContextValue>({
   expandedHref: null,
   setExpandedHref: () => {},
   hasExpansion: false,
+  hydrated: false,
 });
 
 const STORAGE_KEY = "sidebar-expanded-href";
 
 export function SidebarExpansionProvider({ children }: { children: ReactNode }) {
   const [expandedHref, _setExpandedHref] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   // Restaura estado persistido só client-side (evita mismatch SSR).
+  // A flag `hydrated` é o sinal pros children de que pode disparar
+  // auto-expand sem risco de sobrescrita posterior pelo provider.
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,6 +58,7 @@ export function SidebarExpansionProvider({ children }: { children: ReactNode }) 
     } catch {
       // localStorage indisponível (modo privado em alguns browsers) — segue sem
     }
+    setHydrated(true);
   }, []);
 
   const setExpandedHref = (href: string | null) => {
@@ -67,6 +80,7 @@ export function SidebarExpansionProvider({ children }: { children: ReactNode }) 
         expandedHref,
         setExpandedHref,
         hasExpansion: expandedHref !== null,
+        hydrated,
       }}
     >
       {children}

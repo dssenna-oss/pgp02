@@ -46,16 +46,20 @@ export default function SidebarNavItem({
   tourId,
 }: SidebarNavItemProps) {
   const subItems = SIDEBAR_SUB_ITEMS[href];
-  const { expandedHref, setExpandedHref } = useSidebarExpansion();
+  const { expandedHref, setExpandedHref, hydrated } = useSidebarExpansion();
   const isExpanded = subItems != null && expandedHref === href;
 
   // Auto-expand quando navega pra essa rota (acordeão fecha as outras).
+  // Espera `hydrated=true` antes de disparar — senão o provider lê o
+  // localStorage depois e sobrescreve esse setExpandedHref, mantendo a
+  // árvore expandida na fase ANTERIOR ao invés da atual.
   useEffect(() => {
+    if (!hydrated) return;
     if (isActive && subItems && expandedHref !== href) {
       setExpandedHref(href);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive, href]);
+  }, [isActive, href, hydrated]);
 
   // Sem sub-itens — renderiza como link comum (preserva visual original).
   if (!subItems) {
