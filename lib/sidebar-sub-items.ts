@@ -22,9 +22,57 @@ export interface SidebarSubItem {
 }
 
 export const SIDEBAR_SUB_ITEMS: Record<string, SidebarSubItem[]> = {
+  // ────────────────────────────────────────────────────────────────────
+  // 9 fases — Fatia 2 (replica da Fase Preliminar pras demais).
+  // Ordem reflete a sequência visual real das PhaseSection na página.
+  // Fase 6 não tem "descricao" (estrutura própria com 4 cards de
+  // mini-apps); abre direto pelo "howto" + "consideracoes".
+  // ────────────────────────────────────────────────────────────────────
   "/dashboard/fase-preliminar": [
     { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
     { hash: "consideracoes", label: "Considerações", icon: "💭" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-1": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-2": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-3": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-4": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-5": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-6": [
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
+    { hash: "consideracoes", label: "Considerações", icon: "💭" },
+    { hash: "checklist", label: "Checklist", icon: "✅" },
+    { hash: "documentacao", label: "Documentação", icon: "📂" },
+  ],
+  "/dashboard/fase-7": [
+    { hash: "descricao", label: "Descrição da Fase", icon: "📄" },
+    { hash: "howto", label: "Como Proceder", icon: "🛠️" },
     { hash: "checklist", label: "Checklist", icon: "✅" },
     { hash: "documentacao", label: "Documentação", icon: "📂" },
   ],
