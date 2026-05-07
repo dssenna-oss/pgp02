@@ -73,6 +73,23 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Sua conta está inativa. Entre em contato com o administrador para ativá-la.");
         }
 
+        // Painel de Retomada (CP27) — atualiza lastLoginAt + previousLoginAt.
+        // O valor antigo de lastLoginAt vira o novo previousLoginAt; assim o
+        // banner "Desde sua última visita" no Dashboard sabe a janela exata
+        // entre o login anterior e o atual. Falha aqui não bloqueia o login.
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              previousLoginAt: (user as any).lastLoginAt ?? null,
+              lastLoginAt: new Date(),
+            },
+          });
+        } catch (err) {
+          console.error("[auth] Falha ao atualizar lastLoginAt:", err);
+          // Não interrompe — login segue mesmo se o tracking falhar.
+        }
+
         // Remove o logoUrl da empresa — base64 incha o JWT e estoura
         // o limite de tamanho de header da Vercel (~16KB). O frontend
         // busca o logo separadamente via /api/company/logo.

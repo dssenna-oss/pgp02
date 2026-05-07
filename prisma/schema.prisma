@@ -49,6 +49,19 @@ model User {
   resetToken        String?   @unique
   resetTokenExpiry  DateTime?
 
+  // Painel de Retomada (Etapa 25 / Checkpoint 27)
+  // Quando o user logou pela última vez (atualiza no signIn callback).
+  lastLoginAt       DateTime?
+  // Quando o user logou da vez ANTERIOR à atual.
+  // Usado pelo banner "Desde sua última visita" pra calcular o que mudou
+  // entre os 2 logins. Atualiza junto com lastLoginAt: o valor antigo de
+  // lastLoginAt vira o novo previousLoginAt antes de gravar o NOW().
+  previousLoginAt   DateTime?
+  // Coisas que o user editou recentemente — usado pelo card "Continue de
+  // onde parou". Capturado server-side em rotas PATCH/POST de cada
+  // entidade (Inventário, RIPD, Política, LIA, Incidente, Plano).
+  lastActions       UserLastAction[]
+
   // Progresso do checklist RIPD
   ripdChecklistProgress RipdChecklistProgress?
 
@@ -2000,4 +2013,46 @@ model CookieConsent {
   @@index([deviceFingerprint])
   @@index([createdAt])
   @@map("cookie_consents")
+}
+
+// ============================================================
+// Painel de Retomada (Etapa 25 / Checkpoint 27)
+// ============================================================
+// Tracking de "Continue de onde parou" — registra o que o user
+// editou nas rotas PATCH/POST de cada entidade. 1 row por
+// (user, refType, refId) — upsert na rota de mutation.
+// Listagem no Dashboard filtra por status != APROVADO/PUBLICADO/
+// ENCERRADO + openedAt nos últimos 14 dias.
+//
+// refType:
+//   - "INVENTARIO"   → DataInventory
+//   - "RIPD"         → Ripd
+//   - "POLITICA"     → Policy
+//   - "INCIDENTE"    → Incident
+//   - "LIA"          → Lia
+//   - "PLANO_ACAO"   → ActionPlan
+//
+// closedCleanly: true quando user finalizou (publish/approve/close).
+// Quando closedCleanly = true, o item some do "Continue de onde parou"
+// mesmo se foi editado nos últimos 14 dias.
+// ============================================================
+model UserLastAction {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refType        String
+  refId          String
+  /// Rota pra retomar diretamente (ex: /dashboard/inventario/abc).
+  route          String
+  /// Label denormalizada pro display ("Inventário CRM"), evita JOIN.
+  label          String
+  /// Progresso 0..100 quando aplicável (Inventário, RIPD).
+  /// Null quando a entidade não tem progresso linear (Plano de Ação).
+  completeness   Int?
+  openedAt       DateTime @default(now())
+  closedCleanly  Boolean  @default(false)
+
+  @@unique([userId, refType, refId])
+  @@index([userId, openedAt(sort: Desc)])
+  @@map("user_last_actions")
 }

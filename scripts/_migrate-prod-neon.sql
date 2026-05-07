@@ -27,6 +27,7 @@
 --   * scripts/_migrate-lia.sql (Etapa 20 — Checkpoint 21: LIA (lias + lia_versions))
 --   * scripts/_migrate-cyber.sql (Etapa 21 — Checkpoint 22: Maturidade Cibernética NIST (cyber_answers + cyber_snapshots))
 --   * scripts/_migrate-action-plan-cyber.sql (Etapa 22 — Checkpoint 22 Fatia 3: action_plans.refCyberCode)
+--   * scripts/_migrate-painel-retomada.sql (Etapa 25 — Checkpoint 27: Painel de Retomada (users.lastLoginAt + previousLoginAt + user_last_actions))
 -- ============================================================
 
 BEGIN;
@@ -1050,6 +1051,46 @@ CREATE INDEX IF NOT EXISTS "action_plans_companyId_refCyberCode_idx"
 COMMIT;
 
 -- ====================================================================
+-- Etapa 25 — Painel de Retomada (Checkpoint 27)
+-- ====================================================================
+-- Adiciona timestamps de login e tabela de tracking pra "Continue de
+-- onde parou" no Dashboard.
+
+BEGIN;
+
+ALTER TABLE "users"
+  ADD COLUMN IF NOT EXISTS "lastLoginAt"     TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "previousLoginAt" TIMESTAMP(3);
+
+CREATE TABLE IF NOT EXISTS "user_last_actions" (
+  "id"             TEXT PRIMARY KEY,
+  "userId"         TEXT NOT NULL,
+  "refType"        TEXT NOT NULL,
+  "refId"          TEXT NOT NULL,
+  "route"          TEXT NOT NULL,
+  "label"          TEXT NOT NULL,
+  "completeness"   INTEGER,
+  "openedAt"       TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "closedCleanly"  BOOLEAN NOT NULL DEFAULT false
+);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_last_actions_userId_fkey') THEN
+    ALTER TABLE "user_last_actions"
+      ADD CONSTRAINT "user_last_actions_userId_fkey"
+      FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE;
+  END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "user_last_actions_userId_refType_refId_key"
+  ON "user_last_actions"("userId", "refType", "refId");
+CREATE INDEX IF NOT EXISTS "user_last_actions_userId_openedAt_idx"
+  ON "user_last_actions"("userId", "openedAt" DESC);
+
+COMMIT;
+
+-- ====================================================================
 -- Verificação
 -- ====================================================================
 \echo ''
@@ -1121,6 +1162,10 @@ SELECT 'lias (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='lias');
 SELECT 'lia_versions (table)', EXISTS (SELECT 1 FROM information_schema.tables
   WHERE table_name='lia_versions');
+SELECT 'users.lastLoginAt', EXISTS (SELECT 1 FROM information_schema.columns
+  WHERE table_name='users' AND column_name='lastLoginAt');
+SELECT 'user_last_actions (table)', EXISTS (SELECT 1 FROM information_schema.tables
+  WHERE table_name='user_last_actions');
 
 \echo ''
 \echo '=== Inventários por status ==='

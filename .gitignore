@@ -42,3 +42,6 @@ Thumbs.db
 __pycache__/
 .pytest_cache/
 .vercel
+
+# Mockups servidos via Next dev pro preview, não vão pra prod
+/public/mockups/
