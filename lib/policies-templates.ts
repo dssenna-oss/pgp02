@@ -925,82 +925,156 @@ Estes Termos são regidos pelas leis brasileiras. \`[Para órgãos públicos fed
 const T_COOKIES: PolicyTemplate = {
   type: "POLITICA_COOKIES",
   defaultTitle: "Política de Cookies",
-  blurb: "Detalha quais cookies o site coleta, com que finalidade, base legal de cada categoria e como o titular pode gerenciar suas preferências (consent banner). Segue o Guia da ANPD.",
+  blurb:
+    "Detalha quais cookies o sítio coleta, finalidade, duração e base legal — separados em essenciais, analíticos, de terceiros e de redes sociais. Inclui tutoriais de configuração nos principais navegadores. Modelo institucional alinhado à Política de Cookies do Portal da Transparência (CGU). Segue o Guia Orientativo da ANPD sobre Cookies e Proteção de Dados Pessoais (2022).",
   content: `# Política de Cookies — {{empresa}}
 
 **Última atualização:** {{data_publicacao}}
 
-Esta política explica o que são cookies, como a **{{empresa}}** os utiliza no site {{website}} e como você pode gerenciar suas preferências.
-
-## 1. O que são cookies
-
-Cookies são pequenos arquivos de texto armazenados no seu navegador quando você visita um site. Servem para reconhecer o dispositivo, lembrar preferências, melhorar performance e personalizar conteúdo.
-
-## 2. Categorias de cookies que utilizamos
-
-### 2.1. Cookies estritamente necessários
-Indispensáveis para o funcionamento do site (ex: manter você logado, lembrar itens no carrinho). **Não exigem consentimento** — base legal: legítimo interesse.
-
-### 2.2. Cookies de desempenho/análise
-Coletam informações sobre como você usa o site (páginas visitadas, tempo gasto) — anonimizadas. Ajudam a melhorar a experiência. **Exigem consentimento.**
-
-### 2.3. Cookies de funcionalidade
-Lembram preferências (idioma, região, fonte). **Exigem consentimento.**
-
-### 2.4. Cookies de publicidade/marketing
-Usados para exibir anúncios relevantes ao seu interesse. **Exigem consentimento.**
-
-## 3. Cookies de terceiros
-
-Alguns recursos do nosso site (vídeos do YouTube, mapas, botões de redes sociais) instalam cookies de terceiros. Esses cookies são governados pelas políticas dos respectivos provedores.
-
-## 4. Tabela de cookies utilizados
-
-> Esta tabela deve ser atualizada conforme o desenvolvedor configure novos cookies. Faça uma varredura regular usando ferramentas como [cookieserve.com](https://www.cookieserve.com) ou similar.
-
-| Nome | Provedor | Categoria | Duração | Finalidade |
-|------|----------|-----------|---------|------------|
-| \`session_id\` | {{website}} | Necessário | Sessão | Manter sessão de navegação |
-| \`_ga\` | Google Analytics | Análise | 2 anos | Identificar visitantes únicos |
-| \`_gid\` | Google Analytics | Análise | 24 horas | Distinguir usuários |
-| (preencher) | (preencher) | (preencher) | (preencher) | (preencher) |
-
-## 5. Como gerenciar suas preferências
-
-### 5.1. Banner de cookies do site
-Na sua primeira visita aparece um banner para você **aceitar** ou **rejeitar** cookies não essenciais. Pode mudar a escolha a qualquer momento clicando em "Configurações de cookies" no rodapé.
-
-### 5.2. Configurações do navegador
-Você pode bloquear ou apagar cookies no seu navegador:
-
-- [Google Chrome](https://support.google.com/chrome/answer/95647)
-- [Mozilla Firefox](https://support.mozilla.org/pt-BR/kb/limpe-cookies-e-dados-de-sites-no-firefox)
-- [Safari](https://support.apple.com/pt-br/guide/safari/sfri11471/mac)
-- [Microsoft Edge](https://support.microsoft.com/pt-br/microsoft-edge)
-
-> **Atenção:** desabilitar cookies necessários pode quebrar funcionalidades do site.
-
-## 6. Bases legais (LGPD)
-
-- **Cookies necessários:** legítimo interesse (Art. 7º, IX da LGPD).
-- **Cookies não necessários (análise, funcionalidade, marketing):** consentimento (Art. 7º, I da LGPD).
-
-Conforme **Guia Orientativo da ANPD sobre Cookies e Proteção de Dados Pessoais (2022)**.
-
-## 7. Seus direitos
-
-Para exercer direitos sobre dados coletados via cookies, contate nosso DPO:
-
-- **Nome:** {{dpo_nome}}
-- **E-mail:** {{dpo_email}}
-
-## 8. Atualizações
-
-Atualizamos esta política sempre que mudarmos a forma de uso de cookies. Reveja periodicamente.
+> A **{{empresa}}** utiliza *cookies* próprios (primários) para registrar as configurações e preferências de navegação dos usuários e gerar relatórios estatísticos \`[via Google Analytics ou ferramenta similar]\`, e também *cookies* de terceiros para complementar essas estatísticas.
+>
+> Os dados \`[do Google Analytics e de terceiros]\` são anonimizados antes de serem usados para análises e processamento de desempenho da web. Modelo institucional alinhado à Política de Cookies do Portal da Transparência (CGU/Governo Federal).
 
 ---
 
-**Versão {{data_publicacao}}** — {{empresa}}
+## Sumário
+
+1. Cookies essenciais
+2. Cookies analíticos
+3. Cookies de terceiros
+4. Cookies utilizados para redes sociais
+5. Configuração de Cookies no navegador
+
+---
+
+## 1. Cookies essenciais
+
+São utilizados *cookies* **estritamente necessários**, com base na hipótese legal do **legítimo interesse** (Art. 7º, IX da LGPD), que **não podem ser desativados** em nossos sistemas. Esses *cookies* permitem funcionalidades essenciais para o fornecimento dos serviços, tais como segurança, verificação de identidade, gestão de rede, e registro de preferências básicas de exibição.
+
+| Nome | Finalidade | Duração |
+|---|---|---|
+| \`lgpd_cookie_status\` | Registrar o aceite do banner de cookies da página inicial | 1 ano |
+| \`contraste\` | Registrar o contraste da tela escolhido pelo usuário (acessibilidade) | Durante uso do portal |
+| \`I18N_LANGUAGE\` | Registrar o idioma em que o site deve ser exibido | Durante uso do portal |
+| \`browserupdateorg\` | Notificar o usuário quando ele usa um navegador antigo ou incompatível | 1 semana |
+| \`[session_id ou nome do cookie de sessão]\` | Manter a sessão de navegação autenticada | Sessão |
+
+> *Atenção: edite a tabela acima conforme os cookies essenciais reais utilizados pela {{empresa_nome_curto}}. Se o sítio é hospedado em Gov.br ou plataforma similar, a maioria desses cookies já vem por padrão.*
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 2. Cookies analíticos
+
+Utilizamos *cookies* de **desempenho** que são opcionais e vêm desabilitados por padrão. Os *cookies* opcionais dependem do **consentimento** do usuário (Art. 7º, I da LGPD) para a sua utilização. Os *cookies* de desempenho visam à melhoria do sítio eletrônico por meio da coleta de dados anonimizados sobre navegação e do uso dos recursos disponibilizados.
+
+\`[Caso utilize Google Analytics, mantenha a tabela abaixo. Caso use outra ferramenta — Matomo, Plausible, etc. — substitua pelos cookies correspondentes.]\`
+
+| Nome | Finalidade | Duração |
+|---|---|---|
+| \`_ga\` | Registrar um número individual de ID com o propósito de gerar dados estatísticos de visitas ao sítio (usuário único, número de visitas, origens de tráfego, início/fim de sessão) | 2 anos |
+| \`_ga_[ID]\` | Registrar um ID único que gera dados estatísticos sobre as visitas no portal (substitua [ID] pelo identificador da propriedade GA4) | 2 anos |
+| \`_gid\` | Registrar um ID único que gera dados estatísticos sobre as visitas no portal | 1 dia |
+| \`_gat_gtag_UA_[ID]\` | Gerenciar a taxa de requisições ao portal | 1 dia |
+| \`_gaexp\` | Determinar a inclusão de um usuário em um experimento e a validade dos experimentos | 3 meses |
+
+Mais informações sobre o Consentimento do Google Analytics: https://policies.google.com/technologies/partner-sites?hl=pt-BR
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 3. Cookies de terceiros
+
+A {{empresa}} \`[utiliza / pode utilizar]\` recursos fornecidos por terceiros que permitem:
+
+- Melhorar campanhas de informação institucional;
+- Oferecer conteúdo interativo;
+- Melhorar a usabilidade e facilitar o compartilhamento de conteúdo nas redes sociais;
+- Assistir a vídeos e apresentações animadas diretamente na plataforma.
+
+Esses terceiros coletarão e usarão dados de navegação também para seus próprios fins. O usuário pode desativá-los direto no site do provedor.
+
+\`[Adapte os cookies de terceiros conforme os recursos efetivamente utilizados no seu sítio. Exemplos comuns:]\`
+
+**Domínios típicos:** Google, YouTube, Doubleclick.net, Facebook (caso aplicável)
+
+| Nome | Finalidade | Duração |
+|---|---|---|
+| \`VISITOR_INFO1_LIVE\` | Permite que o YouTube conte as visualizações de vídeos do YouTube incorporados no portal | 9 meses |
+| \`DSID\` | Permite analisar dados coletados pela Doubleclick.net (comportamento, interesses específicos, dados demográficos sobre idade, sexo biológico e localização geral) | 2 semanas |
+
+Links institucionais para informações detalhadas:
+
+- Informativo oficial dos *cookies* de terceiros da Google: https://business.safety.google/adscookies/
+- Política da Google: https://policies.google.com/technologies/partner-sites?hl=pt-BR
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 4. Cookies utilizados para redes sociais
+
+A {{empresa}} \`[incorpora / pode incorporar]\` vídeos e outros arquivos de mídias provenientes de redes sociais como **Facebook**, **YouTube** e **Google**. O usuário pode pesquisar mais informações sobre os *cookies* utilizados por essas redes sociais e sobre como os dados pessoais são tratados por elas. A seguir, links para as Políticas de Privacidade de cada rede social:
+
+- **Facebook:** https://www.facebook.com/policies/cookies
+- **YouTube:** https://policies.google.com/privacy?hl=pt-BR&gl=pt
+- **Google:** https://policies.google.com/technologies/cookies?hl=pt
+- \`[Adicionar outras redes sociais utilizadas: Instagram, LinkedIn, X/Twitter, etc.]\`
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 5. Configuração de Cookies no navegador
+
+O usuário pode alterar as permissões a qualquer momento, **bloquear** ou **recusar** os *cookies*, com exceção dos estritamente necessários. Todavia, a revogação do consentimento de determinados *cookies* pode prejudicar o correto funcionamento de alguns recursos do sítio.
+
+Para gerenciar os *cookies*, uma das alternativas é configurar diretamente no navegador. Tutoriais oficiais:
+
+- **Internet Explorer:** https://support.microsoft.com/pt-br/help/17442/windows-internet-explorer-delete-manage-cookies
+- **Mozilla Firefox:** https://support.mozilla.org/pt-BR/kb/gerencie-configuracoes-de-armazenamento-local-de-s
+- **Safari:** https://support.apple.com/pt-br/guide/safari/sfri11471/mac
+- **Google Chrome:** https://support.google.com/chrome/answer/95647?co=GENIE.Platform%3DDesktop&oco=1&hl=pt-BR
+- **Microsoft Edge:** https://support.microsoft.com/pt-br/help/4027947/microsoft-edge-delete-cookies
+- **Opera:** https://help.opera.com/en/latest/web-preferences/#cookies
+
+> **Atenção:** desabilitar *cookies* essenciais pode comprometer a sua experiência e prejudicar o funcionamento do sítio eletrônico.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## Bases legais (LGPD)
+
+- **Cookies essenciais:** legítimo interesse (Art. 7º, IX da LGPD) — não exigem consentimento.
+- **Cookies analíticos, de terceiros e de redes sociais:** consentimento (Art. 7º, I da LGPD) — exigem aceitação ativa do usuário no banner de cookies.
+
+Conforme orientações do **Guia Orientativo da ANPD sobre Cookies e Proteção de Dados Pessoais (2022)** e da **Política Nacional de Segurança da Informação (Decreto nº 9.637/2018)**.
+
+---
+
+## Direitos do titular
+
+Para exercer direitos sobre dados coletados via *cookies* (Art. 18 da LGPD), entre em contato com o **Encarregado pelo Tratamento de Dados Pessoais**:
+
+- **Nome:** {{dpo_nome}}
+- **E-mail:** {{dpo_email}}
+- **Telefone:** {{dpo_telefone}}
+
+---
+
+## Atualizações desta Política
+
+Atualizamos esta Política sempre que mudarmos a forma de uso de *cookies* — seja pela inclusão de novas ferramentas, retirada de funcionalidades ou alteração nos provedores terceiros. A versão vigente está sempre disponível no rodapé do sítio.
+
+---
+
+**{{empresa}}** — CNPJ {{cnpj}}
+**Versão desta Política:** {{data_publicacao}}
+
+> Modelo institucional baseado na Política de Cookies do Portal da Transparência (CGU — https://portaldatransparencia.gov.br/termos-de-uso) e no Guia Orientativo da ANPD sobre Cookies (2022). Substitua os marcadores entre colchetes \`[...]\` e os exemplos de cookies pelos efetivamente utilizados no sítio da {{empresa_nome_curto}}. Use ferramentas como o **Cookie Inspector** do navegador ou serviços online (cookieserve.com, builtwith.com) para identificar todos os cookies em uso. Documentos complementares: **Termo de Uso** e **Aviso de Privacidade**.
 `,
 };
 
