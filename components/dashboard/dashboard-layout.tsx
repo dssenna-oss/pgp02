@@ -46,6 +46,10 @@ import TourProvider from "@/components/tour/tour-provider";
 import TourFloatingButton from "@/components/tour/tour-floating-button";
 import PhaseSearchModal from "@/components/fases/phase-search-modal";
 import PhaseSearchDeepLink from "@/components/fases/phase-search-deeplink";
+import {
+  SidebarExpansionProvider,
+} from "./sidebar-expansion-context";
+import SidebarNavItem from "./sidebar-nav-item";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
 const APP_BRAND = "LGPD - PGP";
@@ -509,17 +513,18 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           .map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <SidebarNavItem
               key={item.name}
               href={item.href}
-              data-tour-id={!mobile && (item as any).tourId ? (item as any).tourId : undefined}
+              isActive={isActive}
+              tourId={!mobile && (item as any).tourId ? (item as any).tourId : undefined}
               className={cn(
                 "flex items-start gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               )}
-              onClick={() => mobile && setSidebarOpen(false)}
+              onNavigate={() => mobile && setSidebarOpen(false)}
             >
               <item.icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div className="flex flex-col min-w-0 flex-1">
@@ -591,7 +596,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                   </span>
                 )}
               </div>
-            </Link>
+            </SidebarNavItem>
           );
         })}
       </nav>
@@ -612,6 +617,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
 
   return (
     <TourProvider>
+    <SidebarExpansionProvider>
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block bg-white dark:bg-gray-800 shadow-sm relative z-20">
@@ -701,6 +707,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         <PhaseSearchDeepLink />
       </Suspense>
     </div>
+    </SidebarExpansionProvider>
     </TourProvider>
   );
 }
