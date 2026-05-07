@@ -251,117 +251,223 @@ c) Esta Política é divulgada interna e externamente nos canais oficiais da {{e
 const T_AVISO_EXTERNO: PolicyTemplate = {
   type: "AVISO_PRIVACIDADE_EXTERNO",
   defaultTitle: "Aviso de Privacidade",
-  blurb: "Documento público que explica aos titulares (clientes, visitantes do site) como a organização coleta, usa, compartilha e protege dados pessoais. Vai no rodapé do site / app.",
+  blurb:
+    "Documento público que esclarece e informa aos titulares como a organização trata seus dados pessoais — operações de coleta, uso, armazenamento, compartilhamento e eliminação. Modelo institucional alinhado ao Aviso de Privacidade da ANPD (12 seções). Indicado para o portal oficial. Use 'Atualizar do Inventário' (Bloco B — em construção) para popular a tabela de tratamento automaticamente a partir dos processos cadastrados.",
   content: `# Aviso de Privacidade — {{empresa}}
 
 **Última atualização:** {{data_publicacao}}
 
-## 1. Quem somos
+> Este Aviso de Privacidade tem a finalidade de esclarecer e informar aos titulares que acessam o sítio eletrônico da **{{empresa}}** como seus dados pessoais são tratados, especialmente no que se refere às operações de coleta, uso, armazenamento, compartilhamento e eliminação. Modelo institucional alinhado às orientações da Autoridade Nacional de Proteção de Dados (ANPD).
 
-A **{{empresa}}**, inscrita no CNPJ {{cnpj}}, com sede em {{endereco}}, leva a sério a privacidade e a proteção dos seus dados pessoais. Este Aviso de Privacidade explica como coletamos, usamos, compartilhamos e protegemos suas informações em conformidade com a Lei Geral de Proteção de Dados (Lei 13.709/2018 — LGPD).
+---
 
-## 2. Quais dados coletamos
+## Sumário
 
-Coletamos dados pessoais necessários pra operar nossos serviços:
+1. Sobre este Aviso de Privacidade
+2. Quais tipos de dados pessoais utilizamos?
+3. Por que e como tratamos seus dados pessoais?
+4. Por que e como tratamos cookies em nosso sítio institucional?
+5. Como obtemos seus dados pessoais?
+6. Como armazenamos seus dados pessoais?
+7. Com quem podemos compartilhar seus dados pessoais?
+8. Como ocorre a eliminação de seus dados pessoais?
+9. Como protegemos seus dados pessoais?
+10. Seus direitos de titular de dados pessoais
+11. Detalhes de contato com a {{empresa_nome_curto}}
+12. Detalhes de contato do Encarregado pelo tratamento de dados pessoais
 
-- **Dados de identificação:** nome completo, CPF, RG, data de nascimento.
-- **Dados de contato:** e-mail, telefone, endereço.
-- **Dados profissionais:** cargo, empresa, área de atuação (quando aplicável).
-- **Dados de navegação:** endereço IP, tipo de navegador, páginas acessadas (via cookies — veja nossa Política de Cookies).
+---
 
-> **Você** é responsável por manter seus dados atualizados e verídicos.
+## 1. Sobre este Aviso de Privacidade
 
-## 3. Como coletamos
+**1.1.** Este Aviso de Privacidade do sítio eletrônico da {{empresa}} tem o objetivo de informar, de maneira objetiva e transparente, a você, titular de dados, como a {{empresa}} trata seus dados pessoais.
 
-- **Diretamente de você:** quando preenche formulários, faz cadastro, contrata serviços, entra em contato.
-- **Automaticamente:** via cookies e tecnologias similares ao navegar em nosso site.
-- **De terceiros:** apenas quando autorizado por você ou previsto em lei.
+**1.2.** A {{empresa}} é \`[descrever natureza jurídica: autarquia / fundação / órgão municipal / empresa de economia mista / etc.]\`, com sede em {{endereco}}, inscrita no CNPJ {{cnpj}}. Executamos nossas atividades de acordo com as atribuições previstas em \`[citar lei/decreto/lei orgânica/estatuto que define as competências]\` e em conformidade com a **Lei nº 13.709/2018 — Lei Geral de Proteção de Dados Pessoais (LGPD)**.
 
-## 4. Para que finalidade usamos seus dados
+[Voltar ao Sumário](#sumário)
 
-Tratamos dados pessoais para:
+---
 
-- Prestar os serviços contratados.
-- Cumprir obrigações legais e regulatórias.
-- Atender solicitações, dúvidas e suporte.
-- Enviar comunicações relevantes (mediante consentimento, quando aplicável).
-- Melhorar a experiência no site e nos nossos serviços.
-- Prevenir fraudes e proteger direitos.
+## 2. Quais tipos de dados pessoais utilizamos?
 
-## 5. Bases legais (Art. 7º e Art. 11 da LGPD)
+**2.1.** Para o desempenho de nossas atividades, podemos tratar as seguintes **categorias de dados pessoais**:
 
-Cada finalidade tem uma base legal:
+{{categorias_dados}}
 
-- **Consentimento** — para envio de comunicações de marketing.
-- **Execução de contrato** — para prestar os serviços que você contratou.
-- **Cumprimento de obrigação legal** — para manter registros fiscais, trabalhistas, etc.
-- **Legítimo interesse** — para segurança da informação e prevenção a fraudes.
+> *Atenção: o conteúdo acima é gerado automaticamente a partir do Inventário de Dados da organização (Bloco B — em construção). Enquanto o aggregator não está ativo, edite manualmente as categorias. Modelo institucional sugerido pela ANPD:*
+>
+> - **Cadastrais e de identificação**: nome, qualificação pessoal, endereço e informações identificadoras perante o cadastro de órgãos públicos, como o número de Cadastro de Pessoas Físicas (CPF).
+> - **Relacionados a comunicações eletrônicas**: correio eletrônico (e-mail), endereço IP e informações sobre páginas acessadas.
+> - **Informações sobre interação de titular** com agentes de tratamento, quando fornecidas no conteúdo de petições dirigidas à {{empresa_nome_curto}}.
+> - **Informações sobre denúncias**, como dados pessoais do denunciante.
+> - **Informações sobre encarregado ou representante legal** de agente de tratamento.
 
-## 6. Com quem compartilhamos
+[Voltar ao Sumário](#sumário)
 
-Compartilhamos dados pessoais apenas quando estritamente necessário e com:
+---
 
-- **Prestadores de serviço** que atuam em nosso nome (hospedagem, e-mail, processamento de pagamentos).
-- **Autoridades competentes** quando exigido por lei ou ordem judicial.
-- **Órgãos reguladores** no escopo de fiscalização.
+## 3. Por que e como tratamos seus dados pessoais?
 
-Todos os terceiros assumem obrigações contratuais de confidencialidade e segurança.
+**3.1.** Podemos tratar seus dados pessoais para o cumprimento das competências institucionais da {{empresa}}. Na tabela a seguir são apresentadas as principais atividades de tratamento de dados pessoais de acordo com as principais finalidades, titulares afetados, hipóteses legais e categorias de dados pessoais tratados.
 
-## 7. Transferência internacional
+{{matriz_tratamento}}
 
-Quando aplicável, transferimos dados internacionalmente apenas para países com nível adequado de proteção ou mediante salvaguardas previstas no Art. 33 da LGPD.
+> *Atenção: a tabela acima é gerada automaticamente a partir do Inventário de Dados da organização ao clicar em "Atualizar do Inventário" (Bloco B — em construção). Enquanto o aggregator não está ativo, complete manualmente. Modelo de tabela:*
+>
+> | Finalidades | Titulares afetados | Hipóteses legais | Categorias de dados pessoais |
+> |---|---|---|---|
+> | Atender solicitações, requerimentos e consultas | Cidadãos e usuários do serviço | Obrigação legal (Art. 7º, II) | Cadastrais e de identificação · Comunicações eletrônicas |
+> | Cumprimento de atribuições da Ouvidoria (Lei 13.460/2017 e Decreto 9.492/2018) | Qualquer pessoa que apresente requerimento | Obrigação legal | Cadastrais · Comunicações · Interação · Denúncias |
+> | Realizar processos seletivos e gestão de pessoas | Candidatos e servidores | Obrigação legal | Cadastrais · Comunicações |
+> | Atuar em processos administrativos e judiciais | Qualquer pessoa interessada | Obrigação legal ou exercício regular de direitos | Cadastrais · Comunicações · Interação · Denúncias |
+> | Dar publicidade a documentos institucionais (transparência ativa — LAI) | Agentes públicos e demais titulares envolvidos | Obrigação legal | Cadastrais · Comunicações |
 
-## 8. Por quanto tempo guardamos seus dados
+**3.2.** O tratamento de dados pessoais para o cumprimento das atribuições institucionais da {{empresa}} está amparado nas hipóteses legais mencionadas na tabela acima.
 
-Mantemos os dados pelo tempo necessário pra cumprir as finalidades informadas, observando prazos legais (fiscais, trabalhistas, regulatórios). Após esse período, descartamos com segurança ou anonimizamos.
+**3.3.** Ademais, podemos tratar seus dados pessoais para cumprimento de outras obrigações legais — por exemplo, para atender aos seus direitos de titular previstos na LGPD, para cumprir ordens judiciais ou para atender a requerimentos de outras autoridades públicas, conforme previsto em lei.
 
-## 9. Como protegemos seus dados
+**3.4.** Por fim, outra finalidade é o gerenciamento de nosso sítio eletrônico, que envolve o uso de cookies, conforme exposto na **Seção 4**.
 
-Adotamos medidas técnicas e organizacionais apropriadas:
+[Voltar ao Sumário](#sumário)
 
-- Criptografia em trânsito (HTTPS/TLS).
-- Controle de acesso baseado em função (RBAC).
-- Logs e monitoramento de acessos.
-- Treinamento contínuo de equipe.
-- Política de incidentes de segurança.
+---
 
-## 10. Seus direitos como titular (Art. 18 da LGPD)
+## 4. Por que e como tratamos cookies em nosso sítio institucional?
 
-Você pode, a qualquer momento:
+**4.1.** Para melhorar a sua experiência no sítio eletrônico da {{empresa}} e prover serviços, utilizamos *cookies*. \`[Adapte conforme infraestrutura: "A {{empresa_nome_curto}}, como demais órgãos da Administração Pública Federal, utiliza-se dos serviços do portal Gov.br…" OU "A {{empresa_nome_curto}} utiliza ferramentas próprias de análise…"]\`
 
-1. **Confirmar** se tratamos seus dados.
-2. **Acessar** os dados que temos sobre você.
-3. **Corrigir** dados incompletos, inexatos ou desatualizados.
-4. **Anonimizar, bloquear ou eliminar** dados desnecessários ou tratados em desconformidade.
-5. **Portar** seus dados para outro fornecedor.
-6. **Revogar consentimento** a qualquer momento.
-7. **Solicitar informação** sobre compartilhamentos.
-8. **Opor-se** a tratamentos que considere abusivos.
+**4.2.** Utilizamos *cookies* **estritamente necessários**, com base na hipótese legal do legítimo interesse, que não podem ser desativados em nossos sistemas. Esses *cookies* permitem funcionalidades essenciais para o fornecimento dos serviços, tais como segurança, verificação de identidade e gestão de rede.
 
-Para exercer esses direitos, entre em contato com nosso Encarregado (DPO):
+**4.3.** Utilizamos também *cookies* de **desempenho** e de **terceiros** que são opcionais e dependem do consentimento do titular. Os de desempenho visam à melhoria do sítio eletrônico por meio da coleta de dados anonimizados sobre navegação. Os de terceiros suportam serviços como compartilhamento em redes sociais ou exibição de vídeos incorporados.
+
+**4.4.** As configurações podem ser realizadas no banner de cookies ou modificadas, a qualquer tempo, no ícone de configurações de cookies do sítio. Para detalhes completos sobre os *cookies* utilizados, consulte nossa **Política de Cookies**.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 5. Como obtemos seus dados pessoais?
+
+**5.1.** Obtemos seus dados pessoais por meio do nosso sítio eletrônico ou por outras formas de contato e interação com o público. Seus dados podem ser obtidos quando você mesmo nos fornece — por exemplo, ao apresentar um requerimento, denúncia, petição ou ao enviar documentos, informações e comunicações.
+
+**5.2.** Também podemos obter seus dados pessoais por meios indiretos, como em notificações recebidas pela {{empresa_nome_curto}} nas quais a pessoa notificante se refere a você, ou por meio de bases públicas autorizadas em lei.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 6. Como armazenamos seus dados pessoais?
+
+**6.1.** Armazenamos seus dados pessoais de forma segura, em \`[descrever infraestrutura: "infraestrutura tecnológica da Administração Pública Federal" / "data center próprio com certificação X" / "provedor de nuvem com nível adequado de proteção"]\`, conforme padrões de segurança aplicáveis à hipótese e de maneira que favoreça os meios para o exercício dos seus direitos previstos na LGPD.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 7. Com quem podemos compartilhar seus dados pessoais?
+
+**7.1.** Podemos compartilhar seus dados pessoais com organizações públicas ou privadas, respeitando as disposições da LGPD, em especial o **princípio da necessidade**, e sempre de forma compatível com a(s) finalidade(s) para a(s) qual(is) foram coletados, conforme indicado na **Seção 3**. Também podemos compartilhar ou divulgar dados pessoais quando necessário para atender ao princípio da publicidade administrativa, nos termos da **Lei nº 12.527/2011 (Lei de Acesso à Informação — LAI)**.
+
+**7.2.** Considerando que a {{empresa}} pode utilizar sistemas informáticos geridos por outros órgãos ou empresas, é importante esclarecer que seus dados pessoais podem ser compartilhados com esses agentes de tratamento.
+
+**7.3.** A seguir, apresentamos as principais categorias de organizações com as quais podemos compartilhar os seus dados pessoais:
+
+{{tipos_compartilhamento}}
+
+> *Atenção: o conteúdo acima é gerado automaticamente a partir do registro de Operadores/Terceiros (Bloco B — em construção). Enquanto o aggregator não está ativo, edite manualmente. Categorias institucionais sugeridas:*
+>
+> - Organizações responsáveis pelo tratamento dos dados pessoais (agentes de tratamento), no caso de petições e requerimentos de titulares;
+> - Organizações públicas parceiras na prestação de serviços ou execução de políticas;
+> - Organizações contratadas pela {{empresa_nome_curto}} para a prestação de serviços (provedores de tecnologia, prestadores de serviços administrativos);
+> - Órgãos da estrutura administrativa de apoio (\`[ex.: Secretaria de Administração / Ministério apoiador]\`);
+> - Órgãos de controle externo, tais como Tribunal de Contas, Controladoria, Ministério Público;
+> - Órgãos do Poder Judiciário, no exercício da função jurisdicional;
+> - Qualquer pessoa que apresente um pedido de acesso à informação à {{empresa_nome_curto}}, observado o disposto na LAI.
+
+**7.4.** Ao compartilharmos seus dados pessoais com operadores de dados, exigiremos que sejam tratados de acordo com nossas instruções, o que inclui o armazenamento seguro, retenção apenas pelo período instruído e o não compartilhamento subsequente com outras organizações sem nossa prévia e expressa autorização.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 8. Como ocorre a eliminação de seus dados pessoais?
+
+**8.1.** Seus dados pessoais serão eliminados quando tiverem cumprido a(s) finalidade(s) para a(s) qual(is) foram coletados, observadas as **tabelas de temporalidade** aplicáveis e as regras de término de tratamento, eliminação e hipóteses de conservação de dados, nos termos dos **arts. 15 e 16 da LGPD**.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 9. Como protegemos seus dados pessoais?
+
+**9.1.** Seus dados pessoais tratados pela {{empresa}} são protegidos de acordo com as normas e diretrizes de segurança da informação expedidas pelos órgãos competentes e de acordo com as disposições da LGPD.
+
+**9.2.** Adotamos medidas técnicas e administrativas apropriadas, incluindo:
+
+- Criptografia em trânsito (HTTPS/TLS);
+- Controle de acesso baseado em função e princípio do mínimo privilégio;
+- Logs e monitoramento de acessos;
+- Capacitação contínua das equipes em proteção de dados pessoais;
+- Política de resposta a incidentes de segurança.
+
+**9.3.** Considerando que a {{empresa}} pode utilizar sistemas informáticos geridos por outros órgãos ou empresas, recomendamos a consulta às páginas institucionais desses órgãos para informações complementares sobre suas políticas de segurança da informação e avisos de privacidade (ver **Seção 7**).
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 10. Seus direitos de titular de dados pessoais
+
+**10.1.** Seus principais direitos enquanto titular de dados pessoais, previstos no **art. 18 da LGPD**, são:
+
+- Confirmação da existência de tratamento;
+- Acesso aos dados;
+- Correção de dados incompletos, inexatos ou desatualizados;
+- Anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em desconformidade com a LGPD;
+- Eliminação dos dados tratados com consentimento, autorizada a sua conservação nos casos descritos na LGPD;
+- Obtenção de informações sobre as entidades públicas ou privadas com as quais a {{empresa_nome_curto}} tenha compartilhado seus dados;
+- Possibilidade de não fornecer o consentimento, bem como de ser informado sobre as consequências, em caso de negativa, quando a operação se basear no consentimento;
+- Revogação do consentimento, quando aplicável;
+- Solicitação de revisão de decisões tomadas unicamente com base em tratamento automatizado de dados pessoais.
+
+**10.2.** Caso deseje exercer seus direitos, utilize \`[descrever o canal: "a Plataforma Fala.BR" / "o e-mail do Encarregado" / "o formulário disponível em <link>"]\`. O exercício de seus direitos é **gratuito** e a {{empresa_nome_curto}} avaliará a possibilidade do imediato atendimento; caso não seja possível, você será informado dos motivos ou dos prazos necessários.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 11. Detalhes de contato com a {{empresa_nome_curto}}
+
+**11.1.** Você pode nos contatar pelos seguintes canais:
+
+- **E-mail institucional:** {{email}}
+- **Telefone:** {{telefone}}
+- **Sítio eletrônico:** {{website}}
+- **Endereço:** {{endereco}}
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 12. Detalhes de contato do Encarregado pelo tratamento de dados pessoais
+
+**12.1.** Nosso **Encarregado pelo Tratamento de Dados Pessoais** poderá ser contatado pelos seguintes canais:
 
 - **Nome:** {{dpo_nome}}
 - **E-mail:** {{dpo_email}}
 - **Telefone:** {{dpo_telefone}}
+- **Endereço (correspondência):** {{endereco}} — marque no envelope "Para o Encarregado de Dados".
 
-Respondemos em até **15 dias úteis**.
+[Voltar ao Sumário](#sumário)
 
-## 11. Cookies
+---
 
-Usamos cookies para funcionalidade, análise e personalização. Veja detalhes na nossa **Política de Cookies**.
+**{{empresa}}** — CNPJ {{cnpj}}
+**Versão deste Aviso:** {{data_publicacao}}
 
-## 12. Alterações neste Aviso
-
-Podemos atualizar este Aviso a qualquer momento. A data da última atualização aparece no topo. Mudanças relevantes serão comunicadas pelos canais habituais.
-
-## 13. Contato
-
-Dúvidas sobre este Aviso ou sobre proteção de dados:
-
-- **{{empresa}}**
-- {{endereco}}
-- E-mail: {{email}}
-- Encarregado (DPO): {{dpo_email}}
+> Este Aviso pode ser atualizado a qualquer momento para refletir mudanças nas atividades de tratamento de dados pessoais, na legislação aplicável ou nas orientações da ANPD. Em caso de alterações relevantes em finalidades, forma ou duração do tratamento, ou no uso compartilhado de dados, os titulares serão informados pelos canais habituais.
+>
+> *Modelo institucional baseado nas orientações da Autoridade Nacional de Proteção de Dados (ANPD), conforme estrutura do Aviso de Privacidade publicado em https://www.gov.br/anpd/pt-br/acesso-a-informacao/aviso-de-privacidade. Os marcadores entre colchetes \`[...]\` devem ser substituídos pelos termos da própria organização.*
 `,
 };
 
