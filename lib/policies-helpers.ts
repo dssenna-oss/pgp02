@@ -185,6 +185,8 @@ export interface PolicyDTO {
   publicUrl: string | null;
   /** Quantas versões publicadas no histórico. */
   versionCount: number;
+  /** Quando o snapshot do Inventário foi atualizado pela última vez (Fatia 5). */
+  aggregatedAt: string | null;
 }
 
 interface PolicyRow {
@@ -204,6 +206,7 @@ interface PolicyRow {
   updatedAt: Date;
   versions?: { id: string }[];
   _count?: { versions: number };
+  aggregatedAt?: Date | null;
 }
 
 export function policyToDTO(
@@ -232,6 +235,7 @@ export function policyToDTO(
     updatedAt: p.updatedAt.toISOString(),
     publicUrl,
     versionCount,
+    aggregatedAt: p.aggregatedAt ? p.aggregatedAt.toISOString() : null,
   };
 }
 

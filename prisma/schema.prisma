@@ -743,6 +743,17 @@ model Policy {
   /// Histórico de versões publicadas
   versions    PolicyVersion[]
 
+  /// Snapshot agregado do Inventário usado pra preencher placeholders
+  /// genéricos do template ({{categorias_dados}}, {{matriz_tratamento}},
+  /// {{tipos_compartilhamento}}). Gerado uma vez via botão "Atualizar
+  /// do Inventário" — depois fica congelado pra que edições manuais
+  /// não sejam sobrescritas. Estrutura tipada em `lib/policy-data-aggregator.ts`.
+  aggregatedDataSnapshot Json?
+  /// Quando o snapshot foi atualizado pela última vez. UI exibe ao DPO
+  /// pra que ele decida se vale rodar de novo (ex.: depois de cadastrar
+  /// novos processos no Inventário).
+  aggregatedAt           DateTime?
+
   @@unique([companyId, type, slug])
   @@index([companyId, status])
   @@index([companyId, type])

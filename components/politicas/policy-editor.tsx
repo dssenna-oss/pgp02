@@ -28,6 +28,7 @@ import {
   Download,
   FileText,
   GitCompareArrows,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,7 @@ import {
   policyStatusLabel,
   policyStatusBadgeClass,
 } from "@/lib/policies-helpers";
+import { hasAggregatablePlaceholders } from "@/lib/policy-data-aggregator";
 
 interface VersionEntry {
   id: string;
@@ -82,6 +84,9 @@ export default function PolicyEditor({ policyId }: Props) {
   const [diffA, setDiffA] = useState<string>("published");
   const [diffB, setDiffB] = useState<string>("current");
   const [loadingDiff, setLoadingDiff] = useState(false);
+  // Fatia 5 — botão "Atualizar do Inventário"
+  const [refreshing, setRefreshing] = useState(false);
+  const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -150,6 +155,42 @@ export default function PolicyEditor({ policyId }: Props) {
       refresh();
     } finally {
       setSaving(false);
+    }
+  };
+
+  /**
+   * Fatia 5 — chama o endpoint que roda o aggregator do Inventário
+   * e substitui os 3 placeholders ({{categorias_dados}}, etc.) pelo
+   * conteúdo gerado a partir dos processos APROVADOS e operadores
+   * cadastrados na organização. Sobrescreve o currentContent — o DPO
+   * pode editar manualmente depois sem que seja sobrescrito de novo
+   * (a menos que clique no botão de novo).
+   */
+  const handleRefreshFromInventory = async () => {
+    if (!data) return;
+    setRefreshing(true);
+    try {
+      const r = await fetch(
+        `/api/politicas/${policyId}/refresh-from-inventory`,
+        { method: "POST" },
+      );
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        toast.error(err.error ?? "Erro ao atualizar do Inventário");
+        return;
+      }
+      const resp = await r.json();
+      const s = resp.snapshot;
+      toast.success(
+        `Atualizado: ${s.processesCount} processos, ${s.categoriesCount} categorias, ${s.matrixRows} linhas na matriz, ${s.operatorsCount} tipos de compartilhamento.`,
+        { duration: 6000 },
+      );
+      setShowRefreshConfirm(false);
+      refresh();
+    } catch {
+      toast.error("Erro de rede ao atualizar do Inventário");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -319,6 +360,26 @@ export default function PolicyEditor({ policyId }: Props) {
             <History className="h-4 w-4 mr-1.5" />
             Histórico ({policy.versionCount})
           </Button>
+          {hasAggregatablePlaceholders(content) && (
+            <Button
+              variant="outline"
+              onClick={() => setShowRefreshConfirm(true)}
+              disabled={refreshing}
+              title={
+                policy.aggregatedAt
+                  ? `Última atualização do Inventário em ${new Date(policy.aggregatedAt).toLocaleString("pt-BR")}`
+                  : "Preencher categorias, matriz e compartilhamentos a partir dos processos do Inventário"
+              }
+              className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-950/30"
+            >
+              {refreshing ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+              )}
+              Atualizar do Inventário
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={handleSave}
@@ -417,6 +478,68 @@ export default function PolicyEditor({ policyId }: Props) {
           </Card>
         )}
       </div>
+
+      {/* Modal de confirmação — Atualizar do Inventário (Fatia 5) */}
+      <Dialog open={showRefreshConfirm} onOpenChange={setShowRefreshConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar do Inventário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2 text-sm">
+            <p className="text-gray-700 dark:text-gray-300">
+              Esta ação preenche os 3 placeholders do template a partir
+              dos <strong>processos APROVADOS</strong> do Inventário e
+              dos <strong>operadores</strong> cadastrados na organização:
+            </p>
+            <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
+              <li>
+                <code className="text-xs">{`{{categorias_dados}}`}</code> →
+                lista de categorias agregadas
+              </li>
+              <li>
+                <code className="text-xs">{`{{matriz_tratamento}}`}</code> →
+                tabela Finalidades × Titulares × Hipóteses × Categorias
+              </li>
+              <li>
+                <code className="text-xs">{`{{tipos_compartilhamento}}`}</code> →
+                lista de tipos de operadores/parceiros
+              </li>
+            </ul>
+            <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 p-3 text-xs text-amber-900 dark:text-amber-200">
+              ⚠️ Se você já editou manualmente esses blocos, eles serão{" "}
+              <strong>sobrescritos</strong>. Salve o documento antes de
+              prosseguir se quiser preservar uma versão.
+            </div>
+            {policy.aggregatedAt && (
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                Última atualização do Inventário:{" "}
+                {new Date(policy.aggregatedAt).toLocaleString("pt-BR")}
+              </p>
+            )}
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowRefreshConfirm(false)}
+              disabled={refreshing}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleRefreshFromInventory}
+              disabled={refreshing}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {refreshing ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1.5" />
+              )}
+              Atualizar agora
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de publicar */}
       <Dialog open={showPublish} onOpenChange={setShowPublish}>
