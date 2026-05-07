@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isSuperAdmin } from "@/lib/auth-helpers";
+import { hasSuperAdminAccess } from "@/lib/auth-helpers";
 
 /**
  * Endpoint leve só pra contagem de pendentes — usado pelo badge da sidebar
@@ -13,7 +13,7 @@ export async function GET() {
   if (!session?.user?.email) {
     return NextResponse.json({ count: 0 });
   }
-  if (!isSuperAdmin(session.user.email)) {
+  if (!hasSuperAdminAccess(session.user as any)) {
     return NextResponse.json({ count: 0 });
   }
 

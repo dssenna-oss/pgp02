@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isSuperAdmin } from "@/lib/auth-helpers";
+import { hasSuperAdminAccess } from "@/lib/auth-helpers";
 
 /**
  * Super admin endpoint — lista cadastros pendentes de aprovação.
@@ -18,7 +18,7 @@ export async function GET() {
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
-  if (!isSuperAdmin(session.user.email)) {
+  if (!hasSuperAdminAccess(session.user as any)) {
     return NextResponse.json({ error: "Acesso restrito" }, { status: 403 });
   }
 

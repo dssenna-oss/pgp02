@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { isSuperAdmin } from "@/lib/auth-helpers";
+import { hasSuperAdminAccess } from "@/lib/auth-helpers";
 import SysadminContent from "@/components/sysadmin/sysadmin-content";
 
 /**
@@ -24,7 +24,7 @@ export default async function SysadminPage() {
   if (!session?.user?.email) {
     redirect("/login");
   }
-  if (!isSuperAdmin(session.user.email)) {
+  if (!hasSuperAdminAccess(session.user)) {
     redirect("/dashboard");
   }
 

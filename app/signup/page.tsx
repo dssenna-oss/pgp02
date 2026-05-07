@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, Eye, EyeOff, Loader2, Building2, User } from "lucide-react";
+import { Shield, Eye, EyeOff, Loader2, Building2, User, MailCheck, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function SignupPage() {
@@ -25,6 +24,9 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Após signup bem sucedido, mostramos tela orientadora "aguarde aprovação"
+  // em vez de tentar login automático (que falharia com isActive=false).
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,21 +71,9 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Conta criada com sucesso!");
-        
-        // Fazer login automático
-        const result = await signIn("credentials", {
-          email: formData.email,
-          password: formData.password,
-          redirect: false,
-        });
-
-        if (result?.error) {
-          toast.error("Erro ao fazer login automático");
-          router.push("/login");
-        } else {
-          router.push("/dashboard");
-        }
+        // Conta nasce com isActive=false (segurança). NÃO tentamos login
+        // automático — mostramos tela orientadora explicando próximos passos.
+        setSubmittedEmail(formData.email);
       } else {
         toast.error(data.error || "Erro ao criar conta");
       }
@@ -98,6 +88,100 @@ export default function SignupPage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  // Tela de confirmação pós-cadastro: explica claramente que a conta foi
+  // criada mas precisa ser aprovada pelo administrador antes do primeiro
+  // login. Substitui o "Erro ao fazer login automático" enganoso anterior.
+  if (submittedEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8">
+        <div className="w-full max-w-lg">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-emerald-600 p-3 rounded-full">
+                <MailCheck className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Cadastro recebido!
+            </h1>
+          </div>
+
+          <Card className="shadow-xl border-0">
+            <CardContent className="pt-6 space-y-5">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 p-4">
+                <p className="text-sm text-blue-900 dark:text-blue-200">
+                  <strong>{submittedEmail}</strong>
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                  conta criada com sucesso, aguardando aprovação
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-amber-600" />
+                  Próximos passos
+                </h2>
+                <ol className="text-sm text-gray-700 dark:text-gray-300 space-y-2 list-decimal list-inside">
+                  <li>
+                    O <strong>administrador do sistema</strong> precisa aprovar
+                    sua conta antes do primeiro acesso (medida de segurança).
+                  </li>
+                  <li>
+                    Aguarde o contato do administrador, ou entre em contato
+                    informando que você fez o cadastro.
+                  </li>
+                  <li>
+                    Após aprovação, você pode fazer login normalmente em{" "}
+                    <Link
+                      href="/login"
+                      className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      /login
+                    </Link>{" "}
+                    com o e-mail e a senha cadastrados.
+                  </li>
+                </ol>
+              </div>
+
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 text-xs text-amber-900 dark:text-amber-200">
+                <strong>Não tente fazer login agora.</strong> Vai aparecer
+                "Sua conta está inativa" — isso é esperado. Aguarde aprovação.
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => router.push("/login")}
+                >
+                  Ir para o login
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setSubmittedEmail(null);
+                    setFormData({
+                      email: "",
+                      password: "",
+                      confirmPassword: "",
+                      companyName: "",
+                      fullName: "",
+                      acceptTerms: false,
+                    });
+                  }}
+                >
+                  Cadastrar outra conta
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8">

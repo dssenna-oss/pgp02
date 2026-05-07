@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
-import { isSuperAdmin } from "@/lib/auth-helpers";
+import { isSuperAdmin, ROLES } from "@/lib/auth-helpers";
 
 const prisma = new PrismaClient();
 
@@ -143,7 +143,11 @@ export const authOptions: NextAuthOptions = {
         // SUPER_ADMIN_EMAIL é env var server-only — calculamos no JWT
         // (server side) e propagamos pra session pro client poder usar
         // sem causar mismatch de hidratação.
-        token.isSuperAdmin = isSuperAdmin(user.email);
+        // Fallback: aceita também role 'admin' legado (= SUPER_ADMIN +
+        // DPO_PRINCIPAL combinados). Garante que a conta inicial não fica
+        // sem privilégios caso SUPER_ADMIN_EMAIL não esteja setado em prod.
+        token.isSuperAdmin =
+          isSuperAdmin(user.email) || user.role === ROLES.ADMIN_LEGACY;
       }
       return token;
     },
