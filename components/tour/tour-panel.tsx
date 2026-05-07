@@ -72,44 +72,45 @@ export default function TourPanel({ step, stepIndex, totalSteps }: TourPanelProp
     <div
       role="dialog"
       aria-label={`Tour PGP — ${step.title}`}
-      className="fixed top-6 right-6 w-[380px] max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-violet-500/20"
+      className="fixed top-6 right-6 w-[380px] max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-purple-200 dark:border-purple-900/40"
       style={{
         zIndex: 60,
-        background: "linear-gradient(160deg, #1e1b4b 0%, #0f172a 100%)",
-        color: "#e0e7ff",
+        background:
+          "linear-gradient(160deg, #faf5ff 0%, #f3e8ff 100%)",
+        color: "#1e1b4b",
       }}
     >
       {/* Header */}
-      <div className="px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+      <div className="px-5 pt-5 pb-3 border-b border-purple-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-sm">
+          <div className="w-8 h-8 rounded-full bg-purple-200 text-purple-700 flex items-center justify-center text-sm">
             🎙️
           </div>
           <div>
-            <div className="text-sm font-semibold">Tour PGP</div>
-            <div className="text-xs text-indigo-300">com narração</div>
+            <div className="text-sm font-semibold text-purple-900">Tour PGP</div>
+            <div className="text-xs text-purple-600">com narração</div>
           </div>
         </div>
         <button
           onClick={end}
           aria-label="Fechar tour"
-          className="text-indigo-300 hover:text-white text-xl leading-none px-1"
+          className="text-purple-500 hover:text-purple-900 hover:bg-purple-100 rounded-full w-7 h-7 flex items-center justify-center text-xl leading-none transition-colors"
         >
           ×
         </button>
       </div>
 
       {/* Progresso */}
-      <div className="px-5 py-3 border-b border-white/10">
-        <div className="flex items-center justify-between text-xs text-indigo-300 mb-1.5">
+      <div className="px-5 py-3 border-b border-purple-200">
+        <div className="flex items-center justify-between text-xs text-purple-700 mb-1.5">
           <span>
             Passo {stepIndex + 1} de {totalSteps}
           </span>
           <span className="truncate ml-2 max-w-[200px] text-right">{step.title}</span>
         </div>
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-purple-200 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all"
+            className="h-full bg-gradient-to-r from-purple-500 to-violet-700 transition-all"
             style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
           />
         </div>
@@ -117,12 +118,12 @@ export default function TourPanel({ step, stepIndex, totalSteps }: TourPanelProp
 
       {/* Título do passo */}
       <div className="px-5 pt-4">
-        <div className="text-lg font-semibold text-white">{step.title}</div>
+        <div className="text-lg font-semibold text-purple-950">{step.title}</div>
       </div>
 
       {/* Transcrição */}
       <div className="px-5 py-3 flex-1 overflow-y-auto">
-        <div className="text-sm leading-relaxed text-indigo-100">
+        <div className="text-sm leading-relaxed text-slate-700">
           {wordIndices.map(({ word, isWord }, i) => {
             if (isWord) {
               runningWordCount += 1;
@@ -144,12 +145,12 @@ export default function TourPanel({ step, stepIndex, totalSteps }: TourPanelProp
       </div>
 
       {/* Player */}
-      <div className="px-5 py-4 border-t border-white/10 bg-black/20">
+      <div className="px-5 py-4 border-t border-purple-200 bg-white/50">
         <div className="flex items-center gap-3 mb-3">
           <button
             onClick={togglePlay}
             aria-label={isPlaying ? "Pausar narração" : "Tocar narração"}
-            className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-lg shadow-lg hover:scale-105 transition"
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center text-white text-lg shadow-md hover:shadow-lg hover:scale-105 transition"
           >
             <span aria-hidden>{isPlaying ? "❚❚" : "▶"}</span>
           </button>
@@ -163,13 +164,13 @@ export default function TourPanel({ step, stepIndex, totalSteps }: TourPanelProp
             {[60, 80, 100, 70, 90, 50, 75, 95, 65, 85].map((h, i) => (
               <div
                 key={i}
-                className="pgp-tour-wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full"
+                className="pgp-tour-wave-bar w-1 bg-gradient-to-t from-purple-500 to-violet-500 rounded-full"
                 style={{ height: `${h}%` }}
               />
             ))}
           </div>
 
-          <span className="text-xs text-indigo-300 tabular-nums">
+          <span className="text-xs text-purple-700 tabular-nums">
             {formatTime(currentTime)}
           </span>
         </div>
@@ -179,30 +180,30 @@ export default function TourPanel({ step, stepIndex, totalSteps }: TourPanelProp
           <button
             onClick={prev}
             disabled={stepIndex === 0}
-            className="px-3 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1.5 rounded-lg text-xs text-purple-700 hover:bg-purple-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ← Anterior
           </button>
           <button
             onClick={end}
-            className="px-3 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-white/10 transition"
+            className="px-3 py-1.5 rounded-lg text-xs text-purple-700 hover:bg-purple-100 transition"
           >
             Pular tour
           </button>
           <button
             onClick={next}
-            className="px-4 py-1.5 rounded-lg text-xs bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-medium hover:opacity-90 transition"
+            className="px-4 py-1.5 rounded-lg text-xs bg-gradient-to-r from-purple-500 to-violet-700 text-white font-medium hover:opacity-90 shadow-sm transition"
           >
             {isLastStep ? "Concluir ✓" : "Próximo →"}
           </button>
         </div>
 
         {/* Hint atalhos */}
-        <div className="text-[11px] text-indigo-400/70 mt-3 text-center">
+        <div className="text-[11px] text-purple-600 mt-3 text-center">
           Atalhos:{" "}
-          <kbd className="px-1.5 py-0.5 bg-white/5 rounded">Espaço</kbd> play/pause ·{" "}
-          <kbd className="px-1.5 py-0.5 bg-white/5 rounded">→</kbd> próximo ·{" "}
-          <kbd className="px-1.5 py-0.5 bg-white/5 rounded">Esc</kbd> sair
+          <kbd className="px-1.5 py-0.5 bg-white/70 border border-purple-200 rounded">Espaço</kbd> play/pause ·{" "}
+          <kbd className="px-1.5 py-0.5 bg-white/70 border border-purple-200 rounded">→</kbd> próximo ·{" "}
+          <kbd className="px-1.5 py-0.5 bg-white/70 border border-purple-200 rounded">Esc</kbd> sair
         </div>
       </div>
     </div>

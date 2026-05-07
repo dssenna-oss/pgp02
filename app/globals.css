@@ -312,7 +312,8 @@
 .pgp-tour-wave-bar:nth-child(9) { animation-delay: 0.45s; }
 .pgp-tour-wave-bar:nth-child(10) { animation-delay: 0.05s; }
 
-/* Highlight de palavra ativa na transcrição. */
+/* Highlight de palavra ativa na transcrição.
+   Cores ajustadas pro tema lavanda claro do TourPanel (fundo claro). */
 .pgp-tour-word {
   transition:
     background-color 0.2s,
@@ -321,16 +322,16 @@
 .pgp-tour-word.active {
   background: linear-gradient(
     120deg,
-    rgba(167, 139, 250, 0.4),
-    rgba(99, 102, 241, 0.4)
+    rgba(139, 92, 246, 0.3),
+    rgba(124, 58, 237, 0.35)
   );
   border-radius: 4px;
   padding: 0 3px;
-  color: #fff;
-  font-weight: 500;
+  color: #4c1d95; /* purple-900 */
+  font-weight: 600;
 }
 .pgp-tour-word.spoken {
-  color: rgba(224, 231, 255, 0.55);
+  color: rgba(100, 116, 139, 0.7); /* slate-500 com transparência — palavra "já dita" */
 }
 
 /* CP25 — Highlight pesquisável nas Fases. Pulsa amarelo por ~4s
