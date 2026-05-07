@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { ROLES } from "@/lib/auth-helpers";
 
 // PATCH - Ativar/Desativar usuário (apenas admin)
 export async function PATCH(
@@ -59,15 +60,26 @@ export async function PATCH(
       );
     }
 
-    // Atualizar status do usuário
+    // Atualizar status do usuário.
+    // Defesa em camadas: se está aprovando (isActive=true) e o role está
+    // nulo/vazio (cadastros antigos via /signup que não atribuíam role),
+    // promove a DPO_PRINCIPAL — quem se cadastra via formulário é, por
+    // definição, o representante da nova organização.
+    const needsRolePromotion =
+      isActive && (!user.role || user.role.trim() === "");
+
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { isActive },
+      data: {
+        isActive,
+        ...(needsRolePromotion ? { role: ROLES.DPO_PRINCIPAL } : {}),
+      },
       select: {
         id: true,
         name: true,
         email: true,
         isActive: true,
+        role: true,
       },
     });
 
