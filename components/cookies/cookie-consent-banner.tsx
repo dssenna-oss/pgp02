@@ -35,7 +35,7 @@
  *     vídeo não existir.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -380,6 +380,31 @@ export default function CookieConsentBanner() {
 
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Fatia 4 — URLs públicas das políticas do sistema. Carregadas via
+  // /api/cookies/system-policies. Cache local pra evitar refetch a cada
+  // mount do banner. null = ainda carregando OU política não publicada.
+  const [systemUrls, setSystemUrls] = useState<{
+    avisoUrl: string | null;
+    termosUrl: string | null;
+    cookiesUrl: string | null;
+  }>({ avisoUrl: null, termosUrl: null, cookiesUrl: null });
+
+  useEffect(() => {
+    fetch("/api/cookies/system-policies", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setSystemUrls({
+            avisoUrl: data.avisoUrl ?? null,
+            termosUrl: data.termosUrl ?? null,
+            cookiesUrl: data.cookiesUrl ?? null,
+          });
+        }
+      })
+      .catch(() => {
+        // graceful fallback — links continuam como `#`
+      });
+  }, []);
 
   // Verifica se estamos em uma página legal (não bloquear estas páginas)
   const isOnLegalPage = LEGAL_PAGES.some((page) =>
@@ -525,31 +550,48 @@ export default function CookieConsentBanner() {
                       </Button>
                     </div>
 
-                    {/* Links legais — Fatia 4 substitui placeholders por
-                        URLs públicas das políticas geradas pela empresa */}
-                    <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
-                      <Link
-                        href="#"
-                        className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Política de Cookies
-                      </Link>
-                      <Link
-                        href="#"
-                        className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Aviso de Privacidade
-                      </Link>
-                      <Link
-                        href="#"
-                        className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        Termos de Uso
-                      </Link>
-                    </div>
+                    {/* Links legais — Fatia 4: URLs públicas das políticas
+                        do sistema (LGPD-PGP). Se a política não está
+                        publicada (URL null), o link some — graceful. */}
+                    {(systemUrls.avisoUrl ||
+                      systemUrls.termosUrl ||
+                      systemUrls.cookiesUrl) && (
+                      <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {systemUrls.cookiesUrl && (
+                          <Link
+                            href={systemUrls.cookiesUrl}
+                            target="_blank"
+                            rel="noopener"
+                            className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Política de Cookies
+                          </Link>
+                        )}
+                        {systemUrls.avisoUrl && (
+                          <Link
+                            href={systemUrls.avisoUrl}
+                            target="_blank"
+                            rel="noopener"
+                            className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Aviso de Privacidade
+                          </Link>
+                        )}
+                        {systemUrls.termosUrl && (
+                          <Link
+                            href={systemUrls.termosUrl}
+                            target="_blank"
+                            rel="noopener"
+                            className="hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Termos de Uso
+                          </Link>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
