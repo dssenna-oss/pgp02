@@ -122,6 +122,9 @@ model User {
   // Capacitação LGPD (Checkpoint 18) — quem registrou cada evento de capacitação.
   createdCapacitacoes    CapacitacaoEvento[]     @relation("CapacitacaoCreatedBy")
 
+  // Sistema de Cookies (Checkpoint 26) — registros de consentimento.
+  cookieConsents         CookieConsent[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1936,3 +1939,65 @@ model CyberSnapshot {
   @@map("cyber_snapshots")
 }
 
+
+/// Registro de consentimento de cookies (Checkpoint 26 — Sistema de Cookies).
+/// Cada vez que um usuário/visitante faz uma escolha (aceitar todos / rejeitar
+/// não essenciais / configurar granularmente), uma linha nova é criada aqui
+/// pra fins de auditoria LGPD (evidência de consentimento perante a ANPD).
+///
+/// Modelo baseado no Guia Orientativo da ANPD sobre Cookies (2022) e em
+/// referências do app Detetive da Privacidade (Posso Confiar?). 4 categorias
+/// suportadas: necessary (sempre true) · analytics · marketing · preferences.
+///
+/// O banner aparece SÓ em páginas públicas do PGP (login, signup, /p/...).
+/// Usuários logados são considerados como já tendo consentido implicitamente
+/// (mas o registro permanece se vier de uma sessão pré-login).
+model CookieConsent {
+  id                String    @id @default(cuid())
+
+  // ----- Identificação (todos opcionais — visitor anônimo é OK) -----
+  /// User logado quando deu o consentimento. Null = visitante anônimo.
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Fingerprint do dispositivo (cookie `device_fp` setado client-side).
+  /// Permite rastrear consentimentos do mesmo browser entre sessões sem
+  /// exigir login.
+  deviceFingerprint String?
+  /// IP anonimizado (zera os últimos 8 bits IPv4 ou últimos 80 bits IPv6).
+  /// LGPD recomenda anonimização do IP pra registro de eventos.
+  ipAddress         String?
+  /// User agent do browser — útil pra suporte e auditoria.
+  userAgent         String?
+
+  // ----- Preferências (4 categorias) -----
+  /// Cookies necessários — sempre true. Não pode ser desativado pelo titular
+  /// (legítimo interesse, Art. 7º IX da LGPD).
+  necessary         Boolean   @default(true)
+  /// Cookies analíticos (Google Analytics, métricas de uso).
+  /// Base legal: consentimento (Art. 7º I).
+  analytics         Boolean   @default(false)
+  /// Cookies de marketing (remarketing, pixels de conversão, redes sociais).
+  /// Base legal: consentimento (Art. 7º I).
+  marketing         Boolean   @default(false)
+  /// Cookies de preferências (tema, idioma, layout).
+  /// Base legal: consentimento (Art. 7º I).
+  preferences       Boolean   @default(false)
+
+  // ----- Metadados -----
+  /// Como o consentimento foi coletado: "banner" | "settings" | "api".
+  consentMethod     String    @default("banner")
+  /// Versão da política de cookies vigente quando o consentimento foi dado.
+  /// Permite re-pedir consentimento quando há mudança material na política.
+  consentVersion    String    @default("1.0")
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  /// Data de revogação. Null = consentimento ativo. Setado via DELETE
+  /// no endpoint /api/cookies/consent (titular revoga).
+  revokedAt         DateTime?
+
+  @@index([userId])
+  @@index([deviceFingerprint])
+  @@index([createdAt])
+  @@map("cookie_consents")
+}
