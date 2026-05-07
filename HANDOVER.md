@@ -1,12 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-06 (CP25 Highlights pesquisáveis ✅ + CP26 PSI tentado/revertido) · **Branch:** `claude/laughing-feistel-0db9bb` (worktree)
+> **Última sessão:** 2026-05-07 (3 macro-features em prod: Sub-itens sidebar + Templates ANPD + Cookies CP26 *novo escopo*) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até CP25 (`4e04b4e`) + Suspense fix (`bfa5721`) + 3 reverts de CP26 (`a61a58d`/`1e82e68`/`cec78cb`) + cleanup (`36333ac`). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `c152ba9` (vídeo dos cookies). Vercel verde.
 >
-> **CP26 (PSI) — REVERTIDO mas código preservado no histórico do git** (`f93b7fe`/`732fa4e`/`8160898`). Pra retomar: `git revert` dos 3 reverts → PSI volta. Falta aplicar a Etapa 23 (`scripts/_migrate-psi.sql`) no Neon antes — esse foi o ponto de bloqueio. Detalhes do que foi entregue/revertido na seção CP26 abaixo.
+> **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado (decisão do user em 2026-05-07: "CP26 não ressuscitar"). Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
-> **Migração Neon:** ✅ Etapas 2 → 22 aplicadas. **Etapa 23 (PSI) NÃO aplicada** (CP26 ficou em hold).
+> **Migração Neon:** ✅ Etapas 2 → 24 aplicadas. Última delta (Etapa 24): `cookie_consents` (tabela nova) + `policies.aggregatedDataSnapshot` + `policies.aggregatedAt` — aplicadas via Neon SQL Editor pelo user em 2026-05-07.
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
@@ -27,6 +27,79 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-07 — 3 macro-features em prod
+
+Branch desta sessão: `claude/confident-buck-6d18fe` (worktree). Tudo empurrado direto pra `main`.
+
+### Bloco 1 — Sub-itens em árvore na sidebar (5 fatias)
+
+Sidebar das fases passou a expandir com sub-itens (mini-apps + "Coloque em Prática") em vez de empurrar o user pra dentro da fase pra achar a ferramenta. UX mais arborescente.
+
+- `9ee3562` — **Fatia 1**: prova de conceito só na Fase Preliminar (Capacitação como sub-item)
+- `6259ce5` — **Fatia 2**: estende pra todas as 9 fases
+- `772af02` — fix race condition entre Provider hydrate e auto-expand
+- `3474dc6` — **Fatia 3**: mini-apps prioritários por fase (RIPD/LIA/PSI/Terceiros viram sub-itens das fases que mais usam)
+- `c661c4c` — **Fatia 4**: TOC lateral desliga automático quando a fase tem sub-itens (não polui)
+- `84a1f07` — **Fatia 5**: polimento (animação suave + highlight do sub-item ativo + edge cases)
+- `4fb1a4d` — adiciona "Coloque em Prática" como sub-item universal (todas as fases ganham)
+- `8a8a770` — tema lavanda suave no TourPanel (separado, mas commitou junto)
+- `d7b0d0d` — botão "Refazer tour" muda de lado (UI fix)
+
+**Sem schema novo.** Tudo client-side com persistência em localStorage.
+
+### Bloco 2 — Templates de políticas alinhados à Resolução CD/ANPD nº 20/2024 (6 fatias)
+
+Os 9 templates antigos do CP12 foram complementados/realinhados pra refletir o que a ANPD passou a exigir. 5º perfil institucional aparecendo nas opções de personalização.
+
+- `2e67798` — **Fatia 1**: Política Interna alinhada à Resolução CD/ANPD nº 20/2024 (estrutura por seções obrigatórias)
+- `c379572` — **Fatia 2**: Aviso de Privacidade Externo modelo ANPD (formato sugerido pela ANPD pro público externo)
+- `6cdb276` — **Fatia 3**: Termo de Uso modelo Portal da Transparência (linguagem mais neutra pra órgãos públicos)
+- `a06190c` — **Fatia 4**: Política de Cookies modelo Portal Transparência (4 categorias com base legal explícita)
+- `d2b1a52` — **Fatia 5**: Aggregator do Inventário com botão "Atualizar" — Política Interna agora puxa snapshot do Inventário (lista de tratamentos + bases legais + finalidades) automaticamente. Schema novo: `policies.aggregatedDataSnapshot Json?` + `policies.aggregatedAt DateTime?`.
+- `8d6d75a` — **Fatia 6**: 5 perfis de órgão pra substituir marcadores institucionais — AUTARQUIA / FUNDAÇÃO / EMPRESA_PUBLICA / SOCIEDADE_ECONOMIA_MISTA / ORGAO_DIRETO. Endpoint `/api/politicas/[id]/apply-org-profile` aplica o perfil escolhido nos placeholders.
+
+**Schema delta**: `policies.aggregatedDataSnapshot/aggregatedAt` aplicado em prod via Neon SQL Editor pelo user em 2026-05-07.
+
+### Bloco 3 — Sistema de Cookies institucional (CP26 *novo escopo* — 4 fatias)
+
+CP26 foi formalmente reatribuído. PSI antigo continua morto. Cookies em prod com banner bloqueante + log de consentimentos com IP anonimizado + 4 categorias.
+
+- `b2be4c4` — **Fatia 1**: schema `CookieConsent` (userId? + deviceFingerprint? + ipAddress anonimizado + userAgent + 4 booleans necessary/analytics/marketing/preferences + revokedAt) + endpoint REST `POST/GET/DELETE /api/cookies/consent`. IP anonimizado server-side (zera último octeto IPv4 ou últimos 80 bits IPv6).
+- `9a46513` — **Fatia 2**: Provider React + Banner UI bloqueante (overlay escuro, 4 categorias com toggle, botão "?" pra abrir vídeo "O Caso dos Cookies", botão "Personalizar")
+- `f2100d1` — **Fatia 3**: plug do Provider+Banner no layout — aparece SÓ em rotas públicas (`/p/<slug>/<policy>` e similares); `/dashboard/*` e `/auth/*` ficam isentos
+- `4e09655` — **Fatia 4**: banner aponta pra políticas publicadas do sistema — busca do tenant configurado em `.env` (`SYSTEM_COMPANY_SLUG`) e linka pras 4 políticas (Aviso Externo, Cookies, Termo de Uso, Privacidade) reais
+- `c152ba9` — **vídeo do banner**: `public/videos/O_Caso_dos_Cookies.mp4` (28MB) que ativa o botão "?" do banner
+
+**Schema delta**: tabela `cookie_consents` aplicada em prod via Neon SQL Editor pelo user em 2026-05-07.
+
+### Smoke test técnico passou (2026-05-07)
+
+- `POST /api/cookies/consent` → **200** em prod (tabela existe, write OK)
+- `POST /api/politicas/[id]/refresh-from-inventory` → 401 (auth-gated, route compilada)
+- `POST /api/politicas/[id]/apply-org-profile` → 401 (auth-gated, 5 perfis deployados)
+- `GET /p/test/test` → 404 (handler de rota pública compilou)
+- `GET /api/lia/pending-count` → 401 (CP21 LIA confirmado em prod, schema OK)
+- `GET /api/maturidade-pgp` → 401 (aggregação que inclui LIA roda sem 500)
+- `GET /` → 200 (homepage rendera, Vercel verde)
+
+### O que NÃO foi smoke-testado tecnicamente (precisa olhar humano no Firefox)
+
+- Sub-itens da sidebar expandindo/colapsando ao clicar nas Fases
+- Banner aparecendo bloqueante em `/p/*` e NÃO em `/dashboard/*`
+- Botão "?" do banner abrindo o vídeo
+- Aggregator do Inventário: botão "Atualizar do Inventário" → snapshot atualiza visualmente
+- Aplicar perfil institucional substituindo marcadores no editor
+
+### Descoberta colateral (D2)
+
+CP21 LIA já estava em main há semanas — HANDOVER da sessão 2026-05-06 (que dizia "em branch, pendente Neon + push") estava stale. Endpoints `/api/lia/*` respondem 401 em prod (schema aplicado, route compilada). Maturidade do PGP aggrega LIA sem 500. Etapa 20 (lia) está no consolidado `_migrate-prod-neon.sql` desde aquele dia.
+
+### Decisão arquitetural pendente
+
+App de curso PGP — 3 caminhos no menu (standalone vs flag no atual vs monorepo). Decisão **adiada** pelo user em 2026-05-07; retomar quando ele quiser.
 
 ---
 
@@ -587,6 +660,12 @@ Removidos scripts utilitários consumidos:
 | 17 | `_migrate-incidents.sql` | incidents refatorada (rename detectionDate→detectedAt etc) + incident_communications + action_plans.refIncidentId (Checkpoint 16) | ✅ | ✅ |
 | 18 | `_run-etapa18.ts` (raw SQL via Prisma) | capacitacao_eventos (Checkpoint 18 — Capacitação LGPD) | ✅ | ✅ |
 | 19 | `_run-etapa19.ts` (raw SQL via Prisma) | incident_data_inventories + incident_operators (Checkpoint 16 / F2-F3 — vínculos M:N) | ✅ | ✅ |
+| 20 | `_migrate-lia.sql` | lias + lia_versions (Checkpoint 21 — LIA) | ✅ | ✅ |
+| 21 | `_migrate-cyber.sql` | cyber_answers + cyber_snapshots (Checkpoint 22 — Cyber NIST) | ✅ | ✅ |
+| 22 | `_migrate-action-plan-cyber.sql` | action_plans.refCyberCode (Checkpoint 22 Fatia 3) | ✅ | ✅ |
+| 24 | (DDL ad-hoc via Neon SQL Editor 2026-05-07) | `cookie_consents` (tabela) + `policies.aggregatedDataSnapshot` + `policies.aggregatedAt` (CP26 Cookies + CP-Templates ANPD Fatia 5) | ✅ | ✅ |
+
+> **Nota**: Etapa 23 (PSI antigo) **não foi alocada** — o número CP26 foi reaproveitado pra Cookies e Etapa 23 está livre pra eventual retomada.
 
 Consolidado em `scripts/_migrate-prod-neon.sql` (idempotente).
 > **Nota**: Etapas 18 e 19 foram aplicadas via `npx ts-node scripts/_run-etapa{18,19}.ts` (Prisma `$executeRawUnsafe` direto) porque o `prisma db execute --stdin` tem problema com pipe no Windows. Para reaplicar em outro ambiente, basta `cmd /c "npx ts-node --project tsconfig.json scripts/_run-etapa{18,19}.ts"` com `DATABASE_URL` setado.
@@ -626,8 +705,11 @@ Pegar `NEON_URL` no painel Neon (botão **Connect** → copy connection string).
 | 23 | ~~**Modo leitura overlay (CP19 polish)**~~ — Botão "📖 Modo leitura" no PhaseToolbar abre overlay tela cheia tipo Notion/Medium pra ler conteúdo da fase com tipografia serif espaçada. 3 temas (sépia/claro/escuro) + 3 tamanhos de fonte, persistência localStorage. Captura conteúdo das `<PhaseSection>` via DOM (sem API nova). Atalhos Esc/+/−. Sem schema novo. | ✅ FEITO 2026-05-06 |
 | 24 | ~~**Kanban checklist (CP19 polish)**~~ — Toggle Lista/Kanban dentro da seção Checklist das fases. Modo Kanban tem 3 colunas (Pendente/Em andamento/Feito) com drag-drop nativo HTML5. Estado persistido no `checklistState` existente (mesmo campo) usando string status em vez de boolean — retrocompat automática (load detecta string ou boolean). Cards mostram label + título da seção de origem. Persistência localStorage por fase pra preferência de modo. Sem schema novo, sem API nova. | ✅ FEITO 2026-05-06 |
 | 25 | ~~**Busca textual Spotlight nas Fases**~~ — Modal Cmd+K acessível de qualquer tela com botão fixo na sidebar. Varre Descrição + Considerações + Checklist + Documentação das 9 fases (45k chars de conteúdo extraídos via gerador `scripts/generate-phase-content-index.ts` dos `defaultContent` hardcoded). API `/api/phase-search?q=`. Resultados agrupados por fase com snippet + termo destacado em amarelo. Click → abre fase, expande seção (via localStorage), scroll suave. Sem schema novo. **Limitação conhecida**: o highlight `<mark>` in-page após navegação é best-effort — pode ser apagado pelo `dangerouslySetInnerHTML` do `HtmlSubAccordion` que rerenderiza a árvore (tentei MutationObserver pra reaplicar mas nem sempre vence a corrida com hidratação do React). Não é bloqueante porque o user já viu o snippet destacado no modal antes de clicar. | ✅ FEITO 2026-05-06 (em prod) |
-| 26 | **PSI — Política de Segurança da Informação** — Mini-app (3 fatias: schema+APIs+lista / editor 7 abas + DOCX/PDF/diff + 5º card Fase 6 / NIST + URL pública + Maturidade). Entregue 2026-05-06 mas REVERTIDO no mesmo dia por bloqueio na aplicação Neon. Código preservado no git (commits `f93b7fe`/`732fa4e`/`8160898`). | 🟡 EM HOLD — retomar com Etapa 23 Neon aplicada (ver seção CP26 acima) |
-| 27+ | Outros refinos · Próximas features a definir | depois |
+| 26 | ~~**Sistema de Cookies institucional (4 fatias)**~~ — Schema `CookieConsent` + endpoint REST anonimizando IP server-side · Provider+Banner React bloqueante com 4 categorias · plug só em rotas públicas (`/p/*`) · banner linkando políticas publicadas reais do tenant · vídeo "O Caso dos Cookies" pro botão "?". Substituiu o escopo PSI antigo. | ✅ FEITO 2026-05-07 (em prod) |
+| — | **Sub-itens em árvore na sidebar (5 fatias)** — sidebar das fases expande mini-apps + "Coloque em Prática" como sub-itens; TOC lateral some quando há sub-itens; persistência localStorage. | ✅ FEITO 2026-05-07 |
+| — | **Templates de políticas alinhados Resolução CD/ANPD nº 20/2024 (6 fatias)** — Política Interna ANPD + Aviso Externo + Termo Uso + Política Cookies + Aggregator do Inventário com botão "Atualizar" + 5 perfis institucionais (AUTARQUIA/FUNDAÇÃO/EMPRESA_PUBLICA/SOCIEDADE_ECONOMIA_MISTA/ORGAO_DIRETO). | ✅ FEITO 2026-05-07 |
+| — | ~~**PSI — Política de Segurança da Informação**~~ — entregue 2026-05-06 e revertido no mesmo dia por bloqueio Neon. **Cancelado em 2026-05-07** por decisão do user ("CP26 não ressuscitar"). Código preservado em `f93b7fe`/`732fa4e`/`8160898` se alguém quiser ressuscitar como CP27+ no futuro. | 🔴 CANCELADO |
+| 27+ | App de curso PGP (decisão arquitetural adiada: standalone vs flag no atual vs monorepo) · Outros refinos · Próximas features a definir | depois |
 
 ---
 
@@ -770,11 +852,15 @@ Tudo o que era pendência conhecida foi tratado nessa sessão. Se aparecer algum
 3. **Validação visual em prod** (rápida, quando logar): conferir que `/dashboard` carrega · sidebar tem "Buscar nas Fases…" com `Ctrl K` · Ctrl+K abre o Spotlight (CP25) · Fase 6 mostra 4 cards (Políticas/RIPD/Terceiros/LIA — sem PSI) · sidebar não tem item PSI. App em https://lgpd-pgp.vercel.app
 4. ~~**Limpar scripts utilitários temporários**~~ ✅ FEITO em 2026-05-06 (commit `36333ac`): removidos `_create-admin.ts`, `_run-etapa18.ts`, `_run-etapa19.ts`. `_reset-admin-password.ts`/`_check-tables.ts`/`_check-etapa17.ts` não existiam mais.
 5. ~~**Atualizar `MEMORY.md`**~~ entradas CP16/CP18 já existiam.
-6. **Retomar PSI (CP26)** quando estiver tranquilo pra mexer no Neon. Caminho: aplicar `scripts/_migrate-psi.sql` no Neon → `git revert` dos 3 reverts (`a61a58d`/`1e82e68`/`cec78cb`) → push.
+6. ~~**Retomar PSI (CP26)**~~ ❌ CANCELADO em 2026-05-07. CP26 foi reatribuído pro Sistema de Cookies. Código antigo do PSI continua no histórico em `f93b7fe`/`732fa4e`/`8160898` mas não há plano de retomada.
+7. **Decidir arquitetura do app de curso PGP** quando o user trouxer o tema de volta — 3 caminhos no menu (standalone vs flag no atual vs monorepo).
+8. **Validação visual em prod das 3 macro-features de 2026-05-07**: sub-itens da sidebar abrindo · banner de cookies bloqueante em `/p/*` · botão "?" abrindo vídeo · aggregator atualizando snapshot · perfil institucional substituindo marcadores.
 
 ---
 
 ## 🔥 Resumo executivo
+
+**Sessão 2026-05-07**: 3 macro-features em prod (Sub-itens em árvore na sidebar 5 fatias · Templates de políticas alinhados Resolução CD/ANPD nº 20/2024 6 fatias · Sistema de Cookies institucional CP26 *novo escopo* 4 fatias). 2 schema deltas aplicados em prod via Neon SQL Editor (`policies.aggregatedDataSnapshot/aggregatedAt` + tabela `cookie_consents`). Vídeo do banner de cookies subido. PSI antigo (CP26 versão anterior) formalmente cancelado — número CP26 reatribuído. CP21 LIA validado como já estando em prod (HANDOVER anterior estava stale). Smoke test técnico via curl passou nos 7 endpoints novos/afetados. App de curso PGP fica como decisão pendente.
 
 **Sessão 2026-05-06 (tarde)**: entregou CP25 (Highlights pesquisáveis Ctrl+K) ✅ em prod + tentou CP26 (PSI) e revertiu por bloqueio na aplicação Neon. Limpeza de scripts utilitários (3 arquivos) commitada. Lições novas registradas como armadilhas #15 (`tsc` não pega `useSearchParams` sem Suspense — só `npm run build`) e #16 (`vercel env pull` não expõe sensíveis). PSI fica em hold com código preservado no git.
 
@@ -792,7 +878,7 @@ Sessão 2026-05-05 entregou Checkpoint 16 inteiro (incl. backlog E3+H+F2/F3) + C
 - ✅ **Recovery Neon**: incidente com `--force-reset` resolvido via PITR; senha rotacionada; lição registrada em armadilhas
 - ✅ Schema Neon: Etapas 2 → 19 todas aplicadas e validadas em prod
 
-**Próxima fronteira (Checkpoint 27+):** Retomar PSI (CP26) quando aplicação Neon estiver desbloqueada · refinos diversos. O PGP institucional já está cumprido por Política do PGP + Painel de Maturidade + Capacitação + Incidentes + LIA + Cyber NIST + busca textual.
+**Próxima fronteira (Checkpoint 27+):** App de curso PGP (decisão arquitetural pendente) · refinos diversos · validação visual humana das 3 macro-features de 2026-05-07. O PGP institucional já está cumprido por Política do PGP + Painel de Maturidade + Capacitação + Incidentes + LIA + Cyber NIST + busca textual + Sistema de Cookies institucional. PSI ficou cancelado.
 
 ---
 
