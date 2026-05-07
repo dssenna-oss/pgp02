@@ -32,7 +32,7 @@ export default function TourFloatingButton() {
     <button
       onClick={() => start("master")}
       aria-label={interacted ? "Refazer tour guiado do PGP" : "Fazer tour guiado do PGP"}
-      className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium text-white shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 hover:shadow-violet-500/40 transition-all"
+      className="fixed bottom-6 left-6 lg:left-72 z-40 flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium text-white shadow-lg shadow-violet-500/30 hover:-translate-y-0.5 hover:shadow-violet-500/40 transition-all"
       style={{
         background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
       }}
