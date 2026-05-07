@@ -29,6 +29,7 @@ import {
   FileText,
   GitCompareArrows,
   RefreshCw,
+  Building2,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,11 @@ import {
   policyStatusBadgeClass,
 } from "@/lib/policies-helpers";
 import { hasAggregatablePlaceholders } from "@/lib/policy-data-aggregator";
+import {
+  ORG_PROFILES,
+  hasOrgProfileMarkers,
+  type OrgProfileKey,
+} from "@/lib/policy-org-profiles";
 
 interface VersionEntry {
   id: string;
@@ -87,6 +93,10 @@ export default function PolicyEditor({ policyId }: Props) {
   // Fatia 5 — botão "Atualizar do Inventário"
   const [refreshing, setRefreshing] = useState(false);
   const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
+  // Fatia 6 — botão "Aplicar perfil de órgão"
+  const [applyingProfile, setApplyingProfile] = useState(false);
+  const [showProfilePicker, setShowProfilePicker] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<OrgProfileKey | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -191,6 +201,40 @@ export default function PolicyEditor({ policyId }: Props) {
       toast.error("Erro de rede ao atualizar do Inventário");
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  /**
+   * Fatia 6 — aplica um perfil institucional (Prefeitura, Câmara, TCE,
+   * Autarquia, Federal) substituindo os marcadores `[...]` do template
+   * pelos textos institucionais correspondentes.
+   */
+  const handleApplyProfile = async () => {
+    if (!data || !selectedProfile) return;
+    setApplyingProfile(true);
+    try {
+      const r = await fetch(`/api/politicas/${policyId}/apply-org-profile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileKey: selectedProfile }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        toast.error(err.error ?? "Erro ao aplicar perfil");
+        return;
+      }
+      const resp = await r.json();
+      toast.success(
+        `Perfil "${resp.profile.label}" aplicado: ${resp.replacementsCount} substituições.`,
+        { duration: 5000 },
+      );
+      setShowProfilePicker(false);
+      setSelectedProfile(null);
+      refresh();
+    } catch {
+      toast.error("Erro de rede ao aplicar perfil");
+    } finally {
+      setApplyingProfile(false);
     }
   };
 
@@ -360,6 +404,22 @@ export default function PolicyEditor({ policyId }: Props) {
             <History className="h-4 w-4 mr-1.5" />
             Histórico ({policy.versionCount})
           </Button>
+          {hasOrgProfileMarkers(content) && (
+            <Button
+              variant="outline"
+              onClick={() => setShowProfilePicker(true)}
+              disabled={applyingProfile}
+              title="Substitui marcadores [...] do template por textos institucionais (Prefeitura, Câmara, Tribunal de Contas, Autarquia, Federal)"
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+            >
+              {applyingProfile ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Building2 className="h-4 w-4 mr-1.5" />
+              )}
+              Aplicar perfil de órgão
+            </Button>
+          )}
           {hasAggregatablePlaceholders(content) && (
             <Button
               variant="outline"
@@ -478,6 +538,87 @@ export default function PolicyEditor({ policyId }: Props) {
           </Card>
         )}
       </div>
+
+      {/* Modal de seleção — Aplicar perfil de órgão (Fatia 6) */}
+      <Dialog
+        open={showProfilePicker}
+        onOpenChange={(open) => {
+          setShowProfilePicker(open);
+          if (!open) setSelectedProfile(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Aplicar perfil de órgão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2 text-sm">
+            <p className="text-gray-700 dark:text-gray-300">
+              Substitui os marcadores <code className="text-xs">[...]</code> do
+              template pelos textos institucionais do tipo de organização
+              escolhido (autoridades, leis aplicáveis, foro, etc.).
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Aplicação <strong>idempotente</strong> — após aplicar, marcadores
+              já substituídos não voltam. Você pode ajustar manualmente depois.
+            </p>
+
+            <div className="space-y-2 mt-4 max-h-[400px] overflow-y-auto">
+              {ORG_PROFILES.map((p) => (
+                <label
+                  key={p.key}
+                  className={cn(
+                    "flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                    selectedProfile === p.key
+                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                      : "border-gray-200 dark:border-gray-700 hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/10",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="org-profile"
+                    value={p.key}
+                    checked={selectedProfile === p.key}
+                    onChange={() => setSelectedProfile(p.key)}
+                    className="mt-1 accent-emerald-600"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {p.label}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      {p.description}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowProfilePicker(false);
+                setSelectedProfile(null);
+              }}
+              disabled={applyingProfile}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleApplyProfile}
+              disabled={applyingProfile || !selectedProfile}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {applyingProfile ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Building2 className="h-4 w-4 mr-1.5" />
+              )}
+              Aplicar perfil
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de confirmação — Atualizar do Inventário (Fatia 5) */}
       <Dialog open={showRefreshConfirm} onOpenChange={setShowRefreshConfirm}>
