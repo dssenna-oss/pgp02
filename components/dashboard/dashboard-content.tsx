@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import DesdeUltimaVisitaCard from "@/components/dashboard/desde-ultima-visita-card";
 
 interface DashboardContentProps {
   session: any;
@@ -128,8 +129,8 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => alert('Função de relatório será implementada em breve')}
             >
@@ -138,6 +139,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </Button>
           </div>
         </div>
+
+        {/* Painel de Retomada — Card "Desde sua última visita" (CP27 Fatia 2) */}
+        <DesdeUltimaVisitaCard />
 
         {/* Stats Cards */}
         {loading ? (
