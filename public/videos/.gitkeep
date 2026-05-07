@@ -1,0 +1,7 @@
+# Placeholder para vídeos institucionais.
+#
+# Suba aqui o vídeo educativo do banner de cookies:
+#   public/videos/O_Caso_dos_Cookies.mp4
+#
+# Se o arquivo não existir, o banner mostra fallback graceful (placeholder
+# com instrução). O sistema funciona normalmente sem o vídeo.
