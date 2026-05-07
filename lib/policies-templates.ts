@@ -367,69 +367,219 @@ Dúvidas sobre este Aviso ou sobre proteção de dados:
 
 const T_PRIVACIDADE_INTERNA: PolicyTemplate = {
   type: "POLITICA_PRIVACIDADE_INTERNO",
-  defaultTitle: "Política de Privacidade Interna",
-  blurb: "Declaração para colaboradores (funcionários, estagiários, prestadores) sobre como a empresa coleta, usa e protege os dados pessoais DELES.",
-  content: `# Política de Privacidade Interna — {{empresa}}
+  defaultTitle: "Política Interna de Proteção de Dados Pessoais",
+  blurb:
+    "Política institucional formal seguindo o modelo da Resolução CD/ANPD nº 20/2024. Estabelece princípios, diretrizes e regras para o tratamento de dados pessoais aplicáveis a todos os servidores, colaboradores e terceiros vinculados à organização. Estrutura em 7 capítulos com responsabilidades nominais (órgão máximo, autoridade executiva, Encarregado, Equipe, Chefias, Colaboradores).",
+  content: `# Política Interna de Proteção de Dados Pessoais — {{empresa}}
 
 **Última atualização:** {{data_publicacao}}
 
-> Este documento se destina a colaboradores (funcionários CLT, estagiários, jovens aprendizes, prestadores de serviço, diretores) e explica **como a {{empresa}} trata os dados pessoais que vocês fornecem ou que são gerados durante a relação com a empresa**.
-
-## 1. Dados que tratamos sobre você
-
-- **Identificação:** nome, CPF, RG, CTPS, PIS/PASEP, data de nascimento, foto.
-- **Contato:** endereço, e-mail pessoal e corporativo, telefone.
-- **Profissionais:** cargo, departamento, salário, benefícios, histórico de cargos.
-- **Bancários:** conta para depósito de salário.
-- **Saúde** (dados sensíveis): exames admissionais/periódicos, atestados, ASO, restrições.
-- **Acessos:** crachá, biometria (se aplicável), logs de sistemas, e-mails corporativos.
-
-## 2. Para que usamos esses dados
-
-- Cumprir obrigações trabalhistas, previdenciárias e fiscais.
-- Pagamento de salário, benefícios e reembolsos.
-- Gestão de jornada, férias, ausências.
-- Saúde ocupacional e segurança do trabalho.
-- Avaliações de desempenho e desenvolvimento.
-- Controle de acesso a sistemas e instalações.
-- Comunicação interna.
-
-## 3. Bases legais
-
-- **Execução de contrato de trabalho** — Art. 7º, V da LGPD.
-- **Cumprimento de obrigação legal** — CLT, FGTS, INSS, eSocial.
-- **Tutela da saúde** — Art. 11, II, "f" da LGPD (dados de saúde).
-- **Legítimo interesse** — segurança patrimonial, prevenção a fraudes.
-
-## 4. Compartilhamento
-
-Compartilhamos seus dados apenas com:
-
-- **Órgãos públicos** (Receita, INSS, Ministério do Trabalho, ANPD).
-- **Bancos e operadoras** de benefícios (vale-refeição, plano de saúde).
-- **Prestadores de serviço** sob contrato (folha, ponto, treinamento).
-- **Sucessores** em caso de fusão/aquisição (com salvaguardas).
-
-## 5. Retenção
-
-- **Durante o vínculo:** todos os dados.
-- **Após o desligamento:** mantemos pelos prazos legais (FGTS 30 anos, INSS 10 anos, fiscais 5 anos).
-- **Findos os prazos:** descartamos com segurança ou anonimizamos.
-
-## 6. Seus direitos
-
-Você tem todos os direitos previstos no Art. 18 da LGPD (acesso, correção, eliminação quando aplicável, portabilidade, etc.). Para exercê-los:
-
-- **Encarregado (DPO):** {{dpo_nome}}
-- **E-mail:** {{dpo_email}}
-
-## 7. Comunicação de mudanças
-
-Atualizações desta Política são comunicadas pelos canais internos (e-mail corporativo, intranet, mural).
+> Documento institucional aprovado pelo \`[órgão máximo de direção]\` (Conselho Diretor, Câmara, Diretoria, Comitê Executivo, conforme aplicável). Aplica-se a todos os servidores, colaboradores e terceiros que possuam algum vínculo com a {{empresa}}. Modelo alinhado à **Resolução CD/ANPD nº 20, de 3 de outubro de 2024**.
 
 ---
 
-**Versão {{data_publicacao}}** — Em caso de dúvidas, fale com seu RH ou com o DPO.
+## CAPÍTULO I — DISPOSIÇÕES GERAIS
+
+**Art. 1º** Esta Política Interna de Proteção de Dados Pessoais estabelece princípios, diretrizes e regras para as operações de tratamento de dados pessoais realizadas no âmbito da **{{empresa}}**, inscrita no CNPJ {{cnpj}}, com sede em {{endereco}}.
+
+**Art. 2º** As disposições desta Política aplicam-se a todos os servidores, colaboradores e terceiros que possuam algum vínculo com a {{empresa}}.
+
+**Art. 3º** A Política Interna de Proteção de Dados Pessoais alinha-se às estratégias institucionais da {{empresa}} e articula-se com os demais procedimentos internos que versam sobre proteção de dados pessoais e privacidade.
+
+**Art. 4º** São objetivos desta Política:
+
+I — assegurar e reforçar o cumprimento da legislação de proteção de dados pessoais e da sua respectiva regulamentação nos processos internos da {{empresa}};
+
+II — promover a transparência, responsabilização e prestação de contas em relação ao tratamento de dados pessoais realizado pela {{empresa}}; e
+
+III — incentivar a adoção de boas práticas de proteção de dados pessoais na {{empresa}}.
+
+---
+
+## CAPÍTULO II — PRINCÍPIOS E DIRETRIZES
+
+**Art. 5º** As atividades de tratamento de dados pessoais realizadas pela {{empresa}} devem observar os fundamentos e princípios gerais de proteção de dados previstos nos **arts. 2º e 6º da Lei nº 13.709/2018 (LGPD)**, bem como as seguintes diretrizes:
+
+I — observância do disposto na Lei nº 13.709/2018, nesta Política e nos regulamentos expedidos pela ANPD;
+
+II — adoção de medidas que visem a assegurar a privacidade desde a concepção e por padrão (*privacy by design and by default*);
+
+III — diligência contínua ao longo de todo o ciclo de tratamento do dado pessoal;
+
+IV — boa-fé e ética no tratamento dos dados pessoais;
+
+V — adoção de hipótese legal adequada para o devido tratamento de dados pessoais;
+
+VI — adoção de medidas de segurança técnicas e administrativas apropriadas; e
+
+VII — manutenção do registro das operações de tratamento de dados pessoais.
+
+---
+
+## CAPÍTULO III — TRATAMENTO DE DADOS PESSOAIS
+
+**Art. 6º** O tratamento de dados pessoais pela {{empresa}} será realizado para o atendimento de sua finalidade institucional, com observância das atribuições legais e contratuais aplicáveis.
+
+§ 1º A {{empresa}} poderá tratar dados pessoais de acordo com as hipóteses legais previstas nos **arts. 7º e 11 da Lei nº 13.709/2018**.
+
+§ 2º As informações sobre o tratamento de dados pessoais realizado pela {{empresa}}, com destaque para as finalidades, hipóteses legais para o tratamento, procedimentos e práticas adotadas para a execução das atividades, constam do **Aviso de Privacidade** da {{empresa}}.
+
+§ 3º A {{empresa}} tratará apenas os dados pessoais necessários para atender às finalidades específicas do tratamento, observado o princípio da necessidade.
+
+**Art. 7º** Os dados pessoais serão armazenados de forma segura, conforme padrões de segurança aplicáveis à hipótese, e de maneira que favoreça os meios para o exercício dos direitos do titular previstos na LGPD.
+
+Parágrafo único. Os dados pessoais serão eliminados quando finalizado o tratamento, com base em uma das hipóteses descritas no **art. 15 da LGPD**, ressalvadas as situações previstas no art. 16 da referida lei.
+
+**Art. 8º** O uso compartilhado de dados pessoais pela {{empresa}} atenderá a finalidades específicas legítimas, respeitados os princípios de proteção de dados pessoais elencados no art. 6º e o disposto nos arts. 26, § 1º e 27 da LGPD.
+
+**Art. 9º** Nos casos em que a {{empresa}} realizar transferência internacional de dados, serão adotadas medidas para garantir que a operação de tratamento seja realizada em conformidade com a LGPD e com o **Regulamento de Transferência Internacional de Dados (Resolução CD/ANPD nº 19/2024)**.
+
+**Art. 10.** O acesso aos dados pessoais ficará restrito às pessoas autorizadas e que necessitem realizar o tratamento desses dados para o desempenho de suas atividades na {{empresa}}.
+
+Parágrafo único. O direito de acesso à informação pública, que porventura contenha dado pessoal, deverá ser compatibilizado com o direito à privacidade e à proteção de dados pessoais, nos termos da **Lei nº 12.527/2011 (LAI)**.
+
+**Art. 11.** Os contratos, convênios ou instrumentos congêneres firmados pela {{empresa}} deverão conter cláusulas específicas de proteção de dados pessoais, as quais estabelecerão os deveres e obrigações dos agentes de tratamento envolvidos na operação de tratamento, respeitados os princípios, os direitos dos titulares e o regime de proteção de dados previstos na LGPD.
+
+**Art. 12.** A {{empresa}} adotará medidas de segurança, técnicas e administrativas adequadas para proteger os dados pessoais contra acessos não autorizados e situações acidentais ou ilícitas que venham a causar a destruição, perda, alteração, ou qualquer forma de tratamento inadequado ou ilícito.
+
+**Art. 13.** A {{empresa}} elaborará **Relatório de Impacto à Proteção de Dados Pessoais (RIPD)** nos casos em que as operações de tratamento possam gerar alto risco à garantia dos princípios gerais de proteção de dados pessoais, às liberdades civis e aos direitos fundamentais dos titulares.
+
+§ 1º Para a tomada de decisão mencionada no caput, deverão ser utilizados os parâmetros previstos nos documentos publicados pela ANPD.
+
+§ 2º O Relatório de Impacto à Proteção de Dados Pessoais (RIPD) deverá:
+
+I — ser elaborado pela unidade organizacional responsável pelo tratamento de dados que gera riscos ao titular, com apoio e orientação da Equipe do Encarregado da {{empresa}}; e
+
+II — sugerir ou fornecer ações corretivas necessárias para evitar ou mitigar esses riscos.
+
+---
+
+## CAPÍTULO IV — DIREITOS DOS TITULARES
+
+**Art. 14.** A {{empresa}} adotará medidas para assegurar o exercício dos direitos dos titulares previstos na **Lei nº 13.709/2018** e em eventuais normas complementares.
+
+**Art. 15.** Os direitos dos titulares poderão ser exercidos mediante requerimento expresso do titular, ou de seu representante legalmente constituído, dirigido ao **Encarregado pelo Tratamento de Dados Pessoais**.
+
+§ 1º A solicitação não gerará custos para o titular, e deverá ser atendida nos prazos e nos termos previstos em legislação específica.
+
+§ 2º As solicitações relacionadas aos direitos dos titulares que porventura sejam recebidas por outro canal deverão ser encaminhadas ao Encarregado para adoção das providências cabíveis.
+
+---
+
+## CAPÍTULO V — RESPONSABILIDADES
+
+**Art. 16.** Os deveres de cuidado, atenção e uso adequado de dados pessoais se estendem a todos os destinatários desta Política no desenvolvimento de suas atividades.
+
+**Art. 17.** Para o efetivo cumprimento desta Política, ficam instituídas as responsabilidades:
+
+I — do **\`[órgão máximo de direção]\`** (Conselho Diretor, Diretoria, Câmara, Comitê, conforme aplicável);
+
+II — da **\`[autoridade executiva]\`** (Diretor-Presidente, Prefeito, Reitor, Diretor-Geral, conforme aplicável);
+
+III — do **Encarregado** pelo Tratamento de Dados Pessoais ({{dpo_nome}});
+
+IV — da **Equipe do Encarregado**;
+
+V — das **Chefias imediatas**; e
+
+VI — dos **Colaboradores** (servidores, terceirizados, estagiários e demais vinculados).
+
+§ 1º O **\`[órgão máximo de direção]\`**, órgão máximo de direção da {{empresa}}, deliberará sobre as diretrizes estratégicas da governança de privacidade e proteção de dados pessoais.
+
+§ 2º A **\`[autoridade executiva]\`** da {{empresa}} será responsável por:
+
+I — designar o Encarregado;
+
+II — designar a Equipe do Encarregado; e
+
+III — garantir os recursos necessários para implementação da governança em proteção de dados pessoais.
+
+§ 3º O **Encarregado** da {{empresa}} será responsável por:
+
+I — elaborar e submeter à aprovação do \`[órgão máximo]\` o **Programa de Governança em Privacidade**;
+
+II — coordenar as ações de adequação das atividades da {{empresa}} à Lei nº 13.709/2018 e aos regulamentos emitidos pela ANPD;
+
+III — prestar assistência e orientação na elaboração, definição e implementação de medidas de proteção de dados pessoais, conforme as hipóteses previstas no Regulamento da ANPD sobre a atuação do encarregado (Resolução CD/ANPD nº 18/2024);
+
+IV — aceitar reclamações e comunicações dos titulares, prestar esclarecimentos e adotar as providências cabíveis;
+
+V — orientar os colaboradores e contratados da {{empresa}} sobre as práticas a serem adotadas em relação à proteção de dados pessoais;
+
+VI — monitorar o cumprimento desta Política;
+
+VII — avaliar e propor a atualização desta Política; e
+
+VIII — executar as demais atribuições determinadas pela {{empresa}}.
+
+§ 4º A **Equipe do Encarregado** o apoiará no exercício de suas funções.
+
+§ 5º São responsabilidades das **Chefias imediatas**:
+
+I — conscientizar os colaboradores sob sua supervisão em relação às boas práticas de privacidade, proteção de dados pessoais e segurança da informação, inclusive quanto às diretrizes desta Política;
+
+II — garantir que todos os colaboradores de sua equipe compreendam e sigam os documentos orientadores aplicáveis à {{empresa}};
+
+III — incorporar aos processos de trabalho de sua unidade boas práticas inerentes à privacidade, proteção de dados pessoais e segurança da informação;
+
+IV — garantir a proteção de dados pessoais sob sua custódia, nos termos da LGPD, recorrendo ao Encarregado quando necessário;
+
+V — manter o Encarregado atualizado acerca das operações de tratamento de dados pessoais que realize;
+
+VI — informar ao Encarregado caso sejam encontradas inconsistências em registros que cheguem ao seu conhecimento; e
+
+VII — comunicar ao Encarregado qualquer incidente de segurança que possa acarretar risco ou dano relevante aos titulares sobre o qual venha a tomar conhecimento, seja suspeito ou confirmado.
+
+§ 6º São responsabilidades dos **Colaboradores** (servidores, colaboradores e terceiros):
+
+I — estar ciente desta Política e segui-la, bem como as demais regulamentações em vigor relacionadas à privacidade, proteção de dados e segurança da informação;
+
+II — assumir atitude proativa e engajada no que diz respeito à privacidade, à proteção de dados pessoais e à segurança da informação;
+
+III — comunicar à chefia imediata qualquer incidente de segurança que possa acarretar risco ou dano relevante aos titulares sobre o qual venha a tomar conhecimento, seja suspeito ou confirmado;
+
+IV — preservar a integridade e guardar sigilo dos dados pessoais tratados para o exercício de suas atividades na {{empresa}}, quando incidente hipótese legal de restrição de acesso;
+
+V — não disponibilizar nem dar acesso aos dados pessoais mantidos pela {{empresa}} em hipóteses não previstas em lei ou para pessoas não autorizadas; e
+
+VI — cumprir as normas, recomendações e orientações relativas à segurança da informação, à privacidade e à proteção de dados.
+
+---
+
+## CAPÍTULO VI — CONSCIENTIZAÇÃO E CAPACITAÇÃO
+
+**Art. 18.** Como forma de garantir a disseminação do conhecimento, o Encarregado e sua Equipe poderão:
+
+I — sugerir e apoiar campanhas de conscientização de modo a aprimorar a cultura da proteção de dados pessoais e da privacidade; e
+
+II — orientar o corpo funcional sobre práticas de conformidade de proteção de dados pessoais e de privacidade que devem ser implementadas por todos os integrantes da instituição.
+
+**Art. 19.** As atividades de capacitação serão promovidas pela **\`[unidade responsável por capacitação]\`** (Coordenação-Geral de Administração, Departamento de RH, Escola de Governo, conforme aplicável), em articulação com o Encarregado.
+
+---
+
+## CAPÍTULO VII — PENALIDADES
+
+**Art. 20.** As violações a esta Política são passíveis de aplicação das **penalidades administrativas cabíveis**.
+
+§ 1º No caso de terceiros contratados ou prestadores de serviço, serão aplicadas as penalidades previstas nos respectivos contratos, convênios ou instrumentos congêneres.
+
+§ 2º No caso de violações que impliquem atividades ilegais, ou que possam incorrer em risco ou dano relevante aos titulares de dados pessoais, ou em danos à {{empresa}}, o infrator será responsabilizado pelos prejuízos causados, na forma da legislação pertinente.
+
+---
+
+## DISPOSIÇÕES FINAIS
+
+Esta Política entra em vigor na data de sua aprovação por **\`[órgão máximo de direção]\`** e será revisada periodicamente, ou sempre que houver alteração nas operações de tratamento de dados pessoais, mudança regulatória ou determinação da Autoridade Nacional de Proteção de Dados.
+
+---
+
+**{{empresa}}** — CNPJ {{cnpj}}
+**Encarregado pelo Tratamento de Dados Pessoais:** {{dpo_nome}} ({{dpo_email}})
+**Sede:** {{endereco}}
+**Versão:** {{data_publicacao}}
+
+> Modelo institucional baseado na Resolução CD/ANPD nº 20, de 3 de outubro de 2024 (DOU 07/10/2024). Substitua os marcadores entre colchetes \`[...]\` pelos termos corretos da sua organização (ex.: "Conselho Diretor", "Câmara Municipal", "Diretoria Colegiada", "Prefeito Municipal", "Reitor", etc.).
 `,
 };
 
