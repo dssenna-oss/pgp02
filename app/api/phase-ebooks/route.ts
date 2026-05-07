@@ -29,14 +29,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Usuário sem empresa associada" }, { status: 400 });
     }
 
-    // Buscar e-books da fase, ordenados
+    // Buscar e-books da fase: globais (companyId=null, conteúdo didático
+    // mantido pelo admin do sistema) + específicos desta empresa.
+    // Conteúdo didático nasce global pra que toda empresa nova já encontre
+    // material publicado. Empresas podem ter ebooks próprios cadastrados
+    // adicionalmente — aparecem misturados na ordem definida.
     const ebooks = await prisma.phaseEbook.findMany({
       where: {
-        companyId: user.companyId,
         phase: phase,
+        OR: [
+          { companyId: null },
+          { companyId: user.companyId },
+        ],
       },
       orderBy: {
-        order: 'asc',
+        order: "asc",
       },
     });
 
