@@ -2,10 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useSidebarExpansion } from "@/components/dashboard/sidebar-expansion-context";
 
 /**
  * Índice (TOC) lateral sticky pra navegação rápida entre as PhaseSections
- * (CP19 Fatia 5). Aparece só em desktop (lg+) ao lado direito do main.
+ * (CP19 Fatia 5). Aparece só em desktop (xl+) ao lado direito do main.
+ *
+ * Fatia 4 da feature de árvore na sidebar: o TOC se auto-esconde quando
+ * a sidebar esquerda está mostrando sub-itens (`hasExpansion=true`).
+ * Evita redundância — sub-itens da sidebar fazem o mesmo trabalho com
+ * mais espaço pro conteúdo principal.
  *
  * Auto-detecta as seções pelo atributo `data-phase-section-id` e usa
  * IntersectionObserver pra destacar a seção visível no viewport.
@@ -32,6 +38,7 @@ export default function PhaseTOC({
   items?: TOCItem[];
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const { hasExpansion } = useSidebarExpansion();
 
   useEffect(() => {
     const elements = items
@@ -62,6 +69,13 @@ export default function PhaseTOC({
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       setActiveId(id);
     }
+  }
+
+  // Fatia 4: se a sidebar esquerda já mostra sub-itens, não exibimos o
+  // TOC pra evitar redundância. Em telas xl+ libera mais espaço pro
+  // conteúdo principal.
+  if (hasExpansion) {
+    return null;
   }
 
   return (
