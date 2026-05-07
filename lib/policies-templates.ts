@@ -779,84 +779,146 @@ Esta Norma é revisada periodicamente. Mudanças são divulgadas pela intranet e
 
 const T_TERMOS_USO: PolicyTemplate = {
   type: "TERMOS_USO",
-  defaultTitle: "Termos e Condições de Uso",
-  blurb: "Contrato de adesão entre a empresa e o usuário do site/aplicativo — define direitos, deveres, limitações de uso, propriedade intelectual e link para o Aviso de Privacidade.",
-  content: `# Termos e Condições de Uso — {{empresa}}
+  defaultTitle: "Termo de Uso",
+  blurb:
+    "Termo institucional que define o funcionamento da plataforma, as regras aplicáveis, as responsabilidades dos usuários e da administração, e a autoridade competente para reclamações. Modelo alinhado ao Termo de Uso do Portal da Transparência (CGU). Indicado para portais oficiais de órgãos públicos e empresas estatais.",
+  content: `# Termo de Uso — {{empresa}}
 
 **Última atualização:** {{data_publicacao}}
 
-Bem-vindo(a)! Estes Termos regulam o uso do site/aplicativo da **{{empresa}}** (CNPJ {{cnpj}}). Ao acessar nossos serviços, você concorda integralmente com estas condições.
-
-## 1. Definições
-
-- **Plataforma:** site, app ou qualquer canal digital da {{empresa}}.
-- **Usuário:** quem acessa ou utiliza a Plataforma.
-- **Conteúdo:** textos, imagens, vídeos, documentos disponíveis na Plataforma.
-
-## 2. Aceitação
-
-O uso da Plataforma implica aceitação plena destes Termos e do nosso Aviso de Privacidade. Se não concorda, **não utilize**.
-
-## 3. Cadastro e conta
-
-- O cadastro é gratuito (quando aplicável) e exige informações verídicas.
-- Você é responsável pela confidencialidade de senha e atividades feitas na sua conta.
-- Comunique imediatamente qualquer acesso não autorizado.
-
-## 4. Uso permitido
-
-Você concorda em **NÃO**:
-
-- Utilizar a Plataforma para fins ilegais, fraudulentos ou contrários à moral.
-- Reproduzir, copiar, vender ou distribuir conteúdos sem autorização.
-- Utilizar logomarca, identidade visual ou marcas da {{empresa}} sem autorização escrita.
-- Fazer engenharia reversa, decompilar ou tentar extrair código-fonte.
-- Inserir conteúdos ofensivos, discriminatórios ou que violem direitos de terceiros.
-- Usar bots, scrapers ou automações que sobrecarreguem a Plataforma.
-
-## 5. Propriedade intelectual
-
-Todo o conteúdo da Plataforma (textos, imagens, vídeos, código, design, marcas) pertence à {{empresa}} ou é licenciado. Uso não autorizado caracteriza violação a direitos de propriedade intelectual.
-
-## 6. Privacidade
-
-O tratamento de dados pessoais pela {{empresa}} segue nosso **Aviso de Privacidade**, que faz parte integrante destes Termos. Leia em [link para o Aviso de Privacidade].
-
-## 7. Disponibilidade
-
-Buscamos manter a Plataforma disponível 24/7, mas podemos suspender por manutenção, atualizações ou força maior. Não nos responsabilizamos por indisponibilidades temporárias.
-
-## 8. Limitação de responsabilidade
-
-A {{empresa}} não se responsabiliza por:
-
-- Conteúdo gerado por terceiros na Plataforma.
-- Danos decorrentes do uso indevido pelo Usuário.
-- Falhas de conexão ou de dispositivos do Usuário.
-- Vírus, malware ou ataques cibernéticos não causados por nossa falha.
-
-## 9. Modificações
-
-Podemos atualizar estes Termos a qualquer momento. A versão vigente está sempre disponível na Plataforma. Uso continuado após mudanças = aceitação tácita.
-
-## 10. Cancelamento
-
-Podemos suspender ou encerrar a conta de qualquer Usuário que descumpra estes Termos, sem aviso prévio.
-
-## 11. Lei aplicável e foro
-
-Estes Termos são regidos pelas leis brasileiras. Foro da comarca de {{cidade}}/{{estado}} para dirimir controvérsias.
-
-## 12. Contato
-
-- **{{empresa}}**
-- {{endereco}}
-- E-mail: {{email}}
-- Telefone: {{telefone}}
+> Este Termo de Uso regula o uso do sítio eletrônico/plataforma da **{{empresa}}** (CNPJ {{cnpj}}), localizada em {{endereco}}. Modelo institucional alinhado ao Termo de Uso do Portal da Transparência (CGU/Governo Federal).
 
 ---
 
-**Versão {{data_publicacao}}**
+## Sumário
+
+1. Quais informações estão presentes neste documento?
+2. Aceitação do Termo
+3. Descrição do serviço
+4. Quais são as obrigações dos usuários que utilizam o serviço?
+5. Quais as responsabilidades da administração com os dados pessoais?
+
+---
+
+## 1. Quais informações estão presentes neste documento?
+
+Neste Termo de Uso, o usuário do sítio eletrônico/plataforma da {{empresa}} encontrará informações sobre:
+
+- O funcionamento da plataforma e as regras aplicáveis a ela;
+- O conjunto de regras relacionadas à ferramenta;
+- As responsabilidades do usuário do *site*;
+- As responsabilidades da \`[administração / instituição / empresa]\` ao fornecer o serviço;
+- Informações para contato, caso necessário atualização de informações ou esclarecimento de dúvidas;
+- Autoridade responsável por eventuais reclamações caso questões deste Termo de Uso tenham sido violadas.
+
+> Informações sobre o tratamento de dados pessoais (finalidades, dados coletados, compartilhamento, segurança, direitos do titular) constam do **Aviso de Privacidade** da {{empresa}}, documento complementar a este Termo. Informações sobre uso de cookies constam da **Política de Cookies**.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 2. Aceitação do Termo
+
+Ao utilizar os serviços, o usuário confirma que leu e compreendeu os Termos e Políticas aplicáveis ao sítio eletrônico/plataforma da {{empresa}} e concorda com eles.
+
+São aplicáveis os seguintes diplomas legais e normativos:
+
+- **Lei nº 12.527, de 18 de novembro de 2011** — Regula o acesso a informações previsto no inciso XXXIII do art. 5º, no inciso II do § 3º do art. 37 e no § 2º do art. 216 da Constituição Federal (Lei de Acesso à Informação — LAI);
+- **Lei nº 12.965, de 23 de abril de 2014** — Marco Civil da Internet — Estabelece princípios, garantias, direitos e deveres para o uso da Internet no Brasil;
+- **Lei nº 13.460, de 26 de junho de 2017** — Dispõe sobre participação, proteção e defesa dos direitos do usuário dos serviços públicos da administração pública;
+- **Lei nº 13.709, de 14 de agosto de 2018** — Lei Geral de Proteção de Dados Pessoais (LGPD) — dispõe sobre o tratamento de dados pessoais, com o objetivo de proteger os direitos fundamentais de liberdade e de privacidade;
+- **Decreto nº 9.637, de 26 de dezembro de 2018** — Institui a Política Nacional de Segurança da Informação;
+- **Decreto nº 10.332, de 28 de abril de 2020** — Institui a Estratégia de Governo Digital;
+- \`[Acrescentar: leis orgânicas, estatutos e atos normativos próprios da {{empresa_nome_curto}}]\`.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 3. Descrição do serviço
+
+\`[Descrever brevemente o serviço, sua finalidade, fontes de dados, regularidade de atualização e formas de acesso. Exemplo:]\`
+
+> O sítio eletrônico/plataforma da {{empresa}} é \`[de acesso livre / restrito mediante cadastro / etc.]\`, no qual o cidadão/usuário pode \`[descrever o que ele encontra: informações, serviços, consultas, formulários…]\`. \`[Descrever desde quando existe, quais recursos oferece e como se consolidou como instrumento institucional.]\`
+>
+> Os dados divulgados no sítio são provenientes de \`[descrever fontes: sistemas estruturadores, bases de dados próprias, integrações com outros órgãos…]\`. A periodicidade de envio dos dados depende do assunto tratado, assim como a periodicidade de atualização das informações no sítio.
+>
+> Uma vez carregadas, as informações são disponibilizadas para conhecimento do usuário de diversas formas, como: \`[painéis, consultas detalhadas, gráficos, dados abertos, formulários, etc.]\`.
+>
+> O acesso \`[requer / não requer]\` cadastro de usuário ou senha, sendo permitido a qualquer pessoa \`[navegar pelas páginas de forma livre / acessar mediante autenticação na plataforma Gov.br ou similar]\`, bem como visualizar e utilizar os dados disponíveis da forma que melhor lhe convier.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 4. Quais são as obrigações dos usuários que utilizam o serviço?
+
+O usuário é responsável pela reparação de todos e quaisquer danos, diretos ou indiretos (inclusive decorrentes do desrespeito de quaisquer direitos de outros usuários, de terceiros, inclusive direitos de propriedade intelectual, de segredo e de personalidade) que sejam causados à \`[administração / {{empresa}}]\`, a qualquer outro Usuário, ou, ainda, a qualquer terceiro, inclusive no ato do descumprimento do estabelecido neste Termo de Uso ou de qualquer ato praticado a partir de seu acesso ao serviço.
+
+A {{empresa}} **não poderá ser responsabilizada** pelos seguintes fatos:
+
+a) Equipamento infectado ou invadido por atacantes;
+b) Equipamento danificado no momento do consumo de serviços;
+c) Proteção do computador do usuário;
+d) Proteção das informações baseadas nos computadores dos usuários;
+e) Abuso de uso dos computadores dos usuários;
+f) Monitoração ilegal do computador dos usuários;
+g) Vulnerabilidades ou instabilidades existentes nos sistemas dos usuários;
+h) Perímetro inseguro.
+
+**Em nenhuma hipótese**, a {{empresa}} será responsável pela instalação no equipamento do usuário ou de terceiros de códigos maliciosos (vírus, *trojans*, *malware*, *worm*, *bot*, *backdoor*, *spyware*, *rootkit*, ou de quaisquer outros que venham a ser criados), em decorrência da navegação na Internet pelo usuário.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## 5. Quais as responsabilidades da administração com os dados pessoais?
+
+A {{empresa}} se compromete em cumprir todas as legislações relativas ao uso correto dos dados pessoais do cidadão/usuário, de forma a preservar a privacidade dos dados utilizados no serviço, bem como a garantir todos os direitos e garantias legais dos usuários.
+
+A {{empresa}} também se obriga a promover, independentemente de solicitações, a divulgação em local de fácil acesso, no âmbito de suas competências, de informações de interesse coletivo ou geral produzidas ou custodiadas, em conformidade com a Lei de Acesso à Informação (LAI).
+
+É de responsabilidade da {{empresa}} implementar controles de segurança para proteção dos dados pessoais dos usuários.
+
+A {{empresa}} poderá, quanto às ordens judiciais de pedido das informações, compartilhar informações necessárias para investigações ou tomar medidas relacionadas a atividades ilegais, suspeitas de fraude ou ameaças potenciais contra pessoas, bens ou sistemas que sustentam o serviço, ou de outra forma necessária para cumprir com nossas obrigações legais. Caso ocorra, a {{empresa}} **notificará os usuários afetados**, salvo quando o processo estiver em segredo de justiça.
+
+[Voltar ao Sumário](#sumário)
+
+---
+
+## Alterações deste Termo de Uso
+
+A presente versão deste Termo de Uso foi atualizada pela última vez em **{{data_publicacao}}**.
+
+A {{empresa}} se reserva o direito de modificar, a qualquer momento, as presentes normas — especialmente para adaptá-las às melhorias do sítio eletrônico, seja pela disponibilização de novas funcionalidades, seja pela retirada ou modificação daquelas já existentes.
+
+Nos casos em que as alterações relacionarem-se à finalidade, forma e duração do tratamento, mudança do(s) controlador(es) ou uso compartilhado dos dados, o titular de dados será informado a respeito, sendo-lhe permitido revogar seu consentimento, caso discorde do teor das alterações (hipótese aplicável quando a base legal for o consentimento — art. 7º, I, da LGPD).
+
+---
+
+## Autoridade competente para reclamações e canal de contato
+
+Em caso de dúvidas sobre este Termo de Uso ou de eventuais reclamações relativas ao seu cumprimento, o usuário poderá entrar em contato com a {{empresa}} pelos seguintes canais:
+
+- **E-mail institucional:** {{email}}
+- **Telefone:** {{telefone}}
+- **Endereço:** {{endereco}}
+- **Sítio eletrônico:** {{website}}
+- **Encarregado pelo Tratamento de Dados Pessoais:** {{dpo_nome}} ({{dpo_email}})
+- \`[Ouvidoria / SIC: indicar canal específico, se houver]\`
+
+---
+
+## Foro
+
+Estes Termos são regidos pelas leis brasileiras. \`[Para órgãos públicos federais: "Fica eleito o foro da Justiça Federal da Seção Judiciária de Brasília/DF para dirimir controvérsias decorrentes deste Termo." | Para municipais/estaduais: "Foro da comarca de {{cidade}}/{{estado}}, com renúncia a qualquer outro, por mais privilegiado que seja."]\`
+
+---
+
+**{{empresa}}** — CNPJ {{cnpj}}
+**Versão deste Termo:** {{data_publicacao}}
+
+> Modelo institucional baseado no Termo de Uso do Portal da Transparência (CGU — https://portaldatransparencia.gov.br/termos-de-uso). Substitua os marcadores entre colchetes \`[...]\` pelos termos da própria organização. Documentos complementares: **Aviso de Privacidade** (tratamento de dados pessoais) e **Política de Cookies** (cookies próprios e de terceiros).
 `,
 };
 
