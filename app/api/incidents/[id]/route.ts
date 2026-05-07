@@ -19,6 +19,7 @@ import {
   sanitizeInt,
   sanitizeBool,
 } from "@/lib/incidentes-helpers";
+import { trackLastAction, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 /**
  * GET /api/incidents/[id]
@@ -321,6 +322,17 @@ export async function PATCH(
   if (!updated) {
     return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
   }
+
+  // CP27 Fatia 3 — registra "Continue de onde parou"
+  await trackLastAction({
+    userId: user.id,
+    refType: "INCIDENTE",
+    refId: updated.id,
+    route: `/dashboard/incidentes/${updated.id}`,
+    label: `Incidente "${(updated as any).title}"`,
+    completeness: null,
+    closedCleanly: statusIsClosedCleanly((updated as any).status, "INCIDENTE"),
+  });
 
   return NextResponse.json({ incident: incidentToDTO(updated as any) });
 }

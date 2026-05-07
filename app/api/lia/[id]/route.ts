@@ -12,6 +12,7 @@ import {
   LIA_FULL_INCLUDE,
   type LiaData,
 } from "@/lib/lia-helpers";
+import { trackLastAction, statusToCompleteness, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 /**
  * GET /api/lia/[id]
@@ -149,6 +150,17 @@ export async function PATCH(
     where: { id: params.id },
     data: updates,
     include: LIA_FULL_INCLUDE,
+  });
+
+  // CP27 Fatia 3 — registra "Continue de onde parou"
+  await trackLastAction({
+    userId: user.id,
+    refType: "LIA",
+    refId: updated.id,
+    route: `/dashboard/lia/${updated.id}`,
+    label: `LIA "${updated.title}"`,
+    completeness: statusToCompleteness(updated.status, "LIA"),
+    closedCleanly: statusIsClosedCleanly(updated.status, "LIA"),
   });
 
   return NextResponse.json({ lia: liaToDTO(updated) });

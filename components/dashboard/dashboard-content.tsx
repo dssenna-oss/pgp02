@@ -19,6 +19,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import DesdeUltimaVisitaCard from "@/components/dashboard/desde-ultima-visita-card";
+import ContinueOndeParouCard from "@/components/dashboard/continue-onde-parou-card";
 
 interface DashboardContentProps {
   session: any;
@@ -140,8 +141,11 @@ export default function DashboardContent({ session }: DashboardContentProps) {
           </div>
         </div>
 
-        {/* Painel de Retomada — Card "Desde sua última visita" (CP27 Fatia 2) */}
-        <DesdeUltimaVisitaCard />
+        {/* Painel de Retomada (CP27 Fatias 2 + 4) — 2 cards lado a lado em lg+ */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <DesdeUltimaVisitaCard />
+          <ContinueOndeParouCard />
+        </div>
 
         {/* Stats Cards */}
         {loading ? (

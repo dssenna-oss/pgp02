@@ -8,6 +8,7 @@ import {
   slugify,
   VALID_POLICY_STATUSES,
 } from "@/lib/policies-helpers";
+import { trackLastAction, statusToCompleteness, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 /**
  * GET    /api/politicas/[id]    → carrega política + lista de versões
@@ -161,6 +162,17 @@ export async function PATCH(
   const company = await prisma.company.findUnique({
     where: { id: user.companyId },
     select: { slug: true },
+  });
+
+  // CP27 Fatia 3 — registra "Continue de onde parou"
+  await trackLastAction({
+    userId: user.id,
+    refType: "POLITICA",
+    refId: updated.id,
+    route: `/dashboard/politicas/${updated.id}`,
+    label: `Política "${updated.title}"`,
+    completeness: statusToCompleteness(updated.status, "POLITICA"),
+    closedCleanly: statusIsClosedCleanly(updated.status, "POLITICA"),
   });
 
   return NextResponse.json({ policy: policyToDTO(updated, company?.slug ?? null) });

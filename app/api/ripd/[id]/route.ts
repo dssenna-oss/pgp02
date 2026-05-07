@@ -11,6 +11,7 @@ import {
   ripdAccessFilter,
   type RipdData,
 } from "@/lib/ripd-helpers";
+import { trackLastAction, statusToCompleteness, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 const FULL_INCLUDE = {
   inventory: { select: { id: true, serviceName: true, status: true } },
@@ -170,6 +171,17 @@ export async function PATCH(
     where: { id: params.id },
     data: updates,
     include: FULL_INCLUDE,
+  });
+
+  // CP27 Fatia 3 — registra "Continue de onde parou"
+  await trackLastAction({
+    userId: user.id,
+    refType: "RIPD",
+    refId: updated.id,
+    route: `/dashboard/ripd/${updated.id}`,
+    label: `RIPD "${updated.title}"`,
+    completeness: statusToCompleteness(updated.status, "RIPD"),
+    closedCleanly: statusIsClosedCleanly(updated.status, "RIPD"),
   });
 
   return NextResponse.json({ ripd: ripdToDTO(updated) });

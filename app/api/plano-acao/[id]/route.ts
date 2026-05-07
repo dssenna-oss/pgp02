@@ -9,6 +9,7 @@ import {
   VALID_STATUSES,
   ACTION_STATUS,
 } from "@/lib/action-plan-helpers";
+import { trackLastAction, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 /**
  * GET /api/plano-acao/[id]      → 1 ação
@@ -174,6 +175,18 @@ export async function PATCH(
       createdBy: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // CP27 Fatia 3 — registra "Continue de onde parou"
+  await trackLastAction({
+    userId: user.id,
+    refType: "PLANO_ACAO",
+    refId: updated.id,
+    route: `/dashboard/plano-acao`,
+    label: `Ação "${updated.title}"`,
+    completeness: null,
+    closedCleanly: statusIsClosedCleanly(updated.status, "PLANO_ACAO"),
+  });
+
   return NextResponse.json({ action: actionToDTO(updated) });
 }
 
