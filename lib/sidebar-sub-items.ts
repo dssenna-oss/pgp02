@@ -76,4 +76,27 @@ export const SIDEBAR_SUB_ITEMS: Record<string, SidebarSubItem[]> = {
     { hash: "checklist", label: "Checklist", icon: "✅" },
     { hash: "documentacao", label: "Documentação", icon: "📂" },
   ],
+
+  // ────────────────────────────────────────────────────────────────────
+  // Mini-apps — Fatia 3.
+  // Cobertura inicial dos mini-apps com tabs/filtros claramente
+  // navegáveis. Hash sincroniza com state via `useHashSyncedState`.
+  // Mini-apps que são "lista única" (Tarefas, Contribuidores, RIPD,
+  // LIA, Políticas, Terceiros, Incidentes, Bases Legais, Fórum) ficam
+  // como Link simples — adicionar sub-itens só quando virarem
+  // necessidade de navegação interna real.
+  // ────────────────────────────────────────────────────────────────────
+  "/dashboard/plano-acao": [
+    { hash: "abertas", label: "Em aberto", icon: "📌" },
+    { hash: "concluidas", label: "Concluídas", icon: "✅" },
+    { hash: "cronograma", label: "Cronograma", icon: "📅" },
+  ],
+  "/dashboard/capacitacao": [
+    { hash: "ALL", label: "Todos os eixos", icon: "📋" },
+    { hash: "ONBOARDING", label: "Onboarding", icon: "🚪" },
+    { hash: "PILULAS", label: "Pílulas de Conhecimento", icon: "💊" },
+    { hash: "PRATICA", label: "Prática/Gamificação", icon: "🎮" },
+    { hash: "DEPARTAMENTAL", label: "Departamental", icon: "🏢" },
+    { hash: "MONITORAMENTO", label: "Monitoramento", icon: "📊" },
+  ],
 };

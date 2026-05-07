@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useHashSyncedState } from "@/lib/hash-sync-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -199,7 +200,13 @@ export default function CapacitacaoContent() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
-  const [filterEixo, setFilterEixo] = useState<Eixo | "ALL">("ALL");
+  // Filtro de eixo sincronizado com hash da URL — sub-itens da sidebar
+  // levam direto pra cada eixo (#ONBOARDING, #PILULAS, #PRATICA,
+  // #DEPARTAMENTAL, #MONITORAMENTO).
+  const [filterEixo, setFilterEixo] = useHashSyncedState<Eixo | "ALL">(
+    ["ALL", "ONBOARDING", "PILULAS", "PRATICA", "DEPARTAMENTAL", "MONITORAMENTO"] as const,
+    "ALL",
+  );
   const [filterStatus, setFilterStatus] = useState<StatusKey | "ALL">("ALL");
   const [view, setView] = useState<"list" | "timeline">("list");
   const [editing, setEditing] = useState<FormState | null>(null);

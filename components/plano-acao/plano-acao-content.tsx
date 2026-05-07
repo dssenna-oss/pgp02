@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useHashSyncedState } from "@/lib/hash-sync-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,11 @@ export default function PlanoAcaoContent({ session, isDPO }: Props) {
   const [search, setSearch] = useState("");
   const [originFilter, setOriginFilter] = useState<string>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<string>("ALL");
-  const [tab, setTab] = useState<"abertas" | "concluidas" | "cronograma">(
+  // Tab sincronizada com hash da URL (#abertas / #concluidas / #cronograma).
+  // Permite que sub-itens da sidebar levem direto à aba certa, e que o
+  // user compartilhe links que abrem na mesma aba.
+  const [tab, setTab] = useHashSyncedState(
+    ["abertas", "concluidas", "cronograma"] as const,
     "abertas",
   );
   const [editingAction, setEditingAction] = useState<ActionPlanDTO | "new" | null>(
