@@ -105,7 +105,12 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
   }
 
   return (
-    <div data-tour-id="phase-practical">
+    <div
+      id="coloque-em-pratica"
+      data-phase-section-id="coloque-em-pratica"
+      data-tour-id="phase-practical"
+      className="scroll-mt-4"
+    >
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
