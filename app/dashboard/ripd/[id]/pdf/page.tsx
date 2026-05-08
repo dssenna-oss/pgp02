@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isDPO } from "@/lib/auth-helpers";
 import RipdPdfView from "@/components/ripd/ripd-pdf-view";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 /**
  * Tela "PDF view" do RIPD (Checkpoint 13 / F4).
  *
@@ -24,6 +25,12 @@ export default async function RipdPdfPage({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");const source = searchParams.source === "current" ? "current" : "published";
+  if (!isDPO(session.user?.role)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DpoOnlyFallback feature="RIPD · PDF" />
+      </div>
+    );
+  }const source = searchParams.source === "current" ? "current" : "published";
   return <RipdPdfView ripdId={params.id} source={source} />;
 }

@@ -5,6 +5,7 @@ import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import GapCompareContent from "@/components/gap-analysis/gap-compare-content";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 export default async function GapComparePage({
   searchParams,
 }: {
@@ -13,7 +14,13 @@ export default async function GapComparePage({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");const sp = await searchParams;
+  if (!isDPO(session.user?.role)) {
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="GAP Analysis · Comparar versões" />
+      </DashboardLayout>
+    );
+  }const sp = await searchParams;
   return (
     <DashboardLayout session={session}>
       <GapCompareContent

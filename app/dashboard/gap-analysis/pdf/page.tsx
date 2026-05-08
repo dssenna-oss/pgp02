@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isDPO } from "@/lib/auth-helpers";
 import GapPdfView from "@/components/gap-analysis/gap-pdf-view";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 /**
  * Tela "PDF view" do GAP Analysis (Polimento C2). NÃO usa
  * `DashboardLayout` propositalmente — fica em layout limpo, full-page,
@@ -15,5 +16,11 @@ export default async function GapPdfPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");return <GapPdfView />;
+  if (!isDPO(session.user?.role)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DpoOnlyFallback feature="GAP Analysis · PDF" />
+      </div>
+    );
+  }return <GapPdfView />;
 }

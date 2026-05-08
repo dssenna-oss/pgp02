@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isDPO } from "@/lib/auth-helpers";
 import LiaPdfView from "@/components/lia/lia-pdf-view";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 /**
  * Tela "PDF view" da LIA (Checkpoint 21 / Fatia 2).
  *
@@ -24,6 +25,12 @@ export default async function LiaPdfPage({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");const source = searchParams.source === "current" ? "current" : "published";
+  if (!isDPO(session.user?.role)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DpoOnlyFallback feature="LIA · PDF" />
+      </div>
+    );
+  }const source = searchParams.source === "current" ? "current" : "published";
   return <LiaPdfView liaId={params.id} source={source} />;
 }

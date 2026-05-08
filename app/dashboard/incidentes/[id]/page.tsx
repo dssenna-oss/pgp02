@@ -5,6 +5,7 @@ import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import IncidenteEditorContent from "@/components/incidentes/incidente-editor-content";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 interface PageProps {
   params: { id: string };
 }
@@ -14,7 +15,13 @@ export default async function IncidenteEditorPage({ params }: PageProps) {
   if (!session) {
     redirect("/login");
   }
-  if (!isDPO(session.user?.role)) redirect("/dashboard");
+  if (!isDPO(session.user?.role)) {
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Incidentes" />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout session={session}>

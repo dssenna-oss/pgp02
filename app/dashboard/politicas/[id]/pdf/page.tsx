@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isDPO } from "@/lib/auth-helpers";
 import PolicyPdfView from "@/components/politicas/policy-pdf-view";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 /**
  * Tela "PDF view" de uma política (Checkpoint 12 / E4).
  * Layout limpo, sem DashboardLayout — pra renderizar bem no diálogo
@@ -19,7 +20,13 @@ export default async function PolicyPdfPage({
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");const { id } = await params;
+  if (!isDPO(session.user?.role)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DpoOnlyFallback feature="Políticas · PDF" />
+      </div>
+    );
+  }const { id } = await params;
   const sp = await searchParams;
   const source = sp.source === "current" ? "current" : "published";
   return <PolicyPdfView policyId={id} source={source as "current" | "published"} />;

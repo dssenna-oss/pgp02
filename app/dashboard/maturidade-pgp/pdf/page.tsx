@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isDPO } from "@/lib/auth-helpers";
 import MaturidadePgpPdfView from "@/components/maturidade-pgp/maturidade-pgp-pdf-view";
 
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 /**
  * Versão print-friendly do Painel de Maturidade do PGP (B3 da
  * Opção 1). Mesmo padrão do GAP/RIPD/Políticas: layout limpo full-page,
@@ -16,5 +17,11 @@ export default async function MaturidadePgpPdfPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   
-  if (!isDPO(session.user?.role)) redirect("/dashboard");return <MaturidadePgpPdfView />;
+  if (!isDPO(session.user?.role)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <DpoOnlyFallback feature="Maturidade do PGP · PDF" />
+      </div>
+    );
+  }return <MaturidadePgpPdfView />;
 }

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 import BasesLegaisContent from "@/components/inventario/bases-legais-content";
 
 interface Props {
@@ -21,7 +22,11 @@ export default async function BasesLegaisPage({ params }: Props) {
     redirect("/login");
   }
   if (!isDPO(session.user?.role)) {
-    redirect("/dashboard/inventario");
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Bases Legais do Processo" />
+      </DashboardLayout>
+    );
   }
   const { id } = await Promise.resolve(params as any);
 

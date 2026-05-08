@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 import PlanoAcaoContent from "@/components/plano-acao/plano-acao-content";
 import { isDPO } from "@/lib/auth-helpers";
 
@@ -9,7 +10,13 @@ export default async function PlanoAcaoPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   const userIsDPO = isDPO(session.user?.role);
-  if (!userIsDPO) redirect("/dashboard");
+  if (!userIsDPO) {
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Plano de Ação" />
+      </DashboardLayout>
+    );
+  }
   return (
     <DashboardLayout session={session}>
       <PlanoAcaoContent session={session} isDPO={userIsDPO} />
