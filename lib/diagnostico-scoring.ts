@@ -11,7 +11,11 @@
  * chamadas a banco aqui.
  */
 
-import { decodeSeverity, type RiskSeverity } from "@/lib/riscos-catalog";
+import {
+  decodeSeverity,
+  formatRiskTitle,
+  type RiskSeverity,
+} from "@/lib/riscos-catalog";
 import { GAP_TOTAL } from "@/lib/gap-catalog";
 
 // ============================================================
@@ -355,7 +359,7 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
       const priority: RecommendationPriority = sev === "ALTO" ? "ALTA" : "MEDIA";
       recs.push({
         id: `risco-${risk.dataInventoryId}-${risk.riskCode}`,
-        title: `Tratar risco "${risk.riskCode}" em "${procName}"`,
+        title: `Tratar risco "${formatRiskTitle(risk.riskCode)}" em "${procName}"`,
         description: sev
           ? `Risco classificado como ${sev === "ALTO" ? "alto" : sev === "MEDIO" ? "médio" : "baixo"} ainda sem mitigação iniciada.`
           : "Risco identificado sem severidade classificada nem plano de mitigação. Detalhe a matriz Probabilidade × Impacto.",
@@ -370,7 +374,7 @@ function buildRecommendations(input: DiagnosticoInput): Recommendation[] {
     } else if (risk.status === "EM_MITIGACAO" && !risk.mitigationPlan) {
       recs.push({
         id: `risco-plan-${risk.dataInventoryId}-${risk.riskCode}`,
-        title: `Documentar plano de mitigação do risco "${risk.riskCode}" em "${procName}"`,
+        title: `Documentar plano de mitigação do risco "${formatRiskTitle(risk.riskCode)}" em "${procName}"`,
         description:
           "Risco está marcado como 'Em mitigação' mas não tem plano documentado. Sem plano, é difícil acompanhar evolução.",
         priority: "MEDIA",

@@ -381,6 +381,32 @@ export const RISCOS_BY_CODE: Record<RiskCode, RiskDefinition> =
     RiskDefinition
   >;
 
+/**
+ * Lookup do nome curto pra exibição. Sempre devolve string —
+ * cai no próprio código se não achar (fail-safe pra dados antigos).
+ *
+ * Use em qualquer lugar onde o código bruto apareceria pra usuário
+ * final (ex: "BU"). Combine com `formatRiskTitle()` quando montar
+ * frases tipo "Tratar risco …".
+ */
+export function riskShortLabel(code: string | null | undefined): string {
+  if (!code) return "";
+  const def = RISCOS_BY_CODE[code as RiskCode];
+  return def?.shortLabel ?? code;
+}
+
+/**
+ * Frase pronta pra title de cards/recomendações:
+ *   "Falta de transparência (BU)"
+ * Caso o código não esteja no catálogo, devolve só ele.
+ */
+export function formatRiskTitle(code: string | null | undefined): string {
+  if (!code) return "";
+  const def = RISCOS_BY_CODE[code as RiskCode];
+  if (!def) return code;
+  return `${def.shortLabel} (${def.code})`;
+}
+
 // ============================================================
 // Lifecycle / status helpers
 // ============================================================

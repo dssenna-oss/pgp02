@@ -342,6 +342,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       tourId: "nav-riscos",
     },
     {
+      name: "Glossário de Riscos",
+      description: "Os 13 tipos de risco LGPD explicados",
+      href: "/dashboard/riscos/glossario",
+      icon: BookOpen,
+    },
+    {
       name: "GAP Analysis",
       description: "Diagnóstico macro de adequação à LGPD",
       href: "/dashboard/gap-analysis",

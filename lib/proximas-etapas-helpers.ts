@@ -14,6 +14,7 @@
 import { prisma } from "@/lib/db";
 import { isDPO, INVENTORY_STATUS } from "@/lib/auth-helpers";
 import { buildDiagnostico } from "@/lib/diagnostico-scoring";
+import { formatRiskTitle } from "@/lib/riscos-catalog";
 
 /** Prioridade visual + ordenação dentro da fase. */
 export type ProximaEtapaPriority = "alta" | "media" | "baixa";
@@ -412,7 +413,7 @@ async function buildRiscosSemAcaoEtapas(companyId: string): Promise<ProximaEtapa
       sevLabel === "ALTO" ? "alta" : sevLabel === "BAIXO" ? "baixa" : "media";
     out.push({
       id: `wf-risk-noplan-${r.id}`,
-      title: `Crie ação no Plano pra mitigar risco "${r.riskCode}" (${procName})`,
+      title: `Crie ação no Plano pra mitigar risco "${formatRiskTitle(r.riskCode)}" (${procName})`,
       description: descTrunc
         ? `Severidade ${sevLabel} · ${descTrunc}${descTrunc.length === 50 ? "…" : ""}`
         : `Severidade ${sevLabel} — risco identificado sem ação no Plano`,

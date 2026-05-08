@@ -359,13 +359,13 @@ function RiskTypeBar({
     <div className="grid grid-cols-12 gap-3 items-center">
       <div className="col-span-12 sm:col-span-4 min-w-0">
         <div className="text-xs font-medium text-gray-900 dark:text-white truncate">
+          {label}
           <Badge
             variant="outline"
-            className="font-mono text-[9px] px-1 py-0 mr-1.5"
+            className="font-mono text-[9px] px-1 py-0 ml-1.5 text-gray-500 dark:text-gray-400"
           >
             {code}
           </Badge>
-          {label}
         </div>
         <div className="text-[10px] text-gray-500">
           {total === 0 ? "Sem ocorrência" : `${total} processo(s)`}

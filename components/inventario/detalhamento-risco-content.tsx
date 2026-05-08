@@ -38,6 +38,7 @@ import {
   severityBadgeClass,
   probabilityLabel,
   impactLabel,
+  formatRiskTitle,
   PROBABILITY_HINTS,
   IMPACT_HINTS,
   decodeSeverity,
@@ -210,7 +211,11 @@ export default function DetalhamentoRiscoContent({ invId, riskCode }: Props) {
             {proc.setor && <span className="text-gray-500"> · {proc.setor}</span>}
           </p>
           <div className="flex flex-wrap gap-1.5 mt-2">
-            <Badge variant="outline" className="text-[10px] font-mono">
+            <Badge
+              variant="outline"
+              className="text-[10px] font-mono text-gray-500 dark:text-gray-400"
+              title="Código do risco no catálogo"
+            >
               {risk.riskCode}
             </Badge>
             {computedSeverity && (
@@ -433,7 +438,7 @@ export default function DetalhamentoRiscoContent({ invId, riskCode }: Props) {
             IDENTIFICADO (não faz sentido pra ACEITO/ELIMINADO/MITIGAÇÃO). */}
         {risk.status === RISK_STATUS.IDENTIFICADO && (
           <AddToActionPlanButton
-            title={`Tratar risco "${risk.riskCode}" em "${proc.serviceName}"`}
+            title={`Tratar risco "${formatRiskTitle(risk.riskCode)}" em "${proc.serviceName}"`}
             description={
               probability && impact
                 ? `Risco classificado como ${severityLabel(computedSeverity)}, status Identificado. Detalhe da matriz: Probabilidade ${probabilityLabel(probability)}, Impacto ${impactLabel(impact)}.`
