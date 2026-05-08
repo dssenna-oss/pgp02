@@ -297,11 +297,12 @@ function MultiChoiceField({
     setOtherText(text);
     const withoutOther = value.filter((v) => !v.startsWith(otherPrefix));
     if (checked) {
-      // Mantém "Outro" marcado mesmo com texto vazio — caso contrário o
-      // useEffect re-sincroniza a partir de `value` e desmarca o checkbox
-      // antes do user conseguir digitar (bug observado em 2026-05-07).
-      // O input "Especifique" aparece e atualiza o texto depois.
-      onChange([...withoutOther, otherPrefix + text.trim()]);
+      // NÃO chamar text.trim() aqui: o useEffect (linhas 282-286)
+      // re-sincroniza otherText a partir do `value` recebido, e o trim
+      // descartava espaços intermediários durante a digitação — bug
+      // reportado pelo user em 2026-05-08 ("documentosaosorgãos").
+      // Trim só faz sentido em blur/save final, não em onChange.
+      onChange([...withoutOther, otherPrefix + text]);
     } else {
       onChange(withoutOther);
     }
