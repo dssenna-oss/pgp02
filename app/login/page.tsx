@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+      className="min-h-screen relative overflow-hidden px-4"
       style={{
         backgroundImage:
           "linear-gradient(rgba(15, 23, 42, 0.45), rgba(30, 58, 138, 0.40)), url('/images/login-bg/bg1.jpg')",
@@ -53,23 +53,24 @@ export default function LoginPage() {
         backgroundPosition: "center",
       }}
     >
-      <div className="w-full max-w-sm relative z-10 -translate-y-12 md:-translate-y-20">
-        {/* Logo e título */}
-        <div className="text-center mb-5">
-          <div className="flex items-center justify-center mb-3">
-            <div className="bg-blue-600 p-3 rounded-full shadow-lg">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
+      {/* Header (logo + título) — absoluto, acima do tablet */}
+      <div className="absolute top-[5%] left-1/2 -translate-x-1/2 text-center z-10 w-full max-w-sm">
+        <div className="flex items-center justify-center mb-2">
+          <div className="bg-blue-600 p-3 rounded-full shadow-lg">
+            <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
-            LGPD - PGP
-          </h1>
-          <p className="text-blue-100 drop-shadow-md text-sm">
-            Programa de Governança em Privacidade
-          </p>
         </div>
+        <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
+          LGPD - PGP
+        </h1>
+        <p className="text-blue-100 drop-shadow-md text-sm">
+          Programa de Governança em Privacidade
+        </p>
+      </div>
 
-        <Card className="shadow-xl border-0">
+      {/* Card — absoluto, centralizado dentro do "miolo" do tablet */}
+      <div className="absolute top-[46%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-10">
+        <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-2xl">Entrar na Conta</CardTitle>
             <CardDescription>
@@ -148,13 +149,13 @@ export default function LoginPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Informações adicionais */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-blue-200/70">
-            Sistema seguro de conformidade com LGPD
-          </p>
-        </div>
+      {/* Footer absoluto */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center z-10">
+        <p className="text-xs text-blue-200/70 drop-shadow">
+          Sistema seguro de conformidade com LGPD
+        </p>
       </div>
     </div>
   );
