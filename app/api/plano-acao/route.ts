@@ -27,6 +27,13 @@ export async function GET(_request: NextRequest) {
   if ("error" in r) return r.error;
   const { user } = r;
 
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa o Plano de Ação" },
+      { status: 403 },
+    );
+  }
+
   const where: any = { companyId: user.companyId };
   // Contribuidor: só ações próprias
   if (!user.isDPO) where.assigneeId = user.id;
@@ -97,6 +104,13 @@ export async function POST(request: NextRequest) {
   const r = await loadActionPlanAuth(/* requireDPO */ true);
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa o Plano de Ação" },
+      { status: 403 },
+    );
+  }
 
   let body: any;
   try {

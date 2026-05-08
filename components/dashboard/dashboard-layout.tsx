@@ -246,7 +246,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Empresa", href: "/dashboard/empresa", icon: Building2 },
+    { name: "Empresa", href: "/dashboard/empresa", icon: Building2, dpoOnly: true },
     { 
       name: "📚 Conteúdos Didáticos", 
       description: "📖 Material Educativo e Recursos",
@@ -381,7 +381,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Ações institucionais com responsável e prazo",
       href: "/dashboard/plano-acao",
       icon: Target,
-      // Visível também pra Contribuidor (vê só ações onde é responsável)
+      dpoOnly: true,
       tourId: "nav-plano-acao",
     },
     {
@@ -397,29 +397,28 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Relatório de Impacto à Proteção de Dados",
       href: "/dashboard/ripd",
       icon: FileCheck2,
-      // Visível pra DPO + Contribuidor (cada um vê o que pode editar)
+      dpoOnly: true,
     },
     {
       name: "LIA",
       description: "Avaliação de Legítimo Interesse (Art. 7º IX)",
       href: "/dashboard/lia",
       icon: Scale,
-      // Visível pra DPO + Contribuidor (DPO aprova; Contribuidor cria rascunho)
+      dpoOnly: true,
     },
     {
       name: "Gestão de Terceiros",
       description: "Operadores, contratos e avaliação de risco",
       href: "/dashboard/terceiros",
       icon: Handshake,
-      // Visível pra DPO + Contribuidor (Contribuidor vê só os
-      // operadores ligados a processos próprios; DPO edita tudo)
+      dpoOnly: true,
     },
     {
       name: "Incidentes",
       description: "Resposta a incidentes (Art. 48 LGPD · 72h ANPD)",
       href: "/dashboard/incidentes",
       icon: AlertTriangle,
-      // Visível pra DPO + Contribuidor (Contribuidor vê só os próprios)
+      dpoOnly: true,
     },
     {
       name: "Capacitação",

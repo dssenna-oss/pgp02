@@ -24,6 +24,13 @@ export async function GET(_request: NextRequest) {
   const r = await loadRipdAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa RIPDs" },
+      { status: 403 },
+    );
+  }
+
 
   const ripds = await prisma.ripd.findMany({
     where: ripdAccessFilter(user),
@@ -59,6 +66,13 @@ export async function POST(request: NextRequest) {
   const r = await loadRipdAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa RIPDs" },
+      { status: 403 },
+    );
+  }
+
 
   let body: any;
   try {

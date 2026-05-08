@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDPO } from "@/lib/auth-helpers";
 import GapPdfView from "@/components/gap-analysis/gap-pdf-view";
 
 /**
@@ -13,5 +14,6 @@ import GapPdfView from "@/components/gap-analysis/gap-pdf-view";
 export default async function GapPdfPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  return <GapPdfView />;
+  
+  if (!isDPO(session.user?.role)) redirect("/dashboard");return <GapPdfView />;
 }

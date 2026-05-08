@@ -30,6 +30,13 @@ export async function GET(_request: NextRequest) {
   const r = await loadIncidentAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Incidentes" },
+      { status: 403 },
+    );
+  }
+
 
   const incidents = await prisma.incident.findMany({
     where: incidentAccessFilter(user),
@@ -63,6 +70,13 @@ export async function POST(request: NextRequest) {
   const r = await loadIncidentAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Incidentes" },
+      { status: 403 },
+    );
+  }
+
 
   let body: any;
   try {

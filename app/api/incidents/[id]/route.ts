@@ -35,6 +35,13 @@ export async function GET(
   if ("error" in r) return r.error;
   const { user } = r;
 
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Incidentes" },
+      { status: 403 },
+    );
+  }
+
   const incident = await prisma.incident.findFirst({
     where: {
       id: params.id,
@@ -73,6 +80,13 @@ export async function PATCH(
   const r = await loadIncidentAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Incidentes" },
+      { status: 403 },
+    );
+  }
 
   let body: any;
   try {
@@ -349,6 +363,13 @@ export async function DELETE(
   const r = await loadIncidentAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Incidentes" },
+      { status: 403 },
+    );
+  }
 
   if (!canDeleteIncident(user)) {
     return NextResponse.json(

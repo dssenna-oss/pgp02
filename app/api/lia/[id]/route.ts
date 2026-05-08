@@ -29,6 +29,13 @@ export async function GET(
   if ("error" in r) return r.error;
   const { user } = r;
 
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa LIAs" },
+      { status: 403 },
+    );
+  }
+
   const lia = await prisma.lia.findFirst({
     where: { id: params.id, ...liaAccessFilter(user) },
     include: LIA_FULL_INCLUDE,
@@ -54,6 +61,13 @@ export async function PATCH(
   const r = await loadLiaAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa LIAs" },
+      { status: 403 },
+    );
+  }
 
   const lia = await prisma.lia.findFirst({
     where: { id: params.id, companyId: user.companyId },
@@ -178,6 +192,13 @@ export async function DELETE(
   const r = await loadLiaAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa LIAs" },
+      { status: 403 },
+    );
+  }
 
   const lia = await prisma.lia.findFirst({
     where: { id: params.id, companyId: user.companyId },

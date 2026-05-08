@@ -9,6 +9,7 @@ export default async function PlanoAcaoPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   const userIsDPO = isDPO(session.user?.role);
+  if (!userIsDPO) redirect("/dashboard");
   return (
     <DashboardLayout session={session}>
       <PlanoAcaoContent session={session} isDPO={userIsDPO} />

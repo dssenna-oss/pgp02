@@ -38,6 +38,13 @@ export async function GET(
   const r = await loadOperatorAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Operadores" },
+      { status: 403 },
+    );
+  }
+
 
   const op = await prisma.operator.findFirst({
     where: { id: params.id, ...operatorAccessFilter(user) },
@@ -78,6 +85,13 @@ export async function PATCH(
   const r = await loadOperatorAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Operadores" },
+      { status: 403 },
+    );
+  }
+
 
   if (!canEditOperator(user)) {
     return NextResponse.json(
@@ -333,6 +347,13 @@ export async function DELETE(
   const r = await loadOperatorAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Operadores" },
+      { status: 403 },
+    );
+  }
+
 
   if (!canDeleteOperator(user)) {
     return NextResponse.json(

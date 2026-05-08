@@ -38,6 +38,13 @@ export async function GET(_request: NextRequest) {
   const r = await loadOperatorAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Operadores" },
+      { status: 403 },
+    );
+  }
+
 
   const ops = await prisma.operator.findMany({
     where: operatorAccessFilter(user),
@@ -76,6 +83,13 @@ export async function POST(request: NextRequest) {
   const r = await loadOperatorAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa Operadores" },
+      { status: 403 },
+    );
+  }
+
 
   if (!canEditOperator(user)) {
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDPO } from "@/lib/auth-helpers";
 import LiaPdfView from "@/components/lia/lia-pdf-view";
 
 /**
@@ -22,6 +23,7 @@ export default async function LiaPdfPage({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const source = searchParams.source === "current" ? "current" : "published";
+  
+  if (!isDPO(session.user?.role)) redirect("/dashboard");const source = searchParams.source === "current" ? "current" : "published";
   return <LiaPdfView liaId={params.id} source={source} />;
 }

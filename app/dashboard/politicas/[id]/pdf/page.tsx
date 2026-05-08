@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDPO } from "@/lib/auth-helpers";
 import PolicyPdfView from "@/components/politicas/policy-pdf-view";
 
 /**
@@ -17,7 +18,8 @@ export default async function PolicyPdfPage({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const { id } = await params;
+  
+  if (!isDPO(session.user?.role)) redirect("/dashboard");const { id } = await params;
   const sp = await searchParams;
   const source = sp.source === "current" ? "current" : "published";
   return <PolicyPdfView policyId={id} source={source as "current" | "published"} />;

@@ -24,6 +24,13 @@ export async function GET(_request: NextRequest) {
   const r = await loadLiaAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa LIAs" },
+      { status: 403 },
+    );
+  }
+
 
   const lias = await prisma.lia.findMany({
     where: liaAccessFilter(user),
@@ -54,6 +61,13 @@ export async function POST(request: NextRequest) {
   const r = await loadLiaAuth();
   if ("error" in r) return r.error;
   const { user } = r;
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa LIAs" },
+      { status: 403 },
+    );
+  }
+
 
   let body: any;
   try {

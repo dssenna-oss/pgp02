@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDPO } from "@/lib/auth-helpers";
 import MaturidadePgpPdfView from "@/components/maturidade-pgp/maturidade-pgp-pdf-view";
 
 /**
@@ -14,5 +15,6 @@ import MaturidadePgpPdfView from "@/components/maturidade-pgp/maturidade-pgp-pdf
 export default async function MaturidadePgpPdfPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  return <MaturidadePgpPdfView />;
+  
+  if (!isDPO(session.user?.role)) redirect("/dashboard");return <MaturidadePgpPdfView />;
 }

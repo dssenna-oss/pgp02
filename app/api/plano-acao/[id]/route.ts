@@ -27,6 +27,13 @@ export async function GET(
   const r = await loadActionPlanAuth(/* requireDPO */ false);
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa o Plano de Ação" },
+      { status: 403 },
+    );
+  }
   const { id } = await params;
 
   const a = await prisma.actionPlan.findFirst({
@@ -53,6 +60,13 @@ export async function PATCH(
   const r = await loadActionPlanAuth(/* requireDPO */ false);
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa o Plano de Ação" },
+      { status: 403 },
+    );
+  }
   const { id } = await params;
 
   const existing = await prisma.actionPlan.findFirst({
@@ -197,6 +211,13 @@ export async function DELETE(
   const r = await loadActionPlanAuth(/* requireDPO */ true);
   if ("error" in r) return r.error;
   const { user } = r;
+
+  if (!user.isDPO) {
+    return NextResponse.json(
+      { error: "Apenas DPO acessa o Plano de Ação" },
+      { status: 403 },
+    );
+  }
   const { id } = await params;
 
   const existing = await prisma.actionPlan.findFirst({

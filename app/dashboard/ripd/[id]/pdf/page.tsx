@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { isDPO } from "@/lib/auth-helpers";
 import RipdPdfView from "@/components/ripd/ripd-pdf-view";
 
 /**
@@ -22,6 +23,7 @@ export default async function RipdPdfPage({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const source = searchParams.source === "current" ? "current" : "published";
+  
+  if (!isDPO(session.user?.role)) redirect("/dashboard");const source = searchParams.source === "current" ? "current" : "published";
   return <RipdPdfView ripdId={params.id} source={source} />;
 }
