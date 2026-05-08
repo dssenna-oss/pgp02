@@ -54,7 +54,7 @@ export default function LoginPage() {
       }}
     >
       {/* Header (logo + título) — absoluto, acima do tablet */}
-      <div className="absolute top-[5%] left-[54%] -translate-x-1/2 text-center z-10 w-full max-w-sm">
+      <div className="absolute top-[5%] left-[calc(50%+30px)] -translate-x-1/2 text-center z-10 w-full max-w-sm">
         <div className="flex items-center justify-center mb-2">
           <div className="bg-blue-600 p-3 rounded-full shadow-lg">
             <Shield className="h-8 w-8 text-white" />
@@ -69,7 +69,7 @@ export default function LoginPage() {
       </div>
 
       {/* Card — absoluto, centralizado dentro do "miolo" do tablet */}
-      <div className="absolute top-[46%] left-[54%] -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-10">
+      <div className="absolute top-[46%] left-[calc(50%+30px)] -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-10">
         <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-2xl">Entrar na Conta</CardTitle>
@@ -152,7 +152,7 @@ export default function LoginPage() {
       </div>
 
       {/* Footer absoluto */}
-      <div className="absolute bottom-6 left-[54%] -translate-x-1/2 text-center z-10">
+      <div className="absolute bottom-6 left-[calc(50%+30px)] -translate-x-1/2 text-center z-10">
         <p className="text-xs text-blue-200/70 drop-shadow">
           Sistema seguro de conformidade com LGPD
         </p>
