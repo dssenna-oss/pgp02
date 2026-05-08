@@ -53,18 +53,18 @@ export default function LoginPage() {
         backgroundPosition: "center",
       }}
     >
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-sm relative z-10 -translate-y-12 md:-translate-y-20">
         {/* Logo e título */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
+        <div className="text-center mb-5">
+          <div className="flex items-center justify-center mb-3">
             <div className="bg-blue-600 p-3 rounded-full shadow-lg">
               <Shield className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
             LGPD - PGP
           </h1>
-          <p className="text-blue-100">
+          <p className="text-blue-100 drop-shadow-md text-sm">
             Programa de Governança em Privacidade
           </p>
         </div>
