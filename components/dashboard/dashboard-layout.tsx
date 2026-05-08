@@ -43,6 +43,7 @@ import { roleLabel, isDPO } from "@/lib/auth-helpers";
 import NotificationBell from "./notification-bell";
 import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
+import { useHashScroll } from "@/lib/use-hash-scroll";
 import TourProvider from "@/components/tour/tour-provider";
 import TourFloatingButton from "@/components/tour/tour-floating-button";
 import PhaseSearchModal from "@/components/fases/phase-search-modal";
@@ -64,6 +65,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [quickIncidentOpen, setQuickIncidentOpen] = useState(false);
   const pathname = usePathname();
+  // Resolve bug em que clicar num sub-item da sidebar (ex: 'Coloque em
+  // prática') não scrollava na 1ª vez. Reage a hashchange e abre o
+  // accordion alvo se estiver fechado.
+  useHashScroll();
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   /**
    * Quantidade de tarefas atrasadas + vencendo hoje. Alimenta o badge
