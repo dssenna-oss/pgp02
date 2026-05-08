@@ -45,6 +45,7 @@ import {
 } from "@/lib/inventario-form-schema";
 import { deriveLegacyFields } from "@/lib/inventario-derive";
 import { SectionStep } from "./section-step";
+import { isFieldEmpty, isNotApplied } from "./form-field-renderer";
 import { PrintableInventory } from "./printable-inventory";
 import { MiniAppsMap } from "./mini-apps-map";
 import { CompletionDialog } from "./completion-dialog";
@@ -207,6 +208,32 @@ export default function InventarioWizard({
         return;
       }
       setErrorsBySection((prev) => ({ ...prev, [currentSchemaStep.id]: {} }));
+
+      // Soft confirm: avisar antes de avançar se há campos opcionais em branco
+      // e NÃO marcados como N/A. Reduz dúvida "esqueci ou foi proposital?".
+      const sectionAnswers =
+        (answers[currentSchemaStep.id as keyof FormAnswers] as
+          | Record<string, string | string[]>
+          | undefined) ?? {};
+      const blanks = currentSchemaStep.fields.filter((f) => {
+        if (f.required) return false;
+        if (!isFieldVisible(f, sectionAnswers)) return false;
+        const v = sectionAnswers[f.id];
+        if (isNotApplied(v)) return false;
+        return isFieldEmpty(v);
+      });
+      if (blanks.length > 0) {
+        const word =
+          blanks.length === 1
+            ? "campo opcional em branco"
+            : "campos opcionais em branco";
+        const ok = confirm(
+          `Você deixou ${blanks.length} ${word}. Continuar mesmo assim ou revisar?\n\n` +
+            `Dica: marque "Não se aplica" abaixo de cada campo pra deixar explícito que foi proposital.\n\n` +
+            `[OK] continuar  ·  [Cancelar] revisar`,
+        );
+        if (!ok) return;
+      }
     }
 
     // Sempre salva rascunho antes de avançar
