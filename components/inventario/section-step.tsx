@@ -122,6 +122,9 @@ function FieldAccordionItem({
     ? value.length > 0
     : !!value?.toString().trim();
   const count = Array.isArray(value) ? value.length : 0;
+  /** Pra single-choice mostramos o valor escolhido em vez do count zero. */
+  const singleLabel =
+    !Array.isArray(value) && filled ? value!.toString().trim() : null;
 
   return (
     <AccordionItem
@@ -151,6 +154,11 @@ function FieldAccordionItem({
           {count > 0 && (
             <Badge variant="secondary" className="ml-auto mr-2 text-xs">
               {count} selecionado{count !== 1 ? "s" : ""}
+            </Badge>
+          )}
+          {singleLabel && (
+            <Badge variant="secondary" className="ml-auto mr-2 text-xs">
+              {singleLabel}
             </Badge>
           )}
         </div>
