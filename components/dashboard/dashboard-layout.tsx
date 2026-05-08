@@ -28,6 +28,7 @@ import {
   MessagesSquare,
   Scale,
   Activity,
+  History,
   Target,
   FileText as FileTextIcon,
   FileCheck2,
@@ -298,6 +299,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Caderno pessoal de planejamento",
       href: "/dashboard/tarefas",
       icon: ListChecks,
+    },
+    {
+      name: "Minha atividade",
+      description: "Timeline dos últimos 30 dias",
+      href: "/dashboard/minha-atividade",
+      icon: History,
     },
     {
       name: "Análise de Riscos",
