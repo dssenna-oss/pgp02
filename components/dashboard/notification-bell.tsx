@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Bell, AlertCircle, FileCheck2, Handshake, X } from "lucide-react";
+import { Bell, AlertCircle, FileCheck2, Handshake, ClipboardList, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
 
@@ -24,7 +24,8 @@ export default function NotificationBell() {
     incidents: number;
     ripds: number;
     operators: number;
-  }>({ incidents: 0, ripds: 0, operators: 0 });
+    inventarios: number;
+  }>({ incidents: 0, ripds: 0, operators: 0, inventarios: 0 });
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -33,16 +34,18 @@ export default function NotificationBell() {
 
     async function load() {
       try {
-        const [rInc, rRipd, rOp] = await Promise.all([
+        const [rInc, rRipd, rOp, rInv] = await Promise.all([
           fetch("/api/incidents/pending-count").catch(() => null),
           fetch("/api/ripd/pending-count").catch(() => null),
           fetch("/api/operadores/pending-count").catch(() => null),
+          fetch("/api/inventario/pending-count").catch(() => null),
         ]);
         if (canceled) return;
         const inc = rInc?.ok ? (await rInc.json()).count ?? 0 : 0;
         const ripd = rRipd?.ok ? (await rRipd.json()).count ?? 0 : 0;
         const op = rOp?.ok ? (await rOp.json()).count ?? 0 : 0;
-        setCounts({ incidents: inc, ripds: ripd, operators: op });
+        const inv = rInv?.ok ? (await rInv.json()).count ?? 0 : 0;
+        setCounts({ incidents: inc, ripds: ripd, operators: op, inventarios: inv });
       } catch {
         // silencioso
       }
@@ -71,7 +74,8 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  const total = counts.incidents + counts.ripds + counts.operators;
+  const total =
+    counts.incidents + counts.ripds + counts.operators + counts.inventarios;
   const hasCritical = counts.incidents > 0;
 
   return (
@@ -138,6 +142,14 @@ export default function NotificationBell() {
               count={counts.ripds}
               description="Relatórios enviados pelo Contribuidor pra aprovação do DPO"
               href="/dashboard/ripd"
+              onClick={() => setOpen(false)}
+            />
+            <NotificationItem
+              icon={<ClipboardList className="h-5 w-5 text-blue-600" />}
+              title="Inventários aguardando revisão"
+              count={counts.inventarios}
+              description="Mapeamentos submetidos pelo Contribuidor (ou devolvidos pra ajuste)"
+              href="/dashboard/inventario"
               onClick={() => setOpen(false)}
             />
             <NotificationItem

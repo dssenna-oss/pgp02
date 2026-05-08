@@ -5,17 +5,20 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
-import { 
-  FileText, 
-  AlertTriangle, 
-  BarChart3, 
-  CheckCircle2, 
+import {
+  FileText,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
   Users,
   Calendar,
   TrendingUp,
   Download,
-  Plus
+  Plus,
+  ClipboardList,
+  ArrowRight,
 } from "lucide-react";
+import { isDPO } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import DesdeUltimaVisitaCard from "@/components/dashboard/desde-ultima-visita-card";
@@ -36,6 +39,8 @@ export default function DashboardContent({ session }: DashboardContentProps) {
   });
 
   const [loading, setLoading] = useState(true);
+  const [inventarioPending, setInventarioPending] = useState<number>(0);
+  const userIsDPO = isDPO(session?.user?.role);
 
   // Buscar estatísticas reais da API
   useEffect(() => {
@@ -56,6 +61,25 @@ export default function DashboardContent({ session }: DashboardContentProps) {
 
     fetchStats();
   }, []);
+
+  // Conta inventários pedindo ação (só pra DPO mostrar o banner; pra contribuidor
+  // o badge da sidebar já alerta sobre os DEVOLVIDOs).
+  useEffect(() => {
+    if (!userIsDPO) return;
+    const fetchPending = async () => {
+      try {
+        const r = await fetch("/api/inventario/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        setInventarioPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    fetchPending();
+    const id = setInterval(fetchPending, 60000);
+    return () => clearInterval(id);
+  }, [userIsDPO]);
 
   const quickActions = [
     {
@@ -146,6 +170,33 @@ export default function DashboardContent({ session }: DashboardContentProps) {
           <DesdeUltimaVisitaCard />
           <ContinueOndeParouCard />
         </div>
+
+        {/* Banner: Inventários aguardando revisão (só DPO, só quando há pendentes) */}
+        {userIsDPO && inventarioPending > 0 && (
+          <Link
+            href="/dashboard/inventario"
+            className="block rounded-lg border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-4 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <ClipboardList className="h-6 w-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                    {inventarioPending}{" "}
+                    {inventarioPending === 1
+                      ? "inventário aguardando sua revisão"
+                      : "inventários aguardando sua revisão"}
+                  </h3>
+                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-0.5">
+                    Mapeamento(s) submetido(s) pelo Contribuidor — clique pra
+                    abrir, iniciar revisão e aprovar ou devolver.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            </div>
+          </Link>
+        )}
 
         {/* Stats Cards */}
         {loading ? (

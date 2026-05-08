@@ -104,6 +104,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * Polling 60s.
    */
   const [liasPending, setLiasPending] = useState<number | null>(null);
+  /**
+   * Inventários pedindo ação do usuário:
+   *   - DPO: SUBMETIDO ou EM_REVISAO (fila de aprovação)
+   *   - Contribuidor: DEVOLVIDO (precisam ajuste)
+   * Polling 60s.
+   */
+  const [inventarioPending, setInventarioPending] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -194,6 +201,17 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchInventarioPending = async () => {
+      try {
+        const r = await fetch("/api/inventario/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setInventarioPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
@@ -201,6 +219,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       void fetchOperatorsPending();
       void fetchIncidentsPending();
       void fetchLiasPending();
+      void fetchInventarioPending();
     };
 
     refreshAll();
@@ -210,6 +229,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     const opsId = setInterval(fetchOperatorsPending, 60000);
     const incidentsId = setInterval(fetchIncidentsPending, 60000);
     const liaId = setInterval(fetchLiasPending, 60000);
+    const inventarioId = setInterval(fetchInventarioPending, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
@@ -219,6 +239,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       clearInterval(opsId);
       clearInterval(incidentsId);
       clearInterval(liaId);
+      clearInterval(inventarioId);
       offEvent();
     };
   }, []);
@@ -305,6 +326,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Timeline dos últimos 30 dias",
       href: "/dashboard/minha-atividade",
       icon: History,
+    },
+    {
+      name: "Inventário",
+      description: "Mapeamentos de tratamento de dados",
+      href: "/dashboard/inventario",
+      icon: ClipboardList,
     },
     {
       name: "Análise de Riscos",
@@ -589,6 +616,15 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     liasPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-violet-500 text-white text-[10px] font-bold flex-shrink-0">
                         {liasPending}
+                      </span>
+                    )}
+                  {/* Badge de Inventários aguardando ação:
+                      DPO → SUBMETIDO/EM_REVISAO; Contribuidor → próprios DEVOLVIDOs. */}
+                  {item.href === "/dashboard/inventario" &&
+                    inventarioPending !== null &&
+                    inventarioPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {inventarioPending}
                       </span>
                     )}
                 </span>
