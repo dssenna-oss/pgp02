@@ -21,8 +21,7 @@ import {
 import { isDPO } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import DesdeUltimaVisitaCard from "@/components/dashboard/desde-ultima-visita-card";
-import ContinueOndeParouCard from "@/components/dashboard/continue-onde-parou-card";
+import ProximasEtapasCard from "@/components/dashboard/proximas-etapas-card";
 
 interface DashboardContentProps {
   session: any;
@@ -165,11 +164,10 @@ export default function DashboardContent({ session }: DashboardContentProps) {
           </div>
         </div>
 
-        {/* Painel de Retomada (CP27 Fatias 2 + 4) — 2 cards lado a lado em lg+ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <DesdeUltimaVisitaCard />
-          <ContinueOndeParouCard />
-        </div>
+        {/* Próximas etapas (CP28) — substitui Painel de Retomada antigo.
+            Card prescritivo: regras de workflow + recomendações do Diagnóstico.
+            DPO e Contribuidor recebem listas distintas via engine no servidor. */}
+        <ProximasEtapasCard />
 
         {/* Banner: Inventários aguardando revisão (só DPO, só quando há pendentes) */}
         {userIsDPO && inventarioPending > 0 && (
