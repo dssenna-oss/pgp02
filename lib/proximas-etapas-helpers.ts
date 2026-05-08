@@ -15,11 +15,35 @@ import { prisma } from "@/lib/db";
 import { isDPO, INVENTORY_STATUS } from "@/lib/auth-helpers";
 import { buildDiagnostico } from "@/lib/diagnostico-scoring";
 
-/** Prioridade visual + ordenação. */
+/** Prioridade visual + ordenação dentro da fase. */
 export type ProximaEtapaPriority = "alta" | "media" | "baixa";
 
 /** De onde a etapa veio (analytics + UI dica). */
 export type ProximaEtapaSource = "workflow" | "diagnostico";
+
+/**
+ * Fase do PGP a que a etapa pertence — ordena a lista (ascendente).
+ *  0 = Preliminar (Sensibilização / Capacitação)
+ *  1 = Formação das Equipes
+ *  2 = Diagnóstico Inicial
+ *  3 = Mapeamento e Análise de Riscos (Inventário + Riscos + Bases)
+ *  4 = GAP Analysis
+ *  5 = Plano de Ação
+ *  6 = Execução (Políticas + RIPDs + LIA + Terceiros)
+ *  7 = Monitoramento (Incidentes)
+ */
+export type ProximaEtapaPhase = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+export const PHASE_LABEL: Record<ProximaEtapaPhase, string> = {
+  0: "Preliminar",
+  1: "Fase 1",
+  2: "Fase 2",
+  3: "Fase 3",
+  4: "Fase 4",
+  5: "Fase 5",
+  6: "Fase 6",
+  7: "Fase 7",
+};
 
 /** Um item da lista. */
 export interface ProximaEtapa {
@@ -35,6 +59,8 @@ export interface ProximaEtapa {
   source: ProximaEtapaSource;
   /** Ícone lucide (nome string, resolvido no client). */
   icon: string;
+  /** Fase do PGP — ordena a lista. */
+  phase: ProximaEtapaPhase;
 }
 
 interface UserCtx {
@@ -135,7 +161,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
     }),
   ]);
 
-  // Inventários aguardando aprovação
+  // Inventários aguardando aprovação — Fase 3 (Mapeamento)
   for (const inv of pendingInventarios.slice(0, 3)) {
     out.push({
       id: `wf-inv-${inv.id}`,
@@ -148,10 +174,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "ClipboardList",
+      phase: 3,
     });
   }
 
-  // RIPDs em revisão
+  // RIPDs em revisão — Fase 6 (Execução)
   for (const r of pendingRipds.slice(0, 3)) {
     out.push({
       id: `wf-ripd-${r.id}`,
@@ -161,10 +188,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "FileCheck2",
+      phase: 6,
     });
   }
 
-  // LIAs em revisão
+  // LIAs em revisão — Fase 6 (Execução)
   for (const l of pendingLias.slice(0, 3)) {
     out.push({
       id: `wf-lia-${l.id}`,
@@ -174,10 +202,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "Scale",
+      phase: 6,
     });
   }
 
-  // Incidentes severidade ALTO/MEDIO sem comunicação ANPD
+  // Incidentes severidade ALTO/MEDIO sem comunicação ANPD — Fase 7 (Monitoramento)
   for (const inc of openIncidents.slice(0, 3)) {
     out.push({
       id: `wf-inc-${inc.id}`,
@@ -187,10 +216,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "AlertCircle",
+      phase: 7,
     });
   }
 
-  // Inventário aprovado SEM RIPD vinculado
+  // Inventário aprovado SEM RIPD vinculado — Fase 6 (Execução)
   for (const inv of invSemRipd.slice(0, 2)) {
     out.push({
       id: `wf-noripd-${inv.id}`,
@@ -200,10 +230,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "media",
       source: "workflow",
       icon: "FileText",
+      phase: 6,
     });
   }
 
-  // Política de Privacidade não publicada
+  // Política de Privacidade não publicada — Fase 6 (Execução)
   if (!politicaPriv || politicaPriv.status !== "PUBLICADA") {
     out.push({
       id: "wf-pol-priv",
@@ -216,10 +247,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "FileText",
+      phase: 6,
     });
   }
 
-  // Política de Cookies não publicada
+  // Política de Cookies não publicada — Fase 6 (Execução)
   if (!politicaCookies || politicaCookies.status !== "PUBLICADA") {
     out.push({
       id: "wf-pol-cookies",
@@ -231,10 +263,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "media",
       source: "workflow",
       icon: "FileText",
+      phase: 6,
     });
   }
 
-  // GAP Analysis sem snapshot recente (>90 dias) ou nunca rodado
+  // GAP Analysis sem snapshot recente (>90 dias) ou nunca rodado — Fase 4
   if (!lastGapSnapshot) {
     out.push({
       id: "wf-gap-never",
@@ -245,6 +278,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "alta",
       source: "workflow",
       icon: "ClipboardList",
+      phase: 4,
     });
   } else {
     const daysAgo =
@@ -258,11 +292,12 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
         priority: "media",
         source: "workflow",
         icon: "ClipboardList",
+        phase: 4,
       });
     }
   }
 
-  // Operadores com pendência crítica
+  // Operadores com pendência crítica — Fase 6 (Execução)
   for (const op of operadoresPendentes.slice(0, 2)) {
     const motivo =
       op.contractStatus === "VENCIDO"
@@ -278,6 +313,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       priority: "media",
       source: "workflow",
       icon: "Handshake",
+      phase: 6,
     });
   }
 
@@ -342,21 +378,32 @@ async function dpoDiagnosticoEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
   });
 
   // Pega só top 5 do diagnóstico — workflow já cobre o urgente, isso aqui
-  // entra como fonte estratégica
-  return out.recommendations.slice(0, 5).map((rec) => ({
-    id: `diag-${rec.id}`,
-    title: rec.title,
-    description: rec.description,
-    href: rec.href,
-    priority:
-      rec.priority === "ALTA"
-        ? "alta"
-        : rec.priority === "MEDIA"
-          ? "media"
-          : "baixa",
-    source: "diagnostico" as const,
-    icon: rec.source === "RISCO" ? "ShieldAlert" : rec.source === "GAP" ? "ClipboardList" : "Scale",
-  }));
+  // entra como fonte estratégica.
+  // Mapeia source → fase do PGP: RISCO/BASES → Fase 3 · GAP → Fase 4
+  return out.recommendations.slice(0, 5).map((rec) => {
+    const phase: ProximaEtapaPhase =
+      rec.source === "GAP" ? 4 : 3;
+    return {
+      id: `diag-${rec.id}`,
+      title: rec.title,
+      description: rec.description,
+      href: rec.href,
+      priority:
+        rec.priority === "ALTA"
+          ? "alta"
+          : rec.priority === "MEDIA"
+            ? "media"
+            : "baixa",
+      source: "diagnostico" as const,
+      icon:
+        rec.source === "RISCO"
+          ? "ShieldAlert"
+          : rec.source === "GAP"
+            ? "ClipboardList"
+            : "Scale",
+      phase,
+    };
+  });
 }
 
 /* =========================================================================
@@ -449,7 +496,7 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
     }),
   ]);
 
-  // Inventários devolvidos pelo DPO
+  // Inventários devolvidos pelo DPO — Fase 3
   for (const inv of invDevolvidos.slice(0, 3)) {
     out.push({
       id: `wf-c-inv-dev-${inv.id}`,
@@ -461,10 +508,11 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "alta",
       source: "workflow",
       icon: "ClipboardList",
+      phase: 3,
     });
   }
 
-  // Inventários em rascunho
+  // Inventários em rascunho — Fase 3
   for (const inv of invRascunhos.slice(0, 2)) {
     out.push({
       id: `wf-c-inv-rasc-${inv.id}`,
@@ -474,10 +522,11 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "media",
       source: "workflow",
       icon: "ClipboardList",
+      phase: 3,
     });
   }
 
-  // RIPDs devolvidos
+  // RIPDs devolvidos — Fase 6
   for (const r of ripdsDevolvidos.slice(0, 3)) {
     out.push({
       id: `wf-c-ripd-${r.id}`,
@@ -487,10 +536,11 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "alta",
       source: "workflow",
       icon: "FileCheck2",
+      phase: 6,
     });
   }
 
-  // LIAs devolvidas
+  // LIAs devolvidas — Fase 6
   for (const l of liasDevolvidas.slice(0, 3)) {
     out.push({
       id: `wf-c-lia-${l.id}`,
@@ -500,10 +550,12 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "alta",
       source: "workflow",
       icon: "Scale",
+      phase: 6,
     });
   }
 
-  // Tarefas atrasadas
+  // Tarefas atrasadas — sem fase específica → Fase 5 (Plano de Ação) é o
+  // mais próximo conceitualmente. Tarefas pessoais entram aqui.
   for (const t of tasksAtrasadas.slice(0, 2)) {
     out.push({
       id: `wf-c-task-late-${t.id}`,
@@ -513,10 +565,11 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "alta",
       source: "workflow",
       icon: "ListChecks",
+      phase: 5,
     });
   }
 
-  // Tarefas vencendo
+  // Tarefas vencendo — Fase 5
   for (const t of tasksVencendo.slice(0, 2)) {
     out.push({
       id: `wf-c-task-due-${t.id}`,
@@ -526,6 +579,7 @@ async function contribuidorWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]
       priority: "media",
       source: "workflow",
       icon: "ListChecks",
+      phase: 5,
     });
   }
 
@@ -550,16 +604,21 @@ export async function getProximasEtapas(user: UserCtx): Promise<ProximaEtapa[]> 
     isUserDPO ? dpoDiagnosticoEtapas(user) : Promise.resolve([] as ProximaEtapa[]),
   ]);
 
-  // Workflow primeiro (mais imediato), depois diagnóstico (estratégico).
-  // Dentro de cada bloco, ordena por prioridade DESC.
-  const sortByPriorityDesc = (a: ProximaEtapa, b: ProximaEtapa) =>
-    priorityWeight(b.priority) - priorityWeight(a.priority);
-
-  const result = [
-    ...workflow.sort(sortByPriorityDesc),
-    ...diagnostico.sort(sortByPriorityDesc),
-  ];
+  // Ordenação pelas FASES do PGP (decisão do user em 2026-05-08):
+  //   1) Fase ASC — segue o caminho didático do programa (Fase 3 antes
+  //      de Fase 4 antes de Fase 6, etc.)
+  //   2) Prioridade DESC dentro da mesma fase
+  //   3) Workflow antes de Diagnóstico em empate (workflow é mais
+  //      imediato; diagnóstico é estratégico)
+  const merged = [...workflow, ...diagnostico];
+  merged.sort((a, b) => {
+    if (a.phase !== b.phase) return a.phase - b.phase;
+    const dp = priorityWeight(b.priority) - priorityWeight(a.priority);
+    if (dp !== 0) return dp;
+    if (a.source !== b.source) return a.source === "workflow" ? -1 : 1;
+    return 0;
+  });
 
   // Cap em 30 itens — UI mostra 3 + expansível, mas evita listas absurdas
-  return result.slice(0, 30);
+  return merged.slice(0, 30);
 }

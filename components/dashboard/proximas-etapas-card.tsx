@@ -29,6 +29,18 @@ import { cn } from "@/lib/utils";
 
 type Priority = "alta" | "media" | "baixa";
 type Source = "workflow" | "diagnostico";
+type Phase = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+const PHASE_LABEL: Record<Phase, string> = {
+  0: "Preliminar",
+  1: "Fase 1",
+  2: "Fase 2",
+  3: "Fase 3",
+  4: "Fase 4",
+  5: "Fase 5",
+  6: "Fase 6",
+  7: "Fase 7",
+};
 
 interface Etapa {
   id: string;
@@ -38,6 +50,7 @@ interface Etapa {
   priority: Priority;
   source: Source;
   icon: string;
+  phase: Phase;
 }
 
 /** Mapa string→component pra ícones lucide. */
@@ -224,6 +237,9 @@ function EtapaItem({ etapa }: { etapa: Etapa }) {
           <p className="text-sm font-medium text-gray-900 dark:text-white">
             {etapa.title}
           </p>
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+            🚩 {PHASE_LABEL[etapa.phase]}
+          </span>
           <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded", ps.badge)}>
             {ps.label}
           </span>
