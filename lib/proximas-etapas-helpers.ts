@@ -61,6 +61,12 @@ export interface ProximaEtapa {
   icon: string;
   /** Fase do PGP — ordena a lista. */
   phase: ProximaEtapaPhase;
+  /**
+   * Ordem fina dentro da mesma fase. Padrão 999 (cai no fim).
+   * Ex.: na Fase 6, RIPD=1, LIA=2, Operadores=3, Políticas=4
+   * (pra que Políticas saia depois dos RIPDs/LIAs em que ela se apoia).
+   */
+  subOrder?: number;
 }
 
 interface UserCtx {
@@ -178,7 +184,8 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
     });
   }
 
-  // RIPDs em revisão — Fase 6 (Execução)
+  // RIPDs em revisão — Fase 6 (Execução) · subOrder 1 (vem ANTES de Políticas
+  // porque Políticas se apoiam em RIPDs aprovados pra processos críticos)
   for (const r of pendingRipds.slice(0, 3)) {
     out.push({
       id: `wf-ripd-${r.id}`,
@@ -189,10 +196,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "FileCheck2",
       phase: 6,
+      subOrder: 1,
     });
   }
 
-  // LIAs em revisão — Fase 6 (Execução)
+  // LIAs em revisão — Fase 6 (Execução) · subOrder 2
   for (const l of pendingLias.slice(0, 3)) {
     out.push({
       id: `wf-lia-${l.id}`,
@@ -203,6 +211,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "Scale",
       phase: 6,
+      subOrder: 2,
     });
   }
 
@@ -220,7 +229,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
     });
   }
 
-  // Inventário aprovado SEM RIPD vinculado — Fase 6 (Execução)
+  // Inventário aprovado SEM RIPD vinculado — Fase 6 · subOrder 1 (RIPD)
   for (const inv of invSemRipd.slice(0, 2)) {
     out.push({
       id: `wf-noripd-${inv.id}`,
@@ -231,10 +240,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "FileText",
       phase: 6,
+      subOrder: 1,
     });
   }
 
-  // Política de Privacidade não publicada — Fase 6 (Execução)
+  // Política de Privacidade não publicada — Fase 6 · subOrder 4 (Política)
   if (!politicaPriv || politicaPriv.status !== "PUBLICADA") {
     out.push({
       id: "wf-pol-priv",
@@ -248,10 +258,11 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "FileText",
       phase: 6,
+      subOrder: 4,
     });
   }
 
-  // Política de Cookies não publicada — Fase 6 (Execução)
+  // Política de Cookies não publicada — Fase 6 · subOrder 4 (Política)
   if (!politicaCookies || politicaCookies.status !== "PUBLICADA") {
     out.push({
       id: "wf-pol-cookies",
@@ -264,6 +275,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "FileText",
       phase: 6,
+      subOrder: 4,
     });
   }
 
@@ -297,7 +309,7 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
     }
   }
 
-  // Operadores com pendência crítica — Fase 6 (Execução)
+  // Operadores com pendência crítica — Fase 6 · subOrder 3 (Operadores)
   for (const op of operadoresPendentes.slice(0, 2)) {
     const motivo =
       op.contractStatus === "VENCIDO"
@@ -314,6 +326,101 @@ async function dpoWorkflowEtapas(user: UserCtx): Promise<ProximaEtapa[]> {
       source: "workflow",
       icon: "Handshake",
       phase: 6,
+      subOrder: 3,
+    });
+  }
+
+  // Riscos identificados na Fase 3 SEM ação no Plano (Fase 5)
+  // Ponte conceitual: cada risco ALTO/MEDIO ainda não eliminado precisa
+  // virar uma ação no Plano de Ação pra ser endereçado.
+  const riskActionEtapas = await buildRiscosSemAcaoEtapas(companyId);
+  out.push(...riskActionEtapas);
+
+  return out;
+}
+
+/**
+ * Encontra riscos ALTO/MEDIO ainda não tratados (não ELIMINADO/ACEITO)
+ * que NÃO têm ação correspondente no Plano de Ação. Sugere criar.
+ *
+ * Ponte Fase 3 → Fase 5: o Plano materializa o que o mapeamento de
+ * riscos identificou.
+ */
+async function buildRiscosSemAcaoEtapas(companyId: string): Promise<ProximaEtapa[]> {
+  const out: ProximaEtapa[] = [];
+
+  // Riscos ativos (status IDENTIFICADO ou EM_MITIGACAO).
+  // severityLevel pode estar null/vazio se P×I ainda não foi preenchido —
+  // usamos como qualificador de prioridade, não como filtro.
+  const activeRisks = await prisma.processRisk.findMany({
+    where: {
+      companyId,
+      status: { in: ["IDENTIFICADO", "EM_MITIGACAO"] },
+    },
+    select: {
+      id: true,
+      riskCode: true,
+      description: true,
+      dataInventoryId: true,
+      severityLevel: true,
+      dataInventory: { select: { serviceName: true } },
+    },
+  });
+
+  if (activeRisks.length === 0) return out;
+
+  // Busca quais já têm ação ativa no Plano (origin RISCO + refRiskId)
+  const existingActions = await prisma.actionPlan.findMany({
+    where: {
+      companyId,
+      origin: "RISCO",
+      status: { not: "CONCLUIDA" },
+      refRiskId: { in: activeRisks.map((r) => r.id) },
+    },
+    select: { refRiskId: true },
+  });
+  const coveredIds = new Set(
+    existingActions.map((a) => a.refRiskId).filter(Boolean) as string[],
+  );
+
+  // Riscos sem ação no Plano. Ordena por severidade (ALTO > MEDIO > sem
+  // severidade > BAIXO) — top 3.
+  const sevWeight = (s: string | null) => {
+    const v = s ?? "";
+    if (v.includes("S:ALTO")) return 3;
+    if (v.includes("S:MEDIO")) return 2;
+    if (v.includes("S:BAIXO")) return 1;
+    return 1.5; // sem severidade calculada — fica no meio
+  };
+
+  const uncovered = activeRisks
+    .filter((r) => !coveredIds.has(r.id))
+    .sort((a, b) => sevWeight(b.severityLevel) - sevWeight(a.severityLevel))
+    .slice(0, 3);
+
+  for (const r of uncovered) {
+    const sevLabel = (r.severityLevel ?? "").includes("S:ALTO")
+      ? "ALTO"
+      : (r.severityLevel ?? "").includes("S:MEDIO")
+        ? "MEDIO"
+        : (r.severityLevel ?? "").includes("S:BAIXO")
+          ? "BAIXO"
+          : "sem P×I";
+    const procName = r.dataInventory?.serviceName ?? "processo";
+    const descTrunc = (r.description ?? "").slice(0, 50);
+    const priority: ProximaEtapaPriority =
+      sevLabel === "ALTO" ? "alta" : sevLabel === "BAIXO" ? "baixa" : "media";
+    out.push({
+      id: `wf-risk-noplan-${r.id}`,
+      title: `Crie ação no Plano pra mitigar risco "${r.riskCode}" (${procName})`,
+      description: descTrunc
+        ? `Severidade ${sevLabel} · ${descTrunc}${descTrunc.length === 50 ? "…" : ""}`
+        : `Severidade ${sevLabel} — risco identificado sem ação no Plano`,
+      href: `/dashboard/inventario/${r.dataInventoryId}/riscos`,
+      priority,
+      source: "workflow",
+      icon: "ListChecks",
+      phase: 5,
     });
   }
 
@@ -607,12 +714,17 @@ export async function getProximasEtapas(user: UserCtx): Promise<ProximaEtapa[]> 
   // Ordenação pelas FASES do PGP (decisão do user em 2026-05-08):
   //   1) Fase ASC — segue o caminho didático do programa (Fase 3 antes
   //      de Fase 4 antes de Fase 6, etc.)
-  //   2) Prioridade DESC dentro da mesma fase
-  //   3) Workflow antes de Diagnóstico em empate (workflow é mais
+  //   2) subOrder ASC dentro da mesma fase — ex: Fase 6 sai RIPD (1),
+  //      LIA (2), Operadores (3), Política (4) nessa ordem
+  //   3) Prioridade DESC dentro do mesmo subOrder
+  //   4) Workflow antes de Diagnóstico em empate (workflow é mais
   //      imediato; diagnóstico é estratégico)
   const merged = [...workflow, ...diagnostico];
   merged.sort((a, b) => {
     if (a.phase !== b.phase) return a.phase - b.phase;
+    const aSub = a.subOrder ?? 999;
+    const bSub = b.subOrder ?? 999;
+    if (aSub !== bSub) return aSub - bSub;
     const dp = priorityWeight(b.priority) - priorityWeight(a.priority);
     if (dp !== 0) return dp;
     if (a.source !== b.source) return a.source === "workflow" ? -1 : 1;
