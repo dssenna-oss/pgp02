@@ -417,8 +417,10 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
 
       {/* Lista dos 13 riscos agrupados em 3 categorias com progresso por área.
           Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
+          Refino 2026-05-09 (Opção 2): cada categoria vira Card único com
+          border-l-4 colorido + RiskRow flat dentro (divide-y).
           Categorias em lib/riscos-catalog.ts (TRATAMENTO 7, COMPARTILHAMENTO 3, DIREITOS 3). */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {RISK_CATEGORIES_ORDERED.map((cat) => {
           const risksInCat = riscosByCategory(cat);
           const markedCount = risksInCat.filter(
@@ -525,14 +527,19 @@ function RiskRow({
   const statusColor = riskStatusColor(status);
 
   return (
+    // Flat dentro do card da categoria — sem borda externa (era card-em-card),
+    // só faixa lateral colorida quando há sinal (marcado/alerta) e tint
+    // sutil de fundo. Hover discreto pra rows neutras.
+    // border-l-4 sempre presente (transparent quando neutra) pra evitar
+    // shift de layout quando o sinal aparece.
     <div
       className={cn(
-        "border rounded-lg p-4 transition-all",
+        "p-4 transition-colors border-l-4",
         marked
-          ? "border-red-300 dark:border-red-800/60 bg-red-50/40 dark:bg-red-950/15 border-l-4 border-l-red-500"
+          ? "border-l-red-500 bg-red-50/40 dark:bg-red-950/15"
           : isAlert
-          ? "border-amber-300 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/15"
-          : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+          ? "border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/15"
+          : "border-l-transparent hover:bg-gray-50/70 dark:hover:bg-gray-900/40",
       )}
     >
       <div className="flex items-start gap-4">
@@ -728,8 +735,13 @@ function RiskRow({
 
 /**
  * Wrapper de uma categoria de riscos (Tratamento / Compartilhamento /
- * Direitos). Mostra header com nome + descrição + progresso (X/Y) +
- * barra de progresso visual; em seguida renderiza os RiskRow filhos.
+ * Direitos). Card único bem delimitado com border-left colorido na cor
+ * temática, header com nome + descrição + progresso, e os RiskRow filhos
+ * renderizados FLAT (sem borda própria) divididos por linha sutil.
+ *
+ * Decisão UX 2026-05-09 (Opção 2 do cardápio): cada categoria vira um
+ * Card grande contido — em vez de header + lista solta, fica óbvio
+ * onde o grupo começa e termina.
  */
 function RiskCategoryGroup({
   category,
@@ -744,56 +756,71 @@ function RiskCategoryGroup({
   pct: number;
   children: React.ReactNode;
 }) {
-  // Cor temática por categoria — visual leve, não muito barulhento
-  const styles: Record<RiskCategory, { dot: string; bar: string; bg: string }> = {
+  // Cor temática por categoria. `borderL` controla a faixa lateral de
+  // 4px que sinaliza visualmente o grupo. `headerBg` é o fundo sutil do
+  // header (gradiente vai pra transparente). `dot` e `bar` são para
+  // bullet e barra de progresso.
+  const styles: Record<
+    RiskCategory,
+    { dot: string; bar: string; headerBg: string; borderL: string }
+  > = {
     TRATAMENTO: {
       dot: "bg-blue-500",
       bar: "bg-blue-500",
-      bg: "bg-blue-50/50 dark:bg-blue-950/20",
+      headerBg: "bg-gradient-to-r from-blue-50/80 to-transparent dark:from-blue-950/30",
+      borderL: "border-l-blue-500",
     },
     COMPARTILHAMENTO: {
       dot: "bg-violet-500",
       bar: "bg-violet-500",
-      bg: "bg-violet-50/50 dark:bg-violet-950/20",
+      headerBg:
+        "bg-gradient-to-r from-violet-50/80 to-transparent dark:from-violet-950/30",
+      borderL: "border-l-violet-500",
     },
     DIREITOS: {
       dot: "bg-amber-500",
       bar: "bg-amber-500",
-      bg: "bg-amber-50/50 dark:bg-amber-950/20",
+      headerBg:
+        "bg-gradient-to-r from-amber-50/80 to-transparent dark:from-amber-950/30",
+      borderL: "border-l-amber-500",
     },
   };
   const s = styles[category];
 
   return (
-    <section>
-      <div
-        className={cn(
-          "rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 mb-3",
-          s.bg,
-        )}
-      >
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-2 min-w-0">
+    <section
+      className={cn(
+        "rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-950 overflow-hidden",
+        "border-l-4",
+        s.borderL,
+      )}
+    >
+      {/* Header do grupo */}
+      <div className={cn("px-5 py-4", s.headerBg)}>
+        <div className="flex items-center justify-between gap-3 mb-1.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <span
-              className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0", s.dot)}
+              className={cn("h-3 w-3 rounded-full flex-shrink-0", s.dot)}
               aria-hidden
             />
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+            <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
               {RISK_CATEGORY_LABEL[category]}
             </h3>
           </div>
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-shrink-0 tabular-nums">
-            {markedCount}{" "}
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-shrink-0 tabular-nums">
+            <span className="text-gray-900 dark:text-white">{markedCount}</span>{" "}
             <span className="text-gray-400 dark:text-gray-500">/</span> {total}{" "}
-            marcados
+            <span className="text-gray-500 dark:text-gray-400 font-normal">
+              marcados
+            </span>
           </div>
         </div>
-        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
           {RISK_CATEGORY_DESCRIPTION[category]}
         </p>
         {/* Barra de progresso */}
         <div
-          className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+          className="h-2 w-full bg-gray-200/70 dark:bg-gray-700/50 rounded-full overflow-hidden"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
@@ -806,7 +833,12 @@ function RiskCategoryGroup({
           />
         </div>
       </div>
-      <div className="space-y-3">{children}</div>
+      {/* Separador header → conteúdo */}
+      <div className="border-t border-gray-200 dark:border-gray-800" />
+      {/* Lista de toggles flat (sem borda própria) com divisor entre eles */}
+      <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+        {children}
+      </div>
     </section>
   );
 }
