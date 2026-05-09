@@ -1,8 +1,10 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-07 (3 macro-features em prod: Sub-itens sidebar + Templates ANPD + Cookies CP26 *novo escopo*) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-08 (8 macro-features em prod via push direto + PR #1: Login redesign + Minha atividade + Notificações Inventário + Próximas etapas + Glossário Riscos + Restrição Contribuidor + Fixes UX Inventário + Landing copy) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `c152ba9` (vídeo dos cookies). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `45193dd` (merge PR #1 do fix do campo "Outro"). Vercel verde.
+>
+> **🔐 Push direto pra `main` foi BLOQUEADO no fim da sessão** — passou a exigir PR review. Os 2 últimos commits da sessão (`c1532e7` landing copy + `f7d19da` fix Outro) precisaram virar PR. PR #1 foi aberto em https://github.com/dssenna-oss/pgp02/pull/1 e o user mergeou via web. **Próxima sessão**: ou acrescentar regra `Bash(git push origin HEAD:main:*)` em `.claude/settings.local.json` pra restaurar push autônomo, ou adotar fluxo de PR como padrão.
 >
 > **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado (decisão do user em 2026-05-07: "CP26 não ressuscitar"). Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
@@ -27,6 +29,124 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-08 — 8 macro-features em prod
+
+Branch desta sessão: `claude/confident-buck-6d18fe` (worktree). 19 commits no total. **Sem schema novo, sem migration.** Tudo cliente-side ou em arquivos existentes — usou padrões já testados.
+
+### Bloco 1 — Login redesign (foto LGPD com tablet)
+
+Substitui o gradiente azul claro original do `/login` por foto narrativa (ilustração com tablet + ícones LGPD: balança, olho, cadeado, escudo, briefcase + skyline urbano). Card branco encaixa visualmente DENTRO do tablet do fundo.
+
+- `e81fde2` — tema "cadeado abstrato" SVG (substituído depois)
+- `5500e8c` — foto LGPD `bg1.jpg` (203KB) em `public/images/login-bg/`. Filtro escurecido sobre a foto pra contraste do card branco.
+- `729f7c7` → `cbb7a24` → `c4bfda0` → `c5fe0f9` — 4 iterações pra alinhar o card no tablet (top 5% pra header, top 46% pra card, left calc(50%+30px) pra deslocamento horizontal). Layout `absolute` positioning.
+
+### Bloco 2 — Tela "Minha atividade" (`f8eac0c`)
+
+Nova rota `/dashboard/minha-atividade` mostra timeline cronológica dos últimos 30 dias do user logado. **Cardápio aprovado**: 1A · 2A · 3C · 4A · 5A · 6A · 7A · 8A.
+
+- `lib/atividade-helpers.ts`: tipos + `getUserActivity()` faz **16 queries Prisma em paralelo** agregando campos `*ById`+`*At` de Inventário, Riscos, GAP, Plano, Políticas (+ versões), RIPDs (+ versões), LIA (+ versões), Operadores, Avaliações de Operador, Incidentes, Comunicações de Incidente, Capacitação. Helper `groupByDay()` divide por dia (`YYYY-MM-DD`).
+- `app/api/atividade/route.ts`: GET endpoint auth-gated.
+- `app/dashboard/minha-atividade/page.tsx`: server component fetcha direto via helper (zero round-trip).
+- `components/atividade/atividade-content.tsx`: chips de filtro (tipo + área), agrupado por dia ("Hoje" · "Ontem" · "Sábado — 03/05"), item compacto.
+- Sidebar: novo item "Minha atividade" com ícone `History` (Activity já era usado em Diagnóstico).
+
+**Limitação conhecida**: só mostra eventos com tracking explícito (`createdById`, `approvedById`, etc.). PhaseDocument não tem `createdById` então uploads/exclusões não saem. Tarefas/Fórum excluídos por decisão (1A não inclui).
+
+### Bloco 3 — Notificações de Inventário pro DPO (`ee3b899`)
+
+Antes: contribuidor submetia inventário e nada notificava o DPO. Agora 3 sinais.
+
+- **Sino agregador** (`components/dashboard/notification-bell.tsx`): nova categoria "Inventários aguardando revisão" ao lado de Incidentes/RIPDs/Operadores. Total do badge inclui inventários.
+- **Sidebar**: novo item "Inventário" (após "Minha atividade", antes de "Análise de Riscos") com badge azul mostrando contagem. Polling 60s + refresh imediato via `notifySidebarRefresh()`.
+- **Banner no `/dashboard`**: card âmbar "X inventários aguardando sua revisão" — só pra DPO, só quando count > 0.
+- **API nova**: `GET /api/inventario/pending-count` (segue padrão de RIPD/LIA/Incidentes/Operadores). DPO conta SUBMETIDO+EM_REVISAO; Contribuidor conta DEVOLVIDO próprios.
+
+### Bloco 4 — Card "Próximas etapas" (substitui Painel de Retomada)
+
+Cardápio aprovado: 1A · 2C · 3C · 4B. Substitui `DesdeUltimaVisitaCard` + `ContinueOndeParouCard` (que somiam quando vazios) por **1 card único prescritivo** que sempre mostra ao user o que fazer agora.
+
+- `31b47c8` — versão inicial: engine híbrido (regras workflow + recomendações Diagnóstico). 9 regras DPO + 6 regras Contribuidor + top 5 recomendações do `buildDiagnostico()`. Ordenação: workflow primeiro, depois diagnóstico, prioridade DESC.
+- `3daae24` — ordena pelas **Fases do PGP** (decisão do user): `phase ASC → priority DESC`. Cada regra ganha `phase: 0..7`. UI ganha chip 🚩 "Fase X". Diagnóstico mapeia source→fase: RISCO/BASES→3, GAP→4.
+- `6d74487` — refino: campo `subOrder` pra ordem fina dentro da Fase 6 (RIPD=1 antes de Políticas=4). Nova regra Fase 5: "Crie ação no Plano pra mitigar risco X" — pega cada `ProcessRisk` IDENTIFICADO/EM_MITIGACAO que NÃO tem ActionPlan com `origin='RISCO'+refRiskId` correspondente.
+
+**Arquivos novos**: `lib/proximas-etapas-helpers.ts` (engine) + `app/api/proximas-etapas/route.ts` + `components/dashboard/proximas-etapas-card.tsx`. Estado vazio = "✨ Nada urgente agora".
+
+### Bloco 5 — Riscos: códigos opacos viraram nomes claros + Glossário (`e37a68b`)
+
+User reportou que ver "BU" e "BV" no card de Próximas etapas/Diagnóstico/Riscos não comunicava nada. Cardápio: Opção 2 (nome + chip código) + Opção 4 (glossário dedicado).
+
+- **Helpers no catálogo** (`lib/riscos-catalog.ts`): `riskShortLabel(code)` + `formatRiskTitle(code)` retornam "Falta de transparência (BU)".
+- **Substituições**: `riscos-visao-content.tsx` (RiskTypeBar mostra label primeiro, código vira chip cinza menor), `detalhamento-risco-content.tsx` (chip subordinado ao h1 + AddToActionPlanButton title via `formatRiskTitle()`), `lib/diagnostico-scoring.ts` (recomendações usam `formatRiskTitle()`), `lib/proximas-etapas-helpers.ts` (regra Fase 5 idem).
+- **Glossário novo**: `/dashboard/riscos/glossario` (qualquer user autenticado) — 13 cards (BR..CD) com chip do código + nome curto + completo + resumo + box azul "Fundamento legal" + box âmbar "O que acontece se nada for feito" + `<details>` "Recomendações típicas". Busca livre por código/nome/descrição. Item "Glossário de Riscos" na sidebar logo após "Análise de Riscos" (sem `dpoOnly` — qualquer user pode aprender).
+
+### Bloco 6 — Restrição de acesso Contribuidor (F1+F2+F3) (`9a91d01`)
+
+User reportou risco de segurança: Contribuidor herdava acesso amplo a funcionalidades DPO-only. **Cardápio aprovado**: Abordagem 2+3, fatias F1+F2+F3, todos os 3 casos ambíguos com Opção A (esconder totalmente).
+
+**F1 — Sidebar curada**: adicionou `dpoOnly: true` em 6 itens que faltavam (Empresa, Plano de Ação, RIPD, LIA, Gestão de Terceiros, Incidentes). Contribuidor passa de ~25 itens visíveis a ~12 (Dashboard, Conteúdos Didáticos, Entendendo PGP, 8 Fases, Glossário Riscos, Configurações, Fórum, Tarefas, Minha atividade, Inventário, Capacitação).
+
+**F2 — Páginas DPO bloqueadas**: 24 server pages ganharam `if (!isDPO(...)) redirect("/dashboard")` (depois trocado por DpoOnlyFallback no Bloco 8). Coberto: empresa, gap-analysis (+ compare/pdf/snapshot[id]), diagnostico, maturidade-pgp (+ pdf), maturidade-cyber, politicas (+ [id] + [id]/pdf), ripd (+ [id] + [id]/pdf), lia (+ [id] + [id]/pdf), terceiros (+ [id]), incidentes (+ [id]), plano-acao, analise-riscos, inventario/[id]/risco/[riskCode]. Aplicado via script `guard-pages-tmp.mjs` + correção manual dos 7 pages com pattern customizado.
+
+**F3 — APIs DPO bloqueadas**: adicionou `if (!user.isDPO) → 403` em 5 APIs que filtravam por papel mas não bloqueavam (`/api/ripd`, `/api/lia`, `/api/operadores`, `/api/incidents`, `/api/plano-acao`) + suas rotas `[id]`. Antes: GET filtrava por `createdById = user.id` (Contribuidor via os próprios). Agora: GET retorna 403 pra qualquer non-DPO. Defesa em profundidade.
+
+**APIs preservadas pra Contribuidor**: `/api/inventario` (filter por `createdById`), `/api/inventario/pending-count`, `/api/proximas-etapas`, `/api/atividade`, `/api/tarefas`, `/api/forum`, `/api/capacitacao` (GET).
+
+### Bloco 7 — Mensagem clara em vez de redirect silencioso (`6e59a24`)
+
+User pediu: "Nas ferramentas que não estiverem com acesso habilitado pro Contribuidor devem exibir mensagem com ícone de alerta e em negrito 'Somente disponível para o DPO'".
+
+- **Componente novo** `components/auth/dpo-only-fallback.tsx`: ícone alerta âmbar + h1 negrito + texto contextual (mencionando feature) + botão "Voltar para o Dashboard".
+- **30 server pages atualizadas** (24 do F2 + 6 que já redirecionavam direto): substituem `redirect("/dashboard")` por render de `<DpoOnlyFallback feature="X" />` dentro do `DashboardLayout` (ou wrapper minimalista nas 5 PDF pages que não têm layout). Aplicado via 4 scripts em sequência: `swap-redirects-tmp.mjs` → `fix-broken-imports-tmp.mjs` → `fix-pdf-pages-tmp.mjs` + correções manuais nos casos especiais.
+
+Resultado: Contribuidor que digitar `/dashboard/ripd` na URL recebe a mensagem clara em vez de cair silenciosamente no `/dashboard`. Sidebar continua visível pra navegação.
+
+### Bloco 8 — Fixes UX no formulário de Inventário (5 commits)
+
+- `3c13e87` — **badge nas perguntas single-choice**: na seção 3 ("Tipificação"), 2 perguntas YES/NO (consentimento de pais, dados sensíveis) ficavam com check verde mas SEM badge "X selecionados". `count` era hardcoded a 0 pra `value` não-array. Fix: nova var `singleLabel` mostra o valor escolhido (ex: "Sim", "Não") em vez do count zero.
+- `7bc7922` — **checkbox "Outro" no 1º clique**: bug pré-existente (não desta sessão). Não testei a fundo, descobri por inspeção mas o commit já estava em prod.
+- `1859aad` — **seção 6 esconde 4 campos quando "Não compartilhados"**: na pergunta principal de share_targets, se só "Não são compartilhados" está marcado, os 4 campos de detalhamento (com quem / objetivo / quais dados / por qual meio) somem da tela via `dependsOn` (sistema já existente). Reusa pattern.
+- `2f08345` — **UX campos opcionais (3 camadas)**: tag azul "Opcional" no label de todo `!required` field. Botão "Marcar como 'Não se aplica'" abaixo de input vazio. Quando clicado, banner cinza-tracejado "⊖ Marcado como não se aplica · ↺ Reverter". Sentinel `__NAO_APLICA__` salvo no formAnswers (string em text/single; array unitário em multi-choice). `lib/inventario-derive.ts` filtra o sentinel em `asLine()` pra não poluir derivados (DOCX/XLSX/RIPD). Soft confirm no clique de "Próximo": alerta "Você deixou X campos opcionais em branco. Continuar ou revisar?" se houver opcionais visíveis vazios e não marcados como N/A.
+- `f7d19da` — **campo "Outro" aceita espaços durante digitação**: `setOther()` salvava `text.trim()` a cada keystroke; `useEffect` re-sincronizava state local; espaços do meio sumiam ("documentos aos orgãos" virava "documentosaosorgãos"). Fix: removeu `.trim()` em `onChange` (faz sentido só em blur/save final). **Mergeado via PR #1** (push direto a main bloqueado).
+
+### Bloco 9 — Landing page copy (`c1532e7`)
+
+- CTA principal: "Começar Gratuitamente" → **"Iniciar Jornada de Adequação"**
+- Descrição do rodapé: "Implemente seu programa de governança em privacidade ... sua empresa" → "Implemente o Programa de Governança em Privacidade ... sua Organização"
+- CTA secundário: "Criar Conta Gratuita" → **"Criar Conta Agora"**
+
+Tom mais alinhado ao propósito institucional (não é trial gratuito; é jornada de adequação).
+
+### Bloco 10 — Fix scroll-to-anchor sub-itens da sidebar (`acd4823`)
+
+User reportou: clicar em "Coloque em prática" na sidebar de uma fase não scrollava na 1ª vez. Causa: `<a href="/dashboard/fase-3#coloque-em-pratica">` só atualiza hash via History API quando o user já está na rota; Next.js 13+ App Router não dispara scroll automático; nenhum código reagia ao `hashchange`.
+
+- Hook novo `lib/use-hash-scroll.ts`: lê `window.location.hash` no mount + listener pra `hashchange`. Procura elemento via `[data-phase-section-id="<hash>"]` ou `getElementById`. Se for accordion fechado (`button[aria-expanded="false"]`), clica pra abrir e aguarda 250ms antes de scrollar. Polling 100ms × 20 tentativas (~2s) caso DOM ainda esteja hidratando.
+- Plug em `components/dashboard/dashboard-layout.tsx` — vale pra todas as rotas do dashboard.
+
+### Decisões importantes desta sessão
+
+1. **Card "Próximas etapas" segue ordem das FASES do PGP**, não só prioridade. Fase 3 (Inventário+Riscos) → Fase 4 (GAP) → Fase 5 (Plano) → Fase 6 (Políticas+RIPD+Terceiros) → Fase 7 (Incidentes). Dentro da Fase 6, RIPD vem antes de Políticas (políticas dependem de RIPDs aprovados pra processos críticos).
+2. **Contribuidor restrito a formulários + conteúdo didático** (Opção A nos 3 casos ambíguos). Plano de Ação, RIPD, LIA, Incidentes ficam totalmente escondidos do Contribuidor — não há mais "Contribuidor vê só os próprios". Workflow simplificado: só DPO mexe nesses documentos.
+3. **Mensagens claras em vez de redirects silenciosos**: qualquer rota DPO-only que Contribuidor tente abrir mostra `<DpoOnlyFallback feature="X" />` em vez de jogar pro /dashboard sem explicação.
+4. **Sentinel `__NAO_APLICA__`** pra distinguir "vazio porque esqueci" de "vazio propositalmente" em campos opcionais. Filtrado em `inventario-derive.ts/asLine()` pra não vazar em DOCX/XLSX/RIPD.
+
+### Pendências conhecidas no fim da sessão
+
+- 🟡 **Push direto pra main bloqueado**: ou adicionar permissão `Bash(git push origin HEAD:main:*)` em `.claude/settings.local.json`, ou seguir fluxo de PR sempre. Decisão pra próxima sessão.
+- 🟡 **Setor do user dssenna@gmail.com**: foi cadastrado como "Ouvidoria" mas deveria ser "Recursos Humanos". A UI de Contribuidores não permite editar — só criar. User precisa rodar 2 SQLs no Neon SQL Editor (queries documentadas no chat). Como alternativa, dá pra adicionar UI de edit em sessão futura.
+- 🟡 **Card "Próximas etapas" não testado em modo Contribuidor logado**: implementação tem branch separada (regras de Contribuidor incluem só Inventário DEVOLVIDO/RASCUNHO + Tarefas — RIPDs/LIAs/Incidentes foram removidos pelo Bloco 6). Confirmar comportamento quando logar como Contribuidor.
+
+### Smoke tests passados
+
+- `GET /api/proximas-etapas` (DPO) → retorna 12 etapas ordenadas por Fase 3→4→5→6, mistura workflow + diagnóstico ✅
+- `GET /api/atividade` (DPO) → retorna timeline ✅
+- `GET /dashboard/ripd` (DPO) → 200 ✅
+- Typecheck zerado em todas as 19 mudanças
+- Build Vercel verde em todos os pushes (até o bloqueio)
 
 ---
 

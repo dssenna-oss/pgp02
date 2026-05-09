@@ -1300,12 +1300,22 @@ interface LiaResp {
 }
 
 function Fase6Tools() {
+  // Ordem reflete a sequência de dependência da Fase 6:
+  //   1) RIPD — pré-requisito pra processos de alto risco (Art. 38 LGPD).
+  //      A Política institucional cita conclusões dos RIPDs aprovados.
+  //   2) LIA — pré-requisito quando o tratamento usa Art. 7º IX
+  //      (legítimo interesse). Também alimenta as Políticas.
+  //   3) Gestão de Terceiros — base contratual (DPA/cláusulas LGPD)
+  //      precisa estar mapeada antes da Política consolidar a postura.
+  //   4) Políticas LGPD — documento consolidador que se apoia em RIPDs +
+  //      LIAs + relação com Operadores.
+  // Mesma lógica de subOrder usada no card "Próximas etapas" (CP28).
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <PoliticasCard />
       <RipdCardTools />
-      <TerceirosCardTools />
       <LiaCardTools />
+      <TerceirosCardTools />
+      <PoliticasCard />
     </div>
   );
 }
