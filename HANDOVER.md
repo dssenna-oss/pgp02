@@ -1,16 +1,16 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-10 (6 PRs mergeados em prod: #5 D1+1+2 timeline countdown · D1+5 timeline DOCX · D2 caminho inverso M:N · #6 merge · #7 B+2 presets status radar · Sugestão C tour header · #8 HANDOVER + Relatório Executivo R3 (7 páginas) · #9 refinos B1+B5+C2+D1 · **#10 notificações por email via Brevo**) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-10 (7 PRs mergeados em prod: #5..#7 refinos Incidentes/radar/tour · #8 Relatório Executivo R3 · #9 refinos B1+B5+C2+D1 · #10 notificações Brevo · **#11 toggles email + cron tarefas vencendo**) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `bd83824` (merge PR #10). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `1a00939` (merge PR #11). Vercel verde. Email funcionando em prod (user confirmou em 2026-05-10).
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#10 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#11 mergeados.
 >
-> **📧 Email transacional configurado em 2026-05-10:** conta Brevo (free tier 300/dia) criada pelo user ('Clube do Servidor'). API key `xkeysib-...` salva no `.env` local + Vercel env vars (BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME). Sender atual `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO. Smoke test passou em dev (`/api/admin/test-email` → ok=true).
+> **📧 Email transacional ativo em prod desde 2026-05-10.** Brevo (free tier 300/dia, conta 'Clube do Servidor'). Sender `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO + cron diário 9h Brasília pra digest de tarefas vencendo (`/api/cron/task-due-reminders`, schedule `0 12 * * *` UTC em `vercel.json`). Toggles por user em `/dashboard/configuracoes` (3 booleans: `emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`). Memória detalhada: `project_email_brevo_setup.md`.
 >
 > **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado. Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
-> **Migração Neon:** ✅ Etapas 2 → 25 aplicadas. Última delta (Etapa 25 em 2026-05-09): tabela `forum_reactions` pra reações em emoji nos posts do Fórum. SQL em `scripts/_migrate-etapa-25-forum-reactions.sql`, aplicada via Neon SQL Editor pelo user.
+> **Migração Neon:** ✅ Etapas 2 → 26 aplicadas. Última delta (Etapa 26 em 2026-05-10): 3 booleans em `users` (`emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`) pra preferências de notificação. SQL em `scripts/_migrate-etapa-26-email-prefs.sql`, aplicada via Neon SQL Editor pelo user.
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
