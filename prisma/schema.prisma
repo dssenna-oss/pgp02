@@ -86,6 +86,7 @@ model User {
   receivedForumPosts  ForumPost[] @relation("ForumPostRecipient") // só DMs
   authoredForumReplies ForumReply[]
   forumReads          ForumPostRead[]
+  forumReactions      ForumReaction[]
 
   // GAP Analysis (Checkpoint 9) — quem respondeu cada controle e quem
   // congelou os snapshots
@@ -481,6 +482,7 @@ model ForumPost {
 
   replies      ForumReply[]
   reads        ForumPostRead[]
+  reactions    ForumReaction[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -521,6 +523,26 @@ model ForumPostRead {
   @@unique([postId, userId])
   @@index([userId])
   @@map("forum_post_reads")
+}
+
+/// Reação de um usuário a um post do fórum.
+/// 1 reação por (post, user) — clicar num emoji diferente substitui a
+/// anterior; clicar no mesmo emoji que já reagiu remove.
+/// Emojis permitidos: 👍 ❤️ 🎯 🤔 🎉 (FORUM_REACTION_EMOJIS em
+/// lib/forum-types.ts). Etapa 25 da migração.
+model ForumReaction {
+  id        String   @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String   // 1 emoji unicode da lista permitida
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("forum_reactions")
 }
 
 model RiskAssessment {

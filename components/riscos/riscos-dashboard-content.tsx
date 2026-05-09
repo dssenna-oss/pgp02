@@ -310,7 +310,7 @@ export default function RiscosDashboardContent({
           {loading ? (
             <div className="text-center py-12 text-gray-500">Carregando...</div>
           ) : !data ? null : (
-            <RiscosVisaoContent stats={data.stats} />
+            <RiscosVisaoContent stats={data.stats} items={data.items} />
           )}
         </TabsContent>
 

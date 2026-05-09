@@ -29,6 +29,7 @@ import {
   type ForumPostDTO,
   type ForumCategory,
 } from "@/lib/forum-types";
+import ReactionBar from "./reaction-bar";
 
 interface Props {
   open: boolean;
@@ -238,6 +239,16 @@ export default function PostDetailDialog({
                 {post.content}
               </p>
             </div>
+
+            {/* Reações — sempre renderiza (com botão '+' se vazio) */}
+            <ReactionBar
+              postId={post.id}
+              reactions={post.reactions ?? []}
+              size="md"
+              onChange={(next) =>
+                setPost((cur) => (cur ? { ...cur, reactions: next } : cur))
+              }
+            />
 
             {/* Ações de moderação */}
             {(canPin || canDelete) && (

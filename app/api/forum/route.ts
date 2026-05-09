@@ -8,6 +8,7 @@ import {
   VALID_FORUM_TYPES,
   VALID_FORUM_CATEGORIES,
   FORUM_POST_TYPE,
+  aggregateReactions,
 } from "@/lib/forum-types";
 
 /**
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest) {
       },
       _count: { select: { replies: true } },
       reads: { where: { userId: user.id }, select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: 100,
@@ -106,6 +108,7 @@ export async function GET(req: NextRequest) {
     ...p,
     read: p.reads.length > 0,
     replyCount: p._count.replies,
+    reactions: aggregateReactions(p.reactions, user.id),
     reads: undefined,
     _count: undefined,
   }));
