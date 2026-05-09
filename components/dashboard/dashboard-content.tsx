@@ -152,6 +152,18 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {/* Botão de Relatório Executivo (R3, 2026-05-10).
+                Vai pra página dedicada que renderiza print-friendly e
+                deixa o user clicar 'Imprimir / Salvar PDF' no toolbar. */}
+            {userIsDPO && (
+              <Link href="/dashboard/relatorio-executivo">
+                <button className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <FileText className="h-4 w-4" />
+                  Relatório executivo
+                </button>
+              </Link>
+            )}
+
             {/* Botão do tour integrado no header (Sugestão C, 2026-05-10).
                 Substituiu o stub 'Relatório' que mostrava apenas alert().
                 O TourFloatingButton continua nas outras telas — escondido
