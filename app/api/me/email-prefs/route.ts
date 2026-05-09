@@ -1,11 +1,13 @@
 /**
- * Preferências de notificação por email do user logado (Etapa 26).
+ * Preferências de notificação por email do user logado (Etapa 26 + 27).
  *
- * GET    /api/me/email-prefs   → retorna { dm, announcements, taskDue }
+ * GET    /api/me/email-prefs   → retorna { dm, announcements, taskDue, actionPlan }
  * PATCH  /api/me/email-prefs   → atualiza qualquer subset
- *                                 body: { dm?, announcements?, taskDue? }
+ *                                 body: { dm?, announcements?, taskDue?, actionPlan? }
  *
  * Acesso: qualquer user autenticado (mexe só nas próprias prefs).
+ * O toggle `actionPlan` só faz efeito pra DPOs — Contribuidor não
+ * recebe esse digest mesmo com a flag true.
  */
 
 export const dynamic = "force-dynamic";
@@ -44,12 +46,16 @@ export async function GET() {
       emailNotifyDm: true,
       emailNotifyAnnouncements: true,
       emailNotifyTaskDue: true,
+      emailNotifyActionPlan: true,
+      role: true,
     },
   });
   return NextResponse.json({
     dm: prefs?.emailNotifyDm ?? true,
     announcements: prefs?.emailNotifyAnnouncements ?? true,
     taskDue: prefs?.emailNotifyTaskDue ?? false,
+    actionPlan: prefs?.emailNotifyActionPlan ?? true,
+    role: prefs?.role ?? null,
   });
 }
 
@@ -65,11 +71,12 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  // Aceita só os 3 campos conhecidos. Ignora qualquer outro.
+  // Aceita só os 4 campos conhecidos. Ignora qualquer outro.
   const data: {
     emailNotifyDm?: boolean;
     emailNotifyAnnouncements?: boolean;
     emailNotifyTaskDue?: boolean;
+    emailNotifyActionPlan?: boolean;
   } = {};
   if (typeof body.dm === "boolean") data.emailNotifyDm = body.dm;
   if (typeof body.announcements === "boolean") {
@@ -77,6 +84,9 @@ export async function PATCH(request: NextRequest) {
   }
   if (typeof body.taskDue === "boolean") {
     data.emailNotifyTaskDue = body.taskDue;
+  }
+  if (typeof body.actionPlan === "boolean") {
+    data.emailNotifyActionPlan = body.actionPlan;
   }
 
   if (Object.keys(data).length === 0) {

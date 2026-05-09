@@ -67,6 +67,10 @@ model User {
   /// Receber digest diário de Tarefas vencendo (cron 9h). Default: false
   /// (opt-in — pode ser barulhento).
   emailNotifyTaskDue Boolean  @default(false)
+  /// (DPO-only) Receber digest diário de ações atrasadas/vencendo no Plano
+  /// de Ação institucional (cron 9h). Default: true pra DPOs (opt-out).
+  /// Ignorado pra Contribuidores — eles não veem o Plano. Etapa 27.
+  emailNotifyActionPlan Boolean @default(true)
 
   // Coisas que o user editou recentemente — usado pelo card "Continue de
   // onde parou". Capturado server-side em rotas PATCH/POST de cada
