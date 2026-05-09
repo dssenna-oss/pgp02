@@ -28,6 +28,11 @@ interface SectionStepProps {
   onFieldChange: (fieldId: string, value: string | string[]) => void;
   /** Erros por field id. */
   errors?: Record<string, string>;
+  /**
+   * Origem por campo dessa seção (`{ fieldId: "template:<id>" }`).
+   * Usado pra exibir badge "📋 Modelo" nos campos pré-preenchidos.
+   */
+  provenance?: Record<string, string>;
 }
 
 /**
@@ -40,6 +45,7 @@ export function SectionStep({
   sectionAnswers,
   onFieldChange,
   errors,
+  provenance,
 }: SectionStepProps) {
   // Visíveis filtrados (dependsOn)
   const visibleFields = useMemo(
@@ -83,6 +89,7 @@ export function SectionStep({
                 value={sectionAnswers[field.id]}
                 onChange={(v) => onFieldChange(field.id, v)}
                 error={errors?.[field.id]}
+                provenance={provenance?.[field.id]}
               />
             ))}
           </Accordion>
@@ -95,6 +102,7 @@ export function SectionStep({
               onChange={(v) => onFieldChange(field.id, v)}
               readOnly={!!field.autoFillFrom}
               error={errors?.[field.id]}
+              provenance={provenance?.[field.id]}
             />
           ))
         )}
@@ -112,12 +120,15 @@ function FieldAccordionItem({
   value,
   onChange,
   error,
+  provenance,
 }: {
   field: FormField;
   value: string | string[] | undefined;
   onChange: (v: string | string[]) => void;
   error?: string;
+  provenance?: string;
 }) {
+  const fromTemplate = provenance?.startsWith("template:") ?? false;
   const filled = Array.isArray(value)
     ? value.length > 0
     : !!value?.toString().trim();
@@ -150,6 +161,14 @@ function FieldAccordionItem({
           <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
             {field.label}
             {field.required && <span className="ml-1 text-red-500">*</span>}
+            {fromTemplate && (
+              <span
+                className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 align-middle"
+                title="Pré-preenchido por um modelo padronizado. Você pode editar livremente."
+              >
+                📋 Modelo
+              </span>
+            )}
           </span>
           {count > 0 && (
             <Badge variant="secondary" className="ml-auto mr-2 text-xs">
@@ -192,6 +211,7 @@ function FieldAccordionItem({
             onChange={onChange}
             error={error}
             hideLabel
+            provenance={provenance}
           />
         </div>
       </AccordionContent>
