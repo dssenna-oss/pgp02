@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * Card de preferências de notificação por email do user (Etapa 26).
+ * Card de preferências de notificação por email do user (Etapa 26 + 27).
  *
- * Mostra 3 toggles:
+ * Mostra até 4 toggles:
  *   - DM no Fórum
  *   - Comunicados oficiais do DPO
  *   - Digest diário de Tarefas vencendo
+ *   - Digest diário de ações atrasadas no Plano (DPO-only — escondido
+ *     pra Contribuidor)
  *
  * Lê e atualiza via /api/me/email-prefs (GET/PATCH).
  */
@@ -15,17 +17,36 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, MessageSquare, Megaphone, ListChecks } from "lucide-react";
+import {
+  Bell,
+  MessageSquare,
+  Megaphone,
+  ListChecks,
+  ClipboardList,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Prefs {
   dm: boolean;
   announcements: boolean;
   taskDue: boolean;
+  actionPlan: boolean;
 }
+
+interface PrefsResponse extends Prefs {
+  role: string | null;
+}
+
+const DPO_ROLES = new Set([
+  "admin",
+  "DPO_PRINCIPAL",
+  "DPO_SUBSTITUTO",
+  "DPO_AUXILIAR",
+]);
 
 export default function EmailNotificationsCard() {
   const [prefs, setPrefs] = useState<Prefs | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [saving, setSaving] = useState<keyof Prefs | null>(null);
 
   useEffect(() => {
@@ -33,13 +54,21 @@ export default function EmailNotificationsCard() {
       try {
         const r = await fetch("/api/me/email-prefs", { cache: "no-store" });
         if (!r.ok) return;
-        const j = (await r.json()) as Prefs;
-        setPrefs(j);
+        const j = (await r.json()) as PrefsResponse;
+        setPrefs({
+          dm: j.dm,
+          announcements: j.announcements,
+          taskDue: j.taskDue,
+          actionPlan: j.actionPlan,
+        });
+        setRole(j.role);
       } catch {
         // silencioso
       }
     })();
   }, []);
+
+  const isDpoUser = role !== null && DPO_ROLES.has(role);
 
   const update = async (key: keyof Prefs, value: boolean) => {
     if (!prefs) return;
@@ -108,6 +137,16 @@ export default function EmailNotificationsCard() {
               disabled={saving === "taskDue"}
               onChange={(v) => update("taskDue", v)}
             />
+            {isDpoUser && (
+              <NotifRow
+                icon={<ClipboardList className="h-4 w-4 text-rose-600" />}
+                label="Plano de Ação — ações atrasadas (DPO)"
+                hint="Receber resumo às 9h com ações do Plano da organização que estão atrasadas, vencem hoje ou vencem amanhã. Disponível só pra DPO."
+                checked={prefs.actionPlan}
+                disabled={saving === "actionPlan"}
+                onChange={(v) => update("actionPlan", v)}
+              />
+            )}
           </>
         )}
       </CardContent>

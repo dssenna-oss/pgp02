@@ -390,6 +390,175 @@ export function tplTaskDueDigest(args: TaskDueArgs): TemplateOutput {
 }
 
 // ============================================================
+// 4. Digest diário de Plano de Ação atrasado (DPO-only, cron 9h)
+// ============================================================
+
+export interface ActionPlanItem {
+  id: string;
+  title: string;
+  priority: string;
+  origin: string;
+  assigneeName: string | null;
+  daysOverdue?: number;
+}
+
+export interface ActionPlanDigestArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  companyName: string | null;
+  /** Ações já vencidas. */
+  overdue: ActionPlanItem[];
+  /** Ações que vencem HOJE. */
+  dueToday: ActionPlanItem[];
+  /** Ações que vencem AMANHÃ. */
+  dueTomorrow: ActionPlanItem[];
+}
+
+const ORIGIN_LABEL: Record<string, string> = {
+  MANUAL: "Manual",
+  GAP: "GAP",
+  RISCO: "Risco",
+  BASES: "Bases legais",
+  OPERADOR: "Operador",
+  INCIDENTE: "Incidente",
+  LIA: "LIA",
+  CYBER: "Cyber",
+};
+
+export function tplActionPlanOverdueDigest(
+  args: ActionPlanDigestArgs,
+): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "")
+    .split(" ")[0]
+    .trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const totalOverdue = args.overdue.length;
+  const totalToday = args.dueToday.length;
+  const totalTomorrow = args.dueTomorrow.length;
+
+  let subject: string;
+  if (totalOverdue > 0) {
+    subject = `🔴 Plano de Ação: ${totalOverdue} ação(ões) atrasada(s) — atenção do DPO`;
+  } else if (totalToday > 0) {
+    subject = `📌 Plano de Ação: ${totalToday} ação(ões) vencem hoje`;
+  } else {
+    subject = `📅 Plano de Ação: ${totalTomorrow} ação(ões) vencem amanhã`;
+  }
+
+  const renderItem = (it: ActionPlanItem, color: string) => {
+    const prioBadge =
+      it.priority === "ALTA"
+        ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">ALTA</span>`
+        : it.priority === "MEDIA"
+          ? `<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">MÉDIA</span>`
+          : "";
+    const originBadge = `<span style="background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:500;margin-left:6px;">${escapeHtml(
+      ORIGIN_LABEL[it.origin] ?? it.origin,
+    )}</span>`;
+    const overdueLabel =
+      it.daysOverdue !== undefined && it.daysOverdue > 0
+        ? `<span style="color:#dc2626;font-size:11px;margin-left:8px;">há ${it.daysOverdue}d</span>`
+        : "";
+    const assignee = it.assigneeName
+      ? `<div style="font-size:11px;color:#6b7280;margin-top:2px;">Responsável: ${escapeHtml(it.assigneeName)}</div>`
+      : `<div style="font-size:11px;color:#9ca3af;margin-top:2px;font-style:italic;">Sem responsável definido</div>`;
+    return `<li style="margin-bottom:10px;color:${color};">
+      <div>${escapeHtml(it.title)}${prioBadge}${originBadge}${overdueLabel}</div>
+      ${assignee}
+    </li>`;
+  };
+
+  const sections: string[] = [];
+
+  if (totalOverdue > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#991b1b;">🔴 Atrasadas (${totalOverdue})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${args.overdue.map((it) => renderItem(it, "#1f2937")).join("")}</ul>
+      </div>
+    `);
+  }
+
+  if (totalToday > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#92400e;">📌 Vencem hoje (${totalToday})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${args.dueToday.map((it) => renderItem(it, "#1f2937")).join("")}</ul>
+      </div>
+    `);
+  }
+
+  if (totalTomorrow > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#1e40af;">📅 Vencem amanhã (${totalTomorrow})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${args.dueTomorrow.map((it) => renderItem(it, "#1f2937")).join("")}</ul>
+      </div>
+    `);
+  }
+
+  const orgLine = args.companyName
+    ? `<p style="margin: 0 0 16px 0;">Resumo do Plano de Ação institucional de <strong>${escapeHtml(args.companyName)}</strong>:</p>`
+    : `<p style="margin: 0 0 16px 0;">Resumo do Plano de Ação institucional da sua organização:</p>`;
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    ${orgLine}
+    ${sections.join("")}
+    <p style="margin: 16px 0 4px 0; font-size: 13px; color: #6b7280;">
+      Como Encarregado, você é o responsável formal por destravar e
+      acompanhar essas ações. Acesse o Plano para ajustar prazo, mudar
+      responsável ou marcar como concluída.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${totalOverdue > 0 ? totalOverdue + " atrasada(s) · " : ""}${totalToday} hoje · ${totalTomorrow} amanhã`,
+    bodyHtml,
+    ctaText: "Abrir Plano de Ação",
+    ctaHref: `${PROD_URL}/dashboard/plano-acao`,
+  });
+
+  const textParts: string[] = [`${greeting},`, ""];
+  textParts.push(
+    args.companyName
+      ? `Resumo do Plano de Ação institucional de ${args.companyName}:`
+      : `Resumo do Plano de Ação institucional da sua organização:`,
+  );
+  textParts.push("");
+  const renderTextItem = (it: ActionPlanItem) => {
+    const responsavel = it.assigneeName ?? "sem responsável";
+    const overdue =
+      it.daysOverdue !== undefined && it.daysOverdue > 0
+        ? ` (${it.daysOverdue}d atrasada)`
+        : "";
+    return `  - ${it.title} [${it.priority} · ${ORIGIN_LABEL[it.origin] ?? it.origin}] — ${responsavel}${overdue}`;
+  };
+  if (totalOverdue > 0) {
+    textParts.push(`🔴 ATRASADAS (${totalOverdue}):`);
+    args.overdue.forEach((it) => textParts.push(renderTextItem(it)));
+    textParts.push("");
+  }
+  if (totalToday > 0) {
+    textParts.push(`📌 VENCEM HOJE (${totalToday}):`);
+    args.dueToday.forEach((it) => textParts.push(renderTextItem(it)));
+    textParts.push("");
+  }
+  if (totalTomorrow > 0) {
+    textParts.push(`📅 VENCEM AMANHÃ (${totalTomorrow}):`);
+    args.dueTomorrow.forEach((it) => textParts.push(renderTextItem(it)));
+    textParts.push("");
+  }
+  textParts.push(`Acesse: ${PROD_URL}/dashboard/plano-acao`);
+  textParts.push("");
+  textParts.push("—");
+  textParts.push("Sistema PGP - Programa de Governança em Privacidade");
+
+  return { subject, html, text: textParts.join("\n") };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 
