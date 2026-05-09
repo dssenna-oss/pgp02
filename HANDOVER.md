@@ -1,10 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-11 (2 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email** e **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados**) · **Branch:** `claude/silly-ride-84a823` (worktree) + `claude/inventario-templates` (Fatia a)
+> **Última sessão:** 2026-05-11 (3 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**, **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados** e **#15 Fatia b — pré-preencher Inventário por Carta de Serviços via Firecrawl + Gemini**) · **Branch:** `claude/silly-ride-84a823` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `ee7b704` (merge PR #14). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário.
+> **Em prod (`origin/main`)**: tudo até `eb42376` (merge PR #15). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário com 3 caminhos ativos (Modelos / Carta de Serviços / Manual).
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#14 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#15 mergeados.
+>
+> **🔑 FIRECRAWL_API_KEY adicionada no Vercel** em 2026-05-11 (Production + Preview, Sensitive). Falta replicar em Development pra testes locais.
 >
 > **📧 Email transacional ativo em prod desde 2026-05-10.** Brevo (free tier 300/dia, conta 'Clube do Servidor'). Sender `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO + 2 crons diários 9h Brasília — digest de tarefas vencendo (`/api/cron/task-due-reminders`) + digest de ações atrasadas no Plano pro DPO (`/api/cron/action-plan-reminders`, **PR #13**). Toggles por user em `/dashboard/configuracoes` (4 booleans: `emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`, `emailNotifyActionPlan` — este último DPO-only escondido pra Contribuidor). Memória detalhada: `project_email_brevo_setup.md`.
 >
@@ -34,7 +36,60 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-11 — 2 PRs mergeados (#13 + #14)
+## 🆕 O que foi feito na sessão 2026-05-11 — 3 PRs mergeados (#13 + #14 + #15)
+
+### PR #15 — Fatia (b) "Pré-preencher por Carta de Serviços" (Firecrawl + Gemini)
+
+Ativa o card placeholder "Em breve" da PR #14 com pipeline completo:
+URLs públicas → Firecrawl (browser real + proxies residenciais) → markdown
+limpo → Gemini com schema do form como contrato → `Partial<FormAnswers>`
+sanitizado → mesclado em `answers` sem sobrescrever input humano.
+
+**Arquivos novos**:
+- `lib/firecrawl.ts` — wrapper REST API v1 (`POST /v1/scrape`,
+  `formats:["markdown"]`, `onlyMainContent: true`). Retorna
+  `{ url, markdown, title, error }` sem lançar — caller decide.
+- `lib/inventario-ai-prefill.ts` — engine que orquestra scrape paralelo
+  + LLM com `temperature: 0.1`, `responseMimeType: application/json`,
+  prompt rígido anti-alucinação + sanitizer pós-LLM (descarta IDs
+  inexistentes e valores fora das opções de single/multi-choice).
+- `app/api/inventario/ai-prefill/route.ts` — endpoint POST autenticado
+  (qualquer user logado), valida 1-5 URLs http(s), `maxDuration: 60s`.
+- `components/inventario/carta-servicos-picker.tsx` — modal com 2 telas:
+  input de URLs + tela de resultado (URLs OK/erro + lista de campos
+  preenchidos + botão Aplicar).
+
+**UI integrada**:
+- Card "Em breve" da entry-screen vira card ativo (badge "IA" violeta);
+  subtítulo honesto "Cobre ~30-40% dos campos".
+- Botão "Pré-preencher por URL" (Sparkles violeta) no header do wizard
+  em qualquer step → ativa **Modelo 2 combinável** (template + URL +
+  manual em qualquer ordem, sem sobrescrever).
+- Badge novo `🤖 IA` (azul-céu sky-100) em campos com origem
+  `firecrawl:<url>` no provenance. Tooltip mostra a URL.
+
+**Decisões importantes**:
+1. **Anti-alucinação em 3 camadas**: prompt rígido ("só preencha se
+   estiver LITERAL") + `temperature: 0.1` + sanitizer server-side que
+   filtra contra o schema (descarta valores fora de `options[]` e IDs
+   que não existem).
+2. **Provenance compartilhada**: mesmo `_meta.provenance[sec.fieldId]`
+   da Fatia (a), só muda o prefixo (`template:` vs `firecrawl:`). Reusa
+   lógica de edição que limpa marca quando user altera valor.
+3. **Limites pragmáticos**: 5 URLs / 50K chars markdown / 60s timeout /
+   `temperature: 0.1` / `maxOutputTokens: 4000`. Custo por inventário
+   ≪ R$ 0,01 (Gemini 2.5 Flash) + Firecrawl no plano do user.
+4. **Sem persistência server-side**: endpoint stateless, retorna
+   `{ next, summary }`. Wizard salva via PUT existente após user revisar.
+5. **Honestidade na UX**: modal explica que sites institucionais cobrem
+   bem finalidade/dados básicos/base legal, mas armazenamento/segurança
+   técnica/volume ficam pra input humano.
+
+**Pré-requisito operacional**:
+- `FIRECRAWL_API_KEY` adicionada no Vercel (2026-05-11) em Production
+  + Preview, Sensitive. Pendente: replicar em Development.
+
+
 
 ### PR #14 — Cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados (Fatia "a")
 
