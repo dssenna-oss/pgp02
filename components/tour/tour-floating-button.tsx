@@ -8,14 +8,20 @@
  * Label dinâmico:
  *  - 1ª vez: "Fazer tour guiado"
  *  - Depois (já completou ou já pulou): "Refazer tour"
+ *
+ * 2026-05-10 (Sugestão C): esconde em /dashboard pra não duplicar com
+ * TourHeaderButton que agora vive no header da página principal. Demais
+ * telas (Fases, Inventário, Plano, etc.) continuam tendo o flutuante.
  */
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useTour } from "./tour-provider";
 import { hasEverInteracted } from "@/lib/tour/tour-storage";
 
 export default function TourFloatingButton() {
   const { isOpen, start } = useTour();
+  const pathname = usePathname();
   const [interacted, setInteracted] = useState(false);
 
   // Re-checa o storage sempre que o tour fecha (pode ter sido marcado como
@@ -27,6 +33,8 @@ export default function TourFloatingButton() {
   }, [isOpen]);
 
   if (isOpen) return null;
+  // Esconde no /dashboard porque lá o TourHeaderButton já cobre.
+  if (pathname === "/dashboard") return null;
 
   return (
     <button
