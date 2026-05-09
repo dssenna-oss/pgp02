@@ -1,10 +1,10 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-09 (4 PRs mergeados em prod: #2 Fase 6 reorder + 13 riscos em 3 categorias + HANDOVER · #3 Riscos Opção 2 (cards delimitados) + landing copy · #4 Radar consolidado /dashboard/riscos + filtros + multi-radar + Tarefas Kanban drag-drop + Fórum reações emoji) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-10 (3 PRs mergeados em prod: #5 D1+1+2 timeline countdown 72h + tempo decorrido · D1+5 timeline DOCX · D2 caminho inverso M:N · #6 merge · #7 B+2 presets status radar + Sugestão C tour no header) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `2b1c4dc` (merge PR #4). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `9a1c2f5` (merge PR #7). Vercel verde.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Cada sessão entrega 1+ PRs criados via `gh compare URL`. User mergea via web. Já são PRs #1..#4 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Cada sessão entrega 1+ PRs criados via `gh compare URL`. User mergea via web. Já são PRs #1..#7 mergeados.
 >
 > **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado. Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
@@ -29,6 +29,90 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-10 — 3 PRs mergeados, 5 commits
+
+### PR #5 — Refino timeline Incidentes + caminho inverso M:N
+
+- `45c2447` **D1+1+2** — Timeline visual no editor de Incidente ganha:
+  - **Badge countdown 72h** no evento "Detectado" calcula prazo regressivo
+    Art. 48 §1º LGPD: verde `> 24h`, âmbar `6-24h`, vermelho `< 6h`,
+    vermelho pulsante quando vencido. Após notificar: verde "ANPD
+    notificada em XhYY" ou âmbar "com atraso (Xh)".
+  - **"Tempo decorrido" relativo** em cada evento (`⌚ 5h após detecção`,
+    `⌚ 2d 3h após detecção`). Ancora em `detectedAt`.
+  - Helpers novos `computeDeadline()` + `fmtElapsed()` em
+    `incident-timeline.tsx`. Badge propagado via `TimelineEvent.badge`.
+- `43405f1` **D1+5** — Linha do tempo no DOCX ANPD (Res. 15/2024).
+  Nova seção "9. Linha do Tempo do Ciclo de Vida" antes da assinatura
+  no `lib/incidentes-docx-export.ts`. Helper `buildDocxTimeline()`
+  retorna eventos ordenados ASCENDENTE (formal).
+- `f2d4531` **D2 — caminho inverso M:N**. Schema + chips diretos
+  já existiam (CP16 Etapa 19); faltava o "recurso → incidentes".
+  - Componente novo `<LinkedIncidentsCard>` em
+    `components/incidentes/linked-incidents-card.tsx`. Card vermelho
+    /âmbar com lista clicável dos até 5 incidentes vinculados.
+  - API `GET /api/incidents` ganha query params `?inventoryId=X`
+    e `?operatorId=Y` (filtra usando relations existentes
+    `dataInventories.some` e `affectedOperatorsList.some`).
+  - Plug em 2 lugares: `analise-riscos-content.tsx` (DPO vê histórico
+    do processo) + `terceiro-detail-content.tsx` (Art. 42 LGPD —
+    responsabilidade solidária).
+
+### PR #6 — Merge intermediário (sem mudanças funcionais)
+
+### PR #7 — Presets de status no radar + tour no header
+
+- `c6e3816` **B+2 (Opção C)** — 4 botões preset acima do radar do
+  `/dashboard/riscos`: **Tudo / Backlog / Em ação / Resolvido**.
+  - Vocabulário gestão (não jargão IDENTIFICADO/EM_MITIGACAO).
+  - API `Item` ganha `codesByStatus: Record<RiskStatus, string[]>`.
+  - Cor do preset ativo combina com significado: indigo (tudo), red
+    (backlog), amber (em ação), emerald (resolvido).
+  - Combinável com filtro de setor + modo comparação ("Backlog em RH
+    comparando processos").
+- `d6c2457` **Sugestão C — tour no header**. Substitui stub
+  "Relatório" do dashboard (que só fazia `alert("será em breve")`)
+  pelo `<TourHeaderButton />` (variant outline violeta com ícones
+  `Mic`/`RotateCcw`).
+  - `TourFloatingButton` continua visível em TODAS as outras telas;
+    esconde apenas em `/dashboard` via `usePathname() === "/dashboard"`.
+  - Cleanup de imports órfãos (Download, Button) em
+    `dashboard-content.tsx`.
+
+### Decisões importantes desta sessão
+
+1. **Timeline já existia** — descoberto que `incident-timeline.tsx`
+   estava implementado desde CP16. D1 não era "construir" mas
+   "evoluir": adicionar countdown 72h + tempo decorrido.
+2. **D3 já existia** — `QuickIncidentModal` plugado no layout desde
+   CP16 H. Skip.
+3. **Schema M:N e chips diretos do CP16 já existiam** — D2 era
+   apenas o caminho inverso (recurso → incidentes), não mexer em
+   schema.
+4. **Botão "Relatório" era stub há meses** — substituído por algo
+   funcional em vez de ficar promesa quebrada.
+5. **Vocabulário gestão > schema** — presets de status usam
+   "Backlog/Em ação/Resolvido" não "IDENTIFICADO/EM_MITIGACAO".
+
+### Smoke tests
+- Typecheck zerado em todas as 3 PRs ✅
+- DOCX e API filters não testados visualmente em prod local (sessão
+  expirou, login bloqueado por segurança no eval) — confiança via
+  typecheck e código simples.
+
+### Pendências conhecidas no fim da sessão (mantidas)
+
+- 🟡 Notificações por email (Tarefas vencendo · DMs · novos posts) —
+  bloqueado infra Resend/SendGrid não configurado
+- 🟡 Real-time WebSocket no Fórum — atual polling 30s, refator grande
+- 🟡 ElevenLabs API key não atualizada no Vercel (não-bloqueante)
+- 🟡 Real "Relatório executivo" PDF unificado (Próximas Etapas +
+  KPIs + GAP + Plano) — stub removido hoje, pode evoluir como feature
+- 🟡 Cobertura mobile do tour flutuante — botão fica em
+  `bottom-6 left-6 lg:left-72`, em mobile pode sobrepor footer
 
 ---
 
