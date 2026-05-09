@@ -36,6 +36,7 @@ interface Item {
   byStatus: Record<string, number>;
   bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
   codes: string[];
+  codesByStatus?: Record<string, string[]>;
 }
 
 interface ApiResponse {

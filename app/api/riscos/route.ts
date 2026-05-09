@@ -76,6 +76,20 @@ export async function GET(_request: NextRequest) {
       else if (sev === "BAIXO") bySeverity.BAIXO += 1;
       else bySeverity.NONE += 1;
     }
+    // Códigos agrupados por status — pra filtros de preset no radar
+    // (B+2, 2026-05-10). Permite ao componente filtrar localmente sem
+    // refetch.
+    const codesByStatus: Record<string, string[]> = {
+      IDENTIFICADO: [],
+      EM_MITIGACAO: [],
+      ACEITO: [],
+      ELIMINADO: [],
+    };
+    for (const r of p.processRisks) {
+      if (codesByStatus[r.status]) {
+        codesByStatus[r.status].push(r.riskCode);
+      }
+    }
     return {
       id: p.id,
       serviceName: p.serviceName,
@@ -88,6 +102,7 @@ export async function GET(_request: NextRequest) {
       byStatus,
       bySeverity,
       codes: p.processRisks.map((r) => r.riskCode),
+      codesByStatus,
     };
   });
 

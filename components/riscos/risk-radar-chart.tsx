@@ -39,6 +39,7 @@ interface Item {
   serviceName: string;
   setor: string | null;
   codes: string[];
+  codesByStatus?: Record<string, string[]>;
   totalRisks: number;
 }
 
@@ -46,6 +47,38 @@ interface Props {
   items: Item[];
   totalRisks: number;
 }
+
+/**
+ * Presets de filtro por status (B+2, 2026-05-10).
+ * Em vez de chips individuais por status (que adicionariam muita
+ * carga visual), 4 botões de preset cobrem 95% dos casos de uso:
+ *   - Backlog: riscos identificados mas sem mitigação iniciada
+ *   - Em ação: trabalho em andamento
+ *   - Resolvido: tratados (aceitos formalmente ou eliminados)
+ *   - Tudo: sem filtro (default)
+ */
+type StatusPreset = "all" | "backlog" | "em_acao" | "resolvido";
+
+const PRESET_STATUSES: Record<StatusPreset, ReadonlyArray<string>> = {
+  all: ["IDENTIFICADO", "EM_MITIGACAO", "ACEITO", "ELIMINADO"],
+  backlog: ["IDENTIFICADO"],
+  em_acao: ["EM_MITIGACAO"],
+  resolvido: ["ACEITO", "ELIMINADO"],
+};
+
+const PRESET_LABEL: Record<StatusPreset, string> = {
+  all: "Tudo",
+  backlog: "Backlog",
+  em_acao: "Em ação",
+  resolvido: "Resolvido",
+};
+
+const PRESET_HINT: Record<StatusPreset, string> = {
+  all: "Mostra todos os riscos marcados",
+  backlog: "Riscos identificados sem mitigação iniciada",
+  em_acao: "Riscos com plano de mitigação em andamento",
+  resolvido: "Riscos aceitos formalmente ou eliminados",
+};
 
 interface SingleDatum {
   code: string;
@@ -176,9 +209,31 @@ function MultiTooltip({
   );
 }
 
+/**
+ * Helper: filtra os codes de um item conforme o preset de status.
+ * Se preset='all' ou item não tem codesByStatus, devolve item.codes inteiro.
+ * Caso contrário, devolve só os códigos cujo status está no preset.
+ */
+function codesForPreset(
+  item: Item,
+  preset: StatusPreset,
+): string[] {
+  if (preset === "all" || !item.codesByStatus) {
+    return item.codes;
+  }
+  const allowed = PRESET_STATUSES[preset];
+  const codes: string[] = [];
+  for (const status of allowed) {
+    const statusCodes = item.codesByStatus[status] ?? [];
+    codes.push(...statusCodes);
+  }
+  return codes;
+}
+
 export default function RiskRadarChart({ items, totalRisks }: Props) {
   const [selectedSetores, setSelectedSetores] = useState<Set<string>>(new Set());
   const [compareMode, setCompareMode] = useState(false);
+  const [statusPreset, setStatusPreset] = useState<StatusPreset>("all");
 
   // Setores distintos disponíveis (excluindo nulls). Ordenados alfabeticamente.
   const availableSetores = useMemo(() => {
@@ -189,22 +244,35 @@ export default function RiskRadarChart({ items, totalRisks }: Props) {
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [items]);
 
-  // Items filtrados pelo setor selecionado (ou todos se nada selecionado).
-  // Inclui só processos analisados (com pelo menos 1 risco marcado) — radar
-  // de processo sem risco não comunica nada.
+  // Items filtrados pelo setor + preset de status. Inclui só processos
+  // que têm AO MENOS 1 risco no preset selecionado (radar vazio não
+  // comunica nada).
   const filteredItems = useMemo(() => {
     return items.filter((it) => {
       if (it.totalRisks === 0) return false;
-      if (selectedSetores.size === 0) return true;
-      return it.setor !== null && selectedSetores.has(it.setor);
+      // Filtro de setor
+      if (
+        selectedSetores.size > 0 &&
+        (it.setor === null || !selectedSetores.has(it.setor))
+      ) {
+        return false;
+      }
+      // Filtro de preset de status — exige que o processo tenha ao
+      // menos 1 código nessa categoria
+      if (statusPreset !== "all") {
+        const codes = codesForPreset(it, statusPreset);
+        if (codes.length === 0) return false;
+      }
+      return true;
     });
-  }, [items, selectedSetores]);
+  }, [items, selectedSetores, statusPreset]);
 
   // Dados agregados pra modo single (ou pra fallback quando multi tem 0 itens)
   const singleData: SingleDatum[] = useMemo(() => {
     return RISCOS_CATALOG.map((def) => {
-      const count = filteredItems.filter((it) => it.codes.includes(def.code))
-        .length;
+      const count = filteredItems.filter((it) =>
+        codesForPreset(it, statusPreset).includes(def.code),
+      ).length;
       return {
         code: def.code,
         shortLabel: def.shortLabel,
@@ -227,11 +295,15 @@ export default function RiskRadarChart({ items, totalRisks }: Props) {
           RISK_CATEGORY_LABEL[RISK_CATEGORY_BY_CODE[def.code as RiskCode]],
       };
       for (const it of filteredItems) {
-        row[it.serviceName] = it.codes.includes(def.code) ? 1 : 0;
+        row[it.serviceName] = codesForPreset(it, statusPreset).includes(
+          def.code,
+        )
+          ? 1
+          : 0;
       }
       return row;
     });
-  }, [filteredItems]);
+  }, [filteredItems, statusPreset]);
 
   // Lista de processos pra render no modo multi (com cor estável).
   // Cor é atribuída pela ORDEM do filteredItems.
@@ -338,6 +410,42 @@ export default function RiskRadarChart({ items, totalRisks }: Props) {
             </>
           )}
         </p>
+
+        {/* Presets de status do risco (B+2, 2026-05-10):
+            4 botões em linha — Tudo / Backlog / Em ação / Resolvido.
+            Vocabulário gestão (não jargão técnico do schema). */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">
+            Mostrar:
+          </span>
+          {(["all", "backlog", "em_acao", "resolvido"] as StatusPreset[]).map(
+            (p) => {
+              const active = statusPreset === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setStatusPreset(p)}
+                  title={PRESET_HINT[p]}
+                  className={cn(
+                    "text-xs px-2.5 py-1 rounded-md border font-medium transition-colors",
+                    active
+                      ? p === "backlog"
+                        ? "border-red-500 bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200 dark:border-red-700"
+                        : p === "em_acao"
+                          ? "border-amber-500 bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-700"
+                          : p === "resolvido"
+                            ? "border-emerald-500 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-700"
+                            : "border-indigo-500 bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-700"
+                      : "border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800",
+                  )}
+                >
+                  {PRESET_LABEL[p]}
+                </button>
+              );
+            },
+          )}
+        </div>
 
         {/* Filtros de setor — chips */}
         {availableSetores.length > 0 && (

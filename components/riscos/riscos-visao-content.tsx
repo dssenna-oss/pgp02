@@ -44,6 +44,7 @@ interface RadarItem {
   serviceName: string;
   setor: string | null;
   codes: string[];
+  codesByStatus?: Record<string, string[]>;
   totalRisks: number;
 }
 
