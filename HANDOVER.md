@@ -1,10 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-10 (3 PRs mergeados em prod: #5 D1+1+2 timeline countdown 72h + tempo decorrido · D1+5 timeline DOCX · D2 caminho inverso M:N · #6 merge · #7 B+2 presets status radar + Sugestão C tour no header) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-10 (6 PRs mergeados em prod: #5 D1+1+2 timeline countdown · D1+5 timeline DOCX · D2 caminho inverso M:N · #6 merge · #7 B+2 presets status radar · Sugestão C tour header · #8 HANDOVER + Relatório Executivo R3 (7 páginas) · #9 refinos B1+B5+C2+D1 · **#10 notificações por email via Brevo**) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `9a1c2f5` (merge PR #7). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `bd83824` (merge PR #10). Vercel verde.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Cada sessão entrega 1+ PRs criados via `gh compare URL`. User mergea via web. Já são PRs #1..#7 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#10 mergeados.
+>
+> **📧 Email transacional configurado em 2026-05-10:** conta Brevo (free tier 300/dia) criada pelo user ('Clube do Servidor'). API key `xkeysib-...` salva no `.env` local + Vercel env vars (BREVO_API_KEY, BREVO_SENDER_EMAIL, BREVO_SENDER_NAME). Sender atual `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO. Smoke test passou em dev (`/api/admin/test-email` → ok=true).
 >
 > **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado. Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
@@ -32,7 +34,110 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-10 — 3 PRs mergeados, 5 commits
+## 🆕 O que foi feito na sessão 2026-05-10 — 6 PRs mergeados, 8 commits
+
+### PR #8 — Relatório Executivo R3 completo (7 páginas)
+
+- `21b90f4` Engine `lib/relatorio-executivo-helpers.ts` (~700 linhas) faz
+  12 queries Prisma em paralelo, reusa `buildDiagnostico()` e
+  `getProximasEtapas()`, computa maturidade simplificada (5 níveis),
+  agrega KPIs de 10 dimensões, detecta pendências críticas e gera
+  texto de conclusão auto-formatado com markdown leve.
+- Página `/dashboard/relatorio-executivo` server component DPO-only.
+- Componente `<RelatorioExecutivoContent>` com 7 seções print-friendly:
+  Capa · Postura geral (score+maturidade+4 pilares) · KPIs · Mapa de
+  riscos (radar+top5) · Próximas etapas · Pendências críticas · Histórico
+  (line chart se há ≥2 snapshots GAP) · Conclusão+assinatura.
+- Estilos `@media print` com @page A4 + page-break automáticos.
+- Botão `<FileText>Relatório executivo</FileText>` no header do dashboard
+  (só DPO).
+
+### PR #9 — Refinos B1+B5+C2+D1 do Relatório
+
+- `7907689` 4 melhorias num PR (~917 linhas adicionadas):
+  - **B1 Capacitação detalhada**: nova seção 2.1 com 4 KPIs · distribuição
+    por eixo (5 eixos do CP18 com barras coloridas) · cronograma 90d.
+    Helper `buildCapacitacaoDetalhada()` + tipos exportados
+    `eixoLabel()` + `audienceLabel()`.
+  - **B5 Alertas de prazo regulatório**: nova seção 6 com 4 blocos
+    (RIPDs > 90d sem revisão · Políticas > 12 meses · Capacitações
+    com prazo vencido · Contratos Operadores expirando 90d). Helper
+    `buildAlertasPrazo()`.
+  - **C2 Citações de artigos LGPD**: componente `<SectionHeader>`
+    aplicado em todas as 8+ seções (Art. 50, 41, 37, 38, 7, 11, 48,
+    52 §1 VIII, etc.). Eleva credibilidade jurídica.
+  - **D1 Template 1-pager**: componente `<RelatorioOnePager>` ativado
+    via query param `?layout=resumido`. Resumo em 1 página A4 com
+    score+maturidade no canto, 4 KPIs, 4 pilares, top 3 pendências,
+    próximas 5 etapas, síntese curta. Toggle no toolbar entre versões.
+
+### PR #10 — Notificações por email via Brevo
+
+- `4a731cd` Setup completo de email transacional (~532 linhas):
+  - Conta Brevo criada pelo user ('Clube do Servidor', free tier 300/dia)
+  - **Erro 401 inicial**: user pegou SMTP credentials (`xsmtpsib-`)
+    em vez de API key (`xkeysib-`). Após trocar, smoke test passou.
+  - **`lib/email-sender.ts`**: abstração genérica via fetch direto na
+    API REST `/v3/smtp/email`. `sendEmail()` retorna boolean (silencioso
+    em erro, log via console.error). `sendEmailAsync()` fire-and-forget.
+  - **`lib/email-templates.ts`**: 2 templates iniciais (`tplForumDm` +
+    `tplForumAnnouncement`) com HTML + texto plain. Esqueleto institucional
+    azul LGPD-PGP em `wrapEmail()`. Escape HTML em conteúdo dinâmico.
+  - **Pontos plugados**:
+    - `POST /api/forum/mensagens` → notifica destinatário da DM
+    - `POST /api/forum` (apenas type=ANNOUNCEMENT) → notifica todos os
+      outros users da org
+    - Discussions normais NÃO disparam email (evita spam)
+  - **`app/api/admin/test-email`**: endpoint smoke test (DPO-only).
+  - **Vars no Vercel** (configurado pelo user): `BREVO_API_KEY` (sensitive)
+    + `BREVO_SENDER_EMAIL` + `BREVO_SENDER_NAME`.
+
+### Decisões importantes desta sessão
+
+1. **Reuso radical das engines existentes** no Relatório Executivo —
+   `buildDiagnostico()` (CP10), `getProximasEtapas()` (CP28), agregações
+   já validadas. Engine nova só ORQUESTRA + agrega. Tempo real foi
+   ~1h em vez dos 3h30 estimados.
+2. **Maturidade simplificada** no Relatório (5 níveis baseados no
+   score) em vez de duplicar a lógica complexa do Painel de Maturidade
+   (5 pilares ponderados). Documento agregado não precisa do mesmo
+   detalhe.
+3. **Citações de artigos LGPD nas seções** elevam credibilidade
+   pra auditor — cada seção tem `Fundamento legal: ...` em itálico.
+4. **1-pager via query param** (`?layout=resumido`) é mais leve que
+   página separada — reusa toda a engine, só renderiza componente
+   alternativo.
+5. **Email fire-and-forget** em pontos de envio — fluxo principal
+   (criar post, enviar DM) não espera Brevo responder. Email é
+   melhoria, não essencial.
+6. **Discussions normais sem email** — só Announcements geram email
+   pra evitar spam. Users veem pelo polling de 30s.
+
+### Pendências conhecidas no fim da sessão
+
+- 🟡 **Verificar email funcionou em prod** — após Vercel terminar build
+  do PR #10, smoke test em prod (`/api/admin/test-email`)
+- 🟡 Toggle nas Configurações do user pra opt-in/opt-out de tipos de
+  notificação (precisa schema novo: `User.emailPrefs`)
+- 🟡 Cron Vercel pra Tarefas vencendo (envio diário) — precisa setup
+  `vercel.json` com cron schedule
+- 🟡 Verificação de domínio próprio na Brevo (DNS) pra remetente ficar
+  `noreply@lgpd-pgp.com.br` — atualmente `noreply@brevomail.com`
+- 🟡 Notificações pra Plano de Ação atrasada (DPO recebe email quando
+  ações vencidas)
+- 🟡 Deletar `/api/admin/test-email` após validação em prod
+- 🟡 Real-time WebSocket Fórum (não-bloqueante, polling 30s aceita pra MVP)
+- 🟡 Mobile UX do tour flutuante
+
+### Smoke tests
+- Typecheck zerado em todas as 3 PRs ✅
+- `/dashboard/relatorio-executivo` renderiza completo + 1-pager ✅
+- `/api/admin/test-email` retorna ok=true (Brevo aceitou) ✅
+- Email cair na caixa: 🟡 a confirmar pelo user
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-10 (versão antiga, antes do R3) — 3 PRs mergeados, 5 commits
 
 ### PR #5 — Refino timeline Incidentes + caminho inverso M:N
 
