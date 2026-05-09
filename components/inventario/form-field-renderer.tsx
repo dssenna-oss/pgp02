@@ -48,6 +48,12 @@ interface FormFieldRendererProps {
   disabled?: boolean;
   /** Esconde label/description internos (útil quando o wrapper já mostra). */
   hideLabel?: boolean;
+  /**
+   * Origem do valor atual (provenance). Quando começa com "template:" o
+   * label exibe um badge "📋 Modelo" pra deixar claro que veio de
+   * pré-preenchimento. Ao editar, o wizard limpa essa marca.
+   */
+  provenance?: string;
 }
 
 /**
@@ -67,8 +73,10 @@ export function FormFieldRenderer({
   error,
   disabled,
   hideLabel,
+  provenance,
 }: FormFieldRendererProps) {
   const fieldId = useId();
+  const fromTemplate = provenance?.startsWith("template:") ?? false;
 
   // Pergunta = label do campo. Destaque visual: ícone + negrito + cor de
   // acento, pra distinguir das labels das opções (checkbox/radio).
@@ -86,6 +94,14 @@ export function FormFieldRenderer({
         {!field.required && (
           <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 align-middle">
             Opcional
+          </span>
+        )}
+        {fromTemplate && (
+          <span
+            className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 align-middle"
+            title="Pré-preenchido por um modelo padronizado. Você pode editar livremente."
+          >
+            📋 Modelo
           </span>
         )}
       </Label>

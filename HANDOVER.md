@@ -1,16 +1,16 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-10 (7 PRs mergeados em prod: #5..#7 refinos Incidentes/radar/tour · #8 Relatório Executivo R3 · #9 refinos B1+B5+C2+D1 · #10 notificações Brevo · **#11 toggles email + cron tarefas vencendo**) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-11 (1 PR mergeado em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**) · **Branch:** `claude/silly-ride-84a823` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `1a00939` (merge PR #11). Vercel verde. Email funcionando em prod (user confirmou em 2026-05-10).
+> **Em prod (`origin/main`)**: tudo até `ca229ef` (merge PR #13). Vercel verde. Email + 2 crons (tarefas + plano) funcionando em prod.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#11 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#13 mergeados.
 >
-> **📧 Email transacional ativo em prod desde 2026-05-10.** Brevo (free tier 300/dia, conta 'Clube do Servidor'). Sender `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO + cron diário 9h Brasília pra digest de tarefas vencendo (`/api/cron/task-due-reminders`, schedule `0 12 * * *` UTC em `vercel.json`). Toggles por user em `/dashboard/configuracoes` (3 booleans: `emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`). Memória detalhada: `project_email_brevo_setup.md`.
+> **📧 Email transacional ativo em prod desde 2026-05-10.** Brevo (free tier 300/dia, conta 'Clube do Servidor'). Sender `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO + 2 crons diários 9h Brasília — digest de tarefas vencendo (`/api/cron/task-due-reminders`) + digest de ações atrasadas no Plano pro DPO (`/api/cron/action-plan-reminders`, **PR #13**). Toggles por user em `/dashboard/configuracoes` (4 booleans: `emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`, `emailNotifyActionPlan` — este último DPO-only escondido pra Contribuidor). Memória detalhada: `project_email_brevo_setup.md`.
 >
 > **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado. Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
-> **Migração Neon:** ✅ Etapas 2 → 26 aplicadas. Última delta (Etapa 26 em 2026-05-10): 3 booleans em `users` (`emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`) pra preferências de notificação. SQL em `scripts/_migrate-etapa-26-email-prefs.sql`, aplicada via Neon SQL Editor pelo user.
+> **Migração Neon:** ✅ Etapas 2 → 27 aplicadas. Última delta (Etapa 27 em 2026-05-11): 1 boolean em `users` (`emailNotifyActionPlan`, default true — opt-out pra DPO) pra cron do Plano de Ação. SQL em `scripts/_migrate-etapa-27-action-plan-email.sql`, aplicada via `prisma db execute` (additive com DEFAULT, sem risco). Etapa 26 (2026-05-10): 3 booleans (`emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`).
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
@@ -31,6 +31,85 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-11 — 1 PR mergeado, 1 commit
+
+### PR #13 — Cron de Plano de Ação atrasado pra DPO + cleanup test-email
+
+Fechou 2 das pendências deixadas pelo PR #11:
+
+- **Item (3) — Cleanup smoke test**: removido `app/api/admin/test-email/route.ts`
+  (já tinha cumprido seu papel validando Brevo no PR #10).
+- **Item (1) — Cron pra Plano**: novo digest diário pro DPO sobre ações
+  vencendo/atrasadas, espelhando o cron de Tarefas mas com semântica
+  organizacional (não pessoal).
+
+**Schema (Etapa 27)**: novo boolean `User.emailNotifyActionPlan` com default
+**true** (opt-out pra DPO — geralmente quer saber). Pra Contribuidor o
+toggle nem aparece e o cron nunca dispara mesmo com flag `true`. Migration
+aditiva aplicada via `prisma db execute` durante a sessão (sem usar SQL
+Editor — additive com DEFAULT, sem risco).
+
+**Cron** [`app/api/cron/action-plan-reminders/route.ts`](app/api/cron/action-plan-reminders/route.ts):
+- Roda 9h Brasília (mesmo schedule `0 12 * * *` UTC do cron de tarefas)
+- Itera DPOs ativos com `emailNotifyActionPlan=true` (`role` ∈ admin/DPO_*)
+- Agrupa o Plano por `companyId` num `Map` pra evitar refazer query quando
+  há múltiplos DPOs na mesma org (Principal + Substituto + Auxiliar)
+- Categoriza ações em status A_FAZER/EM_ANDAMENTO com `dueDate` em 3 baldes
+  (atrasadas / hoje / amanhã)
+- Pula DPO se a org não tem nenhuma ação no prazo (sem spam vazio)
+
+**Template** `tplActionPlanOverdueDigest` em [`lib/email-templates.ts:259`](lib/email-templates.ts:259) —
+3 seções coloridas (vermelha/âmbar/azul) + badge de origem (GAP/RISCO/
+OPERADOR/INCIDENTE/LIA/CYBER/MANUAL/BASES) + responsável formal por ação
+(ou "Sem responsável definido" em itálico).
+
+**UI** [`components/configuracoes/email-notifications-card.tsx`](components/configuracoes/email-notifications-card.tsx) —
+4º toggle "Plano de Ação — ações atrasadas (DPO)", ícone vermelho-rosé,
+**escondido pra Contribuidor** via check de `role` que vem no GET de
+`/api/me/email-prefs`. API ganhou campo `actionPlan` + `role`.
+
+**`vercel.json`** — segundo cron registrado (2 entradas no array `crons`).
+
+### Decisões importantes desta sessão
+
+1. **Default opt-OUT pra DPO** (em vez de opt-in como Tarefas) — a
+   responsabilidade institucional do Encarregado pelo Plano justifica:
+   ele já recebe esses dados pelo painel, faz sentido o digest chegar
+   por padrão.
+2. **Vários DPOs da mesma org recebem o MESMO conteúdo** — não tentamos
+   deduplicar pra simplificar (e cada DPO controla via toggle se quer
+   ou não). Cache por `companyId` evita só a query duplicada.
+3. **Migration via `prisma db execute`** (não SQL Editor) — pode rodar
+   autonomamente porque é aditiva com DEFAULT (sem risco de quebrar
+   prod). Padrão pra próximas migrations seguras.
+4. **Não enviei email de teste real** — confiança no smoke veio do
+   payload do cron retornar `dpoConsidered: 1, sent: 0, skipped: 1`
+   (sem ações no prazo agora — comportamento correto).
+
+### Smoke tests passados
+- ✅ Typecheck zerado nas mudanças (erro de `@dnd-kit/core` é pré-existente,
+  unrelated)
+- ✅ Migration confirmada via `findFirst` retornando `emailNotifyActionPlan: true`
+- ✅ `GET /api/me/email-prefs` (logado como admin) → `{ actionPlan: true, role: "admin", ... }`
+- ✅ `GET /api/cron/action-plan-reminders` (dev local) → `{ ok: true, dpoConsidered: 1, companiesWithPlan: 1, sent: 0, skipped: 1 }`
+- ✅ Toggle visível na tela `/dashboard/configuracoes` como 4º item do card
+
+### Pendências conhecidas no fim da sessão
+
+- 🟡 **Verificar cron em prod no Vercel** — após deploy do PR #13, conferir
+  Settings → Crons mostra 2 entradas (task-due-reminders + action-plan-reminders)
+- 🟡 **Notificar DPO de ação atrasada via email** sem esperar 9h — quando
+  user quiser, dá pra adicionar trigger imediato (similar ao DM no Fórum)
+  além do digest
+- 🟡 **Verificação de domínio próprio na Brevo** (DNS) pra remetente ficar
+  `noreply@lgpd-pgp.com.br`
+- 🟡 **Backlog Incidentes (CP16)** — vínculos M:N Inventário↔Operador via
+  chips (Etapa novo schema, ~2h)
+- 🟡 **Real-time WebSocket Fórum** (não-bloqueante, polling 30s aceita pra MVP)
+- 🟡 **Mobile UX do tour flutuante**
 
 ---
 

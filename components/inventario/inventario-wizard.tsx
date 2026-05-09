@@ -44,11 +44,17 @@ import {
   isFieldVisible,
 } from "@/lib/inventario-form-schema";
 import { deriveLegacyFields } from "@/lib/inventario-derive";
+import {
+  applyTemplate,
+  type InventarioTemplate,
+} from "@/lib/inventario-templates-publicos";
 import { SectionStep } from "./section-step";
 import { isFieldEmpty, isNotApplied } from "./form-field-renderer";
 import { PrintableInventory } from "./printable-inventory";
 import { MiniAppsMap } from "./mini-apps-map";
 import { CompletionDialog } from "./completion-dialog";
+import InventarioEntryScreen from "./inventario-entry-screen";
+import TemplatePicker from "./template-picker";
 
 interface InventarioWizardProps {
   userName: string;
@@ -80,6 +86,25 @@ export default function InventarioWizard({
     Record<string, Record<string, string>>
   >({});
 
+  /**
+   * Tela inicial de escolha do ponto de partida (2026-05-11).
+   * - "entry": user ainda não escolheu como começar (3 cards)
+   * - "wizard": user já escolheu, mostra o formulário
+   * Inventários existentes (draft) pulam direto pra "wizard".
+   */
+  const [entryMode, setEntryMode] = useState<"entry" | "wizard">(
+    initialDraft ? "wizard" : "entry",
+  );
+  /** Estado do dialog de seleção de modelo. */
+  const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  /** ID do template aplicado (pra exibir no header + permitir trocar). */
+  const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(
+    () => {
+      const meta = (initialDraft?.formAnswers?._meta ?? {}) as any;
+      return meta?.templateApplied ?? null;
+    },
+  );
+
   // Pré-preenche Nome e E-mail do session no Sec 1.
   // Se for um draft existente, mantém respostas salvas; mas garante que
   // pelo menos os campos auto-fill (name/email) estão sempre populados.
@@ -98,16 +123,69 @@ export default function InventarioWizard({
     };
   });
 
+  /**
+   * Aplica um template padronizado em `answers`. Mescla por camada (não
+   * sobrescreve campos já preenchidos pelo user) e marca a origem em
+   * `_meta.provenance`. Avança pra primeira seção do form.
+   */
+  const handlePickTemplate = useCallback((template: InventarioTemplate) => {
+    setAnswers((prev) => {
+      const { next } = applyTemplate(prev, template);
+      return next;
+    });
+    setAppliedTemplateId(template.id);
+    setEntryMode("wizard");
+    // Pula onboarding pra mostrar logo o sec1 com info já contextual
+    setStepIndex(1);
+    toast.success(`Modelo "${template.nome}" aplicado. Revise os campos.`);
+  }, []);
+
+  /**
+   * Reseta a escolha — volta pra tela inicial. Não apaga dados, só
+   * permite trocar de ponto de partida. Confirma se já há respostas.
+   */
+  const handleResetEntry = useCallback(() => {
+    const hasAnswers = Object.entries(answers)
+      .filter(([k]) => k.startsWith("sec") && k !== "sec1")
+      .some(([, v]) => {
+        if (!v || typeof v !== "object") return false;
+        return Object.values(v as Record<string, unknown>).some((val) => {
+          if (Array.isArray(val)) return val.length > 0;
+          return typeof val === "string" && val.trim().length > 0;
+        });
+      });
+    if (hasAnswers) {
+      const ok = confirm(
+        "Você já preencheu campos. Voltar à tela inicial mantém o que você digitou — ao escolher outro modelo, ele só preenche os campos que estiverem vazios. Continuar?",
+      );
+      if (!ok) return;
+    }
+    setEntryMode("entry");
+    setStepIndex(0);
+  }, [answers]);
+
   /** Atualiza um único campo de uma seção. */
   const updateField = useCallback(
     (sectionId: string, fieldId: string, value: string | string[]) => {
-      setAnswers((prev) => ({
-        ...prev,
-        [sectionId]: {
-          ...((prev as any)[sectionId] ?? {}),
-          [fieldId]: value,
-        },
-      }));
+      setAnswers((prev) => {
+        const next: any = {
+          ...prev,
+          [sectionId]: {
+            ...((prev as any)[sectionId] ?? {}),
+            [fieldId]: value,
+          },
+        };
+        // Limpa a marca de origem (provenance) quando o user edita —
+        // valor não é mais "do template", virou input humano.
+        const meta = next._meta;
+        const path = `${sectionId}.${fieldId}`;
+        if (meta?.provenance && meta.provenance[path]) {
+          const newProv = { ...meta.provenance };
+          delete newProv[path];
+          next._meta = { ...meta, provenance: newProv };
+        }
+        return next;
+      });
       // Limpa erro do campo ao começar a digitar
       setErrorsBySection((prev) => {
         if (!prev[sectionId]?.[fieldId]) return prev;
@@ -313,6 +391,29 @@ export default function InventarioWizard({
   };
 
   // ===== Render =====
+  // Tela de entrada (escolha do ponto de partida) — só aparece em
+  // inventários novos sem respostas ainda. Inventários existentes pulam.
+  if (entryMode === "entry") {
+    return (
+      <>
+        <InventarioEntryScreen
+          onChoose={(choice) => {
+            if (choice === "templates") {
+              setTemplatePickerOpen(true);
+            } else if (choice === "manual") {
+              setEntryMode("wizard");
+            }
+          }}
+        />
+        <TemplatePicker
+          open={templatePickerOpen}
+          onOpenChange={setTemplatePickerOpen}
+          onPick={handlePickTemplate}
+        />
+      </>
+    );
+  }
+
   // No review usa layout mais largo (com TOC lateral); nas outras telas
   // mantém o max-w-4xl centrado pra leitura confortável.
   const containerClass = isReviewStep
@@ -331,6 +432,27 @@ export default function InventarioWizard({
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Questionário detalhado — alimenta o Inventário e demais documentos.
             </p>
+            {appliedTemplateId && (
+              <button
+                type="button"
+                onClick={handleResetEntry}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-blue-700 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 hover:underline"
+              >
+                <BookMarked className="h-3.5 w-3.5" />
+                Modelo aplicado
+                <span className="text-gray-500">·</span>
+                <span>Trocar modelo / começar de novo</span>
+              </button>
+            )}
+            {!appliedTemplateId && !initialDraft && (
+              <button
+                type="button"
+                onClick={handleResetEntry}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:underline"
+              >
+                ← Voltar à tela inicial
+              </button>
+            )}
           </div>
         </div>
         <Button variant="ghost" size="sm" onClick={handleCancel}>
@@ -391,6 +513,18 @@ export default function InventarioWizard({
                 updateField(currentSchemaStep.id, fieldId, value)
               }
               errors={errorsBySection[currentSchemaStep.id]}
+              provenance={(() => {
+                const meta = (answers._meta ?? {}) as any;
+                const all: Record<string, string> = meta?.provenance ?? {};
+                const prefix = `${currentSchemaStep.id}.`;
+                const out: Record<string, string> = {};
+                for (const [path, origin] of Object.entries(all)) {
+                  if (path.startsWith(prefix)) {
+                    out[path.slice(prefix.length)] = origin;
+                  }
+                }
+                return out;
+              })()}
             />
           )}
         </Card>
@@ -446,6 +580,14 @@ export default function InventarioWizard({
           setShowCompletion(false);
           router.push("/dashboard/inventario");
         }}
+      />
+
+      {/* Picker de modelos — disponível também durante o wizard
+          (acessível pelo botão "Trocar modelo" no header). */}
+      <TemplatePicker
+        open={templatePickerOpen}
+        onOpenChange={setTemplatePickerOpen}
+        onPick={handlePickTemplate}
       />
     </div>
   );
