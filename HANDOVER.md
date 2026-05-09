@@ -1,10 +1,10 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-11 (1 PR mergeado em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**) · **Branch:** `claude/silly-ride-84a823` (worktree)
+> **Última sessão:** 2026-05-11 (2 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email** e **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados**) · **Branch:** `claude/silly-ride-84a823` (worktree) + `claude/inventario-templates` (Fatia a)
 >
-> **Em prod (`origin/main`)**: tudo até `ca229ef` (merge PR #13). Vercel verde. Email + 2 crons (tarefas + plano) funcionando em prod.
+> **Em prod (`origin/main`)**: tudo até `ee7b704` (merge PR #14). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#13 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#14 mergeados.
 >
 > **📧 Email transacional ativo em prod desde 2026-05-10.** Brevo (free tier 300/dia, conta 'Clube do Servidor'). Sender `noreply@brevomail.com` (sem domínio próprio verificado ainda). Pontos plugados: DM no fórum + Comunicado/Announcement do DPO + 2 crons diários 9h Brasília — digest de tarefas vencendo (`/api/cron/task-due-reminders`) + digest de ações atrasadas no Plano pro DPO (`/api/cron/action-plan-reminders`, **PR #13**). Toggles por user em `/dashboard/configuracoes` (4 booleans: `emailNotifyDm`, `emailNotifyAnnouncements`, `emailNotifyTaskDue`, `emailNotifyActionPlan` — este último DPO-only escondido pra Contribuidor). Memória detalhada: `project_email_brevo_setup.md`.
 >
@@ -34,7 +34,78 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-11 — 1 PR mergeado, 1 commit
+## 🆕 O que foi feito na sessão 2026-05-11 — 2 PRs mergeados (#13 + #14)
+
+### PR #14 — Cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados (Fatia "a")
+
+Primeira implementação da estratégia desenhada em conversa pra resolver o
+gargalo do "começar do zero" no Inventário, especialmente em órgãos
+públicos. Substitui a entrada direta do wizard por uma **tela de escolha
+do ponto de partida** com 3 caminhos:
+
+- **(a) Modelos Padronizados** ✅ — implementado nesta fatia. Catálogo de
+  10 processos típicos do setor público brasileiro (genérico — não
+  específico do TCE-ES). Cada modelo entrega um `Partial<FormAnswers>`
+  com 35-50 campos pré-preenchidos seguindo bases legais nacionais.
+- **(b) Pré-preencher por Carta de Serviços** 🟡 — placeholder "Em breve".
+  Implementação na próxima fatia (firecrawl + LLM).
+- **(c) Preenchimento Manual** ✅ — caminho atual (formulário em branco).
+
+**Catálogo (10 modelos em 7 domínios)**:
+1. Ouvidoria/SIC conjunto (Lei 13.460 + LAI)
+2. Ouvidoria apenas (Lei 13.460)
+3. SIC apenas (LAI)
+4. Programa de Estágio (Lei 11.788)
+5. Cadastro de Servidor / RH (Lei 8.112 / estatutos)
+6. Licitação (Lei 14.133/2021)
+7. Protocolo de Documentos (Lei 9.784)
+8. Atendimento ao Público (recepção + agendamento)
+9. Diárias e Passagens (SCDP)
+10. Auditoria/Fiscalização Externa (Tribunais de Contas, CGU, MP)
+
+Cada template traz: bases legais nacionais, hipóteses LGPD aplicáveis
+(Art. 7º e 11), `quandoUsar` em linguagem do dia-a-dia, tags pra busca
+livre, finalidade típica completa, dados pessoais comuns por categoria,
+compartilhamento típico, retenção legal mínima, e `camposPendentes`
+explicitando o que fica pendente de revisão humana (volume de titulares,
+local de armazenamento, sistemas internos específicos).
+
+**UI nova**:
+- `components/inventario/inventario-entry-screen.tsx` — 3 cards com
+  contagem total de modelos, badge "Recomendado" no (a), badge "Em breve"
+  no (b)
+- `components/inventario/template-picker.tsx` — modal com busca livre
+  (nome, descrição, tags), agrupamento por domínio, tela de detalhe com
+  bases legais + hipóteses + contagem preenchidos × pendentes
+- Badges `📋 Modelo` violetas nos campos pré-preenchidos (FormFieldRenderer
+  + FieldAccordionItem da sec3 colapsada). Ao editar, badge some — vira
+  input humano (provenance limpa em `_meta.provenance`)
+- Botão "Modelo aplicado · Trocar modelo / começar de novo" no header do
+  wizard quando há template aplicado, com confirmação se já há respostas
+
+**Modelo 2 (combinável) implementado**: aplicar template → editar →
+trocar = campos editados manualmente ficam preservados; só campos vazios
+recebem o novo template.
+
+**Sem schema de banco novo**. Tudo client-side via `formAnswers` (Json)
+já existente em `DataInventory`. Origem armazenada em
+`answers._meta.provenance[sec.fieldId] = "template:<id>"` (extensão
+informal do JSON, sem tipagem nova).
+
+### Decisões importantes desta sessão (PR #14)
+
+1. **Catálogo é genérico do setor público brasileiro** — não específico
+   do TCE-ES. Templates por *tipo* de processo, com bases legais
+   nacionais. URLs reais ficam pra Fatia (b) (firecrawl).
+2. **Domínio Ouvidoria/SIC oferece 3 variantes** porque algumas
+   instituições concentram ambas as atividades no mesmo sistema (modelo
+   TCE-ES) e outras separam.
+3. **(b) chamado "Pré-preencher por Carta de Serviços"** — escolhido
+   sobre "Verificador" (que sugeriria auditoria de aderência da carta
+   às exigências LGPD, função adiada pra fatia futura).
+4. **Caminho híbrido para variantes** em vez de mapear todas as bifurcações
+   antes: 1 variante padrão por processo + Ouvidoria/SIC com 3 + hook pra
+   adicionar variantes conforme demanda real.
 
 ### PR #13 — Cron de Plano de Ação atrasado pra DPO + cleanup test-email
 
@@ -73,7 +144,7 @@ OPERADOR/INCIDENTE/LIA/CYBER/MANUAL/BASES) + responsável formal por ação
 
 **`vercel.json`** — segundo cron registrado (2 entradas no array `crons`).
 
-### Decisões importantes desta sessão
+### Decisões importantes da PR #13
 
 1. **Default opt-OUT pra DPO** (em vez de opt-in como Tarefas) — a
    responsabilidade institucional do Encarregado pelo Plano justifica:
@@ -90,6 +161,8 @@ OPERADOR/INCIDENTE/LIA/CYBER/MANUAL/BASES) + responsável formal por ação
    (sem ações no prazo agora — comportamento correto).
 
 ### Smoke tests passados
+
+**PR #13**:
 - ✅ Typecheck zerado nas mudanças (erro de `@dnd-kit/core` é pré-existente,
   unrelated)
 - ✅ Migration confirmada via `findFirst` retornando `emailNotifyActionPlan: true`
@@ -97,19 +170,28 @@ OPERADOR/INCIDENTE/LIA/CYBER/MANUAL/BASES) + responsável formal por ação
 - ✅ `GET /api/cron/action-plan-reminders` (dev local) → `{ ok: true, dpoConsidered: 1, companiesWithPlan: 1, sent: 0, skipped: 1 }`
 - ✅ Toggle visível na tela `/dashboard/configuracoes` como 4º item do card
 
+**PR #14**:
+- ✅ Typecheck zerado nas mudanças
+- ✅ `GET /dashboard/inventario/novo` renderiza nova tela "Como você prefere começar?" com 3 cards
+- ✅ Click em "Modelos Padronizados" abre dialog com 10 modelos agrupados em 7 domínios
+- ✅ Click em "Ouvidoria + SIC" abre detalhe mostrando "44 campos" preenchidos + "4 pendentes"
+- ✅ Click em "Aplicar modelo" abre wizard direto no Passo 2 (sec1) com header indicando "Modelo aplicado · Trocar modelo / começar de novo"
+
 ### Pendências conhecidas no fim da sessão
 
-- 🟡 **Verificar cron em prod no Vercel** — após deploy do PR #13, conferir
+- 🟡 **Verificar cron em prod no Vercel** (PR #13) — após deploy, conferir
   Settings → Crons mostra 2 entradas (task-due-reminders + action-plan-reminders)
-- 🟡 **Notificar DPO de ação atrasada via email** sem esperar 9h — quando
-  user quiser, dá pra adicionar trigger imediato (similar ao DM no Fórum)
-  além do digest
-- 🟡 **Verificação de domínio próprio na Brevo** (DNS) pra remetente ficar
-  `noreply@lgpd-pgp.com.br`
-- 🟡 **Backlog Incidentes (CP16)** — vínculos M:N Inventário↔Operador via
-  chips (Etapa novo schema, ~2h)
-- 🟡 **Real-time WebSocket Fórum** (não-bloqueante, polling 30s aceita pra MVP)
-- 🟡 **Mobile UX do tour flutuante**
+- 🟡 **Fatia (b) Inventário** — ativar o card "Pré-preencher por Carta de
+  Serviços" (placeholder hoje). Implementação: endpoint `POST /api/inventario/ai-prefill`
+  → firecrawl → Gemini com schema → `Partial<FormAnswers>` + provenance.
+  Reusa toda a UI da Fatia (a) pra exibir badges. Estimativa ~3-5h.
+- 🟡 **5 templates restantes** que ficaram fora da v1: Concurso Público,
+  PSS, Folha de Pagamento, Aposentadoria/Pensão, Credenciamento PF.
+- 🟡 Notificar DPO de ação atrasada via email **imediato** (sem esperar 9h)
+- 🟡 Verificação de domínio próprio na Brevo (DNS) → `noreply@lgpd-pgp.com.br`
+- 🟡 Backlog Incidentes (CP16) — vínculos M:N Inventário↔Operador via chips
+- 🟡 Real-time WebSocket Fórum
+- 🟡 Mobile UX do tour flutuante
 
 ---
 
