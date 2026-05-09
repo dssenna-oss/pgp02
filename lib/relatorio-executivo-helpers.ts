@@ -65,8 +65,14 @@ export interface RelatorioExecutivo {
   // Próximas etapas (top 10)
   proximasEtapas: ProximaEtapa[];
 
-  // Pendências críticas
+  // Pendências críticas (problemas estruturais agora)
   pendencias: PendenciasCriticas;
+
+  // B5 — Alertas de prazo regulatório (itens com prazo conhecido)
+  alertasPrazo: AlertasPrazo;
+
+  // B1 — Capacitação detalhada
+  capacitacaoDetalhada: CapacitacaoDetalhada;
 
   // Histórico (snapshots GAP, se houver)
   historico: { snapshots: Array<{ date: string; score: number }> } | null;
@@ -132,6 +138,55 @@ export interface PendenciasCriticas {
   processosSemBaseLegal: Array<{ id: string; name: string }>;
   incidentesAbertosLongos: Array<{ id: string; title: string; daysOpen: number }>;
   operadoresAltoRiscoNaoAdequados: Array<{ id: string; name: string }>;
+}
+
+/**
+ * B5 — Alertas de prazo regulatório.
+ * Itens que requerem ação não-imediata mas com prazo conhecido.
+ * Diferente de PendenciasCriticas (problemas estruturais agora).
+ */
+export interface AlertasPrazo {
+  ripdsSemRevisaoLonga: Array<{
+    id: string;
+    title: string;
+    daysSinceUpdate: number;
+  }>;
+  politicasVencendo: Array<{
+    id: string;
+    title: string;
+    daysSincePublish: number;
+  }>;
+  capacitacoesPlanejadasAtrasadas: Array<{
+    id: string;
+    title: string;
+    eixo: string;
+    daysOverdue: number;
+  }>;
+  contratosOperadorVencendo: Array<{
+    id: string;
+    name: string;
+    daysToExpire: number;
+  }>;
+}
+
+/**
+ * B1 — Detalhamento da Capacitação por eixo + público.
+ * Compliance Art. 52 §1º VIII LGPD — programa contínuo de educação.
+ */
+export interface CapacitacaoDetalhada {
+  totalEventos: number;
+  realizados: number;
+  planejados: number;
+  cancelados: number;
+  porEixo: Record<string, { total: number; realizados: number }>;
+  porPublico: Record<string, number>;
+  proximosEventos: Array<{
+    id: string;
+    title: string;
+    eixo: string;
+    audience: string;
+    scheduledAt: string;
+  }>;
 }
 
 // ============================================================
@@ -213,11 +268,22 @@ export async function buildRelatorioExecutivo(
     }),
     prisma.policy.findMany({
       where: { companyId: args.companyId },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        publishedAt: true,
+        type: true,
+      },
     }),
     prisma.ripd.findMany({
       where: { companyId: args.companyId },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        title: true,
+        approvedAt: true,
+        updatedAt: true,
+      },
     }),
     prisma.lia.findMany({
       where: { companyId: args.companyId },
@@ -230,6 +296,7 @@ export async function buildRelatorioExecutivo(
         name: true,
         contractRiskClass: true,
         lgpdComplianceStatus: true,
+        contractExpiresAt: true,
       },
     }),
     prisma.incident.findMany({
@@ -245,7 +312,15 @@ export async function buildRelatorioExecutivo(
     }),
     prisma.capacitacaoEvento.findMany({
       where: { companyId: args.companyId },
-      select: { id: true, eixo: true },
+      select: {
+        id: true,
+        title: true,
+        eixo: true,
+        audience: true,
+        status: true,
+        scheduledAt: true,
+        completedAt: true,
+      },
     }),
     prisma.gapSnapshot.findMany({
       where: { companyId: args.companyId },
@@ -324,6 +399,17 @@ export async function buildRelatorioExecutivo(
     operators,
   });
 
+  // ---------- B5 — Alertas de prazo regulatório ----------
+  const alertasPrazo = buildAlertasPrazo({
+    ripds,
+    policies,
+    capacitacaoEvents,
+    operators,
+  });
+
+  // ---------- B1 — Capacitação detalhada ----------
+  const capacitacaoDetalhada = buildCapacitacaoDetalhada(capacitacaoEvents);
+
   // ---------- Histórico ----------
   // GapSnapshot tem `payload` JSON — extrai score.overall se houver
   const historico =
@@ -375,6 +461,8 @@ export async function buildRelatorioExecutivo(
     riscosByCode,
     proximasEtapas,
     pendencias,
+    alertasPrazo,
+    capacitacaoDetalhada,
     historico: historico && historico.snapshots.length > 0 ? historico : null,
     conclusao,
   };
@@ -786,4 +874,225 @@ function generateConclusionText(args: {
   );
 
   return partes.join("\n\n");
+}
+
+// ============================================================
+// B5 — Alertas de prazo regulatório
+// ============================================================
+
+interface AlertasInputs {
+  ripds: ReadonlyArray<{
+    id: string;
+    title: string;
+    status: string;
+    approvedAt: Date | null;
+    updatedAt: Date;
+  }>;
+  policies: ReadonlyArray<{
+    id: string;
+    status: string;
+    publishedAt: Date | null;
+    type: string;
+  }>;
+  capacitacaoEvents: ReadonlyArray<{
+    id: string;
+    title: string;
+    eixo: string;
+    status: string;
+    scheduledAt: Date | null;
+  }>;
+  operators: ReadonlyArray<{
+    id: string;
+    name: string;
+    contractExpiresAt: Date | null;
+  }>;
+}
+
+const POLICY_TYPE_LABEL: Record<string, string> = {
+  POLITICA_PRIVACIDADE_INTERNO: "Política Interna",
+  POLITICA_PRIVACIDADE_EXTERNO: "Aviso de Privacidade",
+  POLITICA_COOKIES: "Política de Cookies",
+  TERMO_USO: "Termo de Uso",
+  POLITICA_PGP: "Política do PGP",
+};
+
+function buildAlertasPrazo(d: AlertasInputs): AlertasPrazo {
+  const now = Date.now();
+  const ms_per_day = 86_400_000;
+
+  // RIPDs aprovados há > 90 dias sem update (sinaliza falta de revisão)
+  const ripdsSemRevisaoLonga = d.ripds
+    .filter((r) => r.status === "APROVADO")
+    .map((r) => {
+      const ref = r.updatedAt.getTime();
+      const days = Math.floor((now - ref) / ms_per_day);
+      return { id: r.id, title: r.title, daysSinceUpdate: days };
+    })
+    .filter((r) => r.daysSinceUpdate > 90)
+    .sort((a, b) => b.daysSinceUpdate - a.daysSinceUpdate)
+    .slice(0, 8);
+
+  // Políticas publicadas há > 365 dias (sugere revisão anual)
+  const politicasVencendo = d.policies
+    .filter((p) => p.status === "PUBLICADA" && p.publishedAt)
+    .map((p) => {
+      const days = Math.floor(
+        (now - (p.publishedAt as Date).getTime()) / ms_per_day,
+      );
+      return {
+        id: p.id,
+        title: POLICY_TYPE_LABEL[p.type] ?? p.type,
+        daysSincePublish: days,
+      };
+    })
+    .filter((p) => p.daysSincePublish > 365)
+    .sort((a, b) => b.daysSincePublish - a.daysSincePublish)
+    .slice(0, 5);
+
+  // Capacitações PLANEJADAS com scheduledAt no passado e ainda não realizadas
+  const capacitacoesPlanejadasAtrasadas = d.capacitacaoEvents
+    .filter(
+      (e) =>
+        e.status === "PLANEJADO" &&
+        e.scheduledAt &&
+        e.scheduledAt.getTime() < now,
+    )
+    .map((e) => {
+      const days = Math.floor(
+        (now - (e.scheduledAt as Date).getTime()) / ms_per_day,
+      );
+      return {
+        id: e.id,
+        title: e.title,
+        eixo: e.eixo,
+        daysOverdue: days,
+      };
+    })
+    .sort((a, b) => b.daysOverdue - a.daysOverdue)
+    .slice(0, 8);
+
+  // Contratos de Operadores expirando nos próximos 90 dias
+  const contratosOperadorVencendo = d.operators
+    .filter((o) => o.contractExpiresAt)
+    .map((o) => {
+      const days = Math.floor(
+        ((o.contractExpiresAt as Date).getTime() - now) / ms_per_day,
+      );
+      return { id: o.id, name: o.name, daysToExpire: days };
+    })
+    .filter((o) => o.daysToExpire >= 0 && o.daysToExpire <= 90)
+    .sort((a, b) => a.daysToExpire - b.daysToExpire)
+    .slice(0, 8);
+
+  return {
+    ripdsSemRevisaoLonga,
+    politicasVencendo,
+    capacitacoesPlanejadasAtrasadas,
+    contratosOperadorVencendo,
+  };
+}
+
+// ============================================================
+// B1 — Capacitação detalhada
+// ============================================================
+
+const EIXO_LABELS: Record<string, string> = {
+  ONBOARDING: "Onboarding",
+  PILULAS: "Pílulas",
+  PRATICA: "Prática",
+  DEPARTAMENTAL: "Departamental",
+  MONITORAMENTO: "Monitoramento",
+};
+
+function buildCapacitacaoDetalhada(
+  events: ReadonlyArray<{
+    id: string;
+    title: string;
+    eixo: string;
+    audience: string;
+    status: string;
+    scheduledAt: Date | null;
+    completedAt: Date | null;
+  }>,
+): CapacitacaoDetalhada {
+  const total = events.length;
+  const realizados = events.filter((e) => e.status === "REALIZADO").length;
+  const planejados = events.filter((e) => e.status === "PLANEJADO").length;
+  const cancelados = events.filter((e) => e.status === "CANCELADO").length;
+
+  // Por eixo
+  const porEixo: Record<string, { total: number; realizados: number }> = {};
+  for (const eixo of Object.keys(EIXO_LABELS)) {
+    porEixo[eixo] = { total: 0, realizados: 0 };
+  }
+  for (const e of events) {
+    if (!porEixo[e.eixo]) {
+      porEixo[e.eixo] = { total: 0, realizados: 0 };
+    }
+    porEixo[e.eixo].total += 1;
+    if (e.status === "REALIZADO") porEixo[e.eixo].realizados += 1;
+  }
+
+  // Por público (count)
+  const porPublico: Record<string, number> = {};
+  for (const e of events) {
+    porPublico[e.audience] = (porPublico[e.audience] ?? 0) + 1;
+  }
+
+  // Próximos 90 dias — eventos planejados com scheduledAt futuro
+  const now = Date.now();
+  const horizon = now + 90 * 86_400_000;
+  const proximosEventos = events
+    .filter(
+      (e) =>
+        e.status === "PLANEJADO" &&
+        e.scheduledAt &&
+        e.scheduledAt.getTime() >= now &&
+        e.scheduledAt.getTime() <= horizon,
+    )
+    .sort((a, b) => {
+      const aT = a.scheduledAt?.getTime() ?? 0;
+      const bT = b.scheduledAt?.getTime() ?? 0;
+      return aT - bT;
+    })
+    .slice(0, 8)
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      eixo: e.eixo,
+      audience: e.audience,
+      scheduledAt: (e.scheduledAt as Date).toISOString(),
+    }));
+
+  return {
+    totalEventos: total,
+    realizados,
+    planejados,
+    cancelados,
+    porEixo,
+    porPublico,
+    proximosEventos,
+  };
+}
+
+// ============================================================
+// Helpers públicos pra UI usar (labels)
+// ============================================================
+
+export function eixoLabel(eixo: string): string {
+  return EIXO_LABELS[eixo] ?? eixo;
+}
+
+const AUDIENCE_LABELS: Record<string, string> = {
+  GERAL: "Geral",
+  RH_MARKETING: "RH/Marketing",
+  TI_SEGURANCA: "TI/Segurança",
+  EXTERNOS: "Externos",
+  DIRETORIA: "Diretoria",
+  ATENDIMENTO: "Atendimento",
+  NOVOS_COLABORADORES: "Novos colaboradores",
+};
+
+export function audienceLabel(audience: string): string {
+  return AUDIENCE_LABELS[audience] ?? audience;
 }
