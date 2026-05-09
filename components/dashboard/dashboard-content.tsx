@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import {
   FileText,
@@ -13,7 +12,6 @@ import {
   Users,
   Calendar,
   TrendingUp,
-  Download,
   Plus,
   ClipboardList,
   ArrowRight,
@@ -22,6 +20,7 @@ import { isDPO } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import ProximasEtapasCard from "@/components/dashboard/proximas-etapas-card";
+import TourHeaderButton from "@/components/tour/tour-header-button";
 
 interface DashboardContentProps {
   session: any;
@@ -153,14 +152,11 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => alert('Função de relatório será implementada em breve')}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Relatório
-            </Button>
+            {/* Botão do tour integrado no header (Sugestão C, 2026-05-10).
+                Substituiu o stub 'Relatório' que mostrava apenas alert().
+                O TourFloatingButton continua nas outras telas — escondido
+                aqui pra evitar duplicação. */}
+            <TourHeaderButton />
           </div>
         </div>
 
