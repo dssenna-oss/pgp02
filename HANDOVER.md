@@ -1,10 +1,10 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-11 (3 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**, **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados** e **#15 Fatia b — pré-preencher Inventário por Carta de Serviços via Firecrawl + Gemini**) · **Branch:** `claude/silly-ride-84a823` (worktree)
+> **Última sessão:** 2026-05-11 (4 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**, **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados**, **#15 Fatia b — pré-preencher Inventário por Carta de Serviços via Firecrawl + Gemini**, **#16 ícone Compass na entry-screen**) · **Branch:** `claude/silly-ride-84a823` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `eb42376` (merge PR #15). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário com 3 caminhos ativos (Modelos / Carta de Serviços / Manual).
+> **Em prod (`origin/main`)**: tudo até `2203f6a` (merge PR #16). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário com 3 caminhos ativos (Modelos / Carta de Serviços / Manual) com header iconizado.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#15 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#16 mergeados.
 >
 > **🔑 FIRECRAWL_API_KEY adicionada no Vercel** em 2026-05-11 (Production + Preview, Sensitive). Falta replicar em Development pra testes locais.
 >
