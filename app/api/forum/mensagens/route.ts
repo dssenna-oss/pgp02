@@ -114,7 +114,13 @@ export async function POST(req: NextRequest) {
   // Destinatário precisa ser da mesma organização
   const recipient = await prisma.user.findFirst({
     where: { id: recipientId, companyId: user.companyId! },
-    select: { id: true, name: true, email: true, role: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      emailNotifyDm: true,
+    },
   });
   if (!recipient) {
     return NextResponse.json(
@@ -147,18 +153,22 @@ export async function POST(req: NextRequest) {
 
   // Notifica destinatário por email (fire-and-forget — não bloqueia
   // a resposta da API se Brevo demorar/falhar). Setup 2026-05-10.
-  sendEmailAsync({
-    to: { email: recipient.email, name: recipient.name ?? undefined },
-    tag: "forum-dm",
-    ...tplForumDm({
-      recipientName: recipient.name,
-      recipientEmail: recipient.email,
-      authorName: message.author.name ?? message.author.email,
-      postTitle: title,
-      postContentPreview: content,
-      postId: message.id,
-    }),
-  });
+  // Respeita preferência User.emailNotifyDm (Etapa 26 — opt-out
+  // possível pra users que não querem ser notificados).
+  if (recipient.emailNotifyDm) {
+    sendEmailAsync({
+      to: { email: recipient.email, name: recipient.name ?? undefined },
+      tag: "forum-dm",
+      ...tplForumDm({
+        recipientName: recipient.name,
+        recipientEmail: recipient.email,
+        authorName: message.author.name ?? message.author.email,
+        postTitle: title,
+        postContentPreview: content,
+        postId: message.id,
+      }),
+    });
+  }
 
   return NextResponse.json({ message }, { status: 201 });
 }

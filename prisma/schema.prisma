@@ -57,6 +57,17 @@ model User {
   // entre os 2 logins. Atualiza junto com lastLoginAt: o valor antigo de
   // lastLoginAt vira o novo previousLoginAt antes de gravar o NOW().
   previousLoginAt   DateTime?
+
+  // ----- Preferências de notificação por email (Etapa 26 — 2026-05-10) -----
+  /// Receber email quando alguém envia DM no Fórum. Default: true
+  /// (a maioria quer saber de mensagem direta).
+  emailNotifyDm     Boolean   @default(true)
+  /// Receber email quando o DPO publica Comunicado oficial. Default: true.
+  emailNotifyAnnouncements Boolean @default(true)
+  /// Receber digest diário de Tarefas vencendo (cron 9h). Default: false
+  /// (opt-in — pode ser barulhento).
+  emailNotifyTaskDue Boolean  @default(false)
+
   // Coisas que o user editou recentemente — usado pelo card "Continue de
   // onde parou". Capturado server-side em rotas PATCH/POST de cada
   // entidade (Inventário, RIPD, Política, LIA, Incidente, Plano).

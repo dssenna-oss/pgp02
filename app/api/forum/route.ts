@@ -207,6 +207,7 @@ export async function POST(req: NextRequest) {
       where: {
         companyId: user.companyId!,
         id: { not: user.id }, // não notifica o próprio autor
+        emailNotifyAnnouncements: true, // Etapa 26 — respeita opt-out
       },
       select: { email: true, name: true },
     });
