@@ -408,6 +408,61 @@ export function formatRiskTitle(code: string | null | undefined): string {
 }
 
 // ============================================================
+// Agrupamento por categoria — pra UI de Análise de Riscos exibir
+// os 13 tipos em 3 grupos lógicos com barra de progresso por área.
+// Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
+// ============================================================
+
+export type RiskCategory = "TRATAMENTO" | "COMPARTILHAMENTO" | "DIREITOS";
+
+export const RISK_CATEGORY_LABEL: Record<RiskCategory, string> = {
+  TRATAMENTO: "Tratamento de Dados",
+  COMPARTILHAMENTO: "Compartilhamento e Transferências",
+  DIREITOS: "Decisões Automatizadas e Direitos do Titular",
+};
+
+export const RISK_CATEGORY_DESCRIPTION: Record<RiskCategory, string> = {
+  TRATAMENTO:
+    "Princípios da LGPD aplicados ao processamento: base legal, minimização, transparência, finalidade, retenção e formas de coleta (Arts. 6º, 7º, 11, 14, 15)",
+  COMPARTILHAMENTO:
+    "Riscos de quando os dados saem do controlador: transferência internacional, operadores terceiros, empresas do grupo (Arts. 26-33)",
+  DIREITOS:
+    "Riscos relacionados a decisões automatizadas, profiling e direitos do titular (Art. 20)",
+};
+
+/** Mapa código → categoria. Cobre os 13 riscos BR..CD do catálogo. */
+export const RISK_CATEGORY_BY_CODE: Record<RiskCode, RiskCategory> = {
+  // Tratamento (7) — bases legais + princípios + coleta
+  BR: "TRATAMENTO", // Ausência de legitimação
+  BS: "TRATAMENTO", // Crianças/Adolescentes
+  BT: "TRATAMENTO", // Tratamento excessivo
+  BU: "TRATAMENTO", // Falta de transparência
+  BX: "TRATAMENTO", // Armazenagem indeterminada
+  BY: "TRATAMENTO", // Finalidade diversa
+  CA: "TRATAMENTO", // Aquisição indireta
+  // Compartilhamento (3)
+  BV: "COMPARTILHAMENTO", // Transferência internacional
+  BW: "COMPARTILHAMENTO", // Compartilhamento com terceiro
+  BZ: "COMPARTILHAMENTO", // Compartilhamento empresas do grupo
+  // Decisões automatizadas + Direitos (3)
+  CB: "DIREITOS", // Decisão automatizada
+  CC: "DIREITOS", // Profiling
+  CD: "DIREITOS", // Background check
+};
+
+/** Ordem de exibição das categorias na UI. */
+export const RISK_CATEGORIES_ORDERED: RiskCategory[] = [
+  "TRATAMENTO",
+  "COMPARTILHAMENTO",
+  "DIREITOS",
+];
+
+/** Helper: retorna riscos de uma categoria. */
+export function riscosByCategory(cat: RiskCategory): RiskDefinition[] {
+  return RISCOS_CATALOG.filter((r) => RISK_CATEGORY_BY_CODE[r.code] === cat);
+}
+
+// ============================================================
 // Lifecycle / status helpers
 // ============================================================
 

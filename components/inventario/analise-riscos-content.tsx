@@ -38,9 +38,15 @@ import {
   RISK_STATUS,
   riskStatusLabel,
   riskStatusColor,
+  RISK_CATEGORIES_ORDERED,
+  RISK_CATEGORY_LABEL,
+  RISK_CATEGORY_DESCRIPTION,
+  RISK_CATEGORY_BY_CODE,
+  riscosByCategory,
   type RiskCode,
   type RiskStatus,
   type RiskSuggestion,
+  type RiskCategory,
 } from "@/lib/riscos-catalog";
 import { cn } from "@/lib/utils";
 
@@ -409,26 +415,46 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
         </div>
       )}
 
-      {/* Lista de 13 riscos */}
-      <div className="space-y-3">
-        {RISCOS_CATALOG.map((def) => {
-          const st = state[def.code];
-          if (!st) return null;
-          const suggestion = data.suggestions[def.code];
+      {/* Lista dos 13 riscos agrupados em 3 categorias com progresso por área.
+          Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
+          Categorias em lib/riscos-catalog.ts (TRATAMENTO 7, COMPARTILHAMENTO 3, DIREITOS 3). */}
+      <div className="space-y-6">
+        {RISK_CATEGORIES_ORDERED.map((cat) => {
+          const risksInCat = riscosByCategory(cat);
+          const markedCount = risksInCat.filter(
+            (def) => state[def.code]?.marked,
+          ).length;
+          const total = risksInCat.length;
+          const pct = total > 0 ? Math.round((markedCount / total) * 100) : 0;
           return (
-            <RiskRow
-              key={def.code}
-              code={def.code}
-              invId={id}
-              marked={st.marked}
-              description={st.description}
-              status={st.status}
-              autoSuggested={st.autoSuggested}
-              suggestion={suggestion}
-              onToggle={(v) => setRiskMarked(def.code, v)}
-              onDescription={(v) => setRiskDescription(def.code, v)}
-              onStatus={(v) => setRiskStatus(def.code, v)}
-            />
+            <RiskCategoryGroup
+              key={cat}
+              category={cat}
+              markedCount={markedCount}
+              total={total}
+              pct={pct}
+            >
+              {risksInCat.map((def) => {
+                const st = state[def.code];
+                if (!st) return null;
+                const suggestion = data.suggestions[def.code];
+                return (
+                  <RiskRow
+                    key={def.code}
+                    code={def.code}
+                    invId={id}
+                    marked={st.marked}
+                    description={st.description}
+                    status={st.status}
+                    autoSuggested={st.autoSuggested}
+                    suggestion={suggestion}
+                    onToggle={(v) => setRiskMarked(def.code, v)}
+                    onDescription={(v) => setRiskDescription(def.code, v)}
+                    onStatus={(v) => setRiskStatus(def.code, v)}
+                  />
+                );
+              })}
+            </RiskCategoryGroup>
           );
         })}
       </div>
@@ -697,5 +723,90 @@ function RiskRow({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Wrapper de uma categoria de riscos (Tratamento / Compartilhamento /
+ * Direitos). Mostra header com nome + descrição + progresso (X/Y) +
+ * barra de progresso visual; em seguida renderiza os RiskRow filhos.
+ */
+function RiskCategoryGroup({
+  category,
+  markedCount,
+  total,
+  pct,
+  children,
+}: {
+  category: RiskCategory;
+  markedCount: number;
+  total: number;
+  pct: number;
+  children: React.ReactNode;
+}) {
+  // Cor temática por categoria — visual leve, não muito barulhento
+  const styles: Record<RiskCategory, { dot: string; bar: string; bg: string }> = {
+    TRATAMENTO: {
+      dot: "bg-blue-500",
+      bar: "bg-blue-500",
+      bg: "bg-blue-50/50 dark:bg-blue-950/20",
+    },
+    COMPARTILHAMENTO: {
+      dot: "bg-violet-500",
+      bar: "bg-violet-500",
+      bg: "bg-violet-50/50 dark:bg-violet-950/20",
+    },
+    DIREITOS: {
+      dot: "bg-amber-500",
+      bar: "bg-amber-500",
+      bg: "bg-amber-50/50 dark:bg-amber-950/20",
+    },
+  };
+  const s = styles[category];
+
+  return (
+    <section>
+      <div
+        className={cn(
+          "rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 mb-3",
+          s.bg,
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              className={cn("h-2.5 w-2.5 rounded-full flex-shrink-0", s.dot)}
+              aria-hidden
+            />
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+              {RISK_CATEGORY_LABEL[category]}
+            </h3>
+          </div>
+          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-shrink-0 tabular-nums">
+            {markedCount}{" "}
+            <span className="text-gray-400 dark:text-gray-500">/</span> {total}{" "}
+            marcados
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
+          {RISK_CATEGORY_DESCRIPTION[category]}
+        </p>
+        {/* Barra de progresso */}
+        <div
+          className="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${markedCount} de ${total} riscos marcados em ${RISK_CATEGORY_LABEL[category]}`}
+        >
+          <div
+            className={cn("h-full transition-all duration-300", s.bar)}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      <div className="space-y-3">{children}</div>
+    </section>
   );
 }
