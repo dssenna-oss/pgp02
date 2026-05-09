@@ -20,6 +20,7 @@ import {
   RISCOS_BY_CODE,
   type RiskCode,
 } from "@/lib/riscos-catalog";
+import RiskRadarChart from "./risk-radar-chart";
 
 interface VisaoStats {
   totalRisks: number;
@@ -72,6 +73,14 @@ export default function RiscosVisaoContent({ stats }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* Mapa radar dos 13 tipos de risco — vista panorâmica.
+          Decisão UX 2026-05-09 (cardápio W1+X1+Y1+Z1): radar único agregado
+          no topo da página, valor = contagem de processos por tipo. */}
+      <RiskRadarChart
+        bySeverityByCode={stats.bySeverityByCode}
+        totalRisks={stats.totalRisks}
+      />
+
       {/* Severidade agregada */}
       <Card>
         <CardContent className="p-5 space-y-4">
