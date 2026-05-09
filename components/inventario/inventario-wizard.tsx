@@ -55,6 +55,9 @@ import { MiniAppsMap } from "./mini-apps-map";
 import { CompletionDialog } from "./completion-dialog";
 import InventarioEntryScreen from "./inventario-entry-screen";
 import TemplatePicker from "./template-picker";
+import CartaServicosPicker, {
+  type AiPrefillSummary,
+} from "./carta-servicos-picker";
 
 interface InventarioWizardProps {
   userName: string;
@@ -97,6 +100,8 @@ export default function InventarioWizard({
   );
   /** Estado do dialog de seleção de modelo. */
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
+  /** Estado do dialog de pré-preencher por Carta de Serviços (Fatia b). */
+  const [cartaPickerOpen, setCartaPickerOpen] = useState(false);
   /** ID do template aplicado (pra exibir no header + permitir trocar). */
   const [appliedTemplateId, setAppliedTemplateId] = useState<string | null>(
     () => {
@@ -139,6 +144,30 @@ export default function InventarioWizard({
     setStepIndex(1);
     toast.success(`Modelo "${template.nome}" aplicado. Revise os campos.`);
   }, []);
+
+  /**
+   * Aplica o resultado do AI Prefill (Fatia b — Carta de Serviços).
+   * `next` já vem mesclado server-side com provenance preenchido.
+   * Avança pra primeira seção do form se estávamos na entrada.
+   */
+  const handleApplyAiPrefill = useCallback(
+    (next: FormAnswers, summary: AiPrefillSummary) => {
+      setAnswers(next);
+      if (entryMode === "entry") {
+        setEntryMode("wizard");
+        setStepIndex(1); // pula onboarding pra ir pro sec1 com info contextual
+      }
+      const n = summary.applied.length;
+      if (n > 0) {
+        toast.success(
+          `${n} campo${n === 1 ? "" : "s"} pré-preenchido${n === 1 ? "" : "s"} por IA. Revise e ajuste.`,
+        );
+      } else {
+        toast.info("Nenhum campo novo foi preenchido.");
+      }
+    },
+    [entryMode],
+  );
 
   /**
    * Reseta a escolha — volta pra tela inicial. Não apaga dados, só
@@ -400,6 +429,8 @@ export default function InventarioWizard({
           onChoose={(choice) => {
             if (choice === "templates") {
               setTemplatePickerOpen(true);
+            } else if (choice === "carta") {
+              setCartaPickerOpen(true);
             } else if (choice === "manual") {
               setEntryMode("wizard");
             }
@@ -409,6 +440,12 @@ export default function InventarioWizard({
           open={templatePickerOpen}
           onOpenChange={setTemplatePickerOpen}
           onPick={handlePickTemplate}
+        />
+        <CartaServicosPicker
+          open={cartaPickerOpen}
+          onOpenChange={setCartaPickerOpen}
+          currentAnswers={answers}
+          onApply={handleApplyAiPrefill}
         />
       </>
     );
@@ -455,9 +492,20 @@ export default function InventarioWizard({
             )}
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleCancel}>
-          <X className="h-4 w-4 mr-1" /> Sair
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCartaPickerOpen(true)}
+            title="Cole URL pública (carta de serviços, ato normativo) — IA preenche os campos vazios."
+          >
+            <Sparkles className="h-4 w-4 mr-1.5 text-violet-600" />
+            Pré-preencher por URL
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleCancel}>
+            <X className="h-4 w-4 mr-1" /> Sair
+          </Button>
+        </div>
       </div>
 
       {/* Progresso */}
@@ -588,6 +636,15 @@ export default function InventarioWizard({
         open={templatePickerOpen}
         onOpenChange={setTemplatePickerOpen}
         onPick={handlePickTemplate}
+      />
+
+      {/* Carta de Serviços — Modelo 2 combinável: pode ser disparado
+          a qualquer momento durante o wizard pra enriquecer campos vazios. */}
+      <CartaServicosPicker
+        open={cartaPickerOpen}
+        onOpenChange={setCartaPickerOpen}
+        currentAnswers={answers}
+        onApply={handleApplyAiPrefill}
       />
     </div>
   );
