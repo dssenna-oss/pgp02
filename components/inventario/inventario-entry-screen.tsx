@@ -5,7 +5,8 @@
  *
  * Apresenta 3 caminhos pra começar o preenchimento:
  *   (a) Modelos Padronizados — abre o TemplatePicker
- *   (b) Pré-preencher por Carta de Serviços — placeholder ("Em breve" — Fatia b)
+ *   (b) Pré-preencher por Carta de Serviços — abre o CartaServicosPicker
+ *       (Fatia b implementada em 2026-05-11)
  *   (c) Preenchimento Manual — segue direto pro wizard atual
  *
  * Aparece SÓ quando o user está criando um inventário novo (sem
@@ -25,7 +26,7 @@ import {
 } from "lucide-react";
 import { INVENTARIO_TEMPLATES } from "@/lib/inventario-templates-publicos";
 
-export type EntryChoice = "templates" | "manual";
+export type EntryChoice = "templates" | "carta" | "manual";
 
 interface InventarioEntryScreenProps {
   /**
@@ -86,16 +87,23 @@ export default function InventarioEntryScreen({
           </Card>
         </button>
 
-        {/* (b) Pré-preencher por Carta de Serviços — em breve */}
-        <div className="text-left">
-          <Card className="h-full opacity-70 cursor-not-allowed">
+        {/* (b) Pré-preencher por Carta de Serviços */}
+        <button
+          type="button"
+          onClick={() => onChoose("carta")}
+          className="text-left group focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 rounded-lg"
+        >
+          <Card className="h-full transition-all hover:border-violet-400 hover:shadow-md">
             <CardContent className="p-5 space-y-3">
               <div className="flex items-start justify-between">
                 <div className="rounded-lg bg-violet-100 dark:bg-violet-900/30 p-2.5">
                   <Globe2 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
                 </div>
-                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-800 border-amber-300">
-                  Em breve
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-violet-50 text-violet-800 border-violet-300"
+                >
+                  IA
                 </Badge>
               </div>
               <div className="space-y-1.5">
@@ -103,18 +111,19 @@ export default function InventarioEntryScreen({
                   Pré-preencher por Carta de Serviços
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 leading-snug">
-                  Cole a URL da carta de serviços, página do serviço ou ato
-                  normativo. O sistema lê e pré-preenche os campos extraíveis
-                  do conteúdo público.
+                  Cole até 5 URLs (carta de serviços, página do serviço, ato
+                  normativo). O sistema lê e pré-preenche os campos
+                  extraíveis do conteúdo público.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t border-gray-100 dark:border-gray-800">
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>Disponível na próxima fatia</span>
+                <span>Cobre ~30-40% dos campos</span>
+                <ArrowRight className="h-3.5 w-3.5 ml-auto group-hover:translate-x-0.5 transition-transform" />
               </div>
             </CardContent>
           </Card>
-        </div>
+        </button>
 
         {/* (c) Preenchimento Manual */}
         <button

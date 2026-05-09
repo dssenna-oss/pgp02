@@ -129,6 +129,7 @@ function FieldAccordionItem({
   provenance?: string;
 }) {
   const fromTemplate = provenance?.startsWith("template:") ?? false;
+  const fromAi = provenance?.startsWith("firecrawl:") ?? false;
   const filled = Array.isArray(value)
     ? value.length > 0
     : !!value?.toString().trim();
@@ -167,6 +168,14 @@ function FieldAccordionItem({
                 title="Pré-preenchido por um modelo padronizado. Você pode editar livremente."
               >
                 📋 Modelo
+              </span>
+            )}
+            {fromAi && (
+              <span
+                className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 align-middle"
+                title="Pré-preenchido por IA a partir de URL pública. Revise antes de finalizar."
+              >
+                🤖 IA
               </span>
             )}
           </span>
