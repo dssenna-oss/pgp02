@@ -257,6 +257,139 @@ export function tplForumAnnouncement(
 }
 
 // ============================================================
+// 3. Digest diário de Tarefas vencendo (cron 9h)
+// ============================================================
+
+export interface TaskDueArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  /** Tarefas que vencem HOJE. */
+  dueToday: Array<{ id: string; title: string; priority: string }>;
+  /** Tarefas que vencem AMANHÃ. */
+  dueTomorrow: Array<{ id: string; title: string; priority: string }>;
+  /** Tarefas JÁ VENCIDAS (atrasadas). */
+  overdue: Array<{ id: string; title: string; priority: string; daysOverdue: number }>;
+}
+
+export function tplTaskDueDigest(args: TaskDueArgs): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "")
+    .split(" ")[0]
+    .trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const totalToday = args.dueToday.length;
+  const totalTomorrow = args.dueTomorrow.length;
+  const totalOverdue = args.overdue.length;
+
+  // Decide o tom do assunto
+  let subject: string;
+  if (totalOverdue > 0) {
+    subject = `🔴 Você tem ${totalOverdue} tarefa(s) atrasada(s) — confira o resumo`;
+  } else if (totalToday > 0) {
+    subject = `📌 Você tem ${totalToday} tarefa(s) vencendo hoje`;
+  } else {
+    subject = `📅 Tarefas vencendo amanhã (${totalTomorrow})`;
+  }
+
+  const renderTaskList = (
+    list: Array<{ title: string; priority: string; daysOverdue?: number }>,
+    color: string,
+  ) =>
+    list
+      .map((t) => {
+        const prioBadge =
+          t.priority === "ALTA"
+            ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">ALTA</span>`
+            : t.priority === "MEDIA"
+              ? `<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">MÉDIA</span>`
+              : "";
+        const overdueLabel =
+          t.daysOverdue !== undefined && t.daysOverdue > 0
+            ? `<span style="color:#dc2626;font-size:11px;margin-left:8px;">há ${t.daysOverdue}d</span>`
+            : "";
+        return `<li style="margin-bottom:6px;color:${color};">${escapeHtml(t.title)}${prioBadge}${overdueLabel}</li>`;
+      })
+      .join("");
+
+  const sections: string[] = [];
+
+  if (totalOverdue > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#991b1b;">🔴 Atrasadas (${totalOverdue})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${renderTaskList(args.overdue, "#1f2937")}</ul>
+      </div>
+    `);
+  }
+
+  if (totalToday > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#92400e;">📌 Vence hoje (${totalToday})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${renderTaskList(args.dueToday, "#1f2937")}</ul>
+      </div>
+    `);
+  }
+
+  if (totalTomorrow > 0) {
+    sections.push(`
+      <div style="margin-bottom:16px;padding:12px 14px;background:#dbeafe;border-left:4px solid #3b82f6;border-radius:4px;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#1e40af;">📅 Vence amanhã (${totalTomorrow})</h3>
+        <ul style="margin:0;padding-left:20px;font-size:13px;">${renderTaskList(args.dueTomorrow, "#1f2937")}</ul>
+      </div>
+    `);
+  }
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">
+      Resumo das suas tarefas pessoais com prazos próximos no Sistema PGP:
+    </p>
+    ${sections.join("")}
+    <p style="margin: 16px 0 4px 0; font-size: 13px; color: #6b7280;">
+      Acesse o Sistema PGP para atualizar status, adicionar marcadores ou criar novas tarefas.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${totalOverdue > 0 ? totalOverdue + " atrasada(s) · " : ""}${totalToday} hoje · ${totalTomorrow} amanhã`,
+    bodyHtml,
+    ctaText: "Abrir minhas tarefas",
+    ctaHref: `${PROD_URL}/dashboard/tarefas`,
+  });
+
+  // Versão texto plain
+  const textParts: string[] = [`${greeting},`, ""];
+  textParts.push("Resumo das suas tarefas pessoais com prazos próximos:");
+  textParts.push("");
+  if (totalOverdue > 0) {
+    textParts.push(`🔴 ATRASADAS (${totalOverdue}):`);
+    args.overdue.forEach((t) =>
+      textParts.push(`  - ${t.title} [${t.priority}] (${t.daysOverdue}d atrasada)`),
+    );
+    textParts.push("");
+  }
+  if (totalToday > 0) {
+    textParts.push(`📌 VENCE HOJE (${totalToday}):`);
+    args.dueToday.forEach((t) => textParts.push(`  - ${t.title} [${t.priority}]`));
+    textParts.push("");
+  }
+  if (totalTomorrow > 0) {
+    textParts.push(`📅 VENCE AMANHÃ (${totalTomorrow}):`);
+    args.dueTomorrow.forEach((t) =>
+      textParts.push(`  - ${t.title} [${t.priority}]`),
+    );
+    textParts.push("");
+  }
+  textParts.push(`Acesse: ${PROD_URL}/dashboard/tarefas`);
+  textParts.push("");
+  textParts.push("—");
+  textParts.push("Sistema PGP - Programa de Governança em Privacidade");
+
+  return { subject, html, text: textParts.join("\n") };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 
