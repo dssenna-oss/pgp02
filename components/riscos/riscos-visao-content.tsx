@@ -39,8 +39,17 @@ interface VisaoStats {
   }>;
 }
 
+interface RadarItem {
+  id: string;
+  serviceName: string;
+  setor: string | null;
+  codes: string[];
+  totalRisks: number;
+}
+
 interface Props {
   stats: VisaoStats;
+  items: RadarItem[];
 }
 
 /**
@@ -52,7 +61,7 @@ interface Props {
  *   - Top 5 críticos (severidade ALTO + status IDENTIFICADO, ordenados pelo
  *     mais antigo = parado há mais tempo)
  */
-export default function RiscosVisaoContent({ stats }: Props) {
+export default function RiscosVisaoContent({ stats, items }: Props) {
   if (stats.totalRisks === 0) {
     return (
       <Card className="border-dashed">
@@ -74,12 +83,11 @@ export default function RiscosVisaoContent({ stats }: Props) {
   return (
     <div className="space-y-6">
       {/* Mapa radar dos 13 tipos de risco — vista panorâmica.
-          Decisão UX 2026-05-09 (cardápio W1+X1+Y1+Z1): radar único agregado
-          no topo da página, valor = contagem de processos por tipo. */}
-      <RiskRadarChart
-        bySeverityByCode={stats.bySeverityByCode}
-        totalRisks={stats.totalRisks}
-      />
+          Decisão UX 2026-05-09:
+            - W1+X1+Y1+Z1: radar único agregado no topo
+            - B+1+B+3: filtro setor (chips multi-select) + modo
+              comparação multi-radar com cada processo como camada */}
+      <RiskRadarChart items={items} totalRisks={stats.totalRisks} />
 
       {/* Severidade agregada */}
       <Card>
