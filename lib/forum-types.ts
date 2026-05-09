@@ -58,6 +58,8 @@ export interface ForumPostDTO {
   replyCount: number;
   /** Apenas em GET por ID — array completa. */
   replies?: ForumReplyDTO[];
+  /** Reações agregadas (1 entrada por emoji com count + meReacted). */
+  reactions?: ReactionCount[];
 }
 
 export interface ForumStats {
@@ -144,3 +146,68 @@ export const VALID_FORUM_TYPES: ReadonlySet<string> = new Set(
 export const VALID_FORUM_CATEGORIES: ReadonlySet<string> = new Set(
   Object.values(FORUM_CATEGORY)
 );
+
+// ============================================================
+// Reações (Etapa 25 — 2026-05-09)
+// ============================================================
+
+/**
+ * Emojis permitidos pra reações em posts. Lista fixa pra evitar
+ * conteúdo arbitrário no banco.
+ */
+export const FORUM_REACTION_EMOJIS = [
+  "👍", // joinha — concordo / boa ideia
+  "❤️", // coração — apoio / gostei muito
+  "🎯", // alvo — esse é o ponto / certeiro
+  "🤔", // pensativo — dúvida / preciso refletir
+  "🎉", // festa — celebração / conquista
+] as const;
+
+export type ForumReactionEmoji = (typeof FORUM_REACTION_EMOJIS)[number];
+
+export const VALID_REACTION_EMOJIS: ReadonlySet<string> = new Set(
+  FORUM_REACTION_EMOJIS,
+);
+
+/**
+ * DTO de uma reação agregada (total + se o user logado reagiu).
+ * 1 reação por (post, user) — clicar em outro emoji substitui o
+ * anterior; clicar no mesmo emoji que já reagiu remove.
+ */
+export interface ReactionCount {
+  emoji: ForumReactionEmoji;
+  count: number;
+  /** True se o user logado é um dos que reagiram com esse emoji. */
+  meReacted: boolean;
+}
+
+/**
+ * Agrega array bruto de reações em counts por emoji + flag meReacted.
+ * Usado nos endpoints GET /api/forum (list) e GET /api/forum/[id]
+ * (detail) — ambos retornam ReactionCount[] no DTO.
+ *
+ * Garante que apenas emojis da lista permitida apareçam na saída
+ * (defesa contra dados antigos ou injeção via SQL externa).
+ */
+export function aggregateReactions(
+  rows: Array<{ emoji: string; userId: string }>,
+  meId: string,
+): ReactionCount[] {
+  const map = new Map<string, { count: number; meReacted: boolean }>();
+  for (const r of rows) {
+    if (!VALID_REACTION_EMOJIS.has(r.emoji)) continue;
+    const cur = map.get(r.emoji) ?? { count: 0, meReacted: false };
+    cur.count += 1;
+    if (r.userId === meId) cur.meReacted = true;
+    map.set(r.emoji, cur);
+  }
+  // Mantém a ordem de FORUM_REACTION_EMOJIS (que é canonical)
+  const out: ReactionCount[] = [];
+  for (const e of FORUM_REACTION_EMOJIS) {
+    const v = map.get(e);
+    if (v && v.count > 0) {
+      out.push({ emoji: e, count: v.count, meReacted: v.meReacted });
+    }
+  }
+  return out;
+}

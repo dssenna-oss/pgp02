@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -43,6 +42,17 @@ import {
 import TaskCard from "./task-card";
 import TaskFormDialog from "./task-form-dialog";
 import MarkersManager from "./markers-manager";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
 
 interface ProcessOption {
   id: string;
@@ -153,7 +163,13 @@ export default function TarefasContent({ session: _session }: { session: any }) 
   }, [filtered]);
 
   // Mutações
+  // Otimista: atualiza state imediatamente (boa UX no drag-drop), reverte
+  // se a API falhar. Após sucesso, refresh() pega contadores reais.
   const handleStatusChange = async (id: string, status: TaskStatus) => {
+    const prev = tasks;
+    const target = prev.find((t) => t.id === id);
+    if (!target || target.status === status) return;
+    setTasks(prev.map((t) => (t.id === id ? { ...t, status } : t)));
     try {
       const r = await fetch(`/api/tarefas/${id}`, {
         method: "PATCH",
@@ -161,14 +177,42 @@ export default function TarefasContent({ session: _session }: { session: any }) 
         body: JSON.stringify({ status }),
       });
       if (!r.ok) {
+        setTasks(prev);
         const j = await r.json().catch(() => ({}));
         toast.error(j.error ?? "Erro ao atualizar");
         return;
       }
       await refresh();
     } catch {
+      setTasks(prev);
       toast.error("Erro de rede");
     }
+  };
+
+  // Drag-drop Kanban (C1, 2026-05-09): cards arrastáveis entre colunas.
+  // Sensor com activationConstraint distance:6 — clicks rápidos não disparam
+  // drag, garantindo que botões dentro do card continuem clicáveis.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const draggingTask = useMemo(
+    () => (draggingId ? tasks.find((t) => t.id === draggingId) ?? null : null),
+    [draggingId, tasks],
+  );
+  const handleDragStart = (event: DragStartEvent) => {
+    setDraggingId(String(event.active.id));
+  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    setDraggingId(null);
+    if (!event.over) return;
+    const overId = String(event.over.id);
+    const validStatus =
+      overId === TASK_STATUS.A_FAZER ||
+      overId === TASK_STATUS.EM_ANDAMENTO ||
+      overId === TASK_STATUS.CONCLUIDA;
+    if (!validStatus) return;
+    void handleStatusChange(String(event.active.id), overId as TaskStatus);
   };
 
   const handleDelete = async (id: string) => {
@@ -347,62 +391,70 @@ export default function TarefasContent({ session: _session }: { session: any }) 
         </CardContent>
       </Card>
 
-      {/* Tabs por status */}
+      {/* Kanban drag-drop por status (3 colunas lado a lado).
+          Decisão UX 2026-05-09 (C1): substituiu Tabs por colunas
+          arrastáveis. Botões de seta no card continuam funcionando como
+          fallback acessível. */}
       {loading ? (
         <div className="text-center py-12 text-gray-500">Carregando...</div>
       ) : tasks.length === 0 ? (
         <EmptyState onCreate={openCreate} />
       ) : (
-        <Tabs defaultValue="A_FAZER">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="A_FAZER">
-              A fazer
-              <Badge variant="secondary" className="ml-1.5">
-                {byStatus.A_FAZER.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="EM_ANDAMENTO">
-              <span className="hidden sm:inline">Em andamento</span>
-              <span className="sm:hidden">Andamento</span>
-              <Badge variant="secondary" className="ml-1.5">
-                {byStatus.EM_ANDAMENTO.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="CONCLUIDA">
-              Concluídas
-              <Badge variant="secondary" className="ml-1.5">
-                {byStatus.CONCLUIDA.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          {(["A_FAZER", "EM_ANDAMENTO", "CONCLUIDA"] as TaskStatus[]).map(
-            (st) => (
-              <TabsContent key={st} value={st} className="space-y-2 mt-4">
-                {byStatus[st].length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-8">
-                    {st === TASK_STATUS.A_FAZER
-                      ? "Nada a fazer no momento"
-                      : st === TASK_STATUS.EM_ANDAMENTO
-                      ? "Nenhuma tarefa em andamento"
-                      : "Nenhuma tarefa concluída"}
-                  </p>
-                ) : (
-                  byStatus[st].map((t) => (
-                    <TaskCard
-                      key={t.id}
-                      task={t}
-                      markers={markers}
-                      onEdit={openEdit}
-                      onDelete={handleDelete}
-                      onChangeStatus={handleStatusChange}
-                    />
-                  ))
-                )}
-              </TabsContent>
-            )
-          )}
-        </Tabs>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setDraggingId(null)}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["A_FAZER", "EM_ANDAMENTO", "CONCLUIDA"] as TaskStatus[]).map(
+              (st) => (
+                <KanbanColumn
+                  key={st}
+                  status={st}
+                  count={byStatus[st].length}
+                  isDragging={draggingId !== null}
+                >
+                  {byStatus[st].length === 0 ? (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic text-center py-6">
+                      {st === TASK_STATUS.A_FAZER
+                        ? "Solte aqui pra criar nova prioridade"
+                        : st === TASK_STATUS.EM_ANDAMENTO
+                        ? "Arraste tarefas que iniciou"
+                        : "Arraste pra marcar como concluída"}
+                    </p>
+                  ) : (
+                    byStatus[st].map((t) => (
+                      <DraggableTask key={t.id} id={t.id}>
+                        <TaskCard
+                          task={t}
+                          markers={markers}
+                          onEdit={openEdit}
+                          onDelete={handleDelete}
+                          onChangeStatus={handleStatusChange}
+                        />
+                      </DraggableTask>
+                    ))
+                  )}
+                </KanbanColumn>
+              ),
+            )}
+          </div>
+          {/* Overlay do card sendo arrastado — flutua com o cursor */}
+          <DragOverlay>
+            {draggingTask ? (
+              <div className="opacity-90 cursor-grabbing">
+                <TaskCard
+                  task={draggingTask}
+                  markers={markers}
+                  onEdit={() => {}}
+                  onDelete={async () => {}}
+                  onChangeStatus={async () => {}}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* Modais */}
@@ -489,5 +541,113 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Coluna do Kanban — drop zone pra cards. Visualmente é um Card com
+ * header (status + contador) e área scrollable. Quando há drag em
+ * progresso, destaca a coluna com border indigo + bg sutil pra deixar
+ * claro onde o user pode soltar.
+ */
+function KanbanColumn({
+  status,
+  count,
+  isDragging,
+  children,
+}: {
+  status: TaskStatus;
+  count: number;
+  isDragging: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  // Estilos por coluna (cor + label)
+  const config: Record<
+    TaskStatus,
+    { label: string; dot: string; headerBg: string }
+  > = {
+    A_FAZER: {
+      label: "A fazer",
+      dot: "bg-gray-400",
+      headerBg: "bg-gray-50 dark:bg-gray-900/40",
+    },
+    EM_ANDAMENTO: {
+      label: "Em andamento",
+      dot: "bg-blue-500",
+      headerBg: "bg-blue-50/60 dark:bg-blue-950/20",
+    },
+    CONCLUIDA: {
+      label: "Concluídas",
+      dot: "bg-emerald-500",
+      headerBg: "bg-emerald-50/60 dark:bg-emerald-950/20",
+    },
+  };
+  const c = config[status];
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "rounded-xl border bg-white dark:bg-gray-950 transition-colors flex flex-col min-h-[200px]",
+        isOver
+          ? "border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-200 dark:ring-indigo-900/40"
+          : isDragging
+          ? "border-dashed border-gray-300 dark:border-gray-700"
+          : "border-gray-200 dark:border-gray-800",
+      )}
+    >
+      <div
+        className={cn(
+          "px-3 py-2.5 rounded-t-xl border-b border-gray-100 dark:border-gray-800 flex items-center justify-between",
+          c.headerBg,
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={cn("h-2 w-2 rounded-full", c.dot)} aria-hidden />
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            {c.label}
+          </h3>
+        </div>
+        <Badge variant="secondary" className="text-xs">
+          {count}
+        </Badge>
+      </div>
+      <div className="p-2 space-y-2 flex-1">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Wrapper draggable de um TaskCard. Listener no wrapper INTEIRO; o
+ * activationConstraint distance:6 do PointerSensor garante que clicks
+ * em botões internos não disparem drag.
+ *
+ * Quando draggando, o card original some (visibility:hidden) e o
+ * DragOverlay no parent renderiza a versão flutuante.
+ */
+function DraggableTask({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "cursor-grab active:cursor-grabbing touch-none",
+        isDragging && "opacity-0",
+      )}
+    >
+      {children}
+    </div>
   );
 }
