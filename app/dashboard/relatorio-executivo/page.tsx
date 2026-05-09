@@ -17,7 +17,11 @@ export const dynamic = "force-dynamic";
  * num só documento (capa + score + KPIs + radar + próximas etapas
  * + pendências + histórico + conclusão). Acesso DPO-only.
  */
-export default async function RelatorioExecutivoPage() {
+export default async function RelatorioExecutivoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ layout?: string }>;
+}) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     redirect("/login");
@@ -43,9 +47,14 @@ export default async function RelatorioExecutivoPage() {
     isDPO: true,
   });
 
+  // D1 — layout via query param (?layout=resumido) define se renderiza
+  // versão completa (7+ páginas) ou 1-pager (resumo executivo).
+  const params = await searchParams;
+  const layout = params.layout === "resumido" ? "resumido" : "completo";
+
   return (
     <DashboardLayout session={session}>
-      <RelatorioExecutivoContent data={data} />
+      <RelatorioExecutivoContent data={data} layout={layout} />
     </DashboardLayout>
   );
 }
