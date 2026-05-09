@@ -1,14 +1,14 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-08 (8 macro-features em prod via push direto + PR #1: Login redesign + Minha atividade + Notificações Inventário + Próximas etapas + Glossário Riscos + Restrição Contribuidor + Fixes UX Inventário + Landing copy) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
+> **Última sessão:** 2026-05-09 (4 PRs mergeados em prod: #2 Fase 6 reorder + 13 riscos em 3 categorias + HANDOVER · #3 Riscos Opção 2 (cards delimitados) + landing copy · #4 Radar consolidado /dashboard/riscos + filtros + multi-radar + Tarefas Kanban drag-drop + Fórum reações emoji) · **Branch:** `claude/confident-buck-6d18fe` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `45193dd` (merge PR #1 do fix do campo "Outro"). Vercel verde.
+> **Em prod (`origin/main`)**: tudo até `2b1c4dc` (merge PR #4). Vercel verde.
 >
-> **🔐 Push direto pra `main` foi BLOQUEADO no fim da sessão** — passou a exigir PR review. Os 2 últimos commits da sessão (`c1532e7` landing copy + `f7d19da` fix Outro) precisaram virar PR. PR #1 foi aberto em https://github.com/dssenna-oss/pgp02/pull/1 e o user mergeou via web. **Próxima sessão**: ou acrescentar regra `Bash(git push origin HEAD:main:*)` em `.claude/settings.local.json` pra restaurar push autônomo, ou adotar fluxo de PR como padrão.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Cada sessão entrega 1+ PRs criados via `gh compare URL`. User mergea via web. Já são PRs #1..#4 mergeados.
 >
-> **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado (decisão do user em 2026-05-07: "CP26 não ressuscitar"). Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
+> **CP26 foi reaproveitado**: a numeração CP26 que antes apontava pro PSI (revertido em 2026-05-06) agora pertence ao **Sistema de Cookies institucional**. PSI fica formalmente cancelado. Código antigo do PSI continua preservado no histórico (`f93b7fe`/`732fa4e`/`8160898`) caso alguém queira retomar como CP27+ no futuro.
 >
-> **Migração Neon:** ✅ Etapas 2 → 24 aplicadas. Última delta (Etapa 24): `cookie_consents` (tabela nova) + `policies.aggregatedDataSnapshot` + `policies.aggregatedAt` — aplicadas via Neon SQL Editor pelo user em 2026-05-07.
+> **Migração Neon:** ✅ Etapas 2 → 25 aplicadas. Última delta (Etapa 25 em 2026-05-09): tabela `forum_reactions` pra reações em emoji nos posts do Fórum. SQL em `scripts/_migrate-etapa-25-forum-reactions.sql`, aplicada via Neon SQL Editor pelo user.
 >
 > **🔐 Senha Neon:** rotacionada em 2026-05-05. `DATABASE_URL` atualizada no Vercel + `.env` local.
 > **🔐 ElevenLabs API key (CP20):** rotacionada em 2026-05-05. Key `1aab` ativa em `.env` local. Vercel ainda não atualizado (não-bloqueante — MP3s são estáticos).
@@ -29,6 +29,51 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 - Vídeos de capa: YouTube embed
 - Chatbot independente da Abacus rodando Gemini 2.5 Flash
 - **RAG com pgvector no Neon: 2.642 chunks** indexados em **86 sources** — 100% coverage
+
+---
+
+## 🆕 O que foi feito na sessão 2026-05-09 — 4 PRs mergeados, 8 commits
+
+### PR #2 — Fase 6 reorder + 13 riscos em 3 categorias + HANDOVER
+- `7aba56e` HANDOVER da sessão 2026-05-08 (122 linhas adicionadas, bloco completo das 8 macro-features)
+- `84b9857` `Fase6Tools` em `phase-native-tools.tsx` reordena cards: **RIPD → LIA → Terceiros → Políticas** (era Políticas → RIPD → Terceiros → LIA). Justificativa: Políticas dependem de RIPDs aprovados pra processos críticos. Mesmo subOrder do card "Próximas etapas" (CP28).
+- `457631d` agrupamento dos 13 riscos LGPD em **3 categorias semânticas** com barra de progresso por área (Tratamento 7 / Compartilhamento 3 / Direitos 3). Helpers `RISK_CATEGORY_LABEL` + `RISK_CATEGORY_BY_CODE` + `riscosByCategory()` em `lib/riscos-catalog.ts`. Componente `RiskCategoryGroup` no `analise-riscos-content.tsx`.
+
+### PR #3 — Análise de Riscos Opção 2 (cards delimitados) + landing copy footer
+- `5248ace` finaliza copy do rodapé pendente desde sessão anterior: "Implemente o Programa de Governança em Privacidade... sua Organização" + CTA secundário "Criar Conta Agora". (Pendência descoberta no início da sessão — `c1532e7` antigo só tinha o CTA principal por causa do bloqueio de push interrompido).
+- `7b9b27d` refino visual do agrupamento de Riscos (cardápio Opção 2): `RiskCategoryGroup` vira **Card único com border-l-4 colorido** na cor temática (azul / violeta / âmbar) + RiskRow flat dentro (sem borda própria, divide-y entre eles) + space-y-8 entre os 3 cards. Resultado: 3 grupos visualmente contidos em vez de lista contínua.
+
+### PR #4 — Radar /dashboard/riscos + Tarefas Kanban + Fórum reações
+- `c689e26` **radar consolidado MVP no `/dashboard/riscos`** (cardápio W1+X1+Y1+Z1). Componente novo `components/riscos/risk-radar-chart.tsx` usando `recharts` 2.15.3 (já instalado). 13 eixos = códigos BR..CD do catálogo. Polígono indigo opacity 35%. Tooltip custom com código + nome + categoria + count. Top 3 picos como badges abaixo. Plug no topo da aba "Visão consolidada" do `RiscosVisaoContent`. Bug fix: removeu className `fill-gray-700` do PolarAngleAxis (criava polygon escuro indesejado no fundo); usa `tick.fill` direto em vez.
+- `241c0ca` **radar evoluído** (cardápio B+1 + B+3): filtro por setor (chips multi-select acima do radar) + modo comparação (multi-radar com cada processo como camada colorida da paleta de 8). Toggle "Comparar processos" no header. Quando ativo, vértices binários (0/1), legend embaixo, MultiTooltip mostra "Marcado em: <lista>". Single mode mantém top 3 picos + tooltip individual. Componente recebe `items: Item[]` em vez de `bySeverityByCode` agregado pra computar localmente.
+- `0ad7952` **Tarefas Kanban drag-drop + Fórum reações em emoji** (cardápio C1 + C2):
+  - **C1** — `@dnd-kit/core` 6.3.1 instalado (--legacy-peer-deps por React version). Substitui Tabs por 3 colunas drag-drop em `tarefas-content.tsx`. `handleStatusChange` agora otimista. PointerSensor com `activationConstraint distance:6` mantém clicks em botões internos do TaskCard. Componentes novos `KanbanColumn` (useDroppable + visual destacado quando isOver) + `DraggableTask` (useDraggable wrapping). DragOverlay flutua o card.
+  - **C2** — schema novo (Etapa 25): tabela `forum_reactions` com `@@unique([postId, userId])` (1 reação por user). API nova `POST /api/forum/[id]/reacoes` toggle inteligente (added/removed/replaced). 5 emojis permitidos: 👍 ❤️ 🎯 🤔 🎉. GET /api/forum e GET /api/forum/[id] incluem `reactions` agregadas via `aggregateReactions()` em `lib/forum-types.ts`. Componente novo `<ReactionBar>` em `components/forum/reaction-bar.tsx` com update otimista, plugado em `post-card.tsx` (só renderiza se há reações) e `post-detail-dialog.tsx` (sempre, com botão "Reagir" e popover dos emojis).
+
+### Memórias atualizadas
+- `feedback_papeis_ocultar_em_vez_de_filtrar.md` (criada na sessão anterior, mantida)
+- `project_proximas_etapas_card.md` (mantida)
+- `project_analise_riscos_opcao_2_pendente.md` (criada na sessão anterior, status agora ✅ implementado)
+- `project_proximas_features_tarefas_forum.md` (atualizada — antes dizia "pendentes pra construir", agora reflete que ambos estão **implementados** e o trabalho de hoje foi evolução: Kanban + reações)
+
+### Pendências conhecidas no fim da sessão
+
+- 🟡 **Backlog Incidentes** (CP16) — 3 itens declarados que ainda não saíram: timeline visual cronológica (E3), vínculos M:N Inventário↔Operador via chips (Etapa 19, schema novo), form de emergência acessível de qualquer tela (H — sino agregador já existe).
+- 🟡 **Filtro de status do risco no radar** (B+2) — adiado por baixa prioridade executiva. Workflow operacional, não lente estratégica. StackedBar abaixo do radar já mostra status agregado.
+- 🟡 **Notificações por email** — bloqueada por infra (Resend/SendGrid não configurado). Útil pra Tarefas vencendo + DMs novos. ~2h + setup de API key.
+- 🟡 **Real-time WebSocket no Fórum** — atual é polling 30s. Latência aceitável pra MVP. Migrar pra WebSocket é refator grande.
+
+### Decisões importantes desta sessão
+1. **Memória de 5 dias confiável só com verificação** — sistema reminder de "memória 5 dias velha" estava certo: project_proximas_features_tarefas_forum dizia "Tarefas pendentes" mas elas já estavam implementadas. Atualizada.
+2. **Radar não vai na tela de input** — para os 13 toggles do Inventário, mantém toggle list agrupado em 3 categorias. Radar fica no DASHBOARD consolidado (`/dashboard/riscos`) onde tem visão multi-processo. Mesma decisão na sessão 2026-05-08 quando o user perguntou se radar substituiria toggles.
+3. **PR é o fluxo padrão agora** — push direto a main bloqueado segue. Não tentei desbloquear via permission rule. User mergea via UI (3 cliques: Compare → Create PR → Merge → Confirm). Funciona bem.
+
+### Smoke tests passados
+- `/dashboard/riscos` aba "Visão consolidada" → radar polígono indigo com picos em BR/BU/BV (Sistema de RH local) ✅
+- Modo comparação → 2 layers coloridas (Sistema de CRM azul + Sistema de RH vermelho) com legend embaixo ✅
+- `/dashboard/tarefas` → 3 colunas Kanban renderizadas, cards exibem em "A fazer" ✅
+- `/dashboard/forum` → modal de post abre, botão "Reagir" com popover dos 5 emojis ✅, click em 👍 cria pill destacada com count ✅
+- Typecheck zerado em todas as 3 PRs
 
 ---
 

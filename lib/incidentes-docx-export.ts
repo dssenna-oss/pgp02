@@ -229,6 +229,49 @@ export async function buildIncidentAnpdDocx(
     );
   }
 
+  // --------- Linha do tempo (D1+5, 2026-05-10) ---------
+  // Narrativa cronológica do ciclo de vida pra anexar ao relatório
+  // ANPD. Compliance Res. CD/ANPD nº 15/2024 valoriza a sequência
+  // explícita de eventos (detecção → contenção → comunicação).
+  // Ordenação ASCENDENTE (mais antigo → mais recente) pra leitura formal.
+  pushHeading(children, "9. Linha do Tempo do Ciclo de Vida");
+  const timelineEvents = buildDocxTimeline(i);
+  if (timelineEvents.length === 0) {
+    pushParagraph(
+      children,
+      "Sem eventos registrados além da detecção."
+    );
+  } else {
+    for (const ev of timelineEvents) {
+      children.push(
+        new Paragraph({
+          spacing: { before: 80, after: 80 },
+          children: [
+            new TextRun({
+              text: ev.when,
+              bold: true,
+              size: 20,
+            }),
+            new TextRun({
+              text: ` — ${ev.title}`,
+              size: 22,
+            }),
+            ...(ev.description
+              ? [
+                  new TextRun({
+                    text: ` (${ev.description})`,
+                    italics: true,
+                    color: "555555",
+                    size: 20,
+                  }),
+                ]
+              : []),
+          ],
+        }),
+      );
+    }
+  }
+
   // --------- Encerramento + assinatura ---------
   children.push(
     new Paragraph({
@@ -458,4 +501,94 @@ function formatCity(address: string | null): string {
     return parts.length >= 2 ? `${parts[parts.length - 2]},` : "";
   }
   return `${last},`;
+}
+
+/**
+ * Eventos da linha do tempo pra inclusão no DOCX (D1+5, 2026-05-10).
+ *
+ * Retorna lista ordenada cronológica ASCENDENTE (mais antigo → mais
+ * recente) com strings prontas pro Paragraph. Não inclui ActionPlans
+ * vinculadas (não fazem parte do DTO; ficam pra inclusão na UI apenas).
+ */
+function buildDocxTimeline(
+  i: IncidentDTO,
+): Array<{ when: string; title: string; description?: string }> {
+  const events: Array<{ at: string; when: string; title: string; description?: string }> = [];
+
+  if (i.occurredAt) {
+    events.push({
+      at: i.occurredAt,
+      when: formatDateTime(i.occurredAt),
+      title: "Incidente ocorreu",
+      description: "data/hora estimada do evento",
+    });
+  }
+  events.push({
+    at: i.detectedAt,
+    when: formatDateTime(i.detectedAt),
+    title: "Detectado pela organização",
+    description: "início do prazo regressivo de 72h pra notificação à ANPD",
+  });
+  if (i.anpdNotifiedAt) {
+    events.push({
+      at: i.anpdNotifiedAt,
+      when: formatDateTime(i.anpdNotifiedAt),
+      title: "ANPD notificada",
+      description: "comunicação formal enviada à Autoridade Nacional",
+    });
+  }
+  if (i.subjectsNotifiedAt) {
+    events.push({
+      at: i.subjectsNotifiedAt,
+      when: formatDateTime(i.subjectsNotifiedAt),
+      title: "Titulares notificados",
+      description: "carta de comunicação aos titulares emitida",
+    });
+  }
+  // Comunicações adicionais (que não duplicam os marcos acima)
+  for (const c of i.communications ?? []) {
+    const cTime = new Date(c.createdAt).getTime();
+    const dupAnpd =
+      c.target === "ANPD" &&
+      i.anpdNotifiedAt &&
+      Math.abs(cTime - new Date(i.anpdNotifiedAt).getTime()) < 60_000;
+    const dupSubjects =
+      c.target === "TITULARES" &&
+      i.subjectsNotifiedAt &&
+      Math.abs(cTime - new Date(i.subjectsNotifiedAt).getTime()) < 60_000;
+    if (dupAnpd || dupSubjects) continue;
+    const targetLabel =
+      c.target === "ANPD"
+        ? "ANPD"
+        : c.target === "TITULARES"
+          ? "titulares"
+          : "interno";
+    events.push({
+      at: c.createdAt,
+      when: formatDateTime(c.createdAt),
+      title: `Comunicação registrada (${targetLabel})`,
+      description: c.channel
+        ? `via ${c.channel}`
+        : undefined,
+    });
+  }
+  if (i.closedAt) {
+    events.push({
+      at: i.closedAt,
+      when: formatDateTime(i.closedAt),
+      title:
+        i.status === "FALSO_POSITIVO"
+          ? "Marcado como falso positivo"
+          : "Encerrado",
+      description: "fim do ciclo de vida do incidente",
+    });
+  }
+
+  // Ordena ASCENDENTE
+  events.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+  return events.map(({ when, title, description }) => ({
+    when,
+    title,
+    ...(description ? { description } : {}),
+  }));
 }

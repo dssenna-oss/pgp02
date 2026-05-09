@@ -60,6 +60,7 @@ import {
 import TerceiroAssessmentSection from "./terceiro-assessment-section";
 import TerceiroAttachmentUpload, { type AttachmentItem } from "./terceiro-attachment-upload";
 import AddToActionPlanButton from "@/components/plano-acao/add-to-action-plan-button";
+import LinkedIncidentsCard from "@/components/incidentes/linked-incidents-card";
 
 interface Props {
   operatorId: string;
@@ -490,7 +491,11 @@ export default function TerceiroDetailContent({ operatorId }: Props) {
         </nav>
 
         {/* Form */}
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-4">
+          {/* Caminho inverso M:N IncidentOperator (D2, 2026-05-10):
+              mostra incidentes que envolveram este operador, se houver. */}
+          <LinkedIncidentsCard operatorId={operatorId} context="operator" />
+
           <Card>
             <CardContent className="p-6">
               {activeSection === "id" && (
