@@ -23,6 +23,7 @@ import {
   ArrowRight,
   Sparkles,
   ListChecks,
+  Compass,
 } from "lucide-react";
 import { INVENTARIO_TEMPLATES } from "@/lib/inventario-templates-publicos";
 
@@ -45,12 +46,18 @@ export default function InventarioEntryScreen({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Como você prefere começar?</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Escolha o ponto de partida do mapeamento. Você poderá enriquecer com
-          outras opções dentro do formulário, e ajustar tudo livremente depois.
-        </p>
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg bg-blue-100 dark:bg-blue-900/30 p-2.5 mt-1 flex-shrink-0">
+          <Compass className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="space-y-2 flex-1 min-w-0">
+          <h1 className="text-3xl font-bold">Como você prefere começar?</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Escolha o ponto de partida do mapeamento. Você poderá enriquecer
+            com outras opções dentro do formulário, e ajustar tudo livremente
+            depois.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
