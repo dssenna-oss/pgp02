@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { sendEmailAsync } from "@/lib/email-sender";
+import { tplForumDm } from "@/lib/email-templates";
 
 /**
  * Mensagens diretas (DMs) — usa o mesmo modelo `ForumPost`,
@@ -142,6 +144,21 @@ export async function POST(req: NextRequest) {
   await prisma.forumPostRead
     .create({ data: { postId: message.id, userId: user.id } })
     .catch(() => {});
+
+  // Notifica destinatário por email (fire-and-forget — não bloqueia
+  // a resposta da API se Brevo demorar/falhar). Setup 2026-05-10.
+  sendEmailAsync({
+    to: { email: recipient.email, name: recipient.name ?? undefined },
+    tag: "forum-dm",
+    ...tplForumDm({
+      recipientName: recipient.name,
+      recipientEmail: recipient.email,
+      authorName: message.author.name ?? message.author.email,
+      postTitle: title,
+      postContentPreview: content,
+      postId: message.id,
+    }),
+  });
 
   return NextResponse.json({ message }, { status: 201 });
 }

@@ -8,8 +8,11 @@ import {
   VALID_FORUM_TYPES,
   VALID_FORUM_CATEGORIES,
   FORUM_POST_TYPE,
+  FORUM_CATEGORY_LABEL,
   aggregateReactions,
 } from "@/lib/forum-types";
+import { sendEmailAsync } from "@/lib/email-sender";
+import { tplForumAnnouncement } from "@/lib/email-templates";
 
 /**
  * Endpoints da listagem pública do Fórum.
@@ -195,6 +198,40 @@ export async function POST(req: NextRequest) {
       data: { postId: post.id, userId: user.id },
     })
     .catch(() => {});
+
+  // Notifica todos os usuários da org por email QUANDO é Comunicado
+  // oficial (Announcement). Discussions normais não disparam email pra
+  // não virar spam — user só sabe pelo polling do Fórum.
+  if (type === FORUM_POST_TYPE.ANNOUNCEMENT) {
+    const orgUsers = await prisma.user.findMany({
+      where: {
+        companyId: user.companyId!,
+        id: { not: user.id }, // não notifica o próprio autor
+      },
+      select: { email: true, name: true },
+    });
+    if (orgUsers.length > 0) {
+      const categoryLabel = category
+        ? FORUM_CATEGORY_LABEL[category as keyof typeof FORUM_CATEGORY_LABEL] ??
+          category
+        : "Geral";
+      for (const u of orgUsers) {
+        sendEmailAsync({
+          to: { email: u.email, name: u.name ?? undefined },
+          tag: "forum-announcement",
+          ...tplForumAnnouncement({
+            recipientName: u.name,
+            recipientEmail: u.email,
+            authorName: post.author.name ?? post.author.email,
+            postTitle: title,
+            postContentPreview: content,
+            postId: post.id,
+            category: categoryLabel,
+          }),
+        });
+      }
+    }
+  }
 
   return NextResponse.json({ post }, { status: 201 });
 }
