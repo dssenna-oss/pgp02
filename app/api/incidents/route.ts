@@ -26,7 +26,7 @@ import {
  *
  * Devolve { items: IncidentDTO[], stats: IncidentStats }.
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   const r = await loadIncidentAuth();
   if ("error" in r) return r.error;
   const { user } = r;
@@ -37,9 +37,23 @@ export async function GET(_request: NextRequest) {
     );
   }
 
+  // Filtros via query string pra view inversa M:N (D2, 2026-05-10):
+  // - inventoryId: incidentes que envolveram este processo do Inventário
+  // - operatorId: incidentes que envolveram este operador
+  // Combinam com incidentAccessFilter (auth) — não substituem.
+  const inventoryId = request.nextUrl.searchParams.get("inventoryId");
+  const operatorId = request.nextUrl.searchParams.get("operatorId");
+
+  const where: any = incidentAccessFilter(user);
+  if (inventoryId) {
+    where.dataInventories = { some: { dataInventoryId: inventoryId } };
+  }
+  if (operatorId) {
+    where.affectedOperatorsList = { some: { operatorId: operatorId } };
+  }
 
   const incidents = await prisma.incident.findMany({
-    where: incidentAccessFilter(user),
+    where,
     include: INCIDENT_FULL_INCLUDE,
     orderBy: [{ detectedAt: "desc" }],
   });

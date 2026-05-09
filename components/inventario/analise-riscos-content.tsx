@@ -49,6 +49,7 @@ import {
   type RiskCategory,
 } from "@/lib/riscos-catalog";
 import { cn } from "@/lib/utils";
+import LinkedIncidentsCard from "@/components/incidentes/linked-incidents-card";
 
 interface Props {
   id: string;
@@ -414,6 +415,10 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
           </div>
         </div>
       )}
+
+      {/* Caminho inverso M:N IncidentDataInventory (D2, 2026-05-10):
+          mostra incidentes que envolveram este processo, se houver. */}
+      <LinkedIncidentsCard inventoryId={id} context="process" />
 
       {/* Lista dos 13 riscos agrupados em 3 categorias com progresso por área.
           Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
