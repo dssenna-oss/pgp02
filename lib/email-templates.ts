@@ -694,6 +694,108 @@ export function tplActionPlanOverdueAlert(
 }
 
 // ============================================================
+// 6. Processos atribuídos por DPO ao Contribuidor (Carta de Serviços)
+// ============================================================
+
+export interface ProcessosAtribuidosArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  /** Nome do DPO que fez a atribuição (vai na frase de abertura). */
+  dpoName: string;
+  /** Nome da org (opcional — não bloqueia o template se não for passado). */
+  companyName: string | null;
+  /** Rascunhos criados pra este Contribuidor — `id` vira link direto. */
+  processes: Array<{ id: string; name: string }>;
+}
+
+/**
+ * Notifica o Contribuidor que o DPO atribuiu N rascunhos de processos
+ * pra ele revisar/completar. Disparado pelo endpoint
+ * `/api/inventario/sugerir-da-carta/materialize` quando o DPO marca
+ * "Notificar por email" no modal de atribuição.
+ *
+ * Respeita `User.emailNotifyAnnouncements` (mesmo toggle dos Comunicados —
+ * tem a mesma natureza institucional, vinda do Encarregado).
+ */
+export function tplProcessosAtribuidos(
+  args: ProcessosAtribuidosArgs,
+): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "")
+    .split(" ")[0]
+    .trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+  const n = args.processes.length;
+  const orgLine = args.companyName ? ` em ${escapeHtml(args.companyName)}` : "";
+
+  const subject =
+    n === 1
+      ? `O DPO atribuiu 1 processo pra você revisar`
+      : `O DPO atribuiu ${n} processos pra você revisar`;
+
+  const itemsHtml = args.processes
+    .map(
+      (p) =>
+        `<li style="margin-bottom:6px;">
+           <a href="${PROD_URL}/dashboard/inventario/${encodeURIComponent(p.id)}/editar" style="color:#3B7FDB;text-decoration:none;font-weight:500;">${escapeHtml(p.name)}</a>
+         </li>`,
+    )
+    .join("");
+
+  const itemsText = args.processes
+    .map((p, i) => `  ${i + 1}. ${p.name}\n     ${PROD_URL}/dashboard/inventario/${p.id}/editar`)
+    .join("\n");
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">
+      O Encarregado <strong>${escapeHtml(args.dpoName)}</strong>${orgLine}
+      atribuiu <strong>${n} processo${n === 1 ? "" : "s"}</strong> pra você
+      revisar no Inventário de Dados Pessoais.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background: #f5f3ff; border-left: 4px solid #8b5cf6; border-radius: 4px;">
+      <tr><td style="padding: 14px 16px;">
+        <div style="font-size: 11px; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+          📋 Processos atribuídos a você
+        </div>
+        <ul style="margin:0;padding-left:20px;font-size:13px;color:#1f2937;">
+          ${itemsHtml}
+        </ul>
+      </td></tr>
+    </table>
+    <p style="margin: 16px 0 4px 0; font-size: 13px; color: #6b7280;">
+      Os campos já vêm <strong>pré-preenchidos pela IA</strong> com base na
+      Carta de Serviços da organização. <strong>Revise cada um antes de submeter</strong>
+      pro DPO — confirme se os dados batem com a realidade do seu setor,
+      complete o que ficou em branco e ajuste o que estiver impreciso.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${args.dpoName} atribuiu ${n} processo${n === 1 ? "" : "s"} pra você revisar`,
+    bodyHtml,
+    ctaText: "Abrir meu Inventário",
+    ctaHref: `${PROD_URL}/dashboard/inventario`,
+  });
+
+  const text = [
+    `${greeting},`,
+    "",
+    `O Encarregado ${args.dpoName}${args.companyName ? ` em ${args.companyName}` : ""} atribuiu ${n} processo${n === 1 ? "" : "s"} pra você revisar no Inventário:`,
+    "",
+    itemsText,
+    "",
+    "Os campos já vêm pré-preenchidos pela IA com base na Carta de Serviços. Revise cada um antes de submeter pro DPO — confirme se os dados batem com a realidade do seu setor, complete o que ficou em branco e ajuste o que estiver impreciso.",
+    "",
+    `Acesse: ${PROD_URL}/dashboard/inventario`,
+    "",
+    "—",
+    "Sistema PGP - Programa de Governança em Privacidade",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 
