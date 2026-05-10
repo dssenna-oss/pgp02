@@ -34,6 +34,7 @@ async function getCurrentDPO() {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user?.companyId) {
     return { error: "Empresa não encontrada", status: 404 };
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
   // Email único?
   const existing = await prisma.user.findUnique({
     where: { email: email.trim().toLowerCase() },
+    select: { id: true },
   });
   if (existing) {
     return NextResponse.json(

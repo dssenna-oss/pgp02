@@ -20,6 +20,7 @@ async function loadMarkerAndCheckOwnership(id: string) {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true },
   });
   if (!user) {
     return { error: NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 }) };

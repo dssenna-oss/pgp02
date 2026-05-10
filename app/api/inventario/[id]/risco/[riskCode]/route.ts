@@ -68,6 +68,7 @@ async function loadDPOAndRisk(
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user?.companyId) {
     return {

@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     // Buscar empresa do usuário
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { companyId: true },
     });
 
     // Atualizar a ordem de cada e-book

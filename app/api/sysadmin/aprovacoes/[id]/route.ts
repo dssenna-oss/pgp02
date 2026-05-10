@@ -29,9 +29,14 @@ export async function DELETE(
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
+    select: {
+      id: true,
+      email: true,
+      isActive: true,
       company: {
-        include: {
+        select: {
+          id: true,
+          companyName: true,
           _count: { select: { users: true } },
         },
       },
