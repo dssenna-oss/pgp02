@@ -1141,7 +1141,7 @@ INDICAR O CANAL DE CONTATO`,
         id: "share_with_whom",
         label:
           "Considerando a questão acima, indique com quem é compartilhado informando o nome do departamento, ou do terceiro (Prestador de Serviços).",
-        type: "text-short",
+        type: "text-long",
         required: false,
         dependsOn: {
           fieldId: "share_targets",
