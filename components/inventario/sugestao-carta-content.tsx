@@ -38,6 +38,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import SugestaoCartaAssignmentModal, {
+  type ServiceToAssign,
+} from "@/components/inventario/sugestao-carta-assignment-modal";
 
 // ====== Tipos espelhando lib/sugestao-carta.ts ======
 
@@ -132,6 +135,7 @@ export default function SugestaoCartaContent() {
   const [result, setResult] = useState<SuggestionResponse | null>(null);
   const [filter, setFilter] = useState<FilterMode>("suggested_or_maybe");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   // Recupera última URL usada pra economizar digitação
   useEffect(() => {
@@ -335,9 +339,36 @@ export default function SugestaoCartaContent() {
     setSelected(new Set());
   }
 
-  async function handleMaterialize() {
+  /** Abre o modal de atribuição. O modal chama `submitMaterialize` no
+   *  confirm. Mantemos a UX antiga (sticky bar → modal → POST) em vez de
+   *  pular direto pra POST. */
+  function handleOpenAssignModal() {
+    if (!result || selected.size === 0 || materializing) return;
+    const toCreate = result.services.filter(
+      (s) => selected.has(s.id) && !s.alreadyMapped,
+    );
+    if (toCreate.length === 0) {
+      toast.error("Nenhum serviço selecionado pra criar.");
+      return;
+    }
+    setAssignModalOpen(true);
+  }
+
+  /** Snapshot dos serviços visíveis no modal — name + category pra match. */
+  const servicesToAssign: ServiceToAssign[] = useMemo(() => {
+    if (!result) return [];
+    return result.services
+      .filter((s) => selected.has(s.id) && !s.alreadyMapped)
+      .map((s) => ({ name: s.name, category: s.category }));
+  }, [result, selected]);
+
+  async function submitMaterialize(args: {
+    assignments: Record<string, string | null>;
+    notifyByEmail: boolean;
+  }) {
     if (!result || selected.size === 0 || materializing) return;
     setMaterializing(true);
+    setAssignModalOpen(false);
     try {
       const toCreate = result.services
         .filter((s) => selected.has(s.id) && !s.alreadyMapped)
@@ -354,7 +385,11 @@ export default function SugestaoCartaContent() {
       const res = await fetch("/api/inventario/sugerir-da-carta/materialize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ services: toCreate }),
+        body: JSON.stringify({
+          services: toCreate,
+          assignments: args.assignments,
+          notifyByEmail: args.notifyByEmail,
+        }),
       });
       const rawText = await res.text();
       let json: any;
@@ -370,10 +405,24 @@ export default function SugestaoCartaContent() {
       }
       const createdN = json.created?.length ?? 0;
       const skippedN = json.skipped?.length ?? 0;
+      const emailsN = json.emailsSent ?? 0;
+      const assignedN = Array.isArray(json.created)
+        ? json.created.filter((c: any) => c?.assignedTo).length
+        : 0;
       if (createdN > 0) {
-        toast.success(
-          `Criei ${createdN} rascunho${createdN === 1 ? "" : "s"} no Inventário${skippedN > 0 ? ` (${skippedN} pulado${skippedN === 1 ? "" : "s"})` : ""}.`,
-        );
+        const parts: string[] = [
+          `Criei ${createdN} rascunho${createdN === 1 ? "" : "s"} no Inventário`,
+        ];
+        if (assignedN > 0) {
+          parts.push(`${assignedN} atribuído${assignedN === 1 ? "" : "s"}`);
+        }
+        if (emailsN > 0) {
+          parts.push(`${emailsN} email${emailsN === 1 ? "" : "s"} enviado${emailsN === 1 ? "" : "s"}`);
+        }
+        if (skippedN > 0) {
+          parts.push(`${skippedN} pulado${skippedN === 1 ? "" : "s"}`);
+        }
+        toast.success(parts.join(" · ") + ".");
         router.push("/dashboard/inventario");
       } else if (skippedN > 0) {
         toast.error(
@@ -915,12 +964,12 @@ export default function SugestaoCartaContent() {
               </Button>
               <Button
                 type="button"
-                onClick={handleMaterialize}
+                onClick={handleOpenAssignModal}
                 disabled={materializing}
                 className="bg-violet-600 hover:bg-violet-700 text-white"
               >
                 <ListChecks className="h-4 w-4 mr-2" />
-                Criar {selectedCount} rascunho{selectedCount === 1 ? "" : "s"} no Inventário
+                Atribuir e criar {selectedCount} rascunho{selectedCount === 1 ? "" : "s"} →
               </Button>
             </div>
           </div>
@@ -935,6 +984,14 @@ export default function SugestaoCartaContent() {
           </div>
         </div>
       )}
+
+      {/* Modal de atribuição (abre antes de chamar materialize) */}
+      <SugestaoCartaAssignmentModal
+        open={assignModalOpen}
+        onClose={() => setAssignModalOpen(false)}
+        services={servicesToAssign}
+        onConfirm={submitMaterialize}
+      />
     </div>
   );
 }
