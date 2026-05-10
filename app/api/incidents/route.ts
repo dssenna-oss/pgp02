@@ -129,32 +129,89 @@ export async function POST(request: NextRequest) {
       ? body.severity
       : "MEDIO";
 
-  const created = await prisma.incident.create({
-    data: {
-      companyId: user.companyId,
-      title,
-      description,
-      incidentType,
-      severity,
-      status: "DETECTADO",
-      occurredAt,
-      detectedAt,
-      affectedDataTypes: sanitizeText(body?.affectedDataTypes),
-      hasSensitiveData: sanitizeBool(body?.hasSensitiveData),
-      affectedSubjectsCategories: sanitizeText(body?.affectedSubjectsCategories),
-      affectedSubjectsCount: sanitizeInt(body?.affectedSubjectsCount),
-      rootCause: sanitizeText(body?.rootCause),
-      attackVector: sanitizeText(body?.attackVector, 200),
-      affectedSystems: sanitizeText(body?.affectedSystems),
-      affectedOperators: sanitizeText(body?.affectedOperators),
-      riskAssessment: sanitizeText(body?.riskAssessment),
-      securityMeasuresInPlace: sanitizeText(body?.securityMeasuresInPlace),
-      containmentMeasures: sanitizeText(body?.containmentMeasures),
-      correctiveMeasures: sanitizeText(body?.correctiveMeasures),
-      delayJustification: sanitizeText(body?.delayJustification),
-      createdById: user.id,
-    },
-    include: INCIDENT_FULL_INCLUDE,
+  // ----- Vínculos M:N (Checkpoint 16 / F2-F3) -----
+  // Permite criar o incidente JÁ com chips de Inventário e Operadores
+  // selecionados — antes precisava-se criar e depois fazer um PATCH.
+  // Validação: cada id precisa pertencer à mesma companyId.
+  let linkedInventoryIds: string[] = [];
+  let linkedOperatorIds: string[] = [];
+
+  if (Array.isArray(body?.linkedInventoryIds)) {
+    const ids = body.linkedInventoryIds.filter(
+      (x: unknown) => typeof x === "string" && x,
+    ) as string[];
+    if (ids.length > 0) {
+      const valid = await prisma.dataInventory.findMany({
+        where: { id: { in: ids }, companyId: user.companyId },
+        select: { id: true },
+      });
+      linkedInventoryIds = valid.map((v) => v.id);
+    }
+  }
+
+  if (Array.isArray(body?.linkedOperatorIds)) {
+    const ids = body.linkedOperatorIds.filter(
+      (x: unknown) => typeof x === "string" && x,
+    ) as string[];
+    if (ids.length > 0) {
+      const valid = await prisma.operator.findMany({
+        where: { id: { in: ids }, companyId: user.companyId },
+        select: { id: true },
+      });
+      linkedOperatorIds = valid.map((v) => v.id);
+    }
+  }
+
+  // Cria o incidente + vínculos M:N atomicamente.
+  const created = await prisma.$transaction(async (tx) => {
+    const inc = await tx.incident.create({
+      data: {
+        companyId: user.companyId,
+        title,
+        description,
+        incidentType,
+        severity,
+        status: "DETECTADO",
+        occurredAt,
+        detectedAt,
+        affectedDataTypes: sanitizeText(body?.affectedDataTypes),
+        hasSensitiveData: sanitizeBool(body?.hasSensitiveData),
+        affectedSubjectsCategories: sanitizeText(body?.affectedSubjectsCategories),
+        affectedSubjectsCount: sanitizeInt(body?.affectedSubjectsCount),
+        rootCause: sanitizeText(body?.rootCause),
+        attackVector: sanitizeText(body?.attackVector, 200),
+        affectedSystems: sanitizeText(body?.affectedSystems),
+        affectedOperators: sanitizeText(body?.affectedOperators),
+        riskAssessment: sanitizeText(body?.riskAssessment),
+        securityMeasuresInPlace: sanitizeText(body?.securityMeasuresInPlace),
+        containmentMeasures: sanitizeText(body?.containmentMeasures),
+        correctiveMeasures: sanitizeText(body?.correctiveMeasures),
+        delayJustification: sanitizeText(body?.delayJustification),
+        createdById: user.id,
+      },
+    });
+
+    if (linkedInventoryIds.length > 0) {
+      await tx.incidentDataInventory.createMany({
+        data: linkedInventoryIds.map((dataInventoryId) => ({
+          incidentId: inc.id,
+          dataInventoryId,
+        })),
+      });
+    }
+    if (linkedOperatorIds.length > 0) {
+      await tx.incidentOperator.createMany({
+        data: linkedOperatorIds.map((operatorId) => ({
+          incidentId: inc.id,
+          operatorId,
+        })),
+      });
+    }
+
+    return tx.incident.findUnique({
+      where: { id: inc.id },
+      include: INCIDENT_FULL_INCLUDE,
+    });
   });
 
   return NextResponse.json(
