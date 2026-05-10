@@ -181,6 +181,11 @@ model Company {
   dpoName           String?  // Data Protection Officer/Encarregado
   dpoEmail          String?
   dpoPhone          String?
+  /// Domínio institucional sem protocolo (ex: "tcees.tc.br"). Usado pelo
+  /// auto-discovery de URLs no modal de "Pré-preencher por Carta de Serviços"
+  /// (Etapa 28, 2026-05-11). Permite extrair candidatos a partir do site
+  /// público sem o user precisar digitar URLs uma a uma.
+  institutionalDomain String?
   businessSector    String?
   employeesCount    Int?
   ripdEbookUrl      String?  // URL do ebook Heyzine para RIPD

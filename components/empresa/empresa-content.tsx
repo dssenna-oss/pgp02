@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, User, MapPin, Phone, Mail, Globe } from "lucide-react";
 import { useState } from "react";
+import InstitutionalDomainCard from "./institutional-domain-card";
 
 interface EmpresaContentProps {
   session?: any;
@@ -32,6 +33,10 @@ export default function EmpresaContent({ session }: EmpresaContentProps) {
           {isEditing ? "Cancelar" : "Editar Informações"}
         </Button>
       </div>
+
+      {/* Domínio institucional — funcional, alimenta auto-discovery
+          de URLs no modal de Pré-preencher por Carta de Serviços */}
+      <InstitutionalDomainCard />
 
       {/* Company Information */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

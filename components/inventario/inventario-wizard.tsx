@@ -445,6 +445,7 @@ export default function InventarioWizard({
           open={cartaPickerOpen}
           onOpenChange={setCartaPickerOpen}
           currentAnswers={answers}
+          appliedTemplateId={appliedTemplateId}
           onApply={handleApplyAiPrefill}
         />
       </>

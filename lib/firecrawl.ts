@@ -128,3 +128,101 @@ export async function scrapeMany(
 ): Promise<FirecrawlScrapeResult[]> {
   return Promise.all(urls.map((u) => scrapeUrlToMarkdown(u, opts)));
 }
+
+// ============================================================
+// /v1/map — descobrir URLs de um site (mais leve que scrape)
+// ============================================================
+
+export interface FirecrawlMapResult {
+  /** URLs descobertas no site (até `limit`). */
+  urls: string[];
+  /** Erro string-friendly se a tentativa falhou. */
+  error: string | null;
+}
+
+/**
+ * Mapeia o site dado a partir do domínio raiz e retorna URLs
+ * descobertas. Endpoint `/v1/map` do Firecrawl é MUITO mais barato
+ * que scrape — só lista URLs, não processa conteúdo.
+ *
+ * Uso típico: alimentar o auto-descobrir do modal "Pré-preencher por
+ * Carta de Serviços" — user cola só o domínio (ou pega de
+ * `Company.institutionalDomain`) e o sistema descobre URLs candidatas
+ * pra carta de serviços, ouvidoria, SIC, LGPD, etc.
+ *
+ * `domain` aceita string com ou sem protocolo (normaliza pra https://).
+ *
+ * `limit` define quantas URLs retornar (default 500). Pra reduzir custo
+ * em sites grandes, baixar pra 100-200 já cobre os links institucionais
+ * típicos da home/menus.
+ */
+export async function mapSite(
+  domain: string,
+  opts: { timeoutMs?: number; limit?: number; search?: string } = {},
+): Promise<FirecrawlMapResult> {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) {
+    return {
+      urls: [],
+      error: "FIRECRAWL_API_KEY não configurada",
+    };
+  }
+
+  // Normaliza pra URL completa
+  const url = /^https?:\/\//.test(domain)
+    ? domain
+    : `https://${domain}`;
+
+  const timeoutMs = opts.timeoutMs ?? 30_000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(`${FIRECRAWL_BASE}/v1/map`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        limit: opts.limit ?? 500,
+        ...(opts.search ? { search: opts.search } : {}),
+      }),
+      signal: ctrl.signal,
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      return {
+        urls: [],
+        error: `HTTP ${res.status}${txt ? ` — ${txt.slice(0, 200)}` : ""}`,
+      };
+    }
+
+    const json = (await res.json()) as {
+      success?: boolean;
+      links?: string[];
+      error?: string;
+    };
+
+    if (!json.success || !Array.isArray(json.links)) {
+      return {
+        urls: [],
+        error: json.error ?? "Resposta inesperada do Firecrawl /v1/map",
+      };
+    }
+
+    return {
+      urls: json.links,
+      error: null,
+    };
+  } catch (e: any) {
+    return {
+      urls: [],
+      error: e?.name === "AbortError" ? "Timeout" : (e?.message ?? "Erro de rede"),
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
