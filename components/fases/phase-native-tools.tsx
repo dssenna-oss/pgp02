@@ -889,6 +889,29 @@ function Fase3Tools() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      {/* Ordem segue o fluxo natural: descobrir → mapear → analisar.
+          1) Sugerir processos (a partir da Carta de Serviços — Lei 13.460)
+          2) Inventário de Dados
+          3) Análise de Riscos */}
+
+      {/* ===== Card Sugerir processos da Carta de Serviços (DPO-only) ===== */}
+      {!riscosForbidden && (
+        <ToolCard
+          icon={<Sparkles className="h-6 w-6" />}
+          iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+          title="Sugerir processos da Carta"
+          description="A IA varre a Carta de Serviços da instituição (Lei 13.460/2017) e sugere quais processos devem entrar no Inventário."
+          progressColor="neutral"
+          loading={loading}
+          primaryAction={{
+            label: "Abrir sugestão",
+            href: "/dashboard/inventario/sugerir-da-carta",
+          }}
+          stats={[]}
+          emptyHint="Cobre serviços ao cidadão (SIC, Ouvidoria, RH, atendimento). Você revisa antes de criar os rascunhos."
+        />
+      )}
+
       {/* ===== Card Inventário ===== */}
       <ToolCard
         icon={<ClipboardList className="h-6 w-6" />}
@@ -1021,24 +1044,6 @@ function Fase3Tools() {
             : undefined
         }
       />
-
-      {/* ===== Card Sugerir processos da Carta de Serviços (DPO-only) ===== */}
-      {!riscosForbidden && (
-        <ToolCard
-          icon={<Sparkles className="h-6 w-6" />}
-          iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
-          title="Sugerir processos da Carta"
-          description="A IA varre a Carta de Serviços da instituição (Lei 13.460/2017) e sugere quais processos devem entrar no Inventário."
-          progressColor="neutral"
-          loading={loading}
-          primaryAction={{
-            label: "Abrir sugestão",
-            href: "/dashboard/inventario/sugerir-da-carta",
-          }}
-          stats={[]}
-          emptyHint="Cobre serviços ao cidadão (SIC, Ouvidoria, RH, atendimento). Você revisa antes de criar os rascunhos."
-        />
-      )}
     </div>
   );
 }
