@@ -27,7 +27,10 @@
  */
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// 180s: folga confortável após upgrade Vercel Pro (teto: 300s).
+// Gemini com 16k tokens leva ~25-35s; 180s deixa margem pra
+// instâncias frias e Cartas extensas.
+export const maxDuration = 180;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
