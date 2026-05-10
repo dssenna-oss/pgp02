@@ -351,6 +351,212 @@ export async function suggestServicesFromText(
   return await callLlmAndSanitize(wrappedCorpus, sourceLabel, warnings);
 }
 
+// ============================================================
+// COLETA (Etapa 1 do fluxo 2-cliques)
+// ============================================================
+
+/** Resultado da Etapa 1: corpus de texto pronto pra mandar pro LLM
+ *  na Etapa 2. */
+export interface CollectionResult {
+  /** Texto concatenado de todas as fontes lidas. */
+  corpus: string;
+  /** Identificador da fonte ("URL fornecida" ou "pdf:filename.pdf"). */
+  sourceLabel: string;
+  /** Quantas fontes leu (páginas web ou páginas do PDF). */
+  pagesRead: number;
+  /** URLs efetivamente lidas (vazio quando vem de PDF). */
+  urlsRead: string[];
+  /** Total de páginas do PDF (vazio quando vem de URL). */
+  pdfTotalPages?: number;
+  /** Tamanho do corpus em chars (UX). */
+  charCount: number;
+  /** Erro bloqueante (sem corpus → não dá pra ir pra Etapa 2). */
+  blockingError: string | null;
+  /** Avisos não-bloqueantes (URLs que falharam etc.). */
+  warnings: string[];
+}
+
+/**
+ * Etapa 1 (URL): mapSite + scrape paralelo + concat markdown.
+ * NÃO chama o LLM. Retorna corpus pra UI mostrar ao user antes
+ * de proceder pra Etapa 2 (classificação).
+ *
+ * Tempo médio em prod: ~15-30s (cabe folgada em maxDuration:60s).
+ */
+export async function collectFromUrl(url: string): Promise<CollectionResult> {
+  const warnings: string[] = [];
+
+  let urlObj: URL;
+  try {
+    urlObj = new URL(url);
+  } catch {
+    return {
+      corpus: "",
+      sourceLabel: url,
+      pagesRead: 0,
+      urlsRead: [],
+      charCount: 0,
+      blockingError: "URL inválida.",
+      warnings,
+    };
+  }
+
+  const pathPrefix = urlObj.pathname.replace(/\/+$/, "") + "/";
+  const isRootPath = pathPrefix === "/";
+
+  const candidatePaths = new Set<string>([
+    urlObj.pathname.replace(/\/+$/, "") || "/",
+  ]);
+  const candidates: string[] = [url];
+
+  if (!isRootPath) {
+    const mapResult = await mapSite(urlObj.host, {
+      limit: 500,
+      timeoutMs: 10_000,
+    });
+    if (mapResult.error) {
+      warnings.push(
+        `Não consegui mapear sub-páginas (${mapResult.error}). Lendo apenas a URL fornecida.`,
+      );
+    } else {
+      for (const u of mapResult.urls) {
+        try {
+          const cu = new URL(u);
+          if (cu.host !== urlObj.host) continue;
+          if (!cu.pathname.startsWith(pathPrefix)) continue;
+          const key = cu.pathname.replace(/\/+$/, "") || "/";
+          if (candidatePaths.has(key)) continue;
+          candidatePaths.add(key);
+          candidates.push(u);
+          if (candidates.length >= MAX_SCRAPE_PAGES) break;
+        } catch {
+          // ignora
+        }
+      }
+    }
+  }
+
+  const scrapes = await scrapeMany(candidates, { timeoutMs: 18_000 });
+  const ok = scrapes.filter(
+    (s) => !s.error && s.markdown && s.markdown.trim().length > 100,
+  );
+  const failed = scrapes.filter((s) => s.error);
+  if (failed.length > 0) {
+    warnings.push(
+      `${failed.length} de ${scrapes.length} URL${scrapes.length === 1 ? "" : "s"} falharam (resultados parciais).`,
+    );
+  }
+
+  if (ok.length === 0) {
+    return {
+      corpus: "",
+      sourceLabel: url,
+      pagesRead: 0,
+      urlsRead: [],
+      charCount: 0,
+      blockingError:
+        "Não consegui ler nenhuma página. Confirme se a URL está pública e acessível, ou tente fazer upload do PDF da Carta.",
+      warnings,
+    };
+  }
+
+  let corpus = ok
+    .map(
+      (s) =>
+        `--- URL: ${s.url}${s.title ? `\nTÍTULO: ${s.title}` : ""}\n\n${s.markdown}`,
+    )
+    .join("\n\n---\n\n");
+  if (corpus.length > MAX_CORPUS_CHARS) {
+    corpus =
+      corpus.slice(0, MAX_CORPUS_CHARS) +
+      "\n[...truncado por limite de contexto...]";
+    warnings.push(
+      `Conteúdo truncado em ${MAX_CORPUS_CHARS.toLocaleString()} caracteres.`,
+    );
+  }
+
+  if (ok.length > 1) {
+    warnings.unshift(
+      `Li ${ok.length} página${ok.length === 1 ? "" : "s"} a partir de ${url}.`,
+    );
+  }
+
+  return {
+    corpus,
+    sourceLabel: url,
+    pagesRead: ok.length,
+    urlsRead: ok.map((s) => s.url),
+    charCount: corpus.length,
+    blockingError: null,
+    warnings,
+  };
+}
+
+/**
+ * Etapa 1 (PDF): extrai texto + concat. Caller passa texto já
+ * extraído (via `lib/pdf-text.ts:extractPdfText`) — esta função só
+ * envelopa no formato CollectionResult.
+ */
+export function buildCollectionFromPdf(
+  text: string,
+  filename: string,
+  pdfPagesRead: number,
+  pdfTotalPages: number,
+): CollectionResult {
+  const warnings: string[] = [];
+  if (!text || text.trim().length < 200) {
+    return {
+      corpus: "",
+      sourceLabel: `pdf:${filename}`,
+      pagesRead: 0,
+      urlsRead: [],
+      pdfTotalPages,
+      charCount: 0,
+      blockingError:
+        "O conteúdo está muito curto ou vazio. Se for um PDF escaneado (imagem), preciso de uma versão com texto pesquisável.",
+      warnings,
+    };
+  }
+  let corpus =
+    text.length > MAX_CORPUS_CHARS
+      ? text.slice(0, MAX_CORPUS_CHARS) +
+        "\n[...truncado por limite de contexto...]"
+      : text;
+  if (text.length > MAX_CORPUS_CHARS) {
+    warnings.push(
+      `Conteúdo truncado em ${MAX_CORPUS_CHARS.toLocaleString()} caracteres.`,
+    );
+  }
+  const sourceLabel = `pdf:${filename}`;
+  corpus = `--- FONTE: ${sourceLabel} ---\n\n${corpus}`;
+  return {
+    corpus,
+    sourceLabel,
+    pagesRead: pdfPagesRead,
+    urlsRead: [],
+    pdfTotalPages,
+    charCount: corpus.length,
+    blockingError: null,
+    warnings,
+  };
+}
+
+/**
+ * Etapa 2: pega o corpus já coletado e roda o LLM pra classificar.
+ *
+ * Tempo médio: ~10-20s (cabe folgada em maxDuration:60s).
+ */
+export async function classifyCorpus(
+  corpus: string,
+  sourceLabel: string,
+): Promise<SuggestionResult> {
+  return await callLlmAndSanitize(corpus, sourceLabel, []);
+}
+
+// ============================================================
+// 1-SHOT (legado — usado pelas rotas antigas, mantém retrocompat)
+// ============================================================
+
 /**
  * Função pública (variante URL): recebe a URL da Carta de Serviços e
  * RAPA TAMBÉM as sub-páginas filhas (mesmo path prefix), pra cobrir
