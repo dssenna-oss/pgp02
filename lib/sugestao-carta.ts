@@ -34,10 +34,15 @@ const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const MAX_CORPUS_CHARS = 50_000;
 
 /** Quantas páginas (URL fornecida + filhas) raspar em paralelo.
- *  Cada scrape custa 1 unidade Firecrawl. Reduzido de 8→5 pra caber
- *  no maxDuration:60s do Vercel Hobby (cold start + mapSite + scrape
- *  paralelo + Gemini). */
-const MAX_SCRAPE_PAGES = 5;
+ *  Cada scrape custa 1 unidade Firecrawl (~R$0,01).
+ *
+ *  Histórico:
+ *  - 2026-05-12 (Hobby): apertamos pra 5 pra caber no 60s do plano free
+ *  - 2026-05-13 (Pro upgrade): voltamos a 10 — agora cabe em 300s e
+ *    Cartas de instituições grandes (ministérios, tribunais) com ~10-15
+ *    sub-páginas funcionam direito. Cada análise custa ~R$0,10 em
+ *    Firecrawl, dentro dos $20/mês incluídos no Pro. */
+const MAX_SCRAPE_PAGES = 10;
 
 export type ServiceClassification = "SUGERIDO" | "TALVEZ" | "NAO";
 
@@ -701,10 +706,11 @@ async function callLlmAndSanitize(
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       config: {
         temperature: 0.1,
-        // 12k tokens cobrem ~50 serviços em JSON estruturado — suficiente
-        // pra Carta de instituição típica. 16k era folga demais e
-        // estourava maxDuration:60s do Vercel.
-        maxOutputTokens: 12_000,
+        // 16k tokens cobrem ~80 serviços em JSON estruturado — folga
+        // confortável pra Cartas grandes (ministérios, tribunais).
+        // Voltado pra 16k após upgrade Pro (maxDuration:300s permite
+        // resposta mais longa do Gemini sem estourar).
+        maxOutputTokens: 16_000,
         responseMimeType: "application/json",
         // Pra extração estruturada — desliga thinking pra liberar todo o
         // budget pra resposta. Lição em feedback_gemini_thinking_budget.md.

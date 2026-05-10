@@ -28,7 +28,9 @@
  */
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// 180s: folga confortável após upgrade Vercel Pro (teto: 300s).
+// Cobre Cartas pesadas com 10 sub-páginas + mapSite sem estourar.
+export const maxDuration = 180;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";

@@ -34,7 +34,10 @@
  */
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// 180s: folga confortável após upgrade Vercel Pro. Rota legada (1-shot
+// scrape+LLM), não usada mais pela UI — mantida pra compat se alguém
+// estiver chamando direto.
+export const maxDuration = 180;
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
