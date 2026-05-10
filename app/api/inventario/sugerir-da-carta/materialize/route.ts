@@ -44,6 +44,7 @@ import {
 const MAX_BATCH = 30;
 
 export async function POST(request: NextRequest) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -176,4 +177,11 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ created, skipped });
+  } catch (e: any) {
+    console.error("[sugerir-da-carta/materialize] erro inesperado", e);
+    return NextResponse.json(
+      { error: e?.message ?? "Erro inesperado no servidor" },
+      { status: 500 },
+    );
+  }
 }

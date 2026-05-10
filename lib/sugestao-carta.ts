@@ -25,12 +25,16 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { scrapeUrlToMarkdown } from "./firecrawl";
+import { mapSite, scrapeMany } from "./firecrawl";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 /** Limite defensivo: corpus enviado ao LLM. */
 const MAX_CORPUS_CHARS = 60_000;
+
+/** Quantas páginas (URL fornecida + filhas) raspar em paralelo.
+ *  Cada scrape custa 1 unidade Firecrawl. */
+const MAX_SCRAPE_PAGES = 8;
 
 export type ServiceClassification = "SUGERIDO" | "TALVEZ" | "NAO";
 
@@ -345,42 +349,123 @@ export async function suggestServicesFromText(
 }
 
 /**
- * Função pública (variante URL): scrapeia UMA URL específica da Carta
- * de Serviços e classifica os serviços encontrados.
+ * Função pública (variante URL): recebe a URL da Carta de Serviços e
+ * RAPA TAMBÉM as sub-páginas filhas (mesmo path prefix), pra cobrir
+ * Cartas que se desdobram em links/dropdowns.
  *
- * Diferente da extinta `suggestServicesFromCarta(domain)` que tentava
- * descobrir URLs por heurística (custoso e errático), aqui o user já
- * conhece a URL da Carta e a passa direto. Mais preciso, mais barato.
+ * Pipeline:
+ *  1. mapSite no host → URLs do domínio
+ *  2. Filtra URLs cujo path começa com o path da URL fornecida
+ *     (ex: URL=tcees.tc.br/carta-de-servicos/ → match /carta-de-servicos/*)
+ *  3. Scrape paralelo (URL fornecida + até 7 filhas) com timeout curto
+ *  4. Concat markdown → LLM
+ *
+ * Se mapSite falhar (Firecrawl down, domínio inválido), faz fallback
+ * pra single-scrape da URL fornecida — não bloqueia o user.
  */
 export async function suggestServicesFromUrl(
   url: string,
 ): Promise<SuggestionResult> {
   const warnings: string[] = [];
 
-  const scrape = await scrapeUrlToMarkdown(url, { timeoutMs: 45_000 });
-  if (scrape.error) {
+  let urlObj: URL;
+  try {
+    urlObj = new URL(url);
+  } catch {
     return {
       services: [],
       stats: emptyStats(0),
-      blockingError: `Não consegui acessar a URL: ${scrape.error}`,
+      blockingError: "URL inválida.",
       warnings,
     };
   }
-  if (!scrape.markdown || scrape.markdown.trim().length < 200) {
+
+  // Path prefix pra matchar filhas. Normaliza com trailing slash:
+  //   /carta-de-servicos    → /carta-de-servicos/
+  //   /carta-de-servicos/   → /carta-de-servicos/
+  //   /                     → / (não filtra nada — fica só na URL fornecida)
+  const pathPrefix = urlObj.pathname.replace(/\/+$/, "") + "/";
+  const isRootPath = pathPrefix === "/";
+
+  // 1. Lista de URLs candidatas — sempre inclui a URL fornecida
+  const candidatePaths = new Set<string>([
+    urlObj.pathname.replace(/\/+$/, "") || "/",
+  ]);
+  const candidates: string[] = [url];
+
+  // 2. mapSite (só se a URL não for raiz — pra raiz seria sem foco)
+  if (!isRootPath) {
+    const mapResult = await mapSite(urlObj.host, {
+      limit: 500,
+      timeoutMs: 12_000,
+    });
+    if (mapResult.error) {
+      warnings.push(
+        `Não consegui mapear sub-páginas (${mapResult.error}). Lendo apenas a URL fornecida.`,
+      );
+    } else {
+      for (const u of mapResult.urls) {
+        try {
+          const cu = new URL(u);
+          if (cu.host !== urlObj.host) continue;
+          if (!cu.pathname.startsWith(pathPrefix)) continue;
+          const key = cu.pathname.replace(/\/+$/, "") || "/";
+          if (candidatePaths.has(key)) continue;
+          candidatePaths.add(key);
+          candidates.push(u);
+          if (candidates.length >= MAX_SCRAPE_PAGES) break;
+        } catch {
+          // url inválida — ignora
+        }
+      }
+    }
+  }
+
+  // 3. Scrape paralelo (timeout 25s por URL — em paralelo o total
+  // continua ~25s, deixando margem pro LLM dentro de maxDuration 60s)
+  const scrapes = await scrapeMany(candidates, { timeoutMs: 25_000 });
+  const ok = scrapes.filter((s) => !s.error && s.markdown && s.markdown.trim().length > 100);
+  const failed = scrapes.filter((s) => s.error);
+  if (failed.length > 0) {
+    warnings.push(
+      `${failed.length} de ${scrapes.length} URL${scrapes.length === 1 ? "" : "s"} falharam (resultados parciais).`,
+    );
+  }
+
+  if (ok.length === 0) {
     return {
       services: [],
       stats: emptyStats(0),
       blockingError:
-        "A página retornou pouco ou nenhum conteúdo. Confirme se a URL está pública e contém a Carta de Serviços.",
+        "Não consegui ler nenhuma página. Confirme se a URL está pública e acessível, ou tente fazer upload do PDF da Carta.",
       warnings,
     };
   }
 
-  const headerLines = [`URL: ${scrape.url}`];
-  if (scrape.title) headerLines.push(`TÍTULO: ${scrape.title}`);
-  const corpus = `--- ${headerLines.join("\n")} ---\n\n${scrape.markdown}`;
+  // 4. Concat markdown
+  let corpus = ok
+    .map(
+      (s) =>
+        `--- URL: ${s.url}${s.title ? `\nTÍTULO: ${s.title}` : ""}\n\n${s.markdown}`,
+    )
+    .join("\n\n---\n\n");
+  if (corpus.length > MAX_CORPUS_CHARS) {
+    corpus =
+      corpus.slice(0, MAX_CORPUS_CHARS) +
+      "\n[...truncado por limite de contexto...]";
+    warnings.push(
+      `Conteúdo truncado em ${MAX_CORPUS_CHARS.toLocaleString()} caracteres.`,
+    );
+  }
 
-  return await callLlmAndSanitize(corpus, scrape.url, warnings);
+  // Aviso útil pra UI: quantas páginas foram lidas vs candidatas
+  if (ok.length > 1) {
+    warnings.unshift(
+      `Li ${ok.length} página${ok.length === 1 ? "" : "s"} a partir de ${url} (URL fornecida + sub-páginas filhas).`,
+    );
+  }
+
+  return await callLlmAndSanitize(corpus, url, warnings);
 }
 
 /**
