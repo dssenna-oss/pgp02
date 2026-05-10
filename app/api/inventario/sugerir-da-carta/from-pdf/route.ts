@@ -48,6 +48,7 @@ import { extractPdfText } from "@/lib/pdf-text";
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(request: NextRequest) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -170,4 +171,11 @@ export async function POST(request: NextRequest) {
     pdfPagesRead: pdfResult.pagesRead,
     pdfTotalPages: pdfResult.totalPages,
   });
+  } catch (e: any) {
+    console.error("[sugerir-da-carta/from-pdf] erro inesperado", e);
+    return NextResponse.json(
+      { error: e?.message ?? "Erro inesperado no servidor" },
+      { status: 500 },
+    );
+  }
 }

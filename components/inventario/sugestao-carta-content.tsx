@@ -169,7 +169,22 @@ export default function SugestaoCartaContent() {
           body: JSON.stringify({ url: trimmed }),
         });
       }
-      const json = await res.json();
+      // Parse robusto: server pode retornar HTML em caso de timeout/crash
+      // do runtime Vercel. Lemos como texto e tentamos JSON.parse com
+      // fallback amigável.
+      const rawText = await res.text();
+      let json: any;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        const snippet = rawText.replace(/<[^>]+>/g, " ").trim().slice(0, 200);
+        const reason =
+          res.status === 504 || res.status === 408
+            ? "O servidor demorou demais (timeout). Páginas muito pesadas podem exceder o limite. Tente outra URL ou faça upload do PDF."
+            : `Resposta inválida do servidor (status ${res.status})${snippet ? `: ${snippet}` : ""}`;
+        toast.error(reason);
+        return;
+      }
       if (!res.ok) {
         toast.error(json?.error ?? "Erro ao sugerir processos");
         return;
@@ -257,7 +272,14 @@ export default function SugestaoCartaContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ services: toCreate }),
       });
-      const json = await res.json();
+      const rawText = await res.text();
+      let json: any;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        toast.error(`Resposta inválida do servidor (status ${res.status}).`);
+        return;
+      }
       if (!res.ok) {
         toast.error(json?.error ?? "Erro ao criar rascunhos");
         return;

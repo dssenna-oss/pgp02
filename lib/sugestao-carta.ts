@@ -357,7 +357,9 @@ export async function suggestServicesFromUrl(
 ): Promise<SuggestionResult> {
   const warnings: string[] = [];
 
-  const scrape = await scrapeUrlToMarkdown(url, { timeoutMs: 45_000 });
+  // Timeout 35s pra deixar margem pro LLM (Gemini 16k tokens leva
+  // ~15-25s) dentro do maxDuration 60s do Vercel.
+  const scrape = await scrapeUrlToMarkdown(url, { timeoutMs: 35_000 });
   if (scrape.error) {
     return {
       services: [],

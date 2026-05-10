@@ -56,6 +56,7 @@ function isValidHttpUrl(s: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  try {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -121,4 +122,14 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ ...result, source: rawUrl });
+  } catch (e: any) {
+    // Garantia de JSON sempre — runtime Vercel pode retornar HTML em
+    // crashes nativos. Aqui interceptamos qualquer throw e devolvemos
+    // erro estruturado pra UI exibir mensagem útil.
+    console.error("[sugerir-da-carta] erro inesperado", e);
+    return NextResponse.json(
+      { error: e?.message ?? "Erro inesperado no servidor" },
+      { status: 500 },
+    );
+  }
 }
