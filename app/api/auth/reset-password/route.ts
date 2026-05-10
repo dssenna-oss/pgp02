@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     // Buscar usuário pelo token
     const user = await prisma.user.findUnique({
       where: { resetToken: token },
+      select: { id: true, resetTokenExpiry: true },
     });
 
     if (!user) {

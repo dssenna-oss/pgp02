@@ -29,6 +29,7 @@ async function getCurrentUser() {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, companyId: true },
   });
   if (!user) {
     return { error: NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 }) };

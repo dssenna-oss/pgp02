@@ -48,6 +48,7 @@ export async function PATCH(
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user?.companyId) {
     return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });

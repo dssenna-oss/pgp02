@@ -23,6 +23,7 @@ async function loadPost(id: string) {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user || !user.companyId) {
     return { error: NextResponse.json({ error: "Usuário sem organização" }, { status: 404 }) };

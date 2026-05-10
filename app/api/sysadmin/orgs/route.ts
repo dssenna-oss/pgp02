@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
   // Email único?
   const existing = await prisma.user.findUnique({
     where: { email: dpoEmail.trim().toLowerCase() },
+    select: { id: true },
   });
   if (existing) {
     return NextResponse.json(

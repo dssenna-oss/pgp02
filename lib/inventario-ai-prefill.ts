@@ -280,6 +280,88 @@ function mergePrefill(
 }
 
 // ============================================================
+// JSON REPAIR — best-effort pra resgatar saída truncada do LLM
+// ============================================================
+
+/**
+ * Tenta reparar JSON malformado típico de LLM que travou no meio.
+ * Cobre 2 casos comuns:
+ *   1. String não terminada (último `"` aberto sem fechar) → fecha a string
+ *   2. Braces/brackets desbalanceados → fecha na ordem inversa do stack
+ *
+ * Não cobre tudo (ex: vírgula trailing depois de truncar mid-key), mas
+ * resolve o caso mais frequente que é o output cortado dentro de um value
+ * de string.
+ */
+function repairTruncatedJson(text: string): string {
+  let s = text.trim();
+  if (!s) return s;
+
+  // Detecta se estamos dentro de uma string não-fechada.
+  // Anda char por char respeitando escapes.
+  const stack: string[] = []; // só {, [
+  let inString = false;
+  let escapeNext = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (escapeNext) {
+      escapeNext = false;
+      continue;
+    }
+    if (inString) {
+      if (c === "\\") {
+        escapeNext = true;
+        continue;
+      }
+      if (c === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "{" || c === "[") stack.push(c);
+    else if (c === "}" && stack[stack.length - 1] === "{") stack.pop();
+    else if (c === "]" && stack[stack.length - 1] === "[") stack.pop();
+  }
+
+  // Fecha string aberta primeiro
+  if (inString) s += '"';
+
+  // Remove vírgula trailing antes do fecho (ex: `"a", `)
+  s = s.replace(/,\s*$/, "");
+
+  // Fecha braces/brackets do stack em ordem reversa
+  while (stack.length > 0) {
+    const open = stack.pop();
+    s += open === "{" ? "}" : "]";
+  }
+
+  return s;
+}
+
+/**
+ * Faz JSON.parse com 1 tentativa de reparo se a 1ª falhar.
+ * Lança o erro original se nem o reparo funcionar.
+ */
+function parseLlmJson(text: string): any {
+  try {
+    return JSON.parse(text);
+  } catch (firstErr) {
+    try {
+      const repaired = repairTruncatedJson(text);
+      return JSON.parse(repaired);
+    } catch {
+      // Devolve o erro ORIGINAL — mais informativo pro debug
+      throw firstErr;
+    }
+  }
+}
+
+// ============================================================
 // PIPELINE — função pública usada pelo endpoint
 // ============================================================
 
@@ -349,12 +431,17 @@ export async function aiPrefillFromUrls(
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       config: {
         temperature: 0.1, // baixa criatividade — só extração
-        maxOutputTokens: 4_000,
+        maxOutputTokens: 8_000,
         responseMimeType: "application/json",
+        // Gemini 2.5 Flash usa "thinking tokens" que comem o budget de saída.
+        // Pra extração estruturada não há ganho de raciocínio — desligamos
+        // pra liberar todo o orçamento pro JSON final (evita truncamento
+        // tipo "Unterminated string in JSON at position X").
+        thinkingConfig: { thinkingBudget: 0 },
       },
     });
     const text = resp.text ?? "";
-    llmJson = JSON.parse(text);
+    llmJson = parseLlmJson(text);
   } catch (e: any) {
     return {
       next: current,
