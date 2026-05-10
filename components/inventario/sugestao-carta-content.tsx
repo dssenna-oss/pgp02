@@ -414,8 +414,9 @@ export default function SugestaoCartaContent() {
                 className="text-sm"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Cole o endereço público da página da Carta de Serviços da sua instituição.
-                A IA lê o conteúdo e identifica os serviços que envolvem dados pessoais.
+                Cole o endereço público da página principal da Carta. A IA também
+                segue automaticamente as sub-páginas filhas (até 8) — útil quando
+                a Carta se desdobra em links/dropdowns.
               </p>
             </div>
             <Button
