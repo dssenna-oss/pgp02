@@ -65,14 +65,11 @@ interface SuggestedService {
 }
 
 interface SuggestionStats {
-  totalUrlsMapped: number;
-  totalUrlsCandidate: number;
-  totalUrlsScraped: number;
   totalServicesExtracted: number;
   bySuggested: number;
   byMaybe: number;
   byNo: number;
-  scrapeErrors: number;
+  corpusChars: number;
 }
 
 interface SuggestionResponse {
@@ -80,15 +77,13 @@ interface SuggestionResponse {
   stats: SuggestionStats;
   blockingError: string | null;
   warnings: string[];
-  /** Vem da rota /sugerir-da-carta (variante por domínio). */
-  domain?: string;
-  /** Vem da rota /sugerir-da-carta/from-pdf (variante por upload). */
+  /** Identificador da fonte: URL http(s) ou "pdf:<filename>". */
   source?: string;
   pdfPagesRead?: number;
   pdfTotalPages?: number;
 }
 
-type SourceMode = "domain" | "pdf";
+type SourceMode = "url" | "pdf";
 
 type FilterMode =
   | "suggested_or_maybe"
@@ -109,11 +104,12 @@ const FILTER_LABELS: Record<FilterMode, string> = {
 
 // ====== Componente principal ======
 
+const LS_KEY_LAST_URL = "pgp:sugestao-carta:last-url";
+
 export default function SugestaoCartaContent() {
   const router = useRouter();
-  const [mode, setMode] = useState<SourceMode>("domain");
-  const [domain, setDomain] = useState("");
-  const [domainPrefilled, setDomainPrefilled] = useState(false);
+  const [mode, setMode] = useState<SourceMode>("url");
+  const [url, setUrl] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDragActive, setPdfDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -123,25 +119,14 @@ export default function SugestaoCartaContent() {
   const [filter, setFilter] = useState<FilterMode>("suggested_or_maybe");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Pré-popula o domain com o que está em /api/company/institutional-domain
+  // Recupera última URL usada pra economizar digitação
   useEffect(() => {
-    let abort = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/company/institutional-domain");
-        if (!res.ok || abort) return;
-        const json = await res.json();
-        if (json?.institutionalDomain && !abort) {
-          setDomain(json.institutionalDomain);
-          setDomainPrefilled(true);
-        }
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => {
-      abort = true;
-    };
+    try {
+      const last = localStorage.getItem(LS_KEY_LAST_URL);
+      if (last) setUrl(last);
+    } catch {
+      // ignora SSR / privacy mode
+    }
   }, []);
 
   async function handleSuggest(e?: React.FormEvent) {
@@ -151,8 +136,12 @@ export default function SugestaoCartaContent() {
       toast.error("Selecione um arquivo PDF antes de continuar.");
       return;
     }
-    if (mode === "domain" && !domain.trim()) {
-      toast.error("Informe o domínio da instituição.");
+    if (mode === "url" && !url.trim()) {
+      toast.error("Cole a URL da Carta de Serviços.");
+      return;
+    }
+    if (mode === "url" && !/^https?:\/\//i.test(url.trim())) {
+      toast.error("URL inválida — use endereço completo com http:// ou https://");
       return;
     }
     setLoading(true);
@@ -168,10 +157,16 @@ export default function SugestaoCartaContent() {
           body: fd,
         });
       } else {
+        const trimmed = url.trim();
+        try {
+          localStorage.setItem(LS_KEY_LAST_URL, trimmed);
+        } catch {
+          // ignora privacy mode
+        }
         res = await fetch("/api/inventario/sugerir-da-carta", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ domain: domain.trim() }),
+          body: JSON.stringify({ url: trimmed }),
         });
       }
       const json = await res.json();
@@ -345,23 +340,23 @@ export default function SugestaoCartaContent() {
         onSubmit={handleSuggest}
         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6 shadow-sm"
       >
-        {/* Toggle de modo: domínio vs PDF */}
+        {/* Toggle de modo: URL vs PDF */}
         <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-900 mb-4">
           <button
             type="button"
             onClick={() => {
-              setMode("domain");
+              setMode("url");
               setResult(null);
             }}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-              mode === "domain"
+              mode === "url"
                 ? "bg-white dark:bg-gray-700 text-violet-700 dark:text-violet-300 shadow-sm"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-900",
             )}
           >
             <Globe className="h-3.5 w-3.5" />
-            Por domínio
+            Por URL
           </button>
           <button
             type="button"
@@ -381,35 +376,29 @@ export default function SugestaoCartaContent() {
           </button>
         </div>
 
-        {/* Variante: por domínio */}
-        {mode === "domain" && (
+        {/* Variante: por URL */}
+        {mode === "url" && (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
             <div className="flex-1">
-              <Label htmlFor="domain" className="text-xs font-medium mb-1 block">
-                Domínio institucional
+              <Label htmlFor="url" className="text-xs font-medium mb-1 block">
+                URL da Carta de Serviços
               </Label>
-              <div className="relative">
-                <Input
-                  id="domain"
-                  type="text"
-                  value={domain}
-                  onChange={(e) => setDomain(e.target.value)}
-                  placeholder="ex: prefeituradeguarapari.es.gov.br"
-                  className="text-sm"
-                />
-                {domainPrefilled && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none hidden sm:inline">
-                    já cadastrado em /empresa
-                  </span>
-                )}
-              </div>
+              <Input
+                id="url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.exemplo.gov.br/carta-de-servicos/"
+                className="text-sm"
+              />
               <p className="text-xs text-gray-500 mt-1">
-                A IA descobre URLs públicas de Carta de Serviços a partir desse domínio.
+                Cole o endereço público da página da Carta de Serviços da sua instituição.
+                A IA lê o conteúdo e identifica os serviços que envolvem dados pessoais.
               </p>
             </div>
             <Button
               type="submit"
-              disabled={loading || !domain.trim()}
+              disabled={loading || !url.trim()}
               className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 self-end sm:self-auto whitespace-nowrap"
             >
               {loading ? (
@@ -550,12 +539,11 @@ export default function SugestaoCartaContent() {
                   {result.stats.totalServicesExtracted} serviço{result.stats.totalServicesExtracted === 1 ? "" : "s"}
                 </span>{" "}
                 em{" "}
-                <span className="font-mono text-xs bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded border">
-                  {result.domain ?? result.source ?? "fonte fornecida"}
+                <span className="font-mono text-xs bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded border break-all">
+                  {result.source?.startsWith("pdf:")
+                    ? result.source.replace(/^pdf:/, "")
+                    : result.source ?? "fonte fornecida"}
                 </span>
-                {result.stats.totalUrlsCandidate > 0 && (
-                  <> (de {result.stats.totalUrlsCandidate} URLs candidatas)</>
-                )}
                 {result.pdfPagesRead != null && result.pdfTotalPages != null && (
                   <>
                     {" "}
@@ -672,8 +660,9 @@ export default function SugestaoCartaContent() {
             Pronto pra começar?
           </p>
           <p className="text-xs text-gray-500">
-            Cole um domínio e clique em "Sugerir processos" — a IA varre as
-            páginas públicas e devolve uma lista pra você revisar.
+            {mode === "url"
+              ? 'Cole a URL da Carta de Serviços e clique em "Sugerir processos" — a IA lê a página e devolve a lista pra você revisar.'
+              : 'Envie o PDF da Carta e clique em "Sugerir processos do PDF" — a IA extrai o texto e devolve a lista pra você revisar.'}
           </p>
         </div>
       )}

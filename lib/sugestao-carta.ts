@@ -25,13 +25,9 @@
  */
 
 import { GoogleGenAI } from "@google/genai";
-import { mapSite, scrapeMany, type FirecrawlScrapeResult } from "./firecrawl";
-import { classifyUrl } from "./url-keywords";
+import { scrapeUrlToMarkdown } from "./firecrawl";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-
-/** Limite defensivo: scrape no máx N URLs (custo Firecrawl). */
-const MAX_SCRAPE = 8;
 
 /** Limite defensivo: corpus enviado ao LLM. */
 const MAX_CORPUS_CHARS = 60_000;
@@ -71,14 +67,12 @@ export interface ServicePrefill {
 }
 
 export interface SuggestionStats {
-  totalUrlsMapped: number;
-  totalUrlsCandidate: number;
-  totalUrlsScraped: number;
   totalServicesExtracted: number;
   bySuggested: number;
   byMaybe: number;
   byNo: number;
-  scrapeErrors: number;
+  /** Tamanho em caracteres do corpus que foi pro LLM (pra debug/UX). */
+  corpusChars: number;
 }
 
 export interface SuggestionResult {
@@ -312,57 +306,9 @@ function getClient(): GoogleGenAI {
 }
 
 /**
- * Filtra URLs do site mapeado pra apenas aquelas relevantes pra Carta
- * de Serviços. Categorias incluídas: carta_servicos (alvo principal),
- * ouvidoria, sic, edital, rh — todas boas fontes de serviços ao cidadão.
- *
- * Limite MAX_SCRAPE preserva budget (Firecrawl cobra por URL scrapeada).
- */
-function pickCandidateUrls(allUrls: string[]): string[] {
-  const RELEVANT_CATS = new Set([
-    "carta_servicos",
-    "ouvidoria",
-    "sic",
-    "edital",
-    "rh",
-  ]);
-
-  // Pontuação simples: mais palavras-chave casadas = mais relevante
-  const scored = allUrls
-    .map((url) => {
-      const cats = classifyUrl(url);
-      const score = cats.filter((c) => RELEVANT_CATS.has(c)).length;
-      return { url, score };
-    })
-    .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score);
-
-  // Dedup por path (alguns sites repetem com query strings)
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const { url } of scored) {
-    try {
-      const u = new URL(url);
-      const key = u.host + u.pathname;
-      if (seen.has(key)) continue;
-      seen.add(key);
-    } catch {
-      // url inválida — usa string inteira
-      if (seen.has(url)) continue;
-      seen.add(url);
-    }
-    out.push(url);
-    if (out.length >= MAX_SCRAPE) break;
-  }
-  return out;
-}
-
-/**
  * Função pública (variante PDF): recebe TEXTO já extraído e classifica.
  *
- * Pula totalmente Firecrawl/mapSite — o user fez upload do PDF da Carta
- * de Serviços e o caller (endpoint) já chamou `extractPdfText`.
- *
+ * O caller (endpoint /from-pdf) já chamou `extractPdfText`.
  * `sourceLabel` é usado em prefill provenance e no `sourceUrl` de cada
  * serviço (ex: "pdf:Carta_Sisouv_2025.pdf"). Não é uma URL real — é só
  * um identificador da fonte pra a UI mostrar.
@@ -394,119 +340,55 @@ export async function suggestServicesFromText(
     );
   }
 
-  // Mesmo prompt da rota domain, mas com cabeçalho de fonte explícita
   const wrappedCorpus = `--- FONTE: ${sourceLabel} ---\n\n${corpus}`;
   return await callLlmAndSanitize(wrappedCorpus, sourceLabel, warnings);
 }
 
 /**
- * Função pública: descobre + extrai + classifica.
+ * Função pública (variante URL): scrapeia UMA URL específica da Carta
+ * de Serviços e classifica os serviços encontrados.
+ *
+ * Diferente da extinta `suggestServicesFromCarta(domain)` que tentava
+ * descobrir URLs por heurística (custoso e errático), aqui o user já
+ * conhece a URL da Carta e a passa direto. Mais preciso, mais barato.
  */
-export async function suggestServicesFromCarta(
-  domain: string,
+export async function suggestServicesFromUrl(
+  url: string,
 ): Promise<SuggestionResult> {
   const warnings: string[] = [];
 
-  // 1. mapSite
-  const mapResult = await mapSite(domain, { limit: 500, timeoutMs: 35_000 });
-  if (mapResult.error) {
+  const scrape = await scrapeUrlToMarkdown(url, { timeoutMs: 45_000 });
+  if (scrape.error) {
     return {
       services: [],
       stats: emptyStats(0),
-      blockingError: `Não consegui mapear o site: ${mapResult.error}`,
+      blockingError: `Não consegui acessar a URL: ${scrape.error}`,
       warnings,
     };
   }
-
-  const totalMapped = mapResult.urls.length;
-  if (totalMapped === 0) {
+  if (!scrape.markdown || scrape.markdown.trim().length < 200) {
     return {
       services: [],
       stats: emptyStats(0),
-      blockingError: "O site não retornou URLs. Confirme o domínio.",
-      warnings,
-    };
-  }
-
-  // 2. Filtra candidatos
-  const candidates = pickCandidateUrls(mapResult.urls);
-  if (candidates.length === 0) {
-    return {
-      services: [],
-      stats: { ...emptyStats(0), totalUrlsMapped: totalMapped },
       blockingError:
-        "Não encontrei páginas que pareçam Carta de Serviços / Ouvidoria / SIC neste domínio. Verifique se a Carta está publicada e tente outro endereço.",
+        "A página retornou pouco ou nenhum conteúdo. Confirme se a URL está pública e contém a Carta de Serviços.",
       warnings,
     };
   }
 
-  // 3. Scrape paralelo
-  const scrapes: FirecrawlScrapeResult[] = await scrapeMany(candidates, {
-    timeoutMs: 35_000,
-  });
-  const okScrapes = scrapes.filter((s) => !s.error && s.markdown);
-  const failedScrapes = scrapes.filter((s) => s.error);
-  if (failedScrapes.length > 0) {
-    warnings.push(
-      `${failedScrapes.length} URL${failedScrapes.length === 1 ? "" : "s"} falharam no scrape (resultados parciais).`,
-    );
-  }
+  const headerLines = [`URL: ${scrape.url}`];
+  if (scrape.title) headerLines.push(`TÍTULO: ${scrape.title}`);
+  const corpus = `--- ${headerLines.join("\n")} ---\n\n${scrape.markdown}`;
 
-  if (okScrapes.length === 0) {
-    return {
-      services: [],
-      stats: {
-        totalUrlsMapped: totalMapped,
-        totalUrlsCandidate: candidates.length,
-        totalUrlsScraped: 0,
-        totalServicesExtracted: 0,
-        bySuggested: 0,
-        byMaybe: 0,
-        byNo: 0,
-        scrapeErrors: failedScrapes.length,
-      },
-      blockingError:
-        "Não consegui ler nenhuma página candidata. Pode ser bloqueio do site ou timeout.",
-      warnings,
-    };
-  }
-
-  // 4. Concat markdown
-  let corpus = okScrapes
-    .map(
-      (s) =>
-        `--- URL: ${s.url}${s.title ? `\nTÍTULO: ${s.title}` : ""}\n\n${s.markdown}`,
-    )
-    .join("\n\n---\n\n");
-  if (corpus.length > MAX_CORPUS_CHARS) {
-    corpus = corpus.slice(0, MAX_CORPUS_CHARS) + "\n[...truncado por limite de contexto...]";
-  }
-
-  // 5+6. Delega LLM + sanitize pro helper compartilhado
-  const llmResult = await callLlmAndSanitize(corpus, domain, warnings);
-
-  // Mistura stats da pipeline (mapSite + scrape) com stats do LLM
-  return {
-    ...llmResult,
-    stats: {
-      ...llmResult.stats,
-      totalUrlsMapped: totalMapped,
-      totalUrlsCandidate: candidates.length,
-      totalUrlsScraped: okScrapes.length,
-      scrapeErrors: failedScrapes.length,
-    },
-  };
+  return await callLlmAndSanitize(corpus, scrape.url, warnings);
 }
 
 /**
  * Helper interno: roda Gemini + sanitiza + monta SuggestionResult.
  *
  * Compartilhado entre:
- *  - `suggestServicesFromCarta(domain)` (pipeline Firecrawl)
- *  - `suggestServicesFromText(text, label)` (PDF upload)
- *
- * Retorna stats com campos URL zerados — o caller que veio do
- * pipeline Firecrawl preenche depois.
+ *  - `suggestServicesFromUrl(url)` (variante URL — scrape Firecrawl)
+ *  - `suggestServicesFromText(text, label)` (variante PDF upload)
  */
 async function callLlmAndSanitize(
   corpus: string,
@@ -536,7 +418,7 @@ async function callLlmAndSanitize(
   } catch (e: any) {
     return {
       services: [],
-      stats: emptyStats(0),
+      stats: emptyStats(corpus.length),
       blockingError: `Erro do LLM: ${e?.message ?? "desconhecido"}`,
       warnings,
     };
@@ -550,8 +432,9 @@ async function callLlmAndSanitize(
   for (const raw of rawServices) {
     const s = sanitizeService(raw);
     if (!s) continue;
-    // PDF: o LLM frequentemente não tem URL pra colocar — usa label
-    // ("pdf:Carta.pdf") como sourceUrl pra UI exibir.
+    // PDF / sem URL no LLM: usa o sourceLabel como fonte da UI.
+    // - sourceLabel = URL http://... → vira sourceUrl (link clicável)
+    // - sourceLabel = "Carta.pdf"   → vira "pdf:Carta.pdf" (sem link)
     if (!s.sourceUrl) {
       (s as any).sourceUrl = sourceLabel.startsWith("http")
         ? sourceLabel
@@ -570,30 +453,24 @@ async function callLlmAndSanitize(
   return {
     services,
     stats: {
-      totalUrlsMapped: 0,
-      totalUrlsCandidate: 0,
-      totalUrlsScraped: 0,
       totalServicesExtracted: services.length,
       bySuggested,
       byMaybe,
       byNo,
-      scrapeErrors: 0,
+      corpusChars: corpus.length,
     },
     blockingError: null,
     warnings,
   };
 }
 
-function emptyStats(totalMapped: number): SuggestionStats {
+function emptyStats(corpusChars: number): SuggestionStats {
   return {
-    totalUrlsMapped: totalMapped,
-    totalUrlsCandidate: 0,
-    totalUrlsScraped: 0,
     totalServicesExtracted: 0,
     bySuggested: 0,
     byMaybe: 0,
     byNo: 0,
-    scrapeErrors: 0,
+    corpusChars,
   };
 }
 
