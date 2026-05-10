@@ -106,6 +106,18 @@ const FILTER_LABELS: Record<FilterMode, string> = {
 
 const LS_KEY_LAST_URL = "pgp:sugestao-carta:last-url";
 
+/** Resultado da Etapa 1 (Coletar) — mantém o corpus em memória pra
+ *  passar pra Etapa 2 (Classificar) sem recoletar. */
+interface CollectionState {
+  corpus: string;
+  sourceLabel: string;
+  pagesRead: number;
+  urlsRead: string[];
+  pdfTotalPages?: number;
+  charCount: number;
+  warnings: string[];
+}
+
 export default function SugestaoCartaContent() {
   const router = useRouter();
   const [mode, setMode] = useState<SourceMode>("url");
@@ -113,8 +125,10 @@ export default function SugestaoCartaContent() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfDragActive, setPdfDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(false);
+  const [collecting, setCollecting] = useState(false);
+  const [classifying, setClassifying] = useState(false);
   const [materializing, setMaterializing] = useState(false);
+  const [collection, setCollection] = useState<CollectionState | null>(null);
   const [result, setResult] = useState<SuggestionResponse | null>(null);
   const [filter, setFilter] = useState<FilterMode>("suggested_or_maybe");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -129,9 +143,18 @@ export default function SugestaoCartaContent() {
     }
   }, []);
 
-  async function handleSuggest(e?: React.FormEvent) {
+  /** Volta pra estado inicial (descarta corpus + result + seleção). */
+  function resetAll() {
+    setCollection(null);
+    setResult(null);
+    setSelected(new Set());
+  }
+
+  /** Etapa 1: chama /coletar (URL) ou /coletar-pdf (PDF) e guarda
+   *  o corpus em estado. NÃO chama o LLM. */
+  async function handleCollect(e?: React.FormEvent) {
     e?.preventDefault();
-    if (loading) return;
+    if (collecting || classifying) return;
     if (mode === "pdf" && !pdfFile) {
       toast.error("Selecione um arquivo PDF antes de continuar.");
       return;
@@ -144,15 +167,16 @@ export default function SugestaoCartaContent() {
       toast.error("URL inválida — use endereço completo com http:// ou https://");
       return;
     }
-    setLoading(true);
+    setCollecting(true);
     setResult(null);
     setSelected(new Set());
+    setCollection(null);
     try {
       let res: Response;
       if (mode === "pdf" && pdfFile) {
         const fd = new FormData();
         fd.append("file", pdfFile);
-        res = await fetch("/api/inventario/sugerir-da-carta/from-pdf", {
+        res = await fetch("/api/inventario/sugerir-da-carta/coletar-pdf", {
           method: "POST",
           body: fd,
         });
@@ -163,15 +187,12 @@ export default function SugestaoCartaContent() {
         } catch {
           // ignora privacy mode
         }
-        res = await fetch("/api/inventario/sugerir-da-carta", {
+        res = await fetch("/api/inventario/sugerir-da-carta/coletar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: trimmed }),
         });
       }
-      // Parse robusto: server pode retornar HTML em caso de timeout/crash
-      // do runtime Vercel. Lemos como texto e tentamos JSON.parse com
-      // fallback amigável.
       const rawText = await res.text();
       let json: any;
       try {
@@ -186,10 +207,72 @@ export default function SugestaoCartaContent() {
         return;
       }
       if (!res.ok) {
-        toast.error(json?.error ?? "Erro ao sugerir processos");
+        toast.error(json?.error ?? "Erro ao coletar conteúdo");
         return;
       }
-      setResult(json as SuggestionResponse);
+      if (json.blockingError) {
+        toast.error(json.blockingError);
+        return;
+      }
+      setCollection({
+        corpus: json.corpus,
+        sourceLabel: json.sourceLabel,
+        pagesRead: json.pagesRead,
+        urlsRead: json.urlsRead ?? [],
+        pdfTotalPages: json.pdfTotalPages,
+        charCount: json.charCount,
+        warnings: json.warnings ?? [],
+      });
+      toast.success(
+        `Coletei ${json.pagesRead} página${json.pagesRead === 1 ? "" : "s"} (${(json.charCount / 1000).toFixed(1)}K chars). Agora classifique.`,
+      );
+    } catch (err: any) {
+      toast.error(`Erro: ${err?.message ?? "desconhecido"}`);
+    } finally {
+      setCollecting(false);
+    }
+  }
+
+  /** Etapa 2: manda corpus pro LLM via /classificar. */
+  async function handleClassify() {
+    if (!collection || classifying || collecting) return;
+    setClassifying(true);
+    setResult(null);
+    setSelected(new Set());
+    try {
+      const res = await fetch("/api/inventario/sugerir-da-carta/classificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          corpus: collection.corpus,
+          sourceLabel: collection.sourceLabel,
+        }),
+      });
+      const rawText = await res.text();
+      let json: any;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        const snippet = rawText.replace(/<[^>]+>/g, " ").trim().slice(0, 200);
+        const reason =
+          res.status === 504 || res.status === 408
+            ? "O LLM demorou demais (timeout). Tente novamente — o cache costuma melhorar a 2ª chamada."
+            : `Resposta inválida do servidor (status ${res.status})${snippet ? `: ${snippet}` : ""}`;
+        toast.error(reason);
+        return;
+      }
+      if (!res.ok) {
+        toast.error(json?.error ?? "Erro ao classificar serviços");
+        return;
+      }
+      // Casa com a interface SuggestionResponse: source + pdfPagesRead etc.
+      const enriched: SuggestionResponse = {
+        ...json,
+        source: json.source ?? collection.sourceLabel,
+        pdfPagesRead: collection.urlsRead.length === 0 ? collection.pagesRead : undefined,
+        pdfTotalPages: collection.pdfTotalPages,
+      };
+      setResult(enriched);
       // Por default, marca todos os SUGERIDO que não estão mapeados ainda
       const initial = new Set<string>();
       for (const s of json.services as SuggestedService[]) {
@@ -210,7 +293,7 @@ export default function SugestaoCartaContent() {
     } catch (err: any) {
       toast.error(`Erro: ${err?.message ?? "desconhecido"}`);
     } finally {
-      setLoading(false);
+      setClassifying(false);
     }
   }
 
@@ -224,6 +307,7 @@ export default function SugestaoCartaContent() {
       return;
     }
     setPdfFile(file);
+    setCollection(null);
     setResult(null);
   }
 
@@ -359,8 +443,8 @@ export default function SugestaoCartaContent() {
 
       {/* Bloco de busca */}
       <form
-        onSubmit={handleSuggest}
-        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6 shadow-sm"
+        onSubmit={handleCollect}
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 shadow-sm"
       >
         {/* Toggle de modo: URL vs PDF */}
         <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-900 mb-4">
@@ -368,7 +452,7 @@ export default function SugestaoCartaContent() {
             type="button"
             onClick={() => {
               setMode("url");
-              setResult(null);
+              resetAll();
             }}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
@@ -384,7 +468,7 @@ export default function SugestaoCartaContent() {
             type="button"
             onClick={() => {
               setMode("pdf");
-              setResult(null);
+              resetAll();
             }}
             className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
@@ -421,15 +505,15 @@ export default function SugestaoCartaContent() {
             </div>
             <Button
               type="submit"
-              disabled={loading || !url.trim()}
+              disabled={collecting || classifying || !url.trim()}
               className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 self-end sm:self-auto whitespace-nowrap"
             >
-              {loading ? (
+              {collecting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <Sparkles className="h-4 w-4 mr-2" />
               )}
-              {loading ? "Analisando..." : "Sugerir processos"}
+              {collecting ? "Coletando..." : "Coletar conteúdo"}
             </Button>
           </div>
         )}
@@ -507,29 +591,142 @@ export default function SugestaoCartaContent() {
             </div>
             <Button
               type="submit"
-              disabled={loading || !pdfFile}
+              disabled={collecting || classifying || !pdfFile}
               className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 self-start whitespace-nowrap"
             >
-              {loading ? (
+              {collecting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <Sparkles className="h-4 w-4 mr-2" />
               )}
-              {loading ? "Analisando..." : "Sugerir processos do PDF"}
+              {collecting ? "Lendo PDF..." : "Coletar conteúdo do PDF"}
             </Button>
           </div>
         )}
       </form>
 
-      {/* Loading State */}
-      {loading && (
+      {/* Loading State: coletando */}
+      {collecting && (
         <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-900 rounded-lg p-6 mb-4 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
           <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-            Mapeando o site, escaneando a Carta de Serviços e classificando processos...
+            Etapa 1 de 2 · Lendo o conteúdo da Carta de Serviços...
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Pode levar de 20s a 60s. Mantenha esta aba aberta.
+            Pode levar até 30s (varre URL fornecida + sub-páginas). Mantenha esta aba aberta.
+          </p>
+        </div>
+      )}
+
+      {/* Bloco "Conteúdo coletado" (entre Etapa 1 e Etapa 2) */}
+      {collection && !classifying && !result && (
+        <div className="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-900 rounded-lg p-4 mb-4 shadow-sm">
+          <div className="flex items-start gap-3 mb-3">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                Etapa 1 concluída · Conteúdo coletado
+              </h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                Li{" "}
+                <span className="font-semibold">
+                  {collection.pagesRead}{" "}
+                  {collection.urlsRead.length > 0 ? "página" : "página do PDF"}
+                  {collection.pagesRead === 1 ? "" : "s"}
+                </span>{" "}
+                · {(collection.charCount / 1000).toFixed(1)}K caracteres prontos pra
+                classificação.
+                {collection.pdfTotalPages != null &&
+                  collection.pdfTotalPages > collection.pagesRead && (
+                    <>
+                      {" "}
+                      ({collection.pagesRead} de {collection.pdfTotalPages} páginas — limite
+                      atingido)
+                    </>
+                  )}
+              </p>
+              {collection.urlsRead.length > 0 && (
+                <details className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  <summary className="cursor-pointer hover:text-gray-900 inline-flex items-center gap-1">
+                    <ChevronDown className="h-3 w-3" />
+                    Ver URLs lidas ({collection.urlsRead.length})
+                  </summary>
+                  <ul className="mt-1.5 space-y-0.5 pl-4">
+                    {collection.urlsRead.map((u) => (
+                      <li key={u} className="break-all">
+                        <a
+                          href={u}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {u}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {collection.warnings.length > 0 && (
+                <div className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                  {collection.warnings.map((w, i) => (
+                    <p key={i}>⚠ {w}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              onClick={handleClassify}
+              disabled={classifying}
+              className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 whitespace-nowrap"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Etapa 2 · Classificar serviços
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCollect}
+              disabled={collecting}
+              className="whitespace-nowrap"
+            >
+              <Loader2 className={cn("h-4 w-4 mr-2", collecting && "animate-spin")} />
+              Recoletar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                const blob = new Blob([collection.corpus], {
+                  type: "text/plain;charset=utf-8",
+                });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `carta-coletada-${Date.now()}.txt`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+              }}
+              className="whitespace-nowrap text-gray-600"
+              title="Baixar texto coletado como TXT (útil pra arquivar/auditar)"
+            >
+              ⬇ Baixar TXT
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading State: classificando */}
+      {classifying && (
+        <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-900 rounded-lg p-6 mb-4 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+            Etapa 2 de 2 · IA classificando os serviços encontrados...
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Pode levar de 15s a 30s. Mantenha esta aba aberta.
           </p>
         </div>
       )}
@@ -676,7 +873,7 @@ export default function SugestaoCartaContent() {
       )}
 
       {/* Estado vazio inicial — antes de rodar */}
-      {!result && !loading && (
+      {!result && !collection && !collecting && !classifying && (
         <div className="bg-white dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
           <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
@@ -684,8 +881,8 @@ export default function SugestaoCartaContent() {
           </p>
           <p className="text-xs text-gray-500">
             {mode === "url"
-              ? 'Cole a URL da Carta de Serviços e clique em "Sugerir processos" — a IA lê a página e devolve a lista pra você revisar.'
-              : 'Envie o PDF da Carta e clique em "Sugerir processos do PDF" — a IA extrai o texto e devolve a lista pra você revisar.'}
+              ? 'Cole a URL da Carta de Serviços e clique em "Coletar conteúdo" — a IA lê as páginas (Etapa 1), você confirma e classifica em seguida (Etapa 2).'
+              : 'Envie o PDF da Carta e clique em "Coletar conteúdo" — a IA extrai o texto (Etapa 1), você confirma e classifica em seguida (Etapa 2).'}
           </p>
         </div>
       )}
