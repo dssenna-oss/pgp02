@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Sugestão de processos a partir da Carta de Serviços (Fase 3)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f8fafc; }
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+    .stripe-green { background: linear-gradient(90deg, #10b981 4px, transparent 4px); padding-left: 12px; }
+    .stripe-amber { background: linear-gradient(90deg, #f59e0b 4px, transparent 4px); padding-left: 12px; }
+    .stripe-gray { background: linear-gradient(90deg, #9ca3af 4px, transparent 4px); padding-left: 12px; }
+    .stripe-blue { background: linear-gradient(90deg, #3b82f6 4px, transparent 4px); padding-left: 12px; }
+  </style>
+</head>
+<body>
+  <div class="max-w-6xl mx-auto p-6">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500 mb-3">
+      Fase 3 — Mapeamento de Dados e Análise de Riscos
+      <span class="mx-1">/</span>
+      <span class="text-gray-700 font-medium">Sugerir processos da Carta de Serviços</span>
+    </nav>
+
+    <!-- Hero -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 mb-1">
+        ✨ Sugerir processos a partir da Carta de Serviços
+      </h1>
+      <p class="text-gray-600 max-w-3xl text-sm leading-relaxed">
+        A Lei 13.460/2017 (Art. 7º) obriga sua organização a publicar uma Carta de Serviços com
+        todos os serviços oferecidos ao cidadão. A IA varre essa Carta e sugere quais processos
+        envolvem dados pessoais — você revisa e cria os Inventários em rascunho com 1 clique.
+      </p>
+    </div>
+
+    <!-- =================================================
+         BLOCO DE BUSCA — colapsa após o primeiro resultado
+         ================================================= -->
+    <div class="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+        <div class="flex-1">
+          <label class="text-xs font-medium text-gray-700 mb-1 block">Domínio institucional</label>
+          <div class="relative">
+            <input
+              type="text"
+              value="tcees.tc.br"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              placeholder="ex: prefeituradeguarapari.es.gov.br"
+            />
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">já cadastrado em /empresa</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">A IA descobre URLs públicas de Carta de Serviços a partir desse domínio.</p>
+        </div>
+        <button class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-md text-sm font-medium flex items-center gap-2 self-end sm:self-auto whitespace-nowrap">
+          <span>✨</span>
+          Sugerir processos
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================
+         BANNER DE STATS — após processamento
+         ================================================= -->
+    <div class="bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-200 rounded-lg p-4 mb-4">
+      <div class="flex items-start gap-3">
+        <span class="text-2xl">🎯</span>
+        <div class="flex-1">
+          <h3 class="font-semibold text-gray-900 text-sm mb-1">Análise concluída em 23s</h3>
+          <p class="text-sm text-gray-700 mb-3">
+            Encontrei <span class="font-semibold">42 serviços</span> em
+            <span class="font-mono text-xs bg-white px-1.5 py-0.5 rounded border">tcees.tc.br/carta-de-servicos</span>.
+            Após classificação automática:
+          </p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="bg-white rounded-md p-2.5 border border-emerald-200">
+              <div class="text-xs text-gray-500">Sugeridos</div>
+              <div class="text-xl font-bold text-emerald-600">18</div>
+              <div class="text-[10px] text-gray-500">trata dado pessoal claro</div>
+            </div>
+            <div class="bg-white rounded-md p-2.5 border border-amber-200">
+              <div class="text-xs text-gray-500">Talvez</div>
+              <div class="text-xl font-bold text-amber-600">7</div>
+              <div class="text-[10px] text-gray-500">ambíguo, revisar</div>
+            </div>
+            <div class="bg-white rounded-md p-2.5 border border-gray-200">
+              <div class="text-xs text-gray-500">Provável que não</div>
+              <div class="text-xl font-bold text-gray-500">14</div>
+              <div class="text-[10px] text-gray-500">serviço anônimo</div>
+            </div>
+            <div class="bg-white rounded-md p-2.5 border border-blue-200">
+              <div class="text-xs text-gray-500">Já mapeado</div>
+              <div class="text-xl font-bold text-blue-600">3</div>
+              <div class="text-[10px] text-gray-500">sem duplicar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================
+         BARRA DE FILTROS + CONTROLES
+         ================================================= -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs text-gray-500 font-medium mr-1">Mostrar:</span>
+        <button class="chip bg-violet-600 text-white">Sugeridos + Talvez (25)</button>
+        <button class="chip bg-white border border-emerald-300 text-emerald-700">🟢 Só sugeridos (18)</button>
+        <button class="chip bg-white border border-amber-300 text-amber-700">🟡 Só talvez (7)</button>
+        <button class="chip bg-white border border-gray-300 text-gray-600">⚪ Não sugeridos (14)</button>
+        <button class="chip bg-white border border-blue-300 text-blue-700">✓ Já mapeados (3)</button>
+        <button class="chip bg-white border border-gray-300 text-gray-700">📋 Tudo (42)</button>
+      </div>
+      <div class="flex items-center gap-2 text-xs">
+        <button class="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline">Selecionar tudo</button>
+        <span class="text-gray-300">·</span>
+        <button class="text-gray-600 hover:text-gray-900 underline-offset-2 hover:underline">Limpar</button>
+      </div>
+    </div>
+
+    <!-- =================================================
+         LISTA DE SERVIÇOS — cards com classificação
+         ================================================= -->
+    <div class="space-y-3 mb-24">
+
+      <!-- ======================== SUGERIDO (verde) ======================== -->
+      <details class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition-shadow stripe-green" open>
+        <summary class="flex items-start gap-3 p-4">
+          <input type="checkbox" checked class="mt-1.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
+          <span class="text-lg leading-none mt-0.5">🟢</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-900">Solicitação de Informações (Lei de Acesso à Informação)</h3>
+              <span class="chip bg-emerald-100 text-emerald-800">Sugerido</span>
+              <span class="chip bg-gray-100 text-gray-700">SIC</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+              Permite ao cidadão solicitar acesso a informações públicas produzidas ou custodiadas pelo
+              TCE-ES, conforme Lei 12.527/2011 (LAI). Exige identificação do solicitante (nome, CPF, e-mail).
+            </p>
+            <div class="flex flex-wrap items-center gap-2 mt-2 text-[11px]">
+              <span class="text-gray-500">Pré-preencherá:</span>
+              <span class="chip bg-blue-50 text-blue-700">📝 Finalidade</span>
+              <span class="chip bg-blue-50 text-blue-700">👥 Público (cidadão)</span>
+              <span class="chip bg-blue-50 text-blue-700">📋 Documentos exigidos</span>
+              <span class="chip bg-blue-50 text-blue-700">⚖️ Base legal</span>
+              <span class="chip bg-blue-50 text-blue-700">🔄 Compartilhamento</span>
+            </div>
+          </div>
+          <span class="text-gray-400 text-xs flex-shrink-0">▼</span>
+        </summary>
+        <div class="border-t border-gray-100 p-4 bg-gray-50 text-sm">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div class="text-xs font-medium text-gray-500 mb-1">Fonte</div>
+              <a class="text-xs text-blue-600 hover:underline break-all" href="#">https://www.tcees.tc.br/carta-de-servicos/sic/</a>
+              <div class="text-xs font-medium text-gray-500 mt-3 mb-1">Por que foi classificado como Sugerido?</div>
+              <p class="text-xs text-gray-700">A descrição menciona explicitamente CPF + nome + e-mail do solicitante. Trata dado pessoal de forma identificada.</p>
+            </div>
+            <div>
+              <div class="text-xs font-medium text-gray-500 mb-1">Pré-visualização do rascunho</div>
+              <div class="bg-white rounded p-2.5 border border-gray-200 text-xs space-y-1.5">
+                <div><b>Nome:</b> Solicitação de Informações via SIC</div>
+                <div><b>Finalidade:</b> Atender pedidos de acesso a informações públicas (LAI)</div>
+                <div><b>Público:</b> Cidadão (qualquer pessoa)</div>
+                <div><b>Base legal:</b> Cumprimento de obrigação legal (Art. 7º II) + LAI</div>
+                <div class="text-gray-400 italic">+ 6 outros campos com badge 🤖 IA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- ======================== SUGERIDO (verde) ======================== -->
+      <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition-shadow stripe-green">
+        <div class="flex items-start gap-3 p-4">
+          <input type="checkbox" checked class="mt-1.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
+          <span class="text-lg leading-none mt-0.5">🟢</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-900">Denúncia, Reclamação ou Sugestão à Ouvidoria</h3>
+              <span class="chip bg-emerald-100 text-emerald-800">Sugerido</span>
+              <span class="chip bg-gray-100 text-gray-700">Ouvidoria</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+              Canal de manifestações do cidadão sobre serviços do TCE-ES. Permite denúncia identificada
+              ou anônima, reclamação, elogio e sugestão. Coleta CPF, nome, contato e descrição.
+            </p>
+            <div class="flex flex-wrap items-center gap-2 mt-2 text-[11px]">
+              <span class="text-gray-500">Pré-preencherá:</span>
+              <span class="chip bg-blue-50 text-blue-700">📝 Finalidade</span>
+              <span class="chip bg-blue-50 text-blue-700">👥 Público</span>
+              <span class="chip bg-blue-50 text-blue-700">⚠️ Sigilo de denúncia</span>
+              <span class="chip bg-blue-50 text-blue-700">⚖️ Base legal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== SUGERIDO (verde) ======================== -->
+      <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition-shadow stripe-green">
+        <div class="flex items-start gap-3 p-4">
+          <input type="checkbox" checked class="mt-1.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
+          <span class="text-lg leading-none mt-0.5">🟢</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-900">Inscrição em Concurso Público</h3>
+              <span class="chip bg-emerald-100 text-emerald-800">Sugerido</span>
+              <span class="chip bg-gray-100 text-gray-700">RH</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+              Cadastro de candidato para participação em concurso público de provimento de cargos
+              efetivos. Coleta dados completos: CPF, RG, formação acadêmica, currículo.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== JÁ MAPEADO (azul) ======================== -->
+      <div class="bg-blue-50/40 border border-blue-200 rounded-lg shadow-sm stripe-blue opacity-80">
+        <div class="flex items-start gap-3 p-4">
+          <span class="mt-1.5 h-4 w-4 rounded-full bg-blue-600 text-white text-[10px] flex items-center justify-center flex-shrink-0">✓</span>
+          <span class="text-lg leading-none mt-0.5">🟢</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-700">Cadastro de Estagiário</h3>
+              <span class="chip bg-blue-100 text-blue-800">Já mapeado em 03/05/2026</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1 line-clamp-1">
+              Inscrição de estudantes em programa de estágio (Lei 11.788/2008).
+            </p>
+            <a href="#" class="text-xs text-blue-600 hover:underline mt-1 inline-block">Abrir Inventário existente →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== TALVEZ (âmbar) ======================== -->
+      <details class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition-shadow stripe-amber">
+        <summary class="flex items-start gap-3 p-4">
+          <input type="checkbox" class="mt-1.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
+          <span class="text-lg leading-none mt-0.5">🟡</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-900">Agendamento de Visita Técnica</h3>
+              <span class="chip bg-amber-100 text-amber-800">Talvez</span>
+              <span class="chip bg-gray-100 text-gray-700">Atendimento</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+              Permite agendar visita guiada às dependências do TCE-ES para grupos escolares ou
+              instituições. A Carta menciona "informar nome do responsável", mas não detalha
+              quais dados são coletados.
+            </p>
+          </div>
+          <span class="text-gray-400 text-xs flex-shrink-0">▼</span>
+        </summary>
+        <div class="border-t border-gray-100 p-4 bg-amber-50/40 text-sm">
+          <div class="text-xs font-medium text-gray-500 mb-1">Por que foi classificado como Talvez?</div>
+          <p class="text-xs text-gray-700">A Carta diz "agendamento" e "responsável pelo grupo" mas não lista CPF/RG/contato. Pode ser apenas nome+e-mail (dado pessoal mínimo) ou pode coletar mais (precisa confirmar com a área operacional).</p>
+        </div>
+      </details>
+
+      <!-- ======================== TALVEZ (âmbar) ======================== -->
+      <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow transition-shadow stripe-amber">
+        <div class="flex items-start gap-3 p-4">
+          <input type="checkbox" class="mt-1.5 h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500" />
+          <span class="text-lg leading-none mt-0.5">🟡</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-900">Solicitação de Uso do Auditório</h3>
+              <span class="chip bg-amber-100 text-amber-800">Talvez</span>
+              <span class="chip bg-gray-100 text-gray-700">Patrimônio</span>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+              Reserva de espaço institucional para eventos externos. Pode coletar dados do solicitante
+              dependendo da política interna.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== PROVÁVEL QUE NÃO (cinza) ======================== -->
+      <div class="bg-gray-50/60 border border-gray-200 rounded-lg stripe-gray opacity-70">
+        <div class="flex items-start gap-3 p-4">
+          <input type="checkbox" disabled class="mt-1.5 h-4 w-4 rounded border-gray-300 cursor-not-allowed" />
+          <span class="text-lg leading-none mt-0.5">🔴</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-700">Consulta a Editais de Licitação</h3>
+              <span class="chip bg-gray-200 text-gray-700">Provável que não</span>
+              <span class="chip bg-gray-100 text-gray-600">Licitação</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1 line-clamp-2">
+              Acesso público a editais publicados. Não coleta dados do consultante (download anônimo).
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== PROVÁVEL QUE NÃO (cinza) ======================== -->
+      <div class="bg-gray-50/60 border border-gray-200 rounded-lg stripe-gray opacity-70">
+        <div class="flex items-start gap-3 p-4">
+          <input type="checkbox" disabled class="mt-1.5 h-4 w-4 rounded border-gray-300 cursor-not-allowed" />
+          <span class="text-lg leading-none mt-0.5">🔴</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start gap-2 flex-wrap">
+              <h3 class="font-semibold text-gray-700">Consulta ao Diário Oficial</h3>
+              <span class="chip bg-gray-200 text-gray-700">Provável que não</span>
+            </div>
+            <p class="text-sm text-gray-500 mt-1">
+              Leitura pública de publicações oficiais. Anônimo.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé "ver mais" -->
+      <div class="text-center pt-2">
+        <button class="text-sm text-violet-600 hover:text-violet-700 font-medium">
+          Carregar mais 17 serviços →
+        </button>
+      </div>
+    </div>
+
+    <!-- =================================================
+         BARRA STICKY DE AÇÃO (aparece quando há seleção)
+         ================================================= -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl z-50">
+      <div class="max-w-6xl mx-auto px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="bg-violet-100 text-violet-800 rounded-full px-3 py-1 text-sm font-semibold">
+            3 selecionados
+          </div>
+          <span class="text-sm text-gray-600">vão virar rascunhos no Inventário com selo <span class="chip bg-sky-100 text-sky-800">🤖 IA</span> nos campos preenchidos.</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+            Cancelar
+          </button>
+          <button class="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2 rounded-md text-sm font-medium flex items-center gap-2">
+            <span>📋</span>
+            Criar 3 rascunhos no Inventário
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
