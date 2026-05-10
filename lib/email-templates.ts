@@ -559,6 +559,141 @@ export function tplActionPlanOverdueDigest(
 }
 
 // ============================================================
+// 5. Alerta IMEDIATO de ação criada/editada já atrasada (DPO-only)
+// ============================================================
+
+export interface ActionPlanOverdueAlertArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  companyName: string | null;
+  /** Trigger humano-legível: "criada" ou "editada". */
+  trigger: "criada" | "editada";
+  /** Ação que disparou o alerta. */
+  action: {
+    id: string;
+    title: string;
+    priority: string;
+    origin: string;
+    assigneeName: string | null;
+    dueDate: Date | string;
+    daysOverdue: number;
+  };
+}
+
+/**
+ * Email enviado IMEDIATAMENTE quando uma ação do Plano é criada já
+ * com `dueDate` no passado, ou quando uma edição faz uma ação que
+ * estava em dia ficar atrasada. Complementa (não substitui) o digest
+ * diário do cron `/api/cron/action-plan-reminders`.
+ *
+ * Justificativa: indica oversight humano e merece atenção fora da
+ * janela de 9h do digest.
+ */
+export function tplActionPlanOverdueAlert(
+  args: ActionPlanOverdueAlertArgs,
+): TemplateOutput {
+  const { action } = args;
+  const recipientFirstName = (args.recipientName ?? "")
+    .split(" ")[0]
+    .trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const subject = `🔴 Ação atrasada no Plano: "${action.title.slice(0, 60)}${
+    action.title.length > 60 ? "…" : ""
+  }"`;
+
+  const dueDateStr =
+    typeof action.dueDate === "string"
+      ? action.dueDate
+      : action.dueDate.toLocaleDateString("pt-BR");
+
+  const prioBadge =
+    action.priority === "ALTA"
+      ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">ALTA</span>`
+      : action.priority === "MEDIA"
+        ? `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">MÉDIA</span>`
+        : `<span style="background:#e5e7eb;color:#374151;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">BAIXA</span>`;
+
+  const originLabel =
+    {
+      MANUAL: "Manual",
+      GAP: "GAP",
+      RISCO: "Risco",
+      BASES: "Bases legais",
+      OPERADOR: "Operador",
+      INCIDENTE: "Incidente",
+      LIA: "LIA",
+      CYBER: "Cyber",
+    }[action.origin] ?? action.origin;
+
+  const triggerSentence =
+    args.trigger === "criada"
+      ? "Uma nova ação foi <strong>criada já com prazo no passado</strong>"
+      : "Uma ação foi <strong>editada e o novo prazo está no passado</strong>";
+
+  const orgLine = args.companyName
+    ? ` no Plano de Ação de <strong>${escapeHtml(args.companyName)}</strong>`
+    : " no Plano de Ação da sua organização";
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">${triggerSentence}${orgLine}.</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background: #fef2f2; border-left: 4px solid #dc2626; border-radius: 4px;">
+      <tr><td style="padding: 14px 16px;">
+        <div style="font-weight: 600; color: #111827; margin-bottom: 8px; font-size: 15px;">
+          ${escapeHtml(action.title)}
+        </div>
+        <div style="font-size: 13px; color: #4b5563; line-height: 1.7;">
+          ${prioBadge}
+          <span style="background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;margin-left:6px;">${escapeHtml(originLabel)}</span>
+          <br>
+          <strong>Prazo:</strong> ${escapeHtml(dueDateStr)}
+          <span style="color:#dc2626;font-weight:600;margin-left:6px;">(há ${action.daysOverdue} dia${action.daysOverdue === 1 ? "" : "s"})</span><br>
+          <strong>Responsável:</strong> ${
+            action.assigneeName
+              ? escapeHtml(action.assigneeName)
+              : '<em style="color:#9ca3af;">Sem responsável definido</em>'
+          }
+        </div>
+      </td></tr>
+    </table>
+    <p style="margin: 16px 0 4px 0; font-size: 13px; color: #6b7280;">
+      Como Encarregado, considere: confirmar que o prazo está correto,
+      ajustar a data, reatribuir o responsável ou marcar a ação como
+      concluída/cancelada se não fizer mais sentido.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `Ação atrasada há ${action.daysOverdue}d — ${action.title.slice(0, 80)}`,
+    bodyHtml,
+    ctaText: "Abrir ação no Plano",
+    ctaHref: `${PROD_URL}/dashboard/plano-acao`,
+  });
+
+  const text = [
+    `${greeting},`,
+    "",
+    args.trigger === "criada"
+      ? `Uma nova ação foi criada já com prazo no passado${args.companyName ? ` em ${args.companyName}` : ""}:`
+      : `Uma ação foi editada e o novo prazo está no passado${args.companyName ? ` em ${args.companyName}` : ""}:`,
+    "",
+    `🔴 ${action.title}`,
+    `   Prioridade: ${action.priority}`,
+    `   Origem: ${originLabel}`,
+    `   Prazo: ${dueDateStr} (há ${action.daysOverdue} dia${action.daysOverdue === 1 ? "" : "s"})`,
+    `   Responsável: ${action.assigneeName ?? "sem responsável"}`,
+    "",
+    `Acesse: ${PROD_URL}/dashboard/plano-acao`,
+    "",
+    "—",
+    "Sistema PGP - Programa de Governança em Privacidade",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 

@@ -10,6 +10,10 @@ import {
   ACTION_STATUS,
 } from "@/lib/action-plan-helpers";
 import { trackLastAction, statusIsClosedCleanly } from "@/lib/track-last-action";
+import {
+  notifyActionOverdue,
+  shouldAlertOverdue,
+} from "@/lib/notify-action-overdue";
 
 /**
  * GET /api/plano-acao/[id]      → 1 ação
@@ -71,7 +75,12 @@ export async function PATCH(
 
   const existing = await prisma.actionPlan.findFirst({
     where: { id, companyId: user.companyId },
-    select: { id: true, assigneeId: true, status: true },
+    select: {
+      id: true,
+      assigneeId: true,
+      status: true,
+      dueDate: true,
+    },
   });
   if (!existing) {
     return NextResponse.json({ error: "Ação não encontrada" }, { status: 404 });
@@ -200,6 +209,34 @@ export async function PATCH(
     completeness: null,
     closedCleanly: statusIsClosedCleanly(updated.status, "PLANO_ACAO"),
   });
+
+  // Alerta IMEDIATO se a edição transicionou de "em dia" pra "atrasada".
+  // Casos cobertos:
+  //   - prazo era no futuro / null e virou passado
+  //   - status reabriu (CONCLUIDA → A_FAZER) com prazo no passado
+  // Fire-and-forget — não atrasa a resposta da API.
+  const wasOverdue = shouldAlertOverdue({
+    dueDate: existing.dueDate,
+    status: existing.status,
+  });
+  const isNowOverdue = shouldAlertOverdue({
+    dueDate: updated.dueDate,
+    status: updated.status,
+  });
+  if (!wasOverdue && isNowOverdue && updated.dueDate) {
+    void notifyActionOverdue(
+      {
+        id: updated.id,
+        title: updated.title,
+        priority: updated.priority,
+        origin: updated.origin,
+        dueDate: updated.dueDate,
+        companyId: updated.companyId,
+        assignee: updated.assignee,
+      },
+      "editada",
+    );
+  }
 
   return NextResponse.json({ action: actionToDTO(updated) });
 }

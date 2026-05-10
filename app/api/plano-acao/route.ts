@@ -13,6 +13,10 @@ import {
   ACTION_PRIORITY,
 } from "@/lib/action-plan-helpers";
 import { GAP_CONTROLS } from "@/lib/gap-catalog";
+import {
+  notifyActionOverdue,
+  shouldAlertOverdue,
+} from "@/lib/notify-action-overdue";
 
 /**
  * GET /api/plano-acao
@@ -249,6 +253,26 @@ export async function POST(request: NextRequest) {
       createdBy: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // Alerta IMEDIATO se a ação já nasceu atrasada (oversight humano).
+  // Fire-and-forget — não atrasa a resposta da API.
+  if (
+    created.dueDate &&
+    shouldAlertOverdue({ dueDate: created.dueDate, status: created.status })
+  ) {
+    void notifyActionOverdue(
+      {
+        id: created.id,
+        title: created.title,
+        priority: created.priority,
+        origin: created.origin,
+        dueDate: created.dueDate,
+        companyId: created.companyId,
+        assignee: created.assignee,
+      },
+      "criada",
+    );
+  }
 
   return NextResponse.json({ action: actionToDTO(created) });
 }
