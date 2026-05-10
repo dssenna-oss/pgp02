@@ -50,6 +50,33 @@ export default async function PublicPolicyPage({
   });
   if (!policy || !policy.publishedContent) notFound();
 
+  // Sumário automático: pro Aviso institucional, anexa links pros Avisos
+  // por serviço publicados (Checkpoint Aviso por Serviço — 2026-05-10).
+  let content = policy.publishedContent;
+  if (policy.type === "AVISO_PRIVACIDADE_EXTERNO") {
+    const serviceNotices = await prisma.servicePrivacyNotice.findMany({
+      where: {
+        companyId: company.id,
+        status: "PUBLICADO",
+      },
+      select: {
+        slug: true,
+        dataInventory: { select: { serviceName: true, setor: true } },
+      },
+      orderBy: { dataInventory: { serviceName: "asc" } },
+    });
+    if (serviceNotices.length > 0) {
+      const links = serviceNotices
+        .map((n) => {
+          const name = n.dataInventory.serviceName ?? n.slug;
+          const setorTag = n.dataInventory.setor ? ` _(${n.dataInventory.setor})_` : "";
+          return `- [${name}](/p/${companySlug}/aviso-servico/${n.slug})${setorTag}`;
+        })
+        .join("\n");
+      content += `\n\n## Avisos de Privacidade específicos por serviço\n\nAlém deste Aviso institucional, publicamos um Aviso detalhado para cada serviço que envolve dados pessoais:\n\n${links}\n`;
+    }
+  }
+
   return (
     <PublicPolicyView
       companyName={company.tradeName ?? company.companyName}
@@ -58,7 +85,7 @@ export default async function PublicPolicyPage({
       type={policy.type}
       typeLabel={policyTypeLabel(policy.type)}
       title={policy.title}
-      content={policy.publishedContent}
+      content={content}
       publishedAt={policy.publishedAt?.toISOString() ?? null}
       version={policy.currentVersion}
     />
