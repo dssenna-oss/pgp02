@@ -358,6 +358,48 @@ function pickCandidateUrls(allUrls: string[]): string[] {
 }
 
 /**
+ * Função pública (variante PDF): recebe TEXTO já extraído e classifica.
+ *
+ * Pula totalmente Firecrawl/mapSite — o user fez upload do PDF da Carta
+ * de Serviços e o caller (endpoint) já chamou `extractPdfText`.
+ *
+ * `sourceLabel` é usado em prefill provenance e no `sourceUrl` de cada
+ * serviço (ex: "pdf:Carta_Sisouv_2025.pdf"). Não é uma URL real — é só
+ * um identificador da fonte pra a UI mostrar.
+ */
+export async function suggestServicesFromText(
+  text: string,
+  sourceLabel: string,
+): Promise<SuggestionResult> {
+  const warnings: string[] = [];
+
+  if (!text || text.trim().length < 200) {
+    return {
+      services: [],
+      stats: emptyStats(0),
+      blockingError:
+        "O conteúdo está muito curto ou vazio. Se for um PDF escaneado (imagem), preciso de uma versão com texto pesquisável.",
+      warnings,
+    };
+  }
+
+  const corpus =
+    text.length > MAX_CORPUS_CHARS
+      ? text.slice(0, MAX_CORPUS_CHARS) +
+        "\n[...truncado por limite de contexto...]"
+      : text;
+  if (text.length > MAX_CORPUS_CHARS) {
+    warnings.push(
+      `Texto truncado em ${MAX_CORPUS_CHARS.toLocaleString()} caracteres (resto ignorado).`,
+    );
+  }
+
+  // Mesmo prompt da rota domain, mas com cabeçalho de fonte explícita
+  const wrappedCorpus = `--- FONTE: ${sourceLabel} ---\n\n${corpus}`;
+  return await callLlmAndSanitize(wrappedCorpus, sourceLabel, warnings);
+}
+
+/**
  * Função pública: descobre + extrai + classifica.
  */
 export async function suggestServicesFromCarta(
@@ -440,9 +482,40 @@ export async function suggestServicesFromCarta(
     corpus = corpus.slice(0, MAX_CORPUS_CHARS) + "\n[...truncado por limite de contexto...]";
   }
 
-  // 5. Gemini call
+  // 5+6. Delega LLM + sanitize pro helper compartilhado
+  const llmResult = await callLlmAndSanitize(corpus, domain, warnings);
+
+  // Mistura stats da pipeline (mapSite + scrape) com stats do LLM
+  return {
+    ...llmResult,
+    stats: {
+      ...llmResult.stats,
+      totalUrlsMapped: totalMapped,
+      totalUrlsCandidate: candidates.length,
+      totalUrlsScraped: okScrapes.length,
+      scrapeErrors: failedScrapes.length,
+    },
+  };
+}
+
+/**
+ * Helper interno: roda Gemini + sanitiza + monta SuggestionResult.
+ *
+ * Compartilhado entre:
+ *  - `suggestServicesFromCarta(domain)` (pipeline Firecrawl)
+ *  - `suggestServicesFromText(text, label)` (PDF upload)
+ *
+ * Retorna stats com campos URL zerados — o caller que veio do
+ * pipeline Firecrawl preenche depois.
+ */
+async function callLlmAndSanitize(
+  corpus: string,
+  sourceLabel: string,
+  initialWarnings: string[],
+): Promise<SuggestionResult> {
+  const warnings = [...initialWarnings];
   const ai = getClient();
-  const fullPrompt = `${SYSTEM_PROMPT}\n\n--- CONTEÚDO DAS URLs ---\n\n${corpus}\n\n---\n\nRetorne APENAS o JSON.`;
+  const fullPrompt = `${SYSTEM_PROMPT}\n\n--- CONTEÚDO ---\n\n${corpus}\n\n---\n\nRetorne APENAS o JSON.`;
 
   let llmJson: any = null;
   try {
@@ -454,8 +527,7 @@ export async function suggestServicesFromCarta(
         maxOutputTokens: 16_000,
         responseMimeType: "application/json",
         // Pra extração estruturada — desliga thinking pra liberar todo o
-        // budget pra resposta. Lição registrada em
-        // feedback_gemini_thinking_budget.md.
+        // budget pra resposta. Lição em feedback_gemini_thinking_budget.md.
         thinkingConfig: { thinkingBudget: 0 },
       },
     });
@@ -464,22 +536,12 @@ export async function suggestServicesFromCarta(
   } catch (e: any) {
     return {
       services: [],
-      stats: {
-        totalUrlsMapped: totalMapped,
-        totalUrlsCandidate: candidates.length,
-        totalUrlsScraped: okScrapes.length,
-        totalServicesExtracted: 0,
-        bySuggested: 0,
-        byMaybe: 0,
-        byNo: 0,
-        scrapeErrors: failedScrapes.length,
-      },
+      stats: emptyStats(0),
       blockingError: `Erro do LLM: ${e?.message ?? "desconhecido"}`,
       warnings,
     };
   }
 
-  // 6. Sanitize lista
   const rawServices: any[] = Array.isArray(llmJson?.services)
     ? llmJson.services
     : [];
@@ -488,7 +550,13 @@ export async function suggestServicesFromCarta(
   for (const raw of rawServices) {
     const s = sanitizeService(raw);
     if (!s) continue;
-    // Dedup por nome normalizado (case-insensitive)
+    // PDF: o LLM frequentemente não tem URL pra colocar — usa label
+    // ("pdf:Carta.pdf") como sourceUrl pra UI exibir.
+    if (!s.sourceUrl) {
+      (s as any).sourceUrl = sourceLabel.startsWith("http")
+        ? sourceLabel
+        : `pdf:${sourceLabel}`;
+    }
     const key = s.name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
@@ -502,14 +570,14 @@ export async function suggestServicesFromCarta(
   return {
     services,
     stats: {
-      totalUrlsMapped: totalMapped,
-      totalUrlsCandidate: candidates.length,
-      totalUrlsScraped: okScrapes.length,
+      totalUrlsMapped: 0,
+      totalUrlsCandidate: 0,
+      totalUrlsScraped: 0,
       totalServicesExtracted: services.length,
       bySuggested,
       byMaybe,
       byNo,
-      scrapeErrors: failedScrapes.length,
+      scrapeErrors: 0,
     },
     blockingError: null,
     warnings,
