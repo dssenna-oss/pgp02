@@ -53,8 +53,11 @@ export default function LoginPage() {
         backgroundPosition: "center",
       }}
     >
-      {/* Header (logo + título) — absoluto, acima do tablet */}
-      <div className="absolute top-[5%] left-[calc(50%+30px)] -translate-x-1/2 text-center z-10 w-full max-w-sm">
+      {/* Header (logo + título) — absoluto, acima do tablet.
+          Em mobile (sem o tablet visível) centralizamos normalmente;
+          a partir de sm aplicamos o deslocamento de 30px que alinha
+          com o tablet da foto de fundo. */}
+      <div className="absolute top-4 sm:top-[5%] left-1/2 sm:left-[calc(50%+30px)] -translate-x-1/2 text-center z-10 w-full max-w-sm px-4">
         <div className="flex items-center justify-center mb-2">
           <div className="bg-blue-600 p-3 rounded-full shadow-lg">
             <Shield className="h-8 w-8 text-white" />
@@ -68,8 +71,9 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* Card — absoluto, centralizado dentro do "miolo" do tablet */}
-      <div className="absolute top-[46%] left-[calc(50%+30px)] -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-10">
+      {/* Card — em mobile fica logo abaixo do header (top fixo);
+          em sm+ vai pro miolo do tablet com o deslocamento de 30px. */}
+      <div className="absolute top-[150px] sm:top-[46%] left-1/2 sm:left-[calc(50%+30px)] -translate-x-1/2 sm:-translate-y-1/2 w-full max-w-sm z-10 px-4">
         <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-2 text-center">
             <CardTitle className="text-2xl">Entrar na Conta</CardTitle>
@@ -151,8 +155,8 @@ export default function LoginPage() {
         </Card>
       </div>
 
-      {/* Footer absoluto */}
-      <div className="absolute bottom-6 left-[calc(50%+30px)] -translate-x-1/2 text-center z-10">
+      {/* Footer absoluto — centralizado no mobile, deslocado no desktop. */}
+      <div className="absolute bottom-4 sm:bottom-6 left-1/2 sm:left-[calc(50%+30px)] -translate-x-1/2 text-center z-10 w-full max-w-sm px-4">
         <p className="text-xs text-blue-200/70 drop-shadow">
           Sistema seguro de conformidade com LGPD
         </p>

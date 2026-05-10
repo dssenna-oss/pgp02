@@ -349,3 +349,24 @@
   0%, 100% { box-shadow: 0 0 0 2px rgba(253, 224, 71, 0.45); }
   50%      { box-shadow: 0 0 0 4px rgba(253, 224, 71, 0.20); }
 }
+
+/* ============================================================
+ * Tabelas em conteúdo HTML (Fases · Considerações · Descrições)
+ * O markdown/HTML editado pelo admin pode ter <table> wider que
+ * a viewport mobile (ex: Matriz de Riscos da Fase 3). Sem fix,
+ * a tabela vaza pra direita rompendo o layout. Solução: tabelas
+ * dentro de `.prose` viram blocos com overflow-x auto em mobile,
+ * preservando o layout natural em desktop.
+ * ============================================================ */
+@media (max-width: 640px) {
+  .prose table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose table td,
+  .prose table th {
+    white-space: normal;
+  }
+}
