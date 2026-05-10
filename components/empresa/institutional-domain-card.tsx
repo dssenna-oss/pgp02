@@ -17,7 +17,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Globe2, Loader2, Save, CheckCircle2 } from "lucide-react";
+import {
+  Globe2,
+  Loader2,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export default function InstitutionalDomainCard() {
@@ -25,6 +31,8 @@ export default function InstitutionalDomainCard() {
   const [value, setValue] = useState("");
   const [savedValue, setSavedValue] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  /** Erro persistente visível inline (não some como o toast). */
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -37,38 +45,56 @@ export default function InstitutionalDomainCard() {
           const dom = j?.institutionalDomain ?? "";
           setValue(dom);
           setSavedValue(dom || null);
+        } else {
+          // Logar pra debug — não bloqueia UX
+          console.warn(
+            "[institutional-domain] GET falhou",
+            r.status,
+            await r.text().catch(() => ""),
+          );
         }
-      } catch {
-        // silencioso
+      } catch (e) {
+        console.warn("[institutional-domain] GET erro de rede", e);
       } finally {
         setLoaded(true);
       }
     })();
   }, []);
 
+  // Botão "Salvar" habilita quando há texto (mesmo igual ao salvo) OU
+  // quando user limpou o campo pra remover. Antes era "só se diferente
+  // do salvo" — confundia se o GET inicial falhasse silencioso.
+  const hasText = (value || "").trim().length > 0;
   const dirty = (value || "").trim() !== (savedValue ?? "");
+  const canSave = loaded && !saving && (dirty || (hasText && !savedValue));
 
   const save = async () => {
     setSaving(true);
+    setError(null);
     try {
       const r = await fetch("/api/company/institutional-domain", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ institutionalDomain: value || null }),
       });
-      const j = await r.json();
+      const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        toast.error(j?.error ?? "Erro ao salvar");
+        const msg =
+          j?.error ?? `Erro ao salvar (HTTP ${r.status}). Tente recarregar a página.`;
+        console.error("[institutional-domain] PATCH falhou", r.status, j);
+        setError(msg);
+        toast.error(msg);
         return;
       }
       const next = j?.institutionalDomain ?? null;
       setSavedValue(next);
       setValue(next ?? "");
-      toast.success(
-        next ? "Domínio salvo" : "Domínio removido",
-      );
+      toast.success(next ? "Domínio salvo" : "Domínio removido");
     } catch (e: any) {
-      toast.error(e?.message ?? "Erro de rede");
+      const msg = e?.message ?? "Erro de rede ao salvar";
+      console.error("[institutional-domain] erro inesperado", e);
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -105,6 +131,20 @@ export default function InstitutionalDomainCard() {
           </p>
         </div>
 
+        {error && (
+          <div className="flex items-start gap-2 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 px-3 py-2 text-sm text-red-800 dark:text-red-300">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <div className="leading-snug">
+              <strong>Não foi possível salvar.</strong>
+              <div className="text-xs mt-0.5">{error}</div>
+              <div className="text-[11px] mt-1 text-red-700 dark:text-red-400">
+                Abra o console do navegador (F12 → Console) pra ver detalhes
+                ou tire um print da resposta da rede.
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between gap-2">
           <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
             {savedValue ? (
@@ -119,7 +159,7 @@ export default function InstitutionalDomainCard() {
           <Button
             size="sm"
             onClick={save}
-            disabled={!loaded || saving || !dirty}
+            disabled={!canSave}
           >
             {saving ? (
               <>
