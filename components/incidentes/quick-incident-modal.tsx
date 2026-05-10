@@ -77,8 +77,11 @@ export default function QuickIncidentModal({
       const created = await r.json();
       notifySidebarRefresh();
       onClose();
-      // Redireciona pro editor completo pra preencher o resto
-      router.push(`/dashboard/incidentes/${created.id}`);
+      // Redireciona pro editor completo pra preencher o resto.
+      // API retorna { incident: { id, ... } } — fallback `created.id`
+      // por compatibilidade caso o formato mude.
+      const newId = created?.incident?.id ?? created?.id;
+      router.push(`/dashboard/incidentes/${newId}`);
     } catch (e: unknown) {
       setError((e as Error)?.message ?? "Erro inesperado");
     } finally {
