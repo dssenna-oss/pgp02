@@ -1,10 +1,12 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-11 (8 PRs mergeados em prod: **#13** cron de Plano atrasado pra DPO + cleanup test-email · **#14** cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados · **#15** Fatia b — Pré-preencher Inventário por Carta de Serviços (Firecrawl + Gemini) · **#16** ícone Compass na entry-screen · **#17** FAB tour mobile (ícone-só + safe-area iOS) · **#18** alerta imediato de ação atrasada · **#19** POST Incidentes aceita chips M:N + fix quick modal · **#20** polling adaptativo no Fórum em vez de WebSocket) · **Branch:** `claude/silly-ride-84a823` (worktree)
+> **Última sessão:** 2026-05-11 (10 PRs mergeados em prod: #13..#22). Destaques: **#21** auto-discover URLs via Firecrawl /v1/map + inputs por template + busca Google · **#22** fix UX do card de domínio institucional (erro persistente). · **Branch:** `claude/silly-ride-84a823` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `09e3ca0` (merge PR #20). Vercel verde. Email + 2 crons + alerta imediato + tela de escolha de modelo no Inventário com 3 caminhos ativos + polling adaptativo no Fórum (5s ativo / 30s inativo / pausa quando aba escondida).
+> **Em prod (`origin/main`)**: tudo até `ebc54cc` (merge PR #22). Vercel verde após recovery do incidente.
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#20 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#22 mergeados.
+>
+> **🚨 Incidente 2026-05-11**: apliquei migration Etapa 28 via `prisma db execute` mas DATABASE_URL local apontava pra `postgres@localhost` (dev), não pro Neon de prod. Build do Vercel deployou Prisma Client com a coluna nova mas Neon prod não tinha → 500 em todos endpoints com auth (forum, pending-counts, empresa, etc). Recovery: SQL `ALTER TABLE companies ADD COLUMN IF NOT EXISTS institutionalDomain TEXT` rodado pelo user no Neon SQL Editor, prod voltou. Lição registrada em `feedback_migration_no_banco_errado.md`. Outro tropeço relacionado: ao editar var Sensitive no Vercel pra adicionar Development, o input Value vem vazio e clicar Save salva como string vazia — fix: re-colar valor original. Lição em `feedback_vercel_sensitive_dev.md`.
 >
 > **🔑 FIRECRAWL_API_KEY ativa**: Vercel em Production + Preview (Sensitive — Vercel BLOQUEIA Sensitive em Development por design). Pra dev local a chave foi adicionada manualmente em `E:\_________PGP\.env` (e replicada no worktree desta sessão). Custo: plano do user no Firecrawl.
 >
