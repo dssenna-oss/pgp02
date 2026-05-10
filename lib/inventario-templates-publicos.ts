@@ -40,6 +40,41 @@ export type TemplateDomain =
   | "viagens"
   | "controle";
 
+/**
+ * Categoria de URL pra auto-descobrir / orientar a busca. Match com as
+ * mesmas chaves usadas em `lib/url-keywords.ts`.
+ */
+export type UrlCategory =
+  | "carta_servicos"
+  | "ouvidoria"
+  | "sic"
+  | "lgpd"
+  | "atos_normativos"
+  | "edital"
+  | "transparencia"
+  | "rh"
+  | "licitacao";
+
+/**
+ * Sugestão de input específico no modal "Pré-preencher por Carta de
+ * Serviços" quando esse template foi aplicado. Em vez de um único campo
+ * genérico "Cole uma URL", o modal mostra 2-3 campos rotulados pra
+ * orientar o que procurar.
+ */
+export interface SuggestedUrlInput {
+  /** Texto do label do campo. */
+  label: string;
+  /** Placeholder dentro do input. */
+  placeholder: string;
+  /**
+   * Categoria — usado pelo botão "🔍 Buscar no Google" pra montar a
+   * query certa, e pelo auto-descobrir pra agrupar candidatos.
+   */
+  category: UrlCategory;
+  /** Hint curto (≤ 80 chars) sobre o que esperar nessa URL. */
+  hint?: string;
+}
+
 export interface InventarioTemplate {
   /** ID único, kebab-case. */
   id: string;
@@ -72,6 +107,13 @@ export interface InventarioTemplate {
    * na UI quando o servidor abre o wizard.
    */
   camposPendentes: string[];
+  /**
+   * Inputs sugeridos no modal de "Pré-preencher por Carta de Serviços"
+   * quando este template está ativo. Orienta o user a buscar URLs
+   * específicas em vez de pedir um campo genérico.
+   * Opcional — se ausente, modal usa input único genérico.
+   */
+  suggestedUrlInputs?: SuggestedUrlInput[];
 }
 
 // ============================================================
@@ -191,6 +233,26 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec7.store_location",
       "sec7.store_extra_retention_reason",
     ],
+    suggestedUrlInputs: [
+      {
+        label: "Carta de Serviços do atendimento de Ouvidoria/SIC",
+        placeholder: "https://www.[orgao].gov.br/carta-de-servicos/...",
+        category: "carta_servicos",
+        hint: "Página oficial do serviço com tipos de manifestação, prazos e canais.",
+      },
+      {
+        label: "Página da Ouvidoria",
+        placeholder: "https://www.[orgao].gov.br/ouvidoria/...",
+        category: "ouvidoria",
+        hint: "Página institucional explicando o sistema de ouvidoria.",
+      },
+      {
+        label: "Ato normativo que regulamenta a Ouvidoria/SIC (opcional)",
+        placeholder: "https://www.[orgao].gov.br/...resolucao-XXX...",
+        category: "atos_normativos",
+        hint: "Resolução, decreto ou portaria que cria/regulamenta o setor.",
+      },
+    ],
   },
   {
     id: "ouvidoria-apenas",
@@ -290,6 +352,20 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec2.process_volume",
       "sec5.collect_source_desc",
       "sec7.store_location",
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Carta de Serviços do atendimento de Ouvidoria",
+        placeholder: "https://www.[orgao].gov.br/carta-de-servicos/...",
+        category: "carta_servicos",
+        hint: "Tipos de manifestação, prazos e canais oficiais.",
+      },
+      {
+        label: "Página da Ouvidoria",
+        placeholder: "https://www.[orgao].gov.br/ouvidoria/...",
+        category: "ouvidoria",
+        hint: "Apresentação do setor e regulamento interno.",
+      },
     ],
   },
   {
@@ -394,6 +470,26 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec3.data_sensitive_list", // sigilo do solicitante é dado sensível por jurisprudência
       "sec5.collect_source_desc",
       "sec7.store_location",
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Página do e-SIC ou serviço de acesso à informação",
+        placeholder: "https://www.[orgao].gov.br/acesso-a-informacao/...",
+        category: "sic",
+        hint: "Onde o cidadão registra pedido de informação (LAI).",
+      },
+      {
+        label: "Carta de Serviços do SIC",
+        placeholder: "https://www.[orgao].gov.br/carta-de-servicos/...",
+        category: "carta_servicos",
+        hint: "Procedimento, prazos LAI e canais.",
+      },
+      {
+        label: "Portal LGPD / Política de Privacidade (opcional)",
+        placeholder: "https://www.[orgao].gov.br/lgpd/...",
+        category: "lgpd",
+        hint: "Como o órgão informa o tratamento de dados ao cidadão.",
+      },
     ],
   },
 
@@ -512,6 +608,20 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec6.share_with_whom", // nome do agente de integração específico
       "sec7.store_location",
       "sec7.store_extra_retention_reason", // tabela de temporalidade própria
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Edital ou regulamento do programa de estágio",
+        placeholder: "https://www.[orgao].gov.br/...edital-estagio...",
+        category: "edital",
+        hint: "Documento de seleção/convocação com critérios e dados exigidos.",
+      },
+      {
+        label: "Página do programa de estágio (RH/Pessoas)",
+        placeholder: "https://www.[orgao].gov.br/estagio/",
+        category: "rh",
+        hint: "Apresentação institucional do programa.",
+      },
     ],
   },
   {
@@ -677,6 +787,26 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec6.share_with_whom", // sistema específico (SIAPE, RH local, etc.)
       "sec7.store_location",
     ],
+    suggestedUrlInputs: [
+      {
+        label: "Página de RH / Gestão de Pessoas",
+        placeholder: "https://www.[orgao].gov.br/recursos-humanos/",
+        category: "rh",
+        hint: "Apresentação do setor e serviços ao servidor.",
+      },
+      {
+        label: "Estatuto, plano de cargos ou regulamento de pessoal",
+        placeholder: "https://www.[orgao].gov.br/...estatuto...",
+        category: "atos_normativos",
+        hint: "Lei/decreto que rege o regime estatutário do órgão.",
+      },
+      {
+        label: "Portal da Transparência (folha pública)",
+        placeholder: "https://www.[orgao].gov.br/transparencia/",
+        category: "transparencia",
+        hint: "Dados da folha publicados conforme Art. 7 LAI.",
+      },
+    ],
   },
 
   // -------- COMPRAS ---------------------------------------------------
@@ -809,6 +939,26 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec6.share_with_whom",
       "sec7.store_location",
     ],
+    suggestedUrlInputs: [
+      {
+        label: "Página de Licitações e Contratos",
+        placeholder: "https://www.[orgao].gov.br/licitacoes/",
+        category: "licitacao",
+        hint: "Lista pública de editais, contratos e atas.",
+      },
+      {
+        label: "Edital específico em andamento (opcional)",
+        placeholder: "https://www.[orgao].gov.br/...edital-XX-2026...",
+        category: "edital",
+        hint: "PDF ou página de um pregão/concorrência específico.",
+      },
+      {
+        label: "Portal da Transparência (compras públicas)",
+        placeholder: "https://www.[orgao].gov.br/transparencia/...",
+        category: "transparencia",
+        hint: "Dados públicos de contratações conforme Lei 14.133.",
+      },
+    ],
   },
 
   // -------- DOCUMENTOS ------------------------------------------------
@@ -930,6 +1080,20 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec5.collect_source_desc",
       "sec7.store_location",
     ],
+    suggestedUrlInputs: [
+      {
+        label: "Carta de Serviços do Protocolo / Atendimento Documental",
+        placeholder: "https://www.[orgao].gov.br/carta-de-servicos/...",
+        category: "carta_servicos",
+        hint: "Procedimento de protocolar documentos no órgão.",
+      },
+      {
+        label: "Página do sistema eletrônico (SEI/eDoc/etc.)",
+        placeholder: "https://www.[orgao].gov.br/sei/",
+        category: "atos_normativos",
+        hint: "Tutorial ou página institucional do sistema usado.",
+      },
+    ],
   },
 
   // -------- ATENDIMENTO ----------------------------------------------
@@ -1035,6 +1199,20 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec5.collect_source_desc",
       "sec7.store_location",
       "sec7.store_extra_retention_reason", // política de retenção do CFTV
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Carta de Serviços do atendimento ao público",
+        placeholder: "https://www.[orgao].gov.br/carta-de-servicos/...",
+        category: "carta_servicos",
+        hint: "Horário, canais e procedimento de atendimento presencial.",
+      },
+      {
+        label: "Página de agendamento online (se houver)",
+        placeholder: "https://www.[orgao].gov.br/agendamento/",
+        category: "atos_normativos",
+        hint: "Sistema/formulário onde o cidadão agenda atendimento.",
+      },
     ],
   },
 
@@ -1164,6 +1342,20 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec5.collect_source_desc",
       "sec6.share_with_whom", // nome da agência
       "sec7.store_location",
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Regulamento de diárias e passagens do órgão",
+        placeholder: "https://www.[orgao].gov.br/...resolucao-diarias...",
+        category: "atos_normativos",
+        hint: "Decreto/resolução que define valores e regras de viagem.",
+      },
+      {
+        label: "Portal da Transparência (relatório de viagens)",
+        placeholder: "https://www.[orgao].gov.br/transparencia/diarias/",
+        category: "transparencia",
+        hint: "Publicação obrigatória de quem viajou, motivo e valor.",
+      },
     ],
   },
 
@@ -1314,6 +1506,26 @@ export const INVENTARIO_TEMPLATES: InventarioTemplate[] = [
       "sec5.collect_source_desc",
       "sec6.share_with_whom",
       "sec7.store_location",
+    ],
+    suggestedUrlInputs: [
+      {
+        label: "Lei orgânica ou regimento interno do órgão de controle",
+        placeholder: "https://www.[orgao].gov.br/...lei-organica...",
+        category: "atos_normativos",
+        hint: "LOTCU/análogo estadual que define competências e procedimentos.",
+      },
+      {
+        label: "Regulamento sobre processos de controle externo",
+        placeholder: "https://www.[orgao].gov.br/...resolucao-processo...",
+        category: "atos_normativos",
+        hint: "Resolução interna que regulamenta apuração e instrução.",
+      },
+      {
+        label: "Portal da Transparência (julgados públicos)",
+        placeholder: "https://www.[orgao].gov.br/transparencia/julgados/",
+        category: "transparencia",
+        hint: "Publicação obrigatória de decisões e responsabilidades.",
+      },
     ],
   },
 ];

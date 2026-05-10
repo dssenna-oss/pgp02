@@ -1,10 +1,10 @@
 # Handover — PGP (LGPD)
 
-> **Última sessão:** 2026-05-11 (4 PRs mergeados em prod: **#13 cron de Plano de Ação atrasado pra DPO + cleanup test-email**, **#14 cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados**, **#15 Fatia b — pré-preencher Inventário por Carta de Serviços via Firecrawl + Gemini**, **#16 ícone Compass na entry-screen**) · **Branch:** `claude/silly-ride-84a823` (worktree)
+> **Última sessão:** 2026-05-11 (8 PRs mergeados em prod: **#13** cron de Plano atrasado pra DPO + cleanup test-email · **#14** cardápio de 3 caminhos de entrada do Inventário + 10 modelos padronizados · **#15** Fatia b — Pré-preencher Inventário por Carta de Serviços (Firecrawl + Gemini) · **#16** ícone Compass na entry-screen · **#17** FAB tour mobile (ícone-só + safe-area iOS) · **#18** alerta imediato de ação atrasada · **#19** POST Incidentes aceita chips M:N + fix quick modal · **#20** polling adaptativo no Fórum em vez de WebSocket) · **Branch:** `claude/silly-ride-84a823` (worktree)
 >
-> **Em prod (`origin/main`)**: tudo até `2203f6a` (merge PR #16). Vercel verde. Email + 2 crons em prod + tela de escolha de modelo no Inventário com 3 caminhos ativos (Modelos / Carta de Serviços / Manual) com header iconizado.
+> **Em prod (`origin/main`)**: tudo até `09e3ca0` (merge PR #20). Vercel verde. Email + 2 crons + alerta imediato + tela de escolha de modelo no Inventário com 3 caminhos ativos + polling adaptativo no Fórum (5s ativo / 30s inativo / pausa quando aba escondida).
 >
-> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#16 mergeados.
+> **🔐 Fluxo de PR adotado como padrão.** Push direto a main continua bloqueado. Já são PRs #1..#20 mergeados.
 >
 > **🔑 FIRECRAWL_API_KEY ativa**: Vercel em Production + Preview (Sensitive — Vercel BLOQUEIA Sensitive em Development por design). Pra dev local a chave foi adicionada manualmente em `E:\_________PGP\.env` (e replicada no worktree desta sessão). Custo: plano do user no Firecrawl.
 >
@@ -36,7 +36,87 @@ Repo: https://github.com/dssenna-oss/pgp02 (público)
 
 ---
 
-## 🆕 O que foi feito na sessão 2026-05-11 — 3 PRs mergeados (#13 + #14 + #15)
+## 🆕 O que foi feito na sessão 2026-05-11 — 8 PRs mergeados (#13 → #20)
+
+### Rajada de fechamento de pendências (#17 → #20)
+
+User pediu execução de 4 frentes da pendência: (5) Mobile UX tour, (2)
+Notificação imediata de Plano atrasado, (4) Backlog Incidentes M:N,
+(6) WebSocket Fórum. Saíram em 4 PRs separados.
+
+#### PR #17 — FAB tour mobile (ícone-só + safe-area iOS)
+
+`components/tour/tour-floating-button.tsx`. Em telas <sm vira FAB
+circular 48×48 (área de toque acima do mínimo iOS de 44pt) e sobe
+pra `bottom: env(safe-area-inset-bottom) + 5rem` pra deixar espaço
+pro footer típico de mobile e respeitar o notch do iOS. Em ≥sm volta
+ao pill com label igual antes (sem regressão). Trocou os emojis 🎙️/🔁
+pelos ícones lucide Mic/RotateCcw — alinha com TourHeaderButton.
+
+#### PR #18 — Alerta imediato de ação atrasada (#2)
+
+Complementa o cron diário do PR #13. Agora além do digest 9h, o DPO
+recebe email IMEDIATO quando há oversight humano:
+  - Ação criada já com dueDate no passado (POST /api/plano-acao)
+  - Ação editada e novo dueDate ficou no passado (PATCH /api/plano-acao/[id])
+  - Reabertura de ação concluída com prazo já vencido
+
+`lib/notify-action-overdue.ts` (helper) + `tplActionPlanOverdueAlert`
+em `lib/email-templates.ts` (template). Lógica:
+  - `shouldAlertOverdue()` decide se há alerta — `dueDate < hoje` E
+    status A_FAZER/EM_ANDAMENTO
+  - PATCH só dispara em TRANSIÇÃO de "em dia" pra "atrasada" (evita
+    spam quando DPO edita outros campos de ação já atrasada antes)
+  - Reusa toggle `User.emailNotifyActionPlan` (Etapa 27) e Brevo
+
+Fire-and-forget — não atrasa a resposta da API. Sem schema novo.
+
+#### PR #19 — POST Incidentes aceita chips M:N + fix redirect (#4)
+
+Investigação revelou que a Fatia M:N do CP16 (chips Inventário↔Operador
+no editor de Incidente) JÁ estava implementada nos PRs anteriores —
+schema (Etapa 19), tabelas, UI de chips, GET/PATCH com sync atômico
+e caminho inverso. O que SOBRAVA:
+
+  1. **POST `/api/incidents` agora aceita** `linkedInventoryIds` +
+     `linkedOperatorIds`: o incidente pode nascer já com chips, sem
+     precisar de PATCH posterior. Validação idêntica à do PATCH (filtra
+     ids da mesma companyId), em transaction com o create.
+  2. **Fix do redirect do `quick-incident-modal`** — bug pré-existente:
+     usava `created.id` mas a API retorna `{ incident: { id, ... } }`.
+     Adicionado fallback `created?.incident?.id ?? created?.id` pra
+     cobrir os dois formatos sem breaking change.
+
+#### PR #20 — Polling adaptativo no Fórum (em vez de WebSocket) (#6)
+
+ESCOLHA ARQUITETURAL DOCUMENTADA: o item original pedia "WebSocket no
+Fórum". Em Vercel serverless WebSocket persistente não funciona — sem
+conexões long-lived. Alternativas reais:
+
+  A. Polling adaptativo (cliente)         — 0 dependências, ~30min ✅
+  B. SSE com poll-no-server               — Vercel cobra função-seg, pior
+  C. Pusher Channels / Ably               — serviço externo pago
+  D. Postgres LISTEN/NOTIFY               — Neon pooler não suporta
+
+Optei pela A. `lib/use-adaptive-polling.ts` (hook genérico, reutilizável)
+ajusta o ritmo conforme estado da aba via Page Visibility API + window
+focus events:
+
+  - aba VISÍVEL e focada     → poll 5s
+  - aba VISÍVEL mas sem foco → poll 30s
+  - aba ESCONDIDA            → pausa total (zero requests)
+  - volta da pausa           → refetch imediato + retoma intervalo
+
+Latência percebida cai de ~15s média (polling 30s) pra ~2.5s média.
+Poupa bateria mobile (pausa quando escondida) e função-seconds Vercel
+(não roda em aba inativa). Quando a org crescer ao ponto de justificar
+<1s, caminho é Pusher Channels (~50 linhas, free tier 200k msg/dia).
+
+Plugado em `forum-content.tsx`. Hook é genérico — pode ser aplicado
+em outras telas com polling fixo (Tarefas, Plano, sino) na próxima
+limpeza.
+
+
 
 ### PR #15 — Fatia (b) "Pré-preencher por Carta de Serviços" (Firecrawl + Gemini)
 
