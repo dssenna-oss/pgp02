@@ -29,12 +29,15 @@ import { mapSite, scrapeMany } from "./firecrawl";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-/** Limite defensivo: corpus enviado ao LLM. */
-const MAX_CORPUS_CHARS = 60_000;
+/** Limite defensivo: corpus enviado ao LLM. Reduzido pra acelerar
+ *  resposta do Gemini (input pesado aumenta TTFB). */
+const MAX_CORPUS_CHARS = 50_000;
 
 /** Quantas páginas (URL fornecida + filhas) raspar em paralelo.
- *  Cada scrape custa 1 unidade Firecrawl. */
-const MAX_SCRAPE_PAGES = 8;
+ *  Cada scrape custa 1 unidade Firecrawl. Reduzido de 8→5 pra caber
+ *  no maxDuration:60s do Vercel Hobby (cold start + mapSite + scrape
+ *  paralelo + Gemini). */
+const MAX_SCRAPE_PAGES = 5;
 
 export type ServiceClassification = "SUGERIDO" | "TALVEZ" | "NAO";
 
@@ -397,7 +400,7 @@ export async function suggestServicesFromUrl(
   if (!isRootPath) {
     const mapResult = await mapSite(urlObj.host, {
       limit: 500,
-      timeoutMs: 12_000,
+      timeoutMs: 10_000,
     });
     if (mapResult.error) {
       warnings.push(
@@ -421,9 +424,10 @@ export async function suggestServicesFromUrl(
     }
   }
 
-  // 3. Scrape paralelo (timeout 25s por URL — em paralelo o total
-  // continua ~25s, deixando margem pro LLM dentro de maxDuration 60s)
-  const scrapes = await scrapeMany(candidates, { timeoutMs: 25_000 });
+  // 3. Scrape paralelo (timeout 18s por URL — em paralelo o total
+  // continua ~18s, deixando margem pro LLM dentro de maxDuration 60s
+  // do Vercel Hobby. Cold start consome 5-10s extras em prod.)
+  const scrapes = await scrapeMany(candidates, { timeoutMs: 18_000 });
   const ok = scrapes.filter((s) => !s.error && s.markdown && s.markdown.trim().length > 100);
   const failed = scrapes.filter((s) => s.error);
   if (failed.length > 0) {
@@ -491,7 +495,10 @@ async function callLlmAndSanitize(
       contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
       config: {
         temperature: 0.1,
-        maxOutputTokens: 16_000,
+        // 12k tokens cobrem ~50 serviços em JSON estruturado — suficiente
+        // pra Carta de instituição típica. 16k era folga demais e
+        // estourava maxDuration:60s do Vercel.
+        maxOutputTokens: 12_000,
         responseMimeType: "application/json",
         // Pra extração estruturada — desliga thinking pra liberar todo o
         // budget pra resposta. Lição em feedback_gemini_thinking_budget.md.
