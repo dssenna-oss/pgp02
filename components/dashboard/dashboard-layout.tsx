@@ -398,6 +398,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       tourId: "nav-politicas",
     },
     {
+      name: "Avisos por Serviço",
+      description: "Aviso de Privacidade granular pra cada processo (Art. 9º LGPD)",
+      href: "/dashboard/avisos-privacidade",
+      icon: FileTextIcon,
+      dpoOnly: true,
+      tourId: "nav-avisos-privacidade",
+    },
+    {
       name: "RIPD",
       description: "Relatório de Impacto à Proteção de Dados",
       href: "/dashboard/ripd",
