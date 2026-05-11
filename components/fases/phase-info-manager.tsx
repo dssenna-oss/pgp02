@@ -8,9 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { BookOpen, ListChecks, Edit2, Save, X, Loader2, Lock } from "lucide-react";
+import { BookOpen, ListChecks, Edit2, Save, X, Loader2, Lock, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 interface PhaseInfoManagerProps {
   phase: string;
@@ -25,6 +31,13 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
   const [saving, setSaving] = useState(false);
   const [editingHeyzine, setEditingHeyzine] = useState(false);
   const [editingHowTo, setEditingHowTo] = useState(false);
+  // Card "Considerações sobre a fase" começa colapsado pra reduzir altura
+  // inicial da página (decisão 1.A do cardápio). Auto-expande quando o
+  // admin entra em modo edição pra evitar editar conteúdo escondido.
+  const [howToExpanded, setHowToExpanded] = useState(false);
+  useEffect(() => {
+    if (editingHowTo) setHowToExpanded(true);
+  }, [editingHowTo]);
   
   // Verifica se o usuário é administrador
   const isAdmin = session?.user?.email === "clubedoservidor@protonmail.com";
@@ -213,35 +226,58 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
     </Card>
   );
 
-  // Componente das Considerações sobre a fase
+  // Componente das Considerações sobre a fase (Collapsible — 1.A do
+  // cardápio: default fechado pra reduzir altura). Clique no header abre
+  // ou fecha o conteúdo. Edição força abrir (effect acima).
   const HowToProceedSection = () => (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
-            <ListChecks className="h-5 w-5 text-green-600 flex-shrink-0" />
-            <span>Considerações sobre a fase</span>
-            {!isAdmin && howToProceed && (
-              <span className="text-xs text-gray-500 font-normal inline-flex items-center">
-                <Lock className="h-3 w-3 inline mr-1" />
-                Gerenciado pelo Administrador
-              </span>
-            )}
-          </CardTitle>
-          {!editingHowTo && isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditingHowTo(true)}
-              className="self-start sm:self-auto"
+    <Collapsible open={howToExpanded} onOpenChange={setHowToExpanded} asChild>
+      <Card>
+        <CardHeader className="py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CollapsibleTrigger
+              className="flex items-center gap-2 flex-wrap min-w-0 text-left group flex-1 cursor-pointer rounded -m-1 p-1 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+              aria-label={howToExpanded ? "Recolher considerações" : "Expandir considerações"}
             >
-              <Edit2 className="h-4 w-4 mr-2" />
-              {howToProceed ? "Editar" : "Adicionar"}
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-gray-500 transition-transform shrink-0",
+                  howToExpanded && "rotate-180",
+                )}
+              />
+              <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
+                <ListChecks className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <span>Considerações sobre a fase</span>
+                {!howToExpanded && (
+                  <span className="text-xs text-gray-500 font-normal">
+                    (clique pra expandir)
+                  </span>
+                )}
+                {!isAdmin && howToProceed && howToExpanded && (
+                  <span className="text-xs text-gray-500 font-normal inline-flex items-center">
+                    <Lock className="h-3 w-3 inline mr-1" />
+                    Gerenciado pelo Administrador
+                  </span>
+                )}
+              </CardTitle>
+            </CollapsibleTrigger>
+            {!editingHowTo && isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingHowTo(true);
+                }}
+                className="self-start sm:self-auto"
+              >
+                <Edit2 className="h-4 w-4 mr-2" />
+                {howToProceed ? "Editar" : "Adicionar"}
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CollapsibleContent className="data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up overflow-hidden">
+          <CardContent>
         {editingHowTo ? (
           <div className="space-y-4">
             <div>
@@ -296,8 +332,10 @@ export default function PhaseInfoManager({ phase, section = "both" }: PhaseInfoM
               : "Nenhum passo-a-passo disponível para esta fase. Entre em contato com o administrador."}
           </p>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 
   // Renderizar apenas seção Heyzine
