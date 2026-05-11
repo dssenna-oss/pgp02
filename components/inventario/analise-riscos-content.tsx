@@ -304,9 +304,9 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
       {/* Header */}
       <div>
         <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-          <Link href="/dashboard/inventario">
+          <Link href="/dashboard/fase-3#coloque-em-pratica">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Voltar pra listagem
+            Voltar pra Fase 3 · Coloque em prática
           </Link>
         </Button>
         <div className="flex items-start gap-3 flex-wrap">
@@ -483,7 +483,7 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button asChild variant="outline" className="flex-1 sm:flex-initial">
-            <Link href="/dashboard/inventario">Cancelar</Link>
+            <Link href="/dashboard/fase-3#coloque-em-pratica">Cancelar</Link>
           </Button>
           <Button
             onClick={handleSave}
