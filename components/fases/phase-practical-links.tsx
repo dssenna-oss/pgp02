@@ -96,6 +96,22 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
     setLinks(newLinks);
   };
 
+  // Quando o user chega na fase via `#coloque-em-pratica` (ex: clicando
+  // no botão "Voltar" do Inventário/RIPD/Avisos), o Next router não
+  // scrolla automaticamente — o elemento só existe depois do mount.
+  // Após terminar de carregar, se a hash bater, faz scroll suave.
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#coloque-em-pratica") return;
+    const el = document.getElementById("coloque-em-pratica");
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
