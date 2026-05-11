@@ -8,9 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import MentionTextarea from "@/components/forum/mention-textarea";
+import MentionText from "@/components/forum/mention-text";
 import {
   Send,
   Pin,
@@ -236,7 +237,7 @@ export default function PostDetailDialog({
             {/* Conteúdo */}
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <p className="whitespace-pre-wrap break-words text-gray-800 dark:text-gray-200">
-                {post.content}
+                <MentionText content={post.content} />
               </p>
             </div>
 
@@ -310,20 +311,19 @@ export default function PostDetailDialog({
                     <span>{timeAgoShort(reply.createdAt)}</span>
                   </div>
                   <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
-                    {reply.content}
+                    <MentionText content={reply.content} />
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Caixa de resposta */}
+            {/* Caixa de resposta — suporta @user pra menção */}
             <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-800">
-              <Textarea
+              <MentionTextarea
                 value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Escreva sua resposta..."
+                onChange={setReplyContent}
+                placeholder="Escreva sua resposta... Digite @ para mencionar alguém."
                 rows={3}
-                maxLength={5000}
               />
               <div className="flex justify-end">
                 <Button

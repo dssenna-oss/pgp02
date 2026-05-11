@@ -796,6 +796,92 @@ export function tplProcessosAtribuidos(
 }
 
 // ============================================================
+// 7. Menção @user no Fórum (post ou reply)
+// ============================================================
+
+export interface ForumMentionArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  /** Nome do autor que mencionou. */
+  authorName: string;
+  /** "post" se mencionou na criação do post, "reply" se foi numa resposta. */
+  source: "post" | "reply";
+  /** Título do post (sempre presente — replies referenciam o post pai). */
+  postTitle: string;
+  /** Preview do conteúdo onde a menção apareceu (com @Nome em texto puro). */
+  contentPreview: string;
+  /** Pra deep-link no email. */
+  postId: string;
+}
+
+/**
+ * Notifica usuário mencionado num post/reply do Fórum. Disparado quando
+ * detectamos `@[Nome](mention:userId)` no content. Respeita o toggle
+ * `User.emailNotifyDm` (mesma natureza institucional de DM/menção
+ * direta — alguém te chamou pelo nome).
+ */
+export function tplForumMention(args: ForumMentionArgs): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "")
+    .split(" ")[0]
+    .trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const action =
+    args.source === "post"
+      ? "mencionou você num post"
+      : "mencionou você numa resposta";
+
+  const subject = `${args.authorName} ${action} no Fórum`;
+  const preview = args.contentPreview.slice(0, 280).trim();
+  const previewSafe = escapeHtml(preview);
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">
+      <strong>${escapeHtml(args.authorName)}</strong> ${action} do Fórum do PGP.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background: #f5f3ff; border-left: 4px solid #8b5cf6; border-radius: 4px;">
+      <tr><td style="padding: 14px 16px;">
+        <div style="font-size: 11px; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+          ${args.source === "post" ? "💬 Post no Fórum" : "↩️ Resposta no Fórum"}
+        </div>
+        <div style="font-weight: 600; color: #111827; margin-bottom: 6px;">
+          ${escapeHtml(args.postTitle)}
+        </div>
+        <div style="font-size: 13px; color: #4b5563; white-space: pre-wrap;">${previewSafe}${preview.length >= 280 ? "..." : ""}</div>
+      </td></tr>
+    </table>
+    <p style="margin: 16px 0 4px 0; font-size: 13px; color: #6b7280;">
+      Abra o Fórum pra responder ou marcar como visto.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${args.authorName} ${action}: ${args.postTitle}`,
+    bodyHtml,
+    ctaText: "Abrir no Fórum",
+    ctaHref: `${PROD_URL}/dashboard/forum`,
+  });
+
+  const text = [
+    `${greeting},`,
+    "",
+    `${args.authorName} ${action} no Fórum do PGP.`,
+    "",
+    `📌 ${args.postTitle}`,
+    "",
+    preview + (preview.length >= 280 ? "..." : ""),
+    "",
+    `Acesse: ${PROD_URL}/dashboard/forum`,
+    "",
+    "—",
+    "Sistema PGP - Programa de Governança em Privacidade",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 
