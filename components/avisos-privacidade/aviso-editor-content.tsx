@@ -40,10 +40,14 @@ import {
   Copy,
   Edit3,
   Eye,
+  History,
+  Download,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AVISO_SECTIONS } from "@/lib/aviso-privacidade-sections";
+import AvisoHistoryModal from "@/components/avisos-privacidade/aviso-history-modal";
 
 interface NoticeData {
   id: string;
@@ -80,6 +84,7 @@ export default function AvisoEditorContent({ noticeId }: { noticeId: string }) {
   const [publishing, setPublishing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [changeLog, setChangeLog] = useState("");
   const [view, setView] = useState<"split" | "preview">("split");
   const [dirty, setDirty] = useState(false);
@@ -306,6 +311,32 @@ export default function AvisoEditorContent({ noticeId }: { noticeId: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowHistoryModal(true)}
+            className="text-xs"
+            title="Histórico de versões + diff"
+          >
+            <History className="h-3.5 w-3.5 mr-1" />
+            Histórico {data.currentVersion > 0 ? `(v${data.currentVersion})` : ""}
+          </Button>
+          <a
+            href={`/api/avisos-privacidade/${data.id}/export?source=${isPub ? "published" : "current"}`}
+            className="text-xs px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 inline-flex items-center gap-1"
+            title="Baixar como DOCX (Word)"
+          >
+            <Download className="h-3.5 w-3.5" /> DOCX
+          </a>
+          <a
+            href={`/dashboard/avisos-privacidade/${data.id}/pdf?source=${isPub ? "published" : "current"}&autoprint=1`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs px-3 py-1.5 rounded border border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800 inline-flex items-center gap-1"
+            title="Abrir versão pra impressão / Salvar PDF"
+          >
+            <Printer className="h-3.5 w-3.5" /> PDF
+          </a>
           {isPub && data.company.slug && (
             <a
               href={`/p/${data.company.slug}/aviso-servico/${data.slug}`}
@@ -341,6 +372,15 @@ export default function AvisoEditorContent({ noticeId }: { noticeId: string }) {
           </Button>
         </div>
       </div>
+
+      {/* Modal de histórico de versões + diff */}
+      <AvisoHistoryModal
+        open={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        noticeId={data.id}
+        currentContent={data.currentContent}
+        currentVersion={data.currentVersion}
+      />
 
       {/* Banner Inventário mudou */}
       {data.outdated && (

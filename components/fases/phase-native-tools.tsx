@@ -1339,7 +1339,129 @@ function Fase6Tools() {
       <LiaCardTools />
       <TerceirosCardTools />
       <PoliticasCard />
+      <AvisosServicoCard />
     </div>
+  );
+}
+
+// ============================================================
+// AvisosServicoCard — Aviso de Privacidade por Serviço (Checkpoint Avisos, 2026-05-10)
+// ============================================================
+
+interface AvisosResp {
+  items: Array<{
+    inventoryId: string;
+    inventoryStatus: string;
+    notice: { status: string; outdated: boolean } | null;
+  }>;
+}
+
+function AvisosServicoCard() {
+  const [data, setData] = useState<AvisosResp | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/avisos-privacidade");
+        if (res.ok) {
+          setData(await res.json());
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const aprovados = data?.items.filter((i) => i.inventoryStatus === "APROVADO").length ?? 0;
+  const publicados = data?.items.filter((i) => i.notice?.status === "PUBLICADO").length ?? 0;
+  const rascunhos = data?.items.filter((i) => i.notice?.status === "RASCUNHO").length ?? 0;
+  const desatualizados = data?.items.filter((i) => i.notice?.outdated === true).length ?? 0;
+  const semAviso = (data?.items ?? []).filter(
+    (i) => i.inventoryStatus === "APROVADO" && !i.notice,
+  ).length;
+
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : aprovados === 0
+      ? "neutral"
+      : publicados > 0 && desatualizados === 0 && semAviso === 0 && rascunhos === 0
+        ? "success"
+        : "warning";
+
+  return (
+    <ToolCard
+      icon={<FileText className="h-6 w-6" />}
+      iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+      title="Aviso de Privacidade por Serviço"
+      description="Documento público que cada serviço entrega ao cidadão (Art. 9º LGPD). Gerado automaticamente do Inventário; você ajusta seções e adiciona observações antes de publicar em URL pública."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: aprovados > 0 ? "Abrir Avisos por Serviço" : "Aprove processos primeiro",
+        href: "/dashboard/avisos-privacidade",
+      }}
+      stats={
+        forbidden
+          ? []
+          : data && aprovados > 0
+            ? [
+                {
+                  label: "aprovados",
+                  value: aprovados,
+                  icon: <FileText className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "publicados",
+                  value: publicados,
+                  color: "emerald",
+                  icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                },
+                ...(rascunhos > 0
+                  ? [
+                      {
+                        label: "em rascunho",
+                        value: rascunhos,
+                        color: "amber" as const,
+                        icon: <Clock className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(desatualizados > 0
+                  ? [
+                      {
+                        label: "desatualizados",
+                        value: desatualizados,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(semAviso > 0
+                  ? [
+                      {
+                        label: "sem aviso ainda",
+                        value: semAviso,
+                        icon: <Clock className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+      }
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : aprovados === 0
+            ? "Avisos só são gerados pra processos APROVADO no Inventário. Aprove no editor pra liberar."
+            : undefined
+      }
+    />
   );
 }
 
