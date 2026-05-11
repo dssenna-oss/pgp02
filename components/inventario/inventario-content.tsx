@@ -26,6 +26,7 @@ import {
   ShieldAlert,
   ListChecks,
   FileText,
+  ArrowLeft,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -392,6 +393,16 @@ export default function InventarioContent({ session }: InventarioContentProps) {
               <ClipboardList className="h-7 w-7 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
+              {/* Link de volta pro card "Coloque em prática" da Fase 3 —
+                  contexto natural de onde o user veio. Sempre visível
+                  já que o Inventário é a ferramenta nativa da Fase 3. */}
+              <Link
+                href="/dashboard/fase-3#coloque-em-pratica"
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-300 mb-1.5 group"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+                Voltar pra Fase 3 · Coloque em prática
+              </Link>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Inventário de Dados Pessoais
               </h1>
