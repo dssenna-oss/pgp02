@@ -12,7 +12,8 @@ import {
   aggregateReactions,
 } from "@/lib/forum-types";
 import { sendEmailAsync } from "@/lib/email-sender";
-import { tplForumAnnouncement } from "@/lib/email-templates";
+import { tplForumAnnouncement, tplForumMention } from "@/lib/email-templates";
+import { extractMentionedUserIds, stripMentionMarkdown } from "@/lib/forum-mentions";
 
 /**
  * Endpoints da listagem pública do Fórum.
@@ -199,6 +200,42 @@ export async function POST(req: NextRequest) {
       data: { postId: post.id, userId: user.id },
     })
     .catch(() => {});
+
+  // Notifica usuários mencionados via @[Nome](mention:userId). Aplica
+  // pra qualquer tipo de post (discussion ou announcement), pra qualquer
+  // user (não só DPO). Respeita opt-out `emailNotifyDm` (mesma natureza
+  // institucional — alguém te chamou pelo nome).
+  const mentionedIds = extractMentionedUserIds(content).filter(
+    (uid) => uid !== user.id, // não notifica menção a si mesmo
+  );
+  if (mentionedIds.length > 0) {
+    const mentioned = await prisma.user.findMany({
+      where: {
+        id: { in: mentionedIds },
+        companyId: user.companyId!, // garante mesma org (defesa contra
+                                    // payload manipulado com userId externo)
+        isActive: true,
+        emailNotifyDm: true,
+      },
+      select: { email: true, name: true },
+    });
+    const previewText = stripMentionMarkdown(content);
+    for (const u of mentioned) {
+      sendEmailAsync({
+        to: { email: u.email, name: u.name ?? undefined },
+        tag: "forum-mention",
+        ...tplForumMention({
+          recipientName: u.name,
+          recipientEmail: u.email,
+          authorName: post.author.name ?? post.author.email,
+          source: "post",
+          postTitle: title,
+          contentPreview: previewText,
+          postId: post.id,
+        }),
+      });
+    }
+  }
 
   // Notifica todos os usuários da org por email QUANDO é Comunicado
   // oficial (Announcement). Discussions normais não disparam email pra
