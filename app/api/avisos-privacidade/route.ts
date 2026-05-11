@@ -81,6 +81,11 @@ export async function GET() {
   }
   const { user } = guard;
 
+  const company = await prisma.company.findUnique({
+    where: { id: user.companyId },
+    select: { slug: true },
+  });
+
   // Lista TODOS os Inventários da org com APROVADO + os que já têm aviso
   // (mesmo se não-aprovado, pra mostrar overrides). Inclui o aviso (null se
   // ainda não existe) pra a UI saber qual estado mostrar.
@@ -139,7 +144,7 @@ export async function GET() {
     };
   });
 
-  return NextResponse.json({ items });
+  return NextResponse.json({ items, companySlug: company?.slug ?? null });
 }
 
 export async function POST(request: NextRequest) {

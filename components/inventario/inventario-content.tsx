@@ -25,6 +25,7 @@ import {
   AlignLeft,
   ShieldAlert,
   ListChecks,
+  FileText,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -1115,6 +1116,29 @@ function InventarioRow({
                   ? "Bases Legais preenchidas — clique pra revisar"
                   : "Preencher Bases Legais"}
               </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Aviso de Privacidade do serviço — atalho pra DPO gerar/editar
+              o documento público (Art. 9º LGPD). Só pra processos APROVADO. */}
+          {isUserDPO && isApproved && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-950/30"
+                >
+                  <Link
+                    href={`/dashboard/avisos-privacidade?inv=${item.id}`}
+                    aria-label="Aviso de Privacidade"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Aviso de Privacidade do serviço</TooltipContent>
             </Tooltip>
           )}
 
