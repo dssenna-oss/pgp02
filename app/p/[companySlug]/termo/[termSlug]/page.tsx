@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import PublicPolicyView from "@/components/politicas/public-policy-view";
+import ConsentAcceptForm from "@/components/consent/consent-accept-form";
 import { CONSENT_TEMPLATE_BY_ID } from "@/lib/consent-templates";
 
 /**
@@ -54,27 +55,40 @@ export default async function PublicConsentTermPage({
     CONSENT_TEMPLATE_BY_ID[term.templateType as keyof typeof CONSENT_TEMPLATE_BY_ID]
       ?.label ?? "Termo de Consentimento";
 
-  // Banner S1: enquanto a coleta digital não rola (S2), informamos o
-  // cidadão que precisa procurar a organização pra dar o consentimento.
-  // Quando S2 entrar, troca por formulário de aceite inline.
-  const banner = term.allowsDigital
-    ? "📝 Este termo aceita assinatura digital. (Em breve: botão **Aceito** aqui mesmo nesta página.)"
+  // Pra coleta presencial, anexamos um banner explicando como dar o
+  // consentimento. Pra digital, embaixo do termo aparece o
+  // <ConsentAcceptForm> com formulário de aceite.
+  const physicalBanner = term.allowsDigital
+    ? null
     : "📋 Este termo é coletado presencialmente. Entre em contato com a Ouvidoria/Atendimento da organização pra fornecer seu consentimento.";
 
-  const contentWithBanner = `${banner}\n\n---\n\n${term.publishedContent}`;
+  const contentWithBanner = physicalBanner
+    ? `${physicalBanner}\n\n---\n\n${term.publishedContent}`
+    : term.publishedContent;
 
   return (
-    <PublicPolicyView
-      companyName={company.tradeName ?? company.companyName}
-      logoUrl={company.logoUrl}
-      website={company.website}
-      type="CONSENT_TERM"
-      typeLabel={typeLabel}
-      title={term.title}
-      content={contentWithBanner}
-      publishedAt={term.publishedAt?.toISOString() ?? null}
-      version={term.currentVersion}
-    />
+    <>
+      <PublicPolicyView
+        companyName={company.tradeName ?? company.companyName}
+        logoUrl={company.logoUrl}
+        website={company.website}
+        type="CONSENT_TERM"
+        typeLabel={typeLabel}
+        title={term.title}
+        content={contentWithBanner}
+        publishedAt={term.publishedAt?.toISOString() ?? null}
+        version={term.currentVersion}
+      />
+      {term.allowsDigital && (
+        <div className="max-w-3xl mx-auto px-6">
+          <ConsentAcceptForm
+            orgSlug={companySlug}
+            termSlug={termSlug}
+            termTitle={term.title}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
