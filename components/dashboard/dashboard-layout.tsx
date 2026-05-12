@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,6 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { roleLabel, isDPO } from "@/lib/auth-helpers";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
 import NotificationBell from "./notification-bell";
 import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
@@ -116,6 +117,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * Polling 60s.
    */
   const [inventarioPending, setInventarioPending] = useState<number | null>(null);
+
+  // Ref pra expor o refreshAll do useEffect ao useAdaptivePolling.
+  // Init null — populado quando o useEffect monta.
+  const refreshAllRef = useRef<(() => void) | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -228,26 +233,24 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     };
 
     refreshAll();
-    const taskId = setInterval(fetchAlerts, 60000);
-    const forumId = setInterval(fetchForumUnread, 30000);
-    const ripdId = setInterval(fetchRipdPending, 60000);
-    const opsId = setInterval(fetchOperatorsPending, 60000);
-    const incidentsId = setInterval(fetchIncidentsPending, 60000);
-    const liaId = setInterval(fetchLiasPending, 60000);
-    const inventarioId = setInterval(fetchInventarioPending, 60000);
+    // Expõe pra fora do useEffect: o useAdaptivePolling top-level chama
+    // essa ref. Pausa quando a aba some, refetch imediato quando volta.
+    refreshAllRef.current = refreshAll;
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
-      clearInterval(taskId);
-      clearInterval(forumId);
-      clearInterval(ripdId);
-      clearInterval(opsId);
-      clearInterval(incidentsId);
-      clearInterval(liaId);
-      clearInterval(inventarioId);
+      refreshAllRef.current = null;
       offEvent();
     };
   }, []);
+
+  // Polling adaptativo único (substitui os 7 setInterval fixos anteriores).
+  // 30s ativo · 60s sem foco · pausa quando a aba some.
+  useAdaptivePolling(() => refreshAllRef.current?.(), {
+    activeMs: 30_000,
+    inactiveMs: 60_000,
+    refetchOnFocus: true,
+  });
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },

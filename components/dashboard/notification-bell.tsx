@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, AlertCircle, FileCheck2, Handshake, ClipboardList, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
 
 /**
  * Sino de notificações agregadas (Checkpoint 16 / H).
@@ -28,6 +29,7 @@ export default function NotificationBell() {
   }>({ incidents: 0, ripds: 0, operators: 0, inventarios: 0 });
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const loadRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let canceled = false;
@@ -52,15 +54,23 @@ export default function NotificationBell() {
     }
 
     load();
-    const interval = setInterval(load, 60_000);
+    loadRef.current = load;
     // Refresh imediato quando outras telas disparam notifySidebarRefresh()
     const offRefresh = onSidebarRefresh(load);
     return () => {
       canceled = true;
-      clearInterval(interval);
+      loadRef.current = null;
       offRefresh();
     };
   }, []);
+
+  // Polling adaptativo (substitui setInterval fixo de 60s).
+  // 30s ativo · 60s sem foco · pausa quando a aba some.
+  useAdaptivePolling(() => loadRef.current?.(), {
+    activeMs: 30_000,
+    inactiveMs: 60_000,
+    refetchOnFocus: true,
+  });
 
   // Fechar ao clicar fora
   useEffect(() => {

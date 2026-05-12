@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import {
@@ -62,8 +63,12 @@ export default function DashboardContent({ session }: DashboardContentProps) {
 
   // Conta inventários pedindo ação (só pra DPO mostrar o banner; pra contribuidor
   // o badge da sidebar já alerta sobre os DEVOLVIDOs).
+  const fetchPendingRef = useRef<(() => void) | null>(null);
   useEffect(() => {
-    if (!userIsDPO) return;
+    if (!userIsDPO) {
+      fetchPendingRef.current = null;
+      return;
+    }
     const fetchPending = async () => {
       try {
         const r = await fetch("/api/inventario/pending-count", { cache: "no-store" });
@@ -75,9 +80,19 @@ export default function DashboardContent({ session }: DashboardContentProps) {
       }
     };
     fetchPending();
-    const id = setInterval(fetchPending, 60000);
-    return () => clearInterval(id);
+    fetchPendingRef.current = fetchPending;
+    return () => {
+      fetchPendingRef.current = null;
+    };
   }, [userIsDPO]);
+
+  // Polling adaptativo (substitui setInterval fixo de 60s).
+  useAdaptivePolling(() => fetchPendingRef.current?.(), {
+    activeMs: 60_000,
+    inactiveMs: 120_000,
+    refetchOnFocus: true,
+    enabled: userIsDPO,
+  });
 
   const quickActions = [
     {
