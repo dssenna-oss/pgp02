@@ -36,6 +36,7 @@ import {
   normalizeEmail,
   sha256,
 } from "@/lib/consent-utils";
+import { notifyConsentAccepted } from "@/lib/consent-notify";
 
 export async function POST(
   request: NextRequest,
@@ -80,6 +81,9 @@ export async function POST(
       where: { companyId_slug: { companyId: company.id, slug: params.termSlug } },
       select: {
         id: true,
+        companyId: true,
+        title: true,
+        slug: true,
         status: true,
         publishedContent: true,
         currentVersion: true,
@@ -154,6 +158,18 @@ export async function POST(
         contentChecksum,
       },
       select: { id: true, acceptedAt: true },
+    });
+
+    // Fire-and-forget: notifica DPOs da org (filtra por emailNotifyConsent).
+    void notifyConsentAccepted({
+      companyId: term.companyId,
+      termId: term.id,
+      termTitle: term.title,
+      termSlug: term.slug,
+      version: currentVer.version,
+      titular: { name: titularName, email: titularEmail, cpf: titularCpf },
+      ip,
+      acceptedAtIso: created.acceptedAt.toISOString(),
     });
 
     return NextResponse.json(

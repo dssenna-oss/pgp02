@@ -32,11 +32,15 @@ import {
   Settings as SettingsIcon,
   Trash2,
   Archive,
+  Plus,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import TermoRecordsPanel from "./termo-records-panel";
+import TermoLinkPickerModal from "./termo-link-picker-modal";
+import TermoQrCode from "./termo-qr-code";
 
 interface TermDetail {
   id: string;
@@ -83,6 +87,9 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
   const [showPublish, setShowPublish] = useState(false);
   const [changeLog, setChangeLog] = useState("");
   const [view, setView] = useState<"split" | "preview">("split");
+  const [showLinkPicker, setShowLinkPicker] = useState(false);
+  const [linkOpInProgress, setLinkOpInProgress] = useState<string | null>(null);
+  const [showQrCode, setShowQrCode] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -162,6 +169,48 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
       toast.error(e?.message ?? "Erro");
     } finally {
       setPublishing(false);
+    }
+  }
+
+  async function persistLinks(newLinkedInventoryIds: string[]) {
+    if (!data) return;
+    const r = await fetch(`/api/consent-terms/${data.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkedInventoryIds: newLinkedInventoryIds }),
+    });
+    const j = await r.json().catch(() => null);
+    if (!r.ok) {
+      toast.error(j?.error ?? "Erro ao atualizar vínculos");
+      throw new Error(j?.error ?? "Erro");
+    }
+    await load();
+  }
+
+  async function handleAddLinks(finalIds: string[]) {
+    try {
+      await persistLinks(finalIds);
+      setShowLinkPicker(false);
+      toast.success("Processos vinculados.");
+    } catch {
+      // toast já mostrado em persistLinks
+    }
+  }
+
+  async function handleRemoveLink(inventoryId: string) {
+    if (!data) return;
+    if (!confirm("Remover este processo do termo? Os aceites já coletados continuam válidos.")) return;
+    setLinkOpInProgress(inventoryId);
+    try {
+      const remaining = data.inventoryLinks
+        .map((l) => l.inventory.id)
+        .filter((id) => id !== inventoryId);
+      await persistLinks(remaining);
+      toast.success("Processo desvinculado.");
+    } catch {
+      // toast já mostrado
+    } finally {
+      setLinkOpInProgress(null);
     }
   }
 
@@ -279,6 +328,21 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
           >
             <Printer className="h-3.5 w-3.5" /> PDF
           </a>
+          {isPub && data.company.slug && data.allowsDigital && (
+            <button
+              type="button"
+              onClick={() => setShowQrCode((v) => !v)}
+              className={cn(
+                "text-xs px-3 py-1.5 rounded border inline-flex items-center gap-1",
+                showQrCode
+                  ? "border-violet-300 bg-violet-50 text-violet-800 dark:bg-violet-950/40 dark:text-violet-200"
+                  : "border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800",
+              )}
+              title="Gerar QR Code da URL pública"
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR Code
+            </button>
+          )}
           {isPub && data.company.slug && (
             <a
               href={`/p/${data.company.slug}/termo/${data.slug}`}
@@ -323,6 +387,16 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
           Configurações
         </TabButton>
       </div>
+
+      {showQrCode && isPub && publicUrl && (
+        <div className="mb-5">
+          <TermoQrCode
+            url={publicUrl}
+            termTitle={data.title}
+            termSlug={data.slug}
+          />
+        </div>
+      )}
 
       {tab === "edit" && (
         <div
@@ -470,25 +544,70 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
           </div>
 
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-2">
-              Processos vinculados
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                Processos vinculados
+                {data.inventoryLinks.length > 0 && (
+                  <span className="text-xs font-normal text-gray-500 ml-1.5">
+                    ({data.inventoryLinks.length})
+                  </span>
+                )}
+              </h3>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowLinkPicker(true)}
+                disabled={isArchived}
+                className="text-xs"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Adicionar processo
+              </Button>
+            </div>
             {data.inventoryLinks.length === 0 ? (
               <p className="text-xs text-gray-500 italic">
-                Nenhum processo vinculado. (Você pode editar vínculos pelo modal de criação;
-                edição de vínculos individuais pelo editor virá numa próxima sessão.)
+                Nenhum processo vinculado. Clique em <strong>Adicionar processo</strong>{" "}
+                pra associar a 1 ou mais entradas aprovadas do Inventário.
               </p>
             ) : (
-              <ul className="space-y-1.5 text-sm">
+              <ul className="space-y-1 text-sm divide-y divide-gray-100 dark:divide-gray-700">
                 {data.inventoryLinks.map(({ inventory: inv }) => (
-                  <li key={inv.id} className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {inv.serviceName}
-                    </span>
-                    {inv.setor && (
-                      <span className="text-xs text-gray-500">· {inv.setor}</span>
-                    )}
-                    <span className="text-[11px] text-gray-500">({inv.status})</span>
+                  <li
+                    key={inv.id}
+                    className="flex items-center gap-2 py-1.5"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Link
+                          href={`/dashboard/inventario/${inv.id}/editar`}
+                          className="font-medium text-violet-700 dark:text-violet-300 hover:underline truncate"
+                        >
+                          {inv.serviceName}
+                        </Link>
+                        {inv.setor && (
+                          <span className="text-xs text-gray-500">
+                            · {inv.setor}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wide">
+                          {inv.status}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLink(inv.id)}
+                      disabled={isArchived || linkOpInProgress === inv.id}
+                      className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 px-2 py-1 rounded inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Desvincular do termo (mantém os aceites já coletados)"
+                    >
+                      {linkOpInProgress === inv.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      Desvincular
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -558,6 +677,13 @@ export default function TermoEditorContent({ termId }: { termId: string }) {
           </div>
         </div>
       )}
+
+      <TermoLinkPickerModal
+        open={showLinkPicker}
+        onClose={() => setShowLinkPicker(false)}
+        alreadyLinkedIds={data.inventoryLinks.map((l) => l.inventory.id)}
+        onConfirm={handleAddLinks}
+      />
 
       <style jsx global>{`
         .policy-article { line-height: 1.7; color: #1f2937; }

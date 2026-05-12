@@ -19,6 +19,7 @@ import {
   ShieldX,
   ListChecks,
   Inbox,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -105,22 +106,34 @@ export default function TermoRecordsPanel({ termId }: { termId: string }) {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        {(["active", "revoked", "all"] as FilterMode[]).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setFilter(k)}
-            className={cn(
-              "px-3 py-1 text-xs rounded-md font-medium",
-              filter === k
-                ? "bg-violet-600 text-white"
-                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200",
-            )}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          {(["active", "revoked", "all"] as FilterMode[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setFilter(k)}
+              className={cn(
+                "px-3 py-1 text-xs rounded-md font-medium",
+                filter === k
+                  ? "bg-violet-600 text-white"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200",
+              )}
+            >
+              {k === "active" ? "Ativos" : k === "revoked" ? "Revogados" : "Todos"}
+            </button>
+          ))}
+        </div>
+        {stats.total > 0 && (
+          <a
+            href={`/api/consent-terms/${termId}/records/export?status=${filter}`}
+            className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded-md font-medium border border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+            title="Exportar relatório de aceites em Excel (.xlsx)"
           >
-            {k === "active" ? "Ativos" : k === "revoked" ? "Revogados" : "Todos"}
-          </button>
-        ))}
+            <Download className="h-3.5 w-3.5" />
+            Exportar Excel
+          </a>
+        )}
       </div>
 
       {loading ? (

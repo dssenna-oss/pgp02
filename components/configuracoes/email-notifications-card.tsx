@@ -23,6 +23,7 @@ import {
   Megaphone,
   ListChecks,
   ClipboardList,
+  FileSignature,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +32,7 @@ interface Prefs {
   announcements: boolean;
   taskDue: boolean;
   actionPlan: boolean;
+  consent: boolean;
 }
 
 interface PrefsResponse extends Prefs {
@@ -60,6 +62,7 @@ export default function EmailNotificationsCard() {
           announcements: j.announcements,
           taskDue: j.taskDue,
           actionPlan: j.actionPlan,
+          consent: (j as any).consent ?? true,
         });
         setRole(j.role);
       } catch {
@@ -145,6 +148,16 @@ export default function EmailNotificationsCard() {
                 checked={prefs.actionPlan}
                 disabled={saving === "actionPlan"}
                 onChange={(v) => update("actionPlan", v)}
+              />
+            )}
+            {isDpoUser && (
+              <NotifRow
+                icon={<FileSignature className="h-4 w-4 text-violet-600" />}
+                label="Termo de Consentimento — aceites e revogações (DPO)"
+                hint="Receber email a cada aceite ou revogação coletado num Termo da sua organização. Em tempo real (sem digest). Disponível só pra DPO."
+                checked={prefs.consent}
+                disabled={saving === "consent"}
+                onChange={(v) => update("consent", v)}
               />
             )}
           </>

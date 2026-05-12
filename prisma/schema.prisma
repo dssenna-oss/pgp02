@@ -71,6 +71,11 @@ model User {
   /// de Ação institucional (cron 9h). Default: true pra DPOs (opt-out).
   /// Ignorado pra Contribuidores — eles não veem o Plano. Etapa 27.
   emailNotifyActionPlan    Boolean @default(true)
+  /// (DPO-only) Receber email a cada aceite/revogação de Termo de
+  /// Consentimento na própria organização (real-time, sem digest).
+  /// Default: true (opt-out). Útil pra DPO acompanhar coleta sem ficar
+  /// abrindo o painel toda hora. Etapa 31.
+  emailNotifyConsent       Boolean @default(true)
 
   // Coisas que o user editou recentemente — usado pelo card "Continue de
   // onde parou". Capturado server-side em rotas PATCH/POST de cada

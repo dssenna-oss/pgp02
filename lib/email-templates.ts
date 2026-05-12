@@ -882,6 +882,169 @@ export function tplForumMention(args: ForumMentionArgs): TemplateOutput {
 }
 
 // ============================================================
+// 7. Aceite de Termo de Consentimento — notificação ao DPO (Etapa 31)
+// ============================================================
+
+export interface ConsentAcceptedArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  termTitle: string;
+  termSlug: string;
+  termId: string;
+  version: number;
+  titularDisplay: string; // nome ou email/cpf mascarado
+  acceptedAtIso: string;
+  ip: string;
+}
+
+export function tplConsentAccepted(args: ConsentAcceptedArgs): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "").split(" ")[0].trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const subject = `✅ Novo aceite: ${args.termTitle}`;
+  const acceptedAtBr = new Date(args.acceptedAtIso).toLocaleString("pt-BR");
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">
+      Um titular registrou aceite no Termo de Consentimento abaixo.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background: #ecfdf5; border-left: 4px solid #10b981; border-radius: 4px;">
+      <tr><td style="padding: 14px 16px;">
+        <div style="font-size: 11px; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+          ✅ Aceite registrado · v${args.version}
+        </div>
+        <div style="font-weight: 600; color: #111827; margin-bottom: 8px;">
+          ${escapeHtml(args.termTitle)}
+        </div>
+        <div style="font-size: 13px; color: #4b5563; line-height: 1.7;">
+          <div><strong>Titular:</strong> ${escapeHtml(args.titularDisplay)}</div>
+          <div><strong>Quando:</strong> ${escapeHtml(acceptedAtBr)}</div>
+          <div><strong>IP:</strong> <span style="font-family: monospace;">${escapeHtml(args.ip)}</span></div>
+        </div>
+      </td></tr>
+    </table>
+    <p style="margin: 0 0 4px 0; font-size: 13px; color: #6b7280;">
+      Evidência completa (User-Agent, SHA-256, versão exata) disponível no painel.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${args.titularDisplay} aceitou: ${args.termTitle}`,
+    bodyHtml,
+    ctaText: "Ver registros no painel",
+    ctaHref: `${PROD_URL}/dashboard/termos-consentimento/${args.termId}/editar`,
+  });
+
+  const text = [
+    `${greeting},`,
+    "",
+    `Um titular registrou aceite no Termo de Consentimento.`,
+    "",
+    `Termo: ${args.termTitle} (versão ${args.version})`,
+    `Titular: ${args.titularDisplay}`,
+    `Quando: ${acceptedAtBr}`,
+    `IP: ${args.ip}`,
+    "",
+    `Painel: ${PROD_URL}/dashboard/termos-consentimento/${args.termId}/editar`,
+    "",
+    "—",
+    "Sistema PGP - Programa de Governança em Privacidade",
+  ].join("\n");
+
+  return { subject, html, text };
+}
+
+// ============================================================
+// 8. Revogação de Termo de Consentimento — notificação ao DPO (Etapa 31)
+// ============================================================
+
+export interface ConsentRevokedArgs {
+  recipientName: string | null;
+  recipientEmail: string;
+  termTitle: string;
+  termId: string;
+  titularDisplay: string;
+  revokedAtIso: string;
+  acceptedAtIso: string | null;
+  reason: string | null;
+}
+
+export function tplConsentRevoked(args: ConsentRevokedArgs): TemplateOutput {
+  const recipientFirstName = (args.recipientName ?? "").split(" ")[0].trim();
+  const greeting = recipientFirstName ? `Olá, ${recipientFirstName}` : "Olá";
+
+  const subject = `⚠ Revogação registrada: ${args.termTitle}`;
+  const revokedAtBr = new Date(args.revokedAtIso).toLocaleString("pt-BR");
+  const acceptedAtBr = args.acceptedAtIso
+    ? new Date(args.acceptedAtIso).toLocaleString("pt-BR")
+    : "—";
+
+  const reasonBlock = args.reason
+    ? `<div style="margin-top: 10px; padding: 10px 12px; background: #fef3c7; border-radius: 4px;">
+        <div style="font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Razão informada pelo titular</div>
+        <div style="font-size: 13px; color: #1f2937; font-style: italic; white-space: pre-wrap;">${escapeHtml(args.reason)}</div>
+      </div>`
+    : "";
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px 0;"><strong>${greeting}</strong>,</p>
+    <p style="margin: 0 0 16px 0;">
+      Um titular revogou o consentimento anteriormente dado (Art. 8º §5º LGPD).
+      O registro de aceite original permanece preservado pra rastreabilidade
+      do período em que esteve ativo.
+    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
+      <tr><td style="padding: 14px 16px;">
+        <div style="font-size: 11px; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+          ⚠ Revogação registrada
+        </div>
+        <div style="font-weight: 600; color: #111827; margin-bottom: 8px;">
+          ${escapeHtml(args.termTitle)}
+        </div>
+        <div style="font-size: 13px; color: #4b5563; line-height: 1.7;">
+          <div><strong>Titular:</strong> ${escapeHtml(args.titularDisplay)}</div>
+          <div><strong>Aceite original:</strong> ${escapeHtml(acceptedAtBr)}</div>
+          <div><strong>Revogado em:</strong> ${escapeHtml(revokedAtBr)}</div>
+        </div>
+        ${reasonBlock}
+      </td></tr>
+    </table>
+    <p style="margin: 0 0 4px 0; font-size: 13px; color: #6b7280;">
+      Avalie se há tratamento em andamento que dependa deste consentimento.
+    </p>
+  `;
+
+  const html = wrapEmail({
+    preheader: `${args.titularDisplay} revogou: ${args.termTitle}`,
+    bodyHtml,
+    ctaText: "Abrir Termo no painel",
+    ctaHref: `${PROD_URL}/dashboard/termos-consentimento/${args.termId}/editar`,
+  });
+
+  const text = [
+    `${greeting},`,
+    "",
+    `Um titular revogou o consentimento (Art. 8º §5º LGPD).`,
+    "",
+    `Termo: ${args.termTitle}`,
+    `Titular: ${args.titularDisplay}`,
+    `Aceite original: ${acceptedAtBr}`,
+    `Revogado em: ${revokedAtBr}`,
+    args.reason ? `Razão: ${args.reason}` : "",
+    "",
+    `Painel: ${PROD_URL}/dashboard/termos-consentimento/${args.termId}/editar`,
+    "",
+    "—",
+    "Sistema PGP - Programa de Governança em Privacidade",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return { subject, html, text };
+}
+
+// ============================================================
 // Helpers
 // ============================================================
 

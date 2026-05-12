@@ -25,6 +25,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -53,6 +55,7 @@ interface ConsentStatusItem {
 }
 
 type FilterMode = "all" | "published" | "draft" | "archived";
+type TemplateFilter = "all" | "GERAL" | "SENSIVEIS" | "MENOR" | "IMAGEM_VOZ" | "COMUNICACAO";
 
 const FILTER_LABELS: Record<FilterMode, string> = {
   all: "Tudo",
@@ -69,6 +72,15 @@ const TEMPLATE_LABEL: Record<string, string> = {
   COMUNICACAO: "Comunicação",
 };
 
+const TEMPLATE_FILTER_OPTIONS: Array<{ key: TemplateFilter; label: string }> = [
+  { key: "all", label: "Todos os modelos" },
+  { key: "GERAL", label: "Geral" },
+  { key: "SENSIVEIS", label: "Sensíveis" },
+  { key: "MENOR", label: "Menor" },
+  { key: "IMAGEM_VOZ", label: "Imagem/Voz" },
+  { key: "COMUNICACAO", label: "Comunicação" },
+];
+
 export default function TermosConsentimentoContent() {
   const router = useRouter();
   const [terms, setTerms] = useState<ListTerm[] | null>(null);
@@ -76,7 +88,16 @@ export default function TermosConsentimentoContent() {
   const [missingItems, setMissingItems] = useState<ConsentStatusItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterMode>("all");
+  const [templateFilter, setTemplateFilter] = useState<TemplateFilter>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+
+  // Debounce client-side da busca (200ms).
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchInput.trim().toLowerCase()), 200);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   async function reload() {
     setLoading(true);
@@ -120,18 +141,19 @@ export default function TermosConsentimentoContent() {
   const filtered = useMemo(() => {
     const t = terms ?? [];
     return t.filter((x) => {
-      switch (filter) {
-        case "all":
-          return true;
-        case "published":
-          return x.status === "PUBLICADO";
-        case "draft":
-          return x.status === "RASCUNHO";
-        case "archived":
-          return x.status === "ARQUIVADO";
+      // Status
+      if (filter === "published" && x.status !== "PUBLICADO") return false;
+      if (filter === "draft" && x.status !== "RASCUNHO") return false;
+      if (filter === "archived" && x.status !== "ARQUIVADO") return false;
+      // Tipo de modelo
+      if (templateFilter !== "all" && x.templateType !== templateFilter) return false;
+      // Busca por título (case-insensitive, contém)
+      if (searchDebounced && !x.title.toLowerCase().includes(searchDebounced)) {
+        return false;
       }
+      return true;
     });
-  }, [terms, filter]);
+  }, [terms, filter, templateFilter, searchDebounced]);
 
   function handleCreated(newId: string) {
     setShowCreate(false);
@@ -211,23 +233,63 @@ export default function TermosConsentimentoContent() {
       )}
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-xs text-gray-500 font-medium mr-1">Mostrar:</span>
-        {(Object.keys(FILTER_LABELS) as FilterMode[]).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setFilter(k)}
-            className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
-              filter === k
-                ? "bg-violet-600 text-white"
-                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200",
-            )}
-          >
-            {FILTER_LABELS[k]}
-          </button>
-        ))}
+      <div className="space-y-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-gray-500 font-medium mr-1">Status:</span>
+          {(Object.keys(FILTER_LABELS) as FilterMode[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setFilter(k)}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                filter === k
+                  ? "bg-violet-600 text-white"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200",
+              )}
+            >
+              {FILTER_LABELS[k]}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-gray-500 font-medium mr-1">Modelo:</span>
+          {TEMPLATE_FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => setTemplateFilter(opt.key)}
+              className={cn(
+                "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-colors",
+                templateFilter === opt.key
+                  ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200",
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Buscar por título do termo..."
+            className="w-full pl-8 pr-8 py-1.5 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-violet-200 focus:border-violet-500"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+              aria-label="Limpar busca"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Loading */}
