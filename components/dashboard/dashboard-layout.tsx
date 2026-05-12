@@ -406,6 +406,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       tourId: "nav-avisos-privacidade",
     },
     {
+      name: "Termos de Consentimento",
+      description: "Coleta formal de consentimento do titular (Art. 8º LGPD)",
+      href: "/dashboard/termos-consentimento",
+      icon: FileTextIcon,
+      dpoOnly: true,
+      tourId: "nav-termos-consentimento",
+    },
+    {
       name: "RIPD",
       description: "Relatório de Impacto à Proteção de Dados",
       href: "/dashboard/ripd",

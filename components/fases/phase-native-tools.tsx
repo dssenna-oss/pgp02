@@ -1340,7 +1340,157 @@ function Fase6Tools() {
       <TerceirosCardTools />
       <PoliticasCard />
       <AvisosServicoCard />
+      <TermosConsentimentoCard />
     </div>
+  );
+}
+
+// ============================================================
+// TermosConsentimentoCard — Termo de Consentimento do Titular (2026-05-10)
+// ============================================================
+
+interface TermosConsentResp {
+  items: Array<{
+    status: string;
+    acceptedCount: number;
+  }>;
+  stats: {
+    total: number;
+    published: number;
+    draft: number;
+    archived: number;
+    totalAccepts: number;
+    approvedProcesses: number;
+  };
+}
+
+interface ConsentStatusResp {
+  stats: { missingTerm: number; totalConsentProcesses: number };
+}
+
+function TermosConsentimentoCard() {
+  const [data, setData] = useState<TermosConsentResp | null>(null);
+  const [missing, setMissing] = useState<number>(0);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [r1, r2] = await Promise.all([
+          fetch("/api/consent-terms"),
+          fetch("/api/inventario/consent-status").catch(() => null),
+        ]);
+        if (r1.status === 403) {
+          setForbidden(true);
+        } else if (r1.ok) {
+          setData(await r1.json());
+        }
+        if (r2 && r2.ok) {
+          const j: ConsentStatusResp = await r2.json();
+          setMissing(j.stats?.missingTerm ?? 0);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const total = data?.stats.total ?? 0;
+  const publicados = data?.stats.published ?? 0;
+  const rascunhos = data?.stats.draft ?? 0;
+  const accepts = data?.stats.totalAccepts ?? 0;
+
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : missing > 0
+      ? "warning"
+      : publicados > 0
+        ? "success"
+        : "neutral";
+
+  return (
+    <ToolCard
+      icon={<FileText className="h-6 w-6" />}
+      iconColor="text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950/40"
+      title="Termos de Consentimento"
+      description="Coleta formal do consentimento do titular (Art. 8º LGPD). Catálogo de 5 modelos institucionais + URL pública com aceite digital e evidência (IP, data, versão)."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label: total > 0 ? "Abrir Termos" : "Criar primeiro termo",
+        href: "/dashboard/termos-consentimento",
+      }}
+      stats={
+        forbidden
+          ? []
+          : data && total > 0
+            ? [
+                {
+                  label: "termos",
+                  value: total,
+                  icon: <FileText className="h-3.5 w-3.5" />,
+                },
+                {
+                  label: "publicados",
+                  value: publicados,
+                  color: "emerald",
+                  icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                },
+                ...(rascunhos > 0
+                  ? [
+                      {
+                        label: "em rascunho",
+                        value: rascunhos,
+                        color: "amber" as const,
+                        icon: <Clock className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(accepts > 0
+                  ? [
+                      {
+                        label: "aceites",
+                        value: accepts,
+                        color: "emerald" as const,
+                        icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(missing > 0
+                  ? [
+                      {
+                        label: "sem termo (consent)",
+                        value: missing,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : missing > 0
+              ? [
+                  {
+                    label: "processos consent. sem termo",
+                    value: missing,
+                    color: "amber" as const,
+                    icon: <AlertCircle className="h-3.5 w-3.5" />,
+                  },
+                ]
+              : []
+      }
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : missing > 0
+            ? `Há ${missing} processo${missing === 1 ? "" : "s"} aprovado${missing === 1 ? "" : "s"} usando Consentimento como base legal sem termo associado.`
+            : total === 0
+              ? "Crie a partir de 1 dos 5 modelos (Geral, Sensíveis, Menor, Imagem/Voz, Comunicação)."
+              : undefined
+      }
+    />
   );
 }
 
