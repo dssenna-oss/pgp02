@@ -13,6 +13,13 @@
  *     `legalBasisSensitive` (Art. 11) contendo "consent" (consentimento,
  *     consent, etc). Cobre 99% dos casos sem precisar enum rígido.
  *
+ * Heurística "cookie-related" (integração CP26 — Sistema de Cookies):
+ *   - Se serviceName/purpose menciona palavras como "cookie", "analytics",
+ *     "google analytics", "tag manager", "pixel", "remarketing", o processo
+ *     já é coberto pelo banner de cookies (CP26) — não conta no
+ *     `stats.missingTerm` nem aparece como pendência. Continua na lista
+ *     com flag `isCookieRelated:true` pra UI exibir contexto ("via CP26").
+ *
  * Auth: DPO-only.
  */
 
@@ -23,6 +30,37 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isDPO } from "@/lib/auth-helpers";
+
+/**
+ * Detecta processos que tratam de cookies/analytics — já cobertos pelo
+ * Sistema de Cookies (CP26) e não precisam de Termo de Consentimento
+ * separado. Match case-insensitive nas keywords principais.
+ *
+ * Cobrir variações comuns (cookie/cookies, analítico/analitico/analytics)
+ * sem ser amplo demais. "Análise" sozinho NÃO entra — análise de dados
+ * de saúde, por exemplo, é tratamento real que precisa de termo.
+ */
+const COOKIE_KEYWORDS = [
+  "cookie",
+  "cookies",
+  "google analytics",
+  "google tag",
+  "tag manager",
+  "gtm",
+  "analytics",
+  "remarketing",
+  "pixel",
+  "rastreio",
+  "rastreamento",
+];
+
+function isCookieRelated(args: {
+  serviceName: string | null;
+  purpose: string | null;
+}): boolean {
+  const haystack = `${args.serviceName ?? ""} ${args.purpose ?? ""}`.toLowerCase();
+  return COOKIE_KEYWORDS.some((k) => haystack.includes(k));
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -52,6 +90,7 @@ export async function GET() {
       id: true,
       serviceName: true,
       setor: true,
+      purpose: true,
       legalBasis: true,
       legalBasisSensitive: true,
       consentTermLinks: {
@@ -66,13 +105,20 @@ export async function GET() {
     const activeTerms = inv.consentTermLinks
       .map((l) => l.term)
       .filter((t) => t.status !== "ARQUIVADO");
+    const cookieRelated = isCookieRelated({
+      serviceName: inv.serviceName,
+      purpose: inv.purpose,
+    });
+    // Cookie-related sem termo NÃO conta como pendência — o CP26 cobre.
+    const missingTerm = activeTerms.length === 0 && !cookieRelated;
     return {
       inventoryId: inv.id,
       serviceName: inv.serviceName,
       setor: inv.setor,
       legalBasis: inv.legalBasis,
       legalBasisSensitive: inv.legalBasisSensitive,
-      missingTerm: activeTerms.length === 0,
+      missingTerm,
+      isCookieRelated: cookieRelated,
       activeTerms,
     };
   });
@@ -82,6 +128,7 @@ export async function GET() {
     stats: {
       totalConsentProcesses: items.length,
       missingTerm: items.filter((i) => i.missingTerm).length,
+      cookieRelated: items.filter((i) => i.isCookieRelated).length,
     },
   });
 }

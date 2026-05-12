@@ -27,10 +27,12 @@ import {
   AlertTriangle,
   Search,
   X,
+  Cookie,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import TermoCreateDialog from "./termo-create-dialog";
+import CookiesStatsPanel from "./cookies-stats-panel";
 
 interface ListTerm {
   id: string;
@@ -52,10 +54,12 @@ interface ConsentStatusItem {
   serviceName: string;
   setor: string | null;
   missingTerm: boolean;
+  isCookieRelated: boolean;
 }
 
 type FilterMode = "all" | "published" | "draft" | "archived";
 type TemplateFilter = "all" | "GERAL" | "SENSIVEIS" | "MENOR" | "IMAGEM_VOZ" | "COMUNICACAO";
+type TabKey = "termos" | "cookies";
 
 const FILTER_LABELS: Record<FilterMode, string> = {
   all: "Tudo",
@@ -86,12 +90,14 @@ export default function TermosConsentimentoContent() {
   const [terms, setTerms] = useState<ListTerm[] | null>(null);
   const [companySlug, setCompanySlug] = useState<string | null>(null);
   const [missingItems, setMissingItems] = useState<ConsentStatusItem[]>([]);
+  const [cookieCovered, setCookieCovered] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterMode>("all");
   const [templateFilter, setTemplateFilter] = useState<TemplateFilter>("all");
   const [searchInput, setSearchInput] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [tab, setTab] = useState<TabKey>("termos");
 
   // Debounce client-side da busca (200ms).
   useEffect(() => {
@@ -113,6 +119,7 @@ export default function TermosConsentimentoContent() {
       if (consentRes && consentRes.ok) {
         const cj = await consentRes.json();
         setMissingItems((cj.items ?? []).filter((i: any) => i.missingTerm));
+        setCookieCovered(cj.stats?.cookieRelated ?? 0);
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao carregar");
@@ -172,24 +179,48 @@ export default function TermosConsentimentoContent() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
             <FileSignature className="h-6 w-6 text-violet-600" />
-            Termos de Consentimento do Titular
+            Consentimento do Titular
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-3xl">
-            Documento formal exigido pelo Art. 8º da LGPD quando o tratamento se baseia em
-            consentimento. Você cria a partir dos modelos, vincula a processos do Inventário,
-            e o cidadão dá aceite na URL pública (com evidência de IP, hora e versão).
+            Painel único do DPO pra acompanhar o consentimento formal exigido pelo Art. 8º
+            (Termos do titular) e o consentimento granular de cookies coletado pelo banner
+            público (Resolução CD/ANPD 2/2022).
           </p>
         </div>
-        <Button
-          onClick={() => setShowCreate(true)}
-          className="bg-violet-600 hover:bg-violet-700 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Criar termo
-        </Button>
+        {tab === "termos" && (
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-violet-600 hover:bg-violet-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Criar termo
+          </Button>
+        )}
       </div>
 
-      {/* KPIs */}
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-5 border-b border-gray-200 dark:border-gray-700">
+        <TabButton
+          active={tab === "termos"}
+          onClick={() => setTab("termos")}
+          icon={<FileSignature className="h-4 w-4" />}
+        >
+          Termos (Art. 8º)
+        </TabButton>
+        <TabButton
+          active={tab === "cookies"}
+          onClick={() => setTab("cookies")}
+          icon={<Cookie className="h-4 w-4" />}
+        >
+          Cookies (CP26)
+        </TabButton>
+      </div>
+
+      {tab === "cookies" && <CookiesStatsPanel />}
+
+      {tab === "termos" && (
+        <>
+          {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
         <KpiCard label="Total" value={stats.total} tone="slate" />
         <KpiCard label="Publicados" value={stats.published} tone="emerald" />
@@ -227,8 +258,23 @@ export default function TermosConsentimentoContent() {
               <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
                 Clique em "Criar termo" acima e vincule ao processo correspondente.
               </p>
+              {cookieCovered > 0 && (
+                <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 italic">
+                  🍪 {cookieCovered} processo{cookieCovered === 1 ? "" : "s"} relacionado{cookieCovered === 1 ? "" : "s"} a cookies/analytics foi
+                  {cookieCovered === 1 ? "" : "ram"} excluído{cookieCovered === 1 ? "" : "s"} desta lista — já {cookieCovered === 1 ? "é tratado" : "são tratados"} pelo Sistema de Cookies.
+                </p>
+              )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Nota standalone quando NÃO há pendência mas há cookie-related */}
+      {missingItems.length === 0 && cookieCovered > 0 && !loading && (
+        <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-900 p-3">
+          <p className="text-xs text-blue-800 dark:text-blue-200">
+            🍪 {cookieCovered} processo{cookieCovered === 1 ? "" : "s"} do Inventário com base = Consentimento {cookieCovered === 1 ? "está" : "estão"} relacionado{cookieCovered === 1 ? "" : "s"} a cookies/analytics — coleta de consentimento é feita pelo Sistema de Cookies (banner público), sem precisar de termo dedicado aqui.
+          </p>
         </div>
       )}
 
@@ -325,6 +371,8 @@ export default function TermosConsentimentoContent() {
           ))}
         </div>
       )}
+        </>
+      )}
 
       <TermoCreateDialog
         open={showCreate}
@@ -332,6 +380,34 @@ export default function TermosConsentimentoContent() {
         onCreated={handleCreated}
       />
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
+        active
+          ? "border-violet-600 text-violet-700 dark:text-violet-300"
+          : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200",
+      )}
+    >
+      {icon}
+      {children}
+    </button>
   );
 }
 
