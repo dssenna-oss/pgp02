@@ -124,6 +124,11 @@ model User {
   publishedServicePrivacyNotices        ServicePrivacyNotice[]        @relation("ServicePrivacyNoticePublishedBy")
   publishedServicePrivacyNoticeVersions ServicePrivacyNoticeVersion[] @relation("ServicePrivacyNoticeVersionPublishedBy")
 
+  // Termos de Consentimento do Titular (Checkpoint Consentimento, 2026-05-10)
+  createdConsentTerms          ConsentTerm[]        @relation("ConsentTermCreatedBy")
+  publishedConsentTerms        ConsentTerm[]        @relation("ConsentTermPublishedBy")
+  publishedConsentTermVersions ConsentTermVersion[] @relation("ConsentTermVersionPublishedBy")
+
   // RIPD (Checkpoint 13) — quem criou, aprovou e congelou cada versão
   createdRipds         Ripd[]        @relation("RipdCreatedBy")
   approvedRipds        Ripd[]        @relation("RipdApprovedBy")
@@ -211,6 +216,7 @@ model Company {
   actionPlans           ActionPlan[]
   policies              Policy[]
   servicePrivacyNotices ServicePrivacyNotice[]
+  consentTerms          ConsentTerm[]
   lias                  Lia[]
   cyberAnswers          CyberAnswer[]
   cyberSnapshots        CyberSnapshot[]
@@ -322,6 +328,9 @@ model DataInventory {
 
   // Aviso de Privacidade do serviço (1:1, opcional)
   servicePrivacyNotice ServicePrivacyNotice?
+
+  // Termos de Consentimento que cobrem este processo (M:N via link table)
+  consentTermLinks ConsentTermInventoryLink[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -947,6 +956,166 @@ model ServicePrivacyNoticeVersion {
   @@unique([noticeId, version])
   @@index([noticeId, publishedAt])
   @@map("service_privacy_notice_versions")
+}
+
+/// Termo de Consentimento do Titular (Checkpoint Consentimento, 2026-05-10).
+///
+/// Documento formal exigido pelo Art. 8º LGPD quando a base legal do
+/// tratamento é "Consentimento" (Art. 7º I, Art. 11 I sensíveis ou
+/// Art. 14 menores). Diferente do Aviso de Privacidade — Aviso informa;
+/// Termo coleta MANIFESTAÇÃO ATIVA do titular.
+///
+/// 1 termo pode cobrir N processos do Inventário (M:N via
+/// ConsentTermInventoryLink). Suporta modo físico (DOCX/PDF impresso) e
+/// digital (URL pública com botão "Aceito" gerando ConsentRecord). DPO
+/// escolhe por termo (`allowsPhysical` / `allowsDigital`).
+///
+/// Versionamento espelha Policy/ServicePrivacyNotice: cada publish cria
+/// ConsentTermVersion com snapshot do markdown publicado. ConsentRecord
+/// referencia a versão exata aceita pra defesa em auditoria mesmo se o
+/// termo mudou depois.
+model ConsentTerm {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Tipo do template-base. Vocabulário fechado em
+  /// `lib/consent-templates.ts`. Valores aceitos:
+  ///   - GERAL       — uso quotidiano (cadastro, mailing, e-mail)
+  ///   - SENSIVEIS   — Art. 11 (saúde, biometria, origem racial)
+  ///   - MENOR       — Art. 14 (criança/adolescente, responsável legal)
+  ///   - IMAGEM_VOZ  — fotos/vídeos pra divulgação (Cód. Civil 11-21)
+  ///   - COMUNICACAO — opt-in granular pra newsletter, pesquisa, etc.
+  templateType String
+
+  /// Slug único por org pra URL pública `/p/<orgSlug>/termo/<slug>`.
+  slug String
+
+  /// Título amigável (mostra no painel + topo da URL pública).
+  title String
+
+  /// RASCUNHO | PUBLICADO | ARQUIVADO
+  status String @default("RASCUNHO")
+
+  /// Markdown atual (editável pelo DPO).
+  currentContent   String  @db.Text
+  /// Snapshot publicado (URL pública lê daqui). Null se nunca publicado.
+  publishedContent String? @db.Text
+  /// Versão atual publicada (0 = nunca publicado).
+  currentVersion   Int     @default(0)
+
+  /// Modos de coleta (decisão 2.C — físico + digital).
+  /// `allowsPhysical` = baixa DOCX/PDF pra assinatura física.
+  /// `allowsDigital` = URL pública com botão "Aceito" + grava ConsentRecord.
+  /// DPO pode habilitar 1 ou os 2.
+  allowsPhysical Boolean @default(true)
+  allowsDigital  Boolean @default(true)
+
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("ConsentTermPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User     @relation("ConsentTermCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions       ConsentTermVersion[]
+  records        ConsentRecord[]
+  inventoryLinks ConsentTermInventoryLink[]
+
+  @@unique([companyId, slug])
+  @@index([companyId, status])
+  @@index([companyId, templateType])
+  @@map("consent_terms")
+}
+
+/// Snapshot de uma versão publicada de ConsentTerm.
+model ConsentTermVersion {
+  id     String      @id @default(cuid())
+  termId String
+  term   ConsentTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  version   Int
+  content   String  @db.Text
+  changeLog String?
+
+  publishedAt   DateTime @default(now())
+  publishedById String
+  publishedBy   User     @relation("ConsentTermVersionPublishedBy", fields: [publishedById], references: [id])
+
+  records ConsentRecord[]
+
+  @@unique([termId, version])
+  @@index([termId, publishedAt])
+  @@map("consent_term_versions")
+}
+
+/// Vínculo M:N entre um Termo e processos do Inventário que ele cobre.
+/// Permite reutilizar o mesmo Termo Geral pra N serviços parecidos sem
+/// duplicar texto. UI do Inventário consulta isto pra mostrar "termo
+/// associado" / "termo faltando".
+model ConsentTermInventoryLink {
+  termId      String
+  term        ConsentTerm   @relation(fields: [termId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   DataInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([termId, inventoryId])
+  @@index([inventoryId])
+  @@map("consent_term_inventory_links")
+}
+
+/// Registro de aceite digital de um Termo de Consentimento. Cumpre o
+/// ônus da prova do Art. 8º §2º (controlador deve provar o consentimento).
+///
+/// Evidência mínima (decisão 4.A do cardápio):
+///   - identificação do titular (email e/ou CPF)
+///   - IP de origem
+///   - User-Agent completo
+///   - Timestamp (acceptedAt)
+///   - SHA-256 do `publishedContent` exatamente como o titular viu
+///     na hora do aceite (defesa: termo pode ter mudado depois mas
+///     o checksum prova qual versão foi aceita)
+///   - versionId — ponteiro pra ConsentTermVersion congelada
+///
+/// Revogação (Art. 8º §5º) registra `revokedAt` e opcionalmente uma
+/// razão. Não apaga o record — a evidência precisa sobreviver à
+/// revogação pra defender o controlador no período anterior.
+model ConsentRecord {
+  id        String             @id @default(cuid())
+  termId    String
+  term      ConsentTerm        @relation(fields: [termId], references: [id], onDelete: Cascade)
+  versionId String
+  version   ConsentTermVersion @relation(fields: [versionId], references: [id])
+
+  /// Email normalizado lowercase. Pode ser null se o termo coleta só CPF.
+  titularEmail String?
+  /// CPF strip → só 11 dígitos. Null se termo coleta só email.
+  titularCpf   String?
+  /// Nome do titular (texto livre — opcional, só pra UI exibir).
+  titularName  String?
+
+  /// IPv4 ou IPv6 do request (X-Forwarded-For ou conn.remoteAddress).
+  ip              String
+  /// User-Agent completo do browser.
+  userAgent       String @db.Text
+  /// SHA-256 hex do `publishedContent` no instante do aceite.
+  contentChecksum String
+
+  acceptedAt DateTime @default(now())
+
+  /// Revogação (Art. 8º §5º). Preservamos o record pra rastreabilidade
+  /// — só marca revogado; não deleta.
+  revokedAt        DateTime?
+  revocationReason String?   @db.Text
+
+  @@index([termId, acceptedAt])
+  @@index([termId, titularEmail])
+  @@index([termId, titularCpf])
+  @@map("consent_records")
 }
 
 /// Relatório de Impacto à Proteção de Dados Pessoais — RIPD
