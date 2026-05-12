@@ -31,6 +31,7 @@ export const maxDuration = 10;
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeCpf, normalizeEmail } from "@/lib/consent-utils";
+import { notifyConsentRevoked } from "@/lib/consent-notify";
 
 export async function POST(
   request: NextRequest,
@@ -68,7 +69,7 @@ export async function POST(
 
     const term = await prisma.consentTerm.findUnique({
       where: { companyId_slug: { companyId: company.id, slug: params.termSlug } },
-      select: { id: true },
+      select: { id: true, companyId: true, title: true },
     });
     if (!term) {
       return NextResponse.json({ error: "Termo não encontrado" }, { status: 404 });
@@ -85,7 +86,13 @@ export async function POST(
         ],
       },
       orderBy: { acceptedAt: "desc" },
-      select: { id: true, acceptedAt: true },
+      select: {
+        id: true,
+        acceptedAt: true,
+        titularName: true,
+        titularEmail: true,
+        titularCpf: true,
+      },
     });
 
     if (!active) {
@@ -122,6 +129,21 @@ export async function POST(
         revocationReason: reason,
       },
       select: { id: true, revokedAt: true },
+    });
+
+    // Fire-and-forget: notifica DPOs da org (Etapa 31).
+    void notifyConsentRevoked({
+      companyId: term.companyId,
+      termId: term.id,
+      termTitle: term.title,
+      titular: {
+        name: active.titularName,
+        email: active.titularEmail,
+        cpf: active.titularCpf,
+      },
+      revokedAtIso: updated.revokedAt!.toISOString(),
+      acceptedAtIso: active.acceptedAt.toISOString(),
+      reason,
     });
 
     return NextResponse.json({

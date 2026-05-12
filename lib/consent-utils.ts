@@ -63,23 +63,94 @@ export function normalizeCpf(raw: string | null | undefined): string | null {
 }
 
 /**
- * Extrai o IP real do request, considerando que estamos atrás do
- * Vercel/CDN (que põe `x-forwarded-for`). Se houver múltiplos IPs
- * (proxies em cadeia), pega o primeiro (o do client original).
+ * Extrai o IP real do request considerando proxies em cadeia
+ * (Vercel + Cloudflare + outros).
  *
- * Fallback: "0.0.0.0" se não conseguir extrair. Nunca devolve null
- * pra simplificar o caller — o IP é evidência, melhor ter "0.0.0.0"
- * que crashar.
+ * Ordem de preferência:
+ *   1. `cf-connecting-ip` — Cloudflare expõe o IP do client original
+ *      direto. Quando presente, é a fonte mais confiável.
+ *   2. `x-vercel-forwarded-for` — header do Vercel com o IP original
+ *      do client (não inclui os proxies da própria Vercel).
+ *   3. `x-forwarded-for` — lista RFC 7239 da direita-pra-esquerda:
+ *      o último IP público (não-privado, não-loopback) é o client
+ *      original. O 1º pode ser um proxy interno spoofável.
+ *   4. `x-real-ip` — comum em Nginx.
+ *
+ * Fallback final: "0.0.0.0" pra nunca crashar — IP é evidência
+ * importante mas não bloqueia o aceite.
  */
 export function extractClientIp(req: Request): string {
+  const cfIp = req.headers.get("cf-connecting-ip");
+  if (cfIp && isValidPublicIp(cfIp.trim())) return cfIp.trim();
+
+  const vercelXff = req.headers.get("x-vercel-forwarded-for");
+  if (vercelXff) {
+    const pick = pickLastPublicIp(vercelXff);
+    if (pick) return pick;
+  }
+
   const xff = req.headers.get("x-forwarded-for");
   if (xff) {
+    const pick = pickLastPublicIp(xff);
+    if (pick) return pick;
+    // Se todos os IPs são privados (ex: dev local) cai no 1º só pra ter algo.
     const first = xff.split(",")[0]?.trim();
     if (first) return first;
   }
+
   const realIp = req.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
+  if (realIp && realIp.trim()) return realIp.trim();
   return "0.0.0.0";
+}
+
+/**
+ * Varre a lista `x-forwarded-for` da direita pra esquerda e devolve o
+ * último IP público válido. Pula loopback, redes privadas RFC 1918,
+ * link-local, e IPv6 reservado.
+ */
+function pickLastPublicIp(headerValue: string): string | null {
+  const parts = headerValue
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (let i = parts.length - 1; i >= 0; i--) {
+    if (isValidPublicIp(parts[i])) return parts[i];
+  }
+  return null;
+}
+
+/**
+ * Heurística simples: rejeita loopback (127.x, ::1), RFC 1918
+ * (10.x, 172.16-31.x, 192.168.x), link-local (169.254.x, fe80::),
+ * e IPv6 unique-local (fc00::/7). Strings vazias e tokens inválidos
+ * também retornam false.
+ */
+function isValidPublicIp(ip: string): boolean {
+  if (!ip) return false;
+  // Strip de porta opcional em IPv4 ("1.2.3.4:5678") — em IPv6 a sintaxe
+  // com porta usa colchetes "[...]:port" que não tratamos aqui.
+  const v4 = ip.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?::\d+)?$/);
+  if (v4) {
+    const octets = v4[1].split(".").map(Number);
+    if (octets.some((o) => Number.isNaN(o) || o < 0 || o > 255)) return false;
+    if (octets[0] === 10) return false;
+    if (octets[0] === 127) return false;
+    if (octets[0] === 169 && octets[1] === 254) return false;
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return false;
+    if (octets[0] === 192 && octets[1] === 168) return false;
+    if (octets[0] === 0) return false;
+    return true;
+  }
+  // IPv6 — checagem grosseira; aceita qualquer hex:hex... que não seja
+  // loopback/link-local/unique-local.
+  if (/^[0-9a-fA-F:]+$/.test(ip) && ip.includes(":")) {
+    const lower = ip.toLowerCase();
+    if (lower === "::1") return false;
+    if (lower.startsWith("fe80:")) return false;
+    if (lower.startsWith("fc") || lower.startsWith("fd")) return false;
+    return true;
+  }
+  return false;
 }
 
 /**

@@ -47,6 +47,7 @@ export async function GET() {
       emailNotifyAnnouncements: true,
       emailNotifyTaskDue: true,
       emailNotifyActionPlan: true,
+      emailNotifyConsent: true,
       role: true,
     },
   });
@@ -55,6 +56,7 @@ export async function GET() {
     announcements: prefs?.emailNotifyAnnouncements ?? true,
     taskDue: prefs?.emailNotifyTaskDue ?? false,
     actionPlan: prefs?.emailNotifyActionPlan ?? true,
+    consent: prefs?.emailNotifyConsent ?? true,
     role: prefs?.role ?? null,
   });
 }
@@ -71,12 +73,13 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  // Aceita só os 4 campos conhecidos. Ignora qualquer outro.
+  // Aceita só os 5 campos conhecidos. Ignora qualquer outro.
   const data: {
     emailNotifyDm?: boolean;
     emailNotifyAnnouncements?: boolean;
     emailNotifyTaskDue?: boolean;
     emailNotifyActionPlan?: boolean;
+    emailNotifyConsent?: boolean;
   } = {};
   if (typeof body.dm === "boolean") data.emailNotifyDm = body.dm;
   if (typeof body.announcements === "boolean") {
@@ -87,6 +90,9 @@ export async function PATCH(request: NextRequest) {
   }
   if (typeof body.actionPlan === "boolean") {
     data.emailNotifyActionPlan = body.actionPlan;
+  }
+  if (typeof body.consent === "boolean") {
+    data.emailNotifyConsent = body.consent;
   }
 
   if (Object.keys(data).length === 0) {
