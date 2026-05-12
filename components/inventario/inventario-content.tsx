@@ -147,10 +147,25 @@ export default function InventarioContent({ session }: InventarioContentProps) {
   const [devolverTarget, setDevolverTarget] = useState<any | null>(null);
   const [devolverComment, setDevolverComment] = useState("");
   const [devolvendo, setDevolvendo] = useState(false);
+  /** Quantos processos APROVADO usam Consentimento mas não têm Termo
+   *  (decisão 3.A do cardápio — banner amarelo). DPO-only. */
+  const [missingConsentCount, setMissingConsentCount] = useState(0);
 
   useEffect(() => {
     loadInventarios();
-  }, []);
+    if (userIsDPO) {
+      // Carrega contagem de processos com Consentimento sem termo —
+      // alimenta o banner amarelo. Falha silenciosa se endpoint quebrar.
+      fetch("/api/inventario/consent-status")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j?.stats?.missingTerm != null) {
+            setMissingConsentCount(j.stats.missingTerm);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userIsDPO]);
 
   const loadInventarios = async () => {
     try {
@@ -444,6 +459,27 @@ export default function InventarioContent({ session }: InventarioContentProps) {
             )}
           </div>
         </div>
+
+        {/* ===== Banner: processos com Consentimento sem Termo (decisão 3.A do cardápio) ===== */}
+        {userIsDPO && missingConsentCount > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20 p-3 flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-amber-900 dark:text-amber-100">
+                <strong>{missingConsentCount} processo{missingConsentCount === 1 ? "" : "s"}</strong>{" "}
+                aprovado{missingConsentCount === 1 ? "" : "s"} usa{missingConsentCount === 1 ? "" : "m"}{" "}
+                <strong>Consentimento</strong> como base legal, mas ainda não tem Termo de
+                Consentimento associado. O Art. 8º da LGPD exige termo formal.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/termos-consentimento"
+              className="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium shrink-0 whitespace-nowrap"
+            >
+              Resolver →
+            </Link>
+          </div>
+        )}
 
         {/* ===== Search + Filter + Sort ===== */}
         <div className="flex gap-3 flex-wrap items-center">
