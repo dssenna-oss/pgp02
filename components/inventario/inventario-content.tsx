@@ -150,17 +150,32 @@ export default function InventarioContent({ session }: InventarioContentProps) {
   /** Quantos processos APROVADO usam Consentimento mas não têm Termo
    *  (decisão 3.A do cardápio — banner amarelo). DPO-only. */
   const [missingConsentCount, setMissingConsentCount] = useState(0);
+  /** Ids de processos APROVADO cuja base = Consentimento E o tema é
+   *  cookies/analytics — coletado pelo Sistema de Cookies (CP26),
+   *  não precisa de Termo formal. Usado pra renderizar badge 🍪 no card. */
+  const [cookieRelatedIds, setCookieRelatedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     loadInventarios();
     if (userIsDPO) {
-      // Carrega contagem de processos com Consentimento sem termo —
-      // alimenta o banner amarelo. Falha silenciosa se endpoint quebrar.
+      // Carrega processos com Consentimento — alimenta o banner amarelo
+      // (count de missing) e o badge 🍪 nos cards (cookie-related ids).
+      // Falha silenciosa se endpoint quebrar.
       fetch("/api/inventario/consent-status")
         .then((r) => (r.ok ? r.json() : null))
         .then((j) => {
           if (j?.stats?.missingTerm != null) {
             setMissingConsentCount(j.stats.missingTerm);
+          }
+          if (Array.isArray(j?.items)) {
+            const ids = new Set<string>(
+              j.items
+                .filter((it: any) => it?.isCookieRelated)
+                .map((it: any) => it.inventoryId),
+            );
+            setCookieRelatedIds(ids);
           }
         })
         .catch(() => {});
@@ -684,6 +699,7 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                     showCreatorInfo={userIsDPO}
                     isUserDPO={userIsDPO}
                     currentUserId={session?.user?.id}
+                    isCookieRelated={cookieRelatedIds.has(item.id)}
                     onDelete={() => setDeleteId(item.id)}
                     onStatusChange={changeStatus}
                     onDevolverClick={(it) => setDevolverTarget(it)}
@@ -844,6 +860,7 @@ function InventarioRow({
   showCreatorInfo,
   isUserDPO,
   currentUserId,
+  isCookieRelated,
   onDelete,
   onStatusChange,
   onDevolverClick,
@@ -852,6 +869,7 @@ function InventarioRow({
   showCreatorInfo: boolean;
   isUserDPO: boolean;
   currentUserId: string | null | undefined;
+  isCookieRelated: boolean;
   onDelete: () => void;
   onStatusChange: (id: string, status: string) => void;
   onDevolverClick: (item: any) => void;
@@ -947,6 +965,26 @@ function InventarioRow({
             >
               {inventoryStatusLabel(status)}
             </Badge>
+            {/* Badge 🍪 — só DPO vê. Processo cookie-related; consentimento
+                vem do banner público (CP26), não de Termo formal (Art. 8º). */}
+            {isCookieRelated && isUserDPO && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900 cursor-help"
+                    aria-label="Consentimento via Sistema de Cookies"
+                  >
+                    🍪
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs max-w-xs">
+                    Consentimento via Sistema de Cookies (CP26) — coletado pelo
+                    banner público, não precisa de Termo formal aqui.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Metadados de contexto: setor + criador (só visível pro DPO,
