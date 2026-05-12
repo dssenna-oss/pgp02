@@ -326,7 +326,7 @@ OPERADOR/INCIDENTE/LIA/CYBER/MANUAL/BASES) + responsável formal por ação
   PSS, Folha de Pagamento, Aposentadoria/Pensão, Credenciamento PF.
 - 🟡 Notificar DPO de ação atrasada via email **imediato** (sem esperar 9h)
 - 🟡 Verificação de domínio próprio na Brevo (DNS) → `noreply@lgpd-pgp.com.br`
-- 🟡 Backlog Incidentes (CP16) — vínculos M:N Inventário↔Operador via chips
+- 🟢 ~~Backlog Incidentes (CP16)~~ — backlog encerrado: timeline visual E3 (`components/incidentes/incident-timeline.tsx`, plugada no editor), botão de pânico "Registrar incidente urgente" no sidebar do dashboard-layout (`QuickIncidentModal`, DPO-only), e vínculos M:N Inventário↔Operador via chips entregues em sessões anteriores. CP16 está 100% em prod.
 - 🟡 Real-time WebSocket Fórum
 - 🟡 Mobile UX do tour flutuante
 
