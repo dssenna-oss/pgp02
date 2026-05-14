@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 import BasesLegaisDashboardContent from "@/components/inventario/bases-legais-dashboard-content";
 
 /**
@@ -19,7 +20,11 @@ export default async function BasesLegaisDashboardPage() {
     redirect("/login");
   }
   if (!isDPO(session.user?.role)) {
-    redirect("/dashboard");
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Bases Legais" />
+      </DashboardLayout>
+    );
   }
   return (
     <DashboardLayout session={session}>

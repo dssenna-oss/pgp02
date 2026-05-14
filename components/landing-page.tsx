@@ -243,7 +243,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/signup">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 h-12 px-8">
-                  Começar Gratuitamente
+                  Iniciar Jornada de Adequação
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -370,12 +370,12 @@ export default function LandingPage() {
               Pronto para começar?
             </h2>
             <p className="text-xl text-blue-50 mb-8 max-w-2xl mx-auto">
-              Implemente seu programa de governança em privacidade de forma simples e eficiente.
-              Comece hoje mesmo e garanta a conformidade da sua empresa com a LGPD.
+              Implemente o Programa de Governança em Privacidade de forma simples e eficiente.
+              Comece hoje mesmo e garanta a conformidade da sua Organização com a LGPD.
             </p>
             <Link href="/signup">
               <Button size="lg" variant="secondary" className="h-12 px-8 bg-white text-[#3B7FDB] hover:bg-gray-50">
-                Criar Conta Gratuita
+                Criar Conta Agora
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>

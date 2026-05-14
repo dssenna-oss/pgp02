@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { sendEmailAsync } from "@/lib/email-sender";
+import { tplForumMention } from "@/lib/email-templates";
+import { extractMentionedUserIds, stripMentionMarkdown } from "@/lib/forum-mentions";
 
 /**
  * POST /api/forum/[id]/respostas — adicionar resposta a um post.
@@ -22,6 +25,7 @@ export async function POST(
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, companyId: true },
   });
   if (!user || !user.companyId) {
     return NextResponse.json(
@@ -89,6 +93,40 @@ export async function POST(
       update: { readAt: new Date() },
     })
     .catch(() => {});
+
+  // Dispara emails pra usuários mencionados via @[Nome](mention:uid).
+  // Não notifica o próprio autor mencionando ele mesmo. Filtra por
+  // companyId pra blindar contra payload manipulado.
+  const mentionedIds = extractMentionedUserIds(content).filter(
+    (uid) => uid !== user.id,
+  );
+  if (mentionedIds.length > 0) {
+    const mentioned = await prisma.user.findMany({
+      where: {
+        id: { in: mentionedIds },
+        companyId: user.companyId,
+        isActive: true,
+        emailNotifyDm: true,
+      },
+      select: { email: true, name: true },
+    });
+    const previewText = stripMentionMarkdown(content);
+    for (const u of mentioned) {
+      sendEmailAsync({
+        to: { email: u.email, name: u.name ?? undefined },
+        tag: "forum-mention",
+        ...tplForumMention({
+          recipientName: u.name,
+          recipientEmail: u.email,
+          authorName: reply.author.name ?? reply.author.email,
+          source: "reply",
+          postTitle: post.title,
+          contentPreview: previewText,
+          postId: id,
+        }),
+      });
+    }
+  }
 
   return NextResponse.json({ reply }, { status: 201 });
 }

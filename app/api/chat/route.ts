@@ -162,6 +162,7 @@ export async function POST(request: NextRequest) {
     if (session?.user?.email) {
       const user = await prisma.user.findUnique({
         where: { email: session.user.email },
+        select: { id: true },
       });
       userId = user?.id || null;
 

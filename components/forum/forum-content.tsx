@@ -25,6 +25,7 @@ import {
 import { toast } from "sonner";
 import { isDPO } from "@/lib/auth-helpers";
 import { notifySidebarRefresh } from "@/lib/sidebar-events";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
 import {
   FORUM_CATEGORY_LABEL,
   type ForumPostDTO,
@@ -39,7 +40,13 @@ interface Props {
   session: any;
 }
 
-const POLLING_MS = 30_000;
+// Polling adaptativo (2026-05-11): substitui o intervalo fixo de 30s
+// por ritmo que varia conforme estado da aba. Latência percebida cai
+// de ~15s média (30s polling) pra ~2.5s média quando o user está
+// olhando a tela. Pausa quando aba escondida — economiza bateria
+// em mobile e evita gastar função-segundos em background.
+const POLL_ACTIVE_MS = 5_000;
+const POLL_INACTIVE_MS = 30_000;
 
 export default function ForumContent({ session }: Props) {
   const currentUserId = session?.user?.id ?? "";
@@ -95,14 +102,21 @@ export default function ForumContent({ session }: Props) {
     notifySidebarRefresh();
   }, [fetchPosts, fetchMessages]);
 
-  // Inicial + polling 30s (decisão 6b)
+  // Fetch inicial no mount
   useEffect(() => {
     void refresh();
-    const id = setInterval(() => {
-      void refresh();
-    }, POLLING_MS);
-    return () => clearInterval(id);
   }, [refresh]);
+
+  // Polling adaptativo: 5s aba ativa, 30s aba sem foco, pausa quando
+  // escondida + refetch imediato quando volta. Substitui o setInterval
+  // fixo de 30s anterior. Decisão arquitetural pragmática em vez de
+  // WebSocket/SSE (que não funcionam bem em Vercel serverless sem
+  // pub/sub externo como Pusher/Redis).
+  useAdaptivePolling(refresh, {
+    activeMs: POLL_ACTIVE_MS,
+    inactiveMs: POLL_INACTIVE_MS,
+    refetchOnFocus: true,
+  });
 
   // Filtro por search (em memória — quantidade pequena por org)
   const filteredPosts = posts.filter((p) => {

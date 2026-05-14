@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Editor de LIA (Avaliação de Legítimo Interesse)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  .tab-active {
+    background: white;
+    border-bottom-color: rgb(99, 102, 241);
+    color: rgb(99, 102, 241);
+    font-weight: 600;
+  }
+  .tab-pending { color: rgb(107, 114, 128); }
+  .tab-complete { color: rgb(16, 185, 129); }
+  .step-dot { width: 28px; height: 28px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+  .step-dot.active { background: rgb(99, 102, 241); color: white; }
+  .step-dot.complete { background: rgb(16, 185, 129); color: white; }
+  .step-dot.pending { background: rgb(229, 231, 235); color: rgb(107, 114, 128); }
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- App shell mockado -->
+<div class="flex">
+  <aside class="w-56 bg-white border-r border-slate-200 p-3 hidden lg:block min-h-screen">
+    <div class="flex items-center gap-2 px-2 py-3 border-b border-slate-100 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">P</div>
+      <div class="text-sm font-semibold text-slate-800">LGPD - PGP</div>
+    </div>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📊 Dashboard</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📋 Inventário</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">⚠️ Riscos</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📐 GAP Analysis</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">🎯 Plano de Ação</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📜 Políticas</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">📄 RIPD</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs bg-indigo-50 text-indigo-700 font-medium">⚖️ LIA <span class="ml-auto text-[9px] bg-indigo-500 text-white px-1.5 py-0.5 rounded">3</span></a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">🤝 Terceiros</a>
+    <a class="flex items-center gap-2 px-2 py-1.5 rounded text-xs text-slate-600">🚨 Incidentes</a>
+  </aside>
+
+  <main class="flex-1 p-6 lg:p-8 max-w-5xl mx-auto w-full">
+
+    <!-- BREADCRUMB -->
+    <div class="text-xs text-slate-500 mb-3">
+      <a class="hover:text-indigo-600">LIA</a> <span class="mx-1">→</span> <span class="text-slate-700 font-medium">Marketing direto — Newsletter</span>
+    </div>
+
+    <!-- HEADER do editor -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-5">
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-4 mb-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <h1 class="text-xl font-bold text-slate-800">LIA — Marketing direto via newsletter</h1>
+              <span class="badge bg-amber-100 text-amber-800">📝 EM REVISÃO</span>
+            </div>
+            <p class="text-sm text-slate-500">
+              Processo do Inventário:
+              <a class="text-indigo-600 hover:underline font-medium">Comunicação de novidades aos clientes existentes</a>
+            </p>
+            <p class="text-xs text-slate-400 mt-1">Base legal alegada: <strong>Art. 7º IX — legítimo interesse do controlador</strong> · Última edição há 2 horas por <strong>DPO Maria Silva</strong> · Versão atual: 3</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-slate-50 transition">📜 Histórico</button>
+            <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-slate-50 transition">🔄 Comparar</button>
+            <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-slate-50 transition">📥 DOCX</button>
+            <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-slate-50 transition">🖨️ PDF</button>
+          </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100">
+          <div class="flex items-center gap-2">
+            <div class="step-dot complete">✓</div>
+            <div class="text-xs">
+              <div class="font-medium text-slate-700">Finalidade</div>
+              <div class="text-[10px] text-emerald-600">Completa</div>
+            </div>
+          </div>
+          <div class="flex-1 h-0.5 bg-emerald-300"></div>
+          <div class="flex items-center gap-2">
+            <div class="step-dot active">2</div>
+            <div class="text-xs">
+              <div class="font-medium text-indigo-600">Necessidade</div>
+              <div class="text-[10px] text-indigo-500">Em andamento</div>
+            </div>
+          </div>
+          <div class="flex-1 h-0.5 bg-slate-200"></div>
+          <div class="flex items-center gap-2">
+            <div class="step-dot pending">3</div>
+            <div class="text-xs">
+              <div class="font-medium text-slate-500">Balanceamento</div>
+              <div class="text-[10px] text-slate-400">Pendente</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="flex border-t border-slate-100 bg-slate-50 rounded-b-xl">
+        <button class="px-5 py-3 text-sm border-b-2 border-transparent tab-complete">
+          1. Finalidade <span class="text-[10px] text-emerald-500">✓</span>
+        </button>
+        <button class="px-5 py-3 text-sm border-b-2 tab-active">
+          2. Necessidade
+        </button>
+        <button class="px-5 py-3 text-sm border-b-2 border-transparent tab-pending">
+          3. Balanceamento
+        </button>
+        <div class="flex-1"></div>
+      </div>
+    </div>
+
+    <!-- WARNING geral (se aplicável ao processo) -->
+    <div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+      <div class="flex items-start gap-3">
+        <div class="text-2xl">⚠️</div>
+        <div class="flex-1">
+          <div class="font-semibold text-amber-900 text-sm">Atenção — verificações automáticas</div>
+          <ul class="text-xs text-amber-800 mt-1 space-y-1 list-disc pl-4">
+            <li>O Inventário registra que este processo trata <strong>dados pessoais comuns</strong> (não sensíveis) — OK pra legítimo interesse.</li>
+            <li>O Inventário registra que <strong>não há</strong> dados de crianças/adolescentes neste processo — OK.</li>
+            <li>A finalidade é específica e clara — <strong>aprovada na Etapa 1</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO da etapa atual: Necessidade -->
+    <section class="bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div class="p-5 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          ⚖️ Etapa 2: Teste de Necessidade
+        </h2>
+        <p class="text-sm text-slate-500 mt-1">
+          Avaliação se o tratamento é realmente necessário pra atingir a finalidade declarada,
+          e se há alternativas menos invasivas aos direitos dos titulares.
+        </p>
+      </div>
+
+      <div class="p-5 space-y-6">
+        <!-- Pergunta 1 -->
+        <div>
+          <label class="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs rounded-full w-5 h-5 flex items-center justify-center">1</span>
+            O tratamento é estritamente necessário para atingir a finalidade?
+            <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-500 mt-1 mb-2">
+            💡 Dica: descreva por que essa é a única forma (ou a forma mais adequada) de atingir o objetivo.
+            Considere alternativas menos invasivas e justifique por que não foram adotadas.
+          </p>
+          <textarea
+            rows="4"
+            class="w-full text-sm rounded-lg border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Ex.: O envio de newsletter requer o e-mail do cliente. Não há alternativa que permita comunicação direta..."
+          >Sim. O envio de newsletter requer o e-mail do cliente cadastrado. Avaliamos alternativas (mensagens no app, push, SMS) mas o e-mail é canal primário esperado pelo titular ao adquirir produto.</textarea>
+        </div>
+
+        <!-- Pergunta 2 -->
+        <div>
+          <label class="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs rounded-full w-5 h-5 flex items-center justify-center">2</span>
+            Há alternativa menos invasiva aos direitos dos titulares?
+            <span class="text-red-500">*</span>
+          </label>
+          <div class="flex gap-3 mt-2 mb-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="alt" class="text-indigo-600">
+              <span class="text-sm">Sim, e foi adotada</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="alt" checked class="text-indigo-600">
+              <span class="text-sm">Sim, mas não é viável</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="alt" class="text-indigo-600">
+              <span class="text-sm">Não há alternativa</span>
+            </label>
+          </div>
+          <textarea
+            rows="3"
+            class="w-full text-sm rounded-lg border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Justifique a escolha..."
+          >Notificações dentro do app seriam menos invasivas, mas alcançariam apenas usuários ativos no app. O e-mail garante alcance amplo. Consentimento explícito também foi avaliado, mas o legítimo interesse permite escala adequada com salvaguardas robustas (opt-out fácil em todo e-mail).</textarea>
+        </div>
+
+        <!-- Pergunta 3 -->
+        <div>
+          <label class="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+            Os dados tratados são minimamente necessários?
+            <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-slate-500 mt-1 mb-2">
+            💡 Liste exatamente quais dados são tratados e justifique a coleta de cada um. Princípio da
+            minimização (Art. 6º III).
+          </p>
+          <textarea
+            rows="3"
+            class="w-full text-sm rounded-lg border border-slate-200 p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Ex.: e-mail (envio), nome (personalização), histórico de cliques (segmentação)..."
+          >E-mail (envio), nome (personalização da saudação) e histórico de aberturas anteriores (frequência adequada). Sem dados de localização, navegação fora do e-mail, ou perfis comportamentais.</textarea>
+        </div>
+
+        <!-- Pergunta 4 -->
+        <div>
+          <label class="text-sm font-medium text-slate-700 flex items-center gap-2">
+            <span class="bg-indigo-100 text-indigo-700 text-xs rounded-full w-5 h-5 flex items-center justify-center">4</span>
+            Análise de minimização foi realizada?
+          </label>
+          <div class="space-y-2 mt-2">
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked class="mt-0.5 text-indigo-600 rounded">
+              <span class="text-sm text-slate-700">Avaliamos quais campos são realmente essenciais</span>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked class="mt-0.5 text-indigo-600 rounded">
+              <span class="text-sm text-slate-700">Removemos campos opcionais não-essenciais</span>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" class="mt-0.5 text-indigo-600 rounded">
+              <span class="text-sm text-slate-700">Aplicamos pseudonimização quando possível</span>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" checked class="mt-0.5 text-indigo-600 rounded">
+              <span class="text-sm text-slate-700">Definimos prazo de retenção compatível com a finalidade</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Pergunta 5 - bloqueante -->
+        <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+          <label class="text-sm font-medium text-red-900 flex items-center gap-2">
+            <span class="bg-red-200 text-red-800 text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
+            🚨 Verificação bloqueante: o tratamento envolve dados sensíveis ou dados de crianças/adolescentes?
+          </label>
+          <p class="text-xs text-red-800 mt-1 mb-2">
+            Atenção: legítimo interesse <strong>não pode</strong> ser usado pra dados sensíveis (Art. 11) ou
+            dados de crianças/adolescentes (Art. 14). Se sim, mude a base legal.
+          </p>
+          <div class="flex gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="sensible" class="text-red-600">
+              <span class="text-sm">Sim — preciso mudar a base legal</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="sensible" checked class="text-red-600">
+              <span class="text-sm font-semibold text-emerald-700">Não — apenas dados comuns</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer da etapa -->
+      <div class="px-5 py-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex items-center justify-between">
+        <button class="px-4 py-2 rounded-lg text-sm border border-slate-200 hover:bg-white transition text-slate-700">
+          ← Etapa anterior (Finalidade)
+        </button>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-500">💾 Auto-salvando…</span>
+          <button class="px-4 py-2 rounded-lg text-sm bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition">
+            Próxima etapa (Balanceamento) →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- AÇÕES de workflow -->
+    <div class="mt-5 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border border-slate-200 p-5">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-800">Ações de fluxo</h3>
+          <p class="text-xs text-slate-500 mt-1">
+            Esta LIA está em <strong>EM_REVISAO</strong> — DPO pode aprovar ou rejeitar.
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button class="px-3 py-1.5 rounded-lg text-xs border border-red-200 text-red-700 bg-white hover:bg-red-50 transition">
+            ✕ Rejeitar (com motivo)
+          </button>
+          <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-white transition text-slate-700">
+            📁 Arquivar
+          </button>
+          <button class="px-4 py-1.5 rounded-lg text-xs bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition">
+            ✓ Aprovar LIA
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Aviso pro mockup -->
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-30">
+  <strong>📝 Mockup estático:</strong> as abas/botões não são funcionais. Esta tela só serve pra
+  você aprovar visualmente o layout do <strong>editor de LIA</strong> antes da implementação real.
+  A lista de LIAs (`/dashboard/lia`) seguirá o padrão visual de Políticas/RIPD já existente.
+</div>
+
+</body>
+</html>

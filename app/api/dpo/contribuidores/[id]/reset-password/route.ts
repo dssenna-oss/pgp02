@@ -32,6 +32,7 @@ export async function POST(
 
   const dpo = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { role: true, companyId: true },
   });
   if (!dpo?.companyId) {
     return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
@@ -51,6 +52,7 @@ export async function POST(
       companyId: dpo.companyId,
       role: { in: [ROLES.CONTRIBUIDOR, ROLES.USER_LEGACY] },
     },
+    select: { id: true, email: true, name: true },
   });
   if (!target) {
     return NextResponse.json(

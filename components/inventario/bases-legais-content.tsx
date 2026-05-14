@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { inventoryStatusLabel, inventoryStatusColor } from "@/lib/auth-helpers";
 import { cn } from "@/lib/utils";
+import LiaInventoryBanner from "@/components/lia/lia-inventory-banner";
 
 interface Props {
   id: string;
@@ -210,6 +211,15 @@ export default function BasesLegaisContent({ id, session }: Props) {
           )}
         </CardContent>
       </Card>
+
+      {/* Banner LIA — aparece quando base usa Art. 7º IX (CP21 Fatia 3).
+          Reage a `legalBasis` em tempo real conforme o DPO digita. */}
+      <LiaInventoryBanner
+        inventoryId={data.id}
+        inventoryName={data.serviceName}
+        legalBasis={legalBasis || data.legalBasis}
+        legalBasisSensitive={legalBasisSensitive || data.legalBasisSensitive}
+      />
 
       {/* Formulário */}
       <form onSubmit={handleSave} className="space-y-5">

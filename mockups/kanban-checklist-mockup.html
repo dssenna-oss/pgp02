@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Kanban Checklist</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; }
+  .kanban-card {
+    cursor: grab;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kanban-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .kanban-card.dragging { opacity: 0.4; transform: rotate(2deg); }
+  .kanban-col.drop-zone-active { background: rgba(99,102,241,0.05); border-color: rgb(99,102,241); }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<div class="max-w-7xl mx-auto p-6 space-y-5">
+
+  <!-- Header simulando Fase 3 -->
+  <div>
+    <p class="text-xs text-slate-500 mb-1">🚩 Fase 3 — Mapeamento e Análise de Riscos</p>
+    <h1 class="text-2xl font-bold mb-1">Checklist de Implementação</h1>
+    <p class="text-sm text-slate-500">Itens de controle pra acompanhar o progresso da fase.</p>
+  </div>
+
+  <!-- Toggle de visualização -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-2 text-sm">
+      <span class="text-slate-500">Visualização:</span>
+      <button class="px-3 py-1.5 rounded-md text-xs border border-slate-200 hover:bg-white">📋 Lista</button>
+      <button class="px-3 py-1.5 rounded-md text-xs bg-violet-100 text-violet-800 ring-2 ring-violet-300 ring-offset-2 font-medium">
+        ▦ Kanban
+        <span class="bg-violet-200 text-violet-900 px-1 rounded text-[10px] ml-1">novo</span>
+      </button>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <span class="text-slate-600">Progresso:</span>
+      <div class="w-40 h-2 bg-slate-200 rounded-full overflow-hidden">
+        <div class="h-full bg-emerald-500" style="width: 33%"></div>
+      </div>
+      <span class="font-medium text-slate-700">5 de 15 (33%)</span>
+    </div>
+  </div>
+
+  <!-- KANBAN -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <!-- COLUNA 1 — Pendente -->
+    <div class="kanban-col bg-slate-100 dark:bg-slate-100 rounded-xl border-2 border-dashed border-slate-200 p-3 min-h-[400px]" data-status="pendente">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <h3 class="font-semibold text-slate-700 text-sm">Pendente</h3>
+          <span class="text-xs bg-slate-200 text-slate-700 px-2 rounded-full">7</span>
+        </div>
+        <button class="text-slate-400 hover:text-slate-600 text-lg leading-none">+</button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="kanban-card bg-white rounded-lg p-3 border border-slate-200 shadow-sm" draggable="true">
+          <p class="text-sm">Mapeie sistemas e bancos de dados da TI</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-blue-50 text-blue-700 px-1.5 rounded">2. Mapeamento por Área</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-slate-200 shadow-sm" draggable="true">
+          <p class="text-sm">Mapeie tratamentos do Financeiro (dados bancários, transações)</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-blue-50 text-blue-700 px-1.5 rounded">2. Mapeamento por Área</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-slate-200 shadow-sm" draggable="true">
+          <p class="text-sm">Liste todos os dados pessoais coletados em cada processo</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">3. Detalhamento</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-slate-200 shadow-sm" draggable="true">
+          <p class="text-sm">Identifique as fontes de coleta (formulários, contratos, sistemas)</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">3. Detalhamento</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-slate-200 shadow-sm" draggable="true">
+          <p class="text-sm">Defina claramente a finalidade de cada tratamento</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">3. Detalhamento</span>
+          </div>
+        </div>
+        <div class="text-center text-xs text-slate-400 italic pt-1">+ 2 itens ocultos</div>
+      </div>
+    </div>
+
+    <!-- COLUNA 2 — Em andamento -->
+    <div class="kanban-col bg-amber-50/50 rounded-xl border-2 border-dashed border-amber-200 p-3 min-h-[400px]" data-status="em-andamento">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <h3 class="font-semibold text-amber-800 text-sm">Em andamento</h3>
+          <span class="text-xs bg-amber-200 text-amber-900 px-2 rounded-full">3</span>
+        </div>
+        <button class="text-amber-500 hover:text-amber-700 text-lg leading-none">+</button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="kanban-card bg-white rounded-lg p-3 border border-amber-200 shadow-sm" draggable="true">
+          <p class="text-sm">Mapeie tratamentos do RH (funcionários, candidatos)</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-blue-50 text-blue-700 px-1.5 rounded">2. Mapeamento por Área</span>
+            <span class="text-amber-600">⏱ Maria Silva</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-amber-200 shadow-sm" draggable="true">
+          <p class="text-sm">Mapeie tratamentos do Comercial/Vendas (clientes, prospects)</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-blue-50 text-blue-700 px-1.5 rounded">2. Mapeamento por Área</span>
+            <span class="text-amber-600">⏱ João P.</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-amber-200 shadow-sm" draggable="true">
+          <p class="text-sm">Mapeie tratamentos do Marketing (leads, newsletters, campanhas)</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-500">
+            <span class="bg-blue-50 text-blue-700 px-1.5 rounded">2. Mapeamento por Área</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUNA 3 — Feito -->
+    <div class="kanban-col bg-emerald-50/50 rounded-xl border-2 border-dashed border-emerald-200 p-3 min-h-[400px]" data-status="feito">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <h3 class="font-semibold text-emerald-800 text-sm">Feito</h3>
+          <span class="text-xs bg-emerald-200 text-emerald-900 px-2 rounded-full">5</span>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="kanban-card bg-white rounded-lg p-3 border border-emerald-200 shadow-sm" draggable="true">
+          <p class="text-sm line-through text-slate-500">Identifique todos os departamentos que coletam/tratam dados pessoais</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">1. Preparação</span>
+            <span>✓ 28/04</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-emerald-200 shadow-sm" draggable="true">
+          <p class="text-sm line-through text-slate-500">Agende entrevistas com gestores de cada área</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">1. Preparação</span>
+            <span>✓ 30/04</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-emerald-200 shadow-sm" draggable="true">
+          <p class="text-sm line-through text-slate-500">Prepare questionários de mapeamento para cada departamento</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">1. Preparação</span>
+            <span>✓ 02/05</span>
+          </div>
+        </div>
+        <div class="kanban-card bg-white rounded-lg p-3 border border-emerald-200 shadow-sm" draggable="true">
+          <p class="text-sm line-through text-slate-500">Defina a metodologia de documentação</p>
+          <div class="flex items-center gap-2 mt-2 text-xs text-slate-400">
+            <span class="bg-emerald-50 text-emerald-700 px-1.5 rounded">1. Preparação</span>
+            <span>✓ 03/05</span>
+          </div>
+        </div>
+        <div class="text-center text-xs text-slate-400 italic pt-1">+ 1 item</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Status -->
+  <p class="text-center text-xs text-slate-500 italic">
+    Arraste os cards entre as colunas pra atualizar o status. Mudança é salva automaticamente.
+  </p>
+</div>
+
+<script>
+  // Drag & drop básico só pra demonstrar a interação
+  const cards = document.querySelectorAll('.kanban-card');
+  const cols = document.querySelectorAll('.kanban-col');
+  let dragging = null;
+
+  cards.forEach(card => {
+    card.addEventListener('dragstart', () => { dragging = card; card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => { dragging?.classList.remove('dragging'); dragging = null; });
+  });
+
+  cols.forEach(col => {
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('drop-zone-active');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('drop-zone-active'));
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('drop-zone-active');
+      if (dragging) {
+        const list = col.querySelector('.space-y-2');
+        if (list) list.appendChild(dragging);
+      }
+    });
+  });
+</script>
+
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-30">
+  <strong>📝 Mockup interativo:</strong> arraste os cards entre as 3 colunas pra ver a transição.
+  No mockup os cards permanecem soltos no ar, mas no app real cada drop vai disparar PATCH no banco automaticamente.
+</div>
+
+</body>
+</html>

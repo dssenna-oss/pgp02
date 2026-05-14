@@ -17,7 +17,9 @@ import {
   Clock,
   Sparkles,
   FileText,
+  BarChart3,
 } from "lucide-react";
+import RiscosVisaoContent from "./riscos-visao-content";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { RISCOS_CATALOG, RISCOS_BY_CODE } from "@/lib/riscos-catalog";
@@ -32,7 +34,9 @@ interface Item {
   totalRisks: number;
   analyzed: boolean;
   byStatus: Record<string, number>;
+  bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
   codes: string[];
+  codesByStatus?: Record<string, string[]>;
 }
 
 interface ApiResponse {
@@ -43,6 +47,19 @@ interface ApiResponse {
     pendingCount: number;
     totalRisks: number;
     byCode: Record<string, number>;
+    bySeverity: { ALTO: number; MEDIO: number; BAIXO: number; NONE: number };
+    bySeverityByCode: Record<
+      string,
+      { ALTO: number; MEDIO: number; BAIXO: number; NONE: number }
+    >;
+    byStatusAgg: Record<string, number>;
+    topCriticos: Array<{
+      processId: string;
+      processName: string;
+      setor: string | null;
+      riskCode: string;
+      identifiedAt: string;
+    }>;
   };
 }
 
@@ -54,6 +71,7 @@ export default function RiscosDashboardContent({
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sevFilter, setSevFilter] = useState<"ALL" | "ALTO" | "MEDIO" | "BAIXO" | "NONE">("ALL");
 
   useEffect(() => {
     (async () => {
@@ -75,6 +93,7 @@ export default function RiscosDashboardContent({
   }, []);
 
   const filtered = (data?.items ?? []).filter((it) => {
+    if (sevFilter !== "ALL" && (it.bySeverity?.[sevFilter] ?? 0) === 0) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (
@@ -109,14 +128,18 @@ export default function RiscosDashboardContent({
 
       {/* Tabs */}
       <Tabs defaultValue="por-processo" className="space-y-6">
-        <TabsList className="grid grid-cols-2 max-w-lg">
+        <TabsList className="grid grid-cols-3 max-w-2xl">
           <TabsTrigger value="por-processo">
             <FileText className="h-4 w-4 mr-2" />
-            Riscos por processo
+            Por processo
+          </TabsTrigger>
+          <TabsTrigger value="visao">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Visão consolidada
           </TabsTrigger>
           <TabsTrigger value="organizacao">
             <Building2 className="h-4 w-4 mr-2" />
-            Riscos da organização
+            Da organização
           </TabsTrigger>
         </TabsList>
 
@@ -176,6 +199,29 @@ export default function RiscosDashboardContent({
                 />
               </div>
 
+              {/* Severidade agregada (Checkpoint 6) */}
+              {data.stats.totalRisks > 0 && (
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        Severidade dos riscos identificados
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <SevPill label="Alto" value={data.stats.bySeverity.ALTO} tone="red" />
+                      <SevPill label="Médio" value={data.stats.bySeverity.MEDIO} tone="amber" />
+                      <SevPill label="Baixo" value={data.stats.bySeverity.BAIXO} tone="emerald" />
+                      <SevPill label="Sem classificação" value={data.stats.bySeverity.NONE} tone="gray" />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Riscos sem classificação ainda não tiveram a matriz Probabilidade × Impacto definida. Abra cada um pelo botão "Detalhar" e classifique.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Top riscos da organização */}
               {Object.keys(data.stats.byCode).length > 0 && (
                 <Card>
@@ -211,15 +257,38 @@ export default function RiscosDashboardContent({
                 </Card>
               )}
 
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nome do processo, setor ou criador..."
-                  className="pl-9"
-                />
+              {/* Busca + filtro por severidade */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar por nome do processo, setor ou criador..."
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {(["ALL", "ALTO", "MEDIO", "BAIXO", "NONE"] as const).map((v) => {
+                    const labelMap = { ALL: "Todos", ALTO: "Alto", MEDIO: "Médio", BAIXO: "Baixo", NONE: "S/ classif." };
+                    const active = sevFilter === v;
+                    return (
+                      <Badge
+                        key={v}
+                        variant="outline"
+                        onClick={() => setSevFilter(v)}
+                        className={cn(
+                          "cursor-pointer px-2.5 py-1 text-xs whitespace-nowrap",
+                          active
+                            ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        )}
+                      >
+                        {labelMap[v]}
+                      </Badge>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Lista de processos */}
@@ -237,27 +306,44 @@ export default function RiscosDashboardContent({
           )}
         </TabsContent>
 
-        {/* ========== Aba 2 — Da organização (placeholder) ========== */}
+        {/* ========== Aba 2 — Visão consolidada (Checkpoint 7) ========== */}
+        <TabsContent value="visao">
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Carregando...</div>
+          ) : !data ? null : (
+            <RiscosVisaoContent stats={data.stats} items={data.items} />
+          )}
+        </TabsContent>
+
+        {/* ========== Aba 3 — Da organização (GAP Analysis) ========== */}
         <TabsContent value="organizacao">
-          <Card className="border-dashed">
-            <CardContent className="p-8 text-center space-y-4">
-              <div className="rounded-full bg-blue-100 dark:bg-blue-950/40 p-3 inline-block">
-                <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <Card>
+            <CardContent className="p-6 sm:p-8 space-y-5">
+              <div className="flex items-start gap-3 flex-wrap">
+                <div className="rounded-full bg-emerald-100 dark:bg-emerald-950/40 p-2.5">
+                  <Building2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Riscos da organização (GAP Analysis)
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Os riscos macro que não pertencem a um processo específico
+                    — ausência de DPO, política de incidentes, governança em
+                    privacidade, etc. — são tratados no GAP Analysis: 119
+                    controles em 28 domínios baseados no template oficial LGPD
+                    PRO.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Riscos da organização — em breve
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Aqui ficarão os riscos macro que não pertencem a uma área
-                específica — como ausência de Encarregado (DPO), falta de
-                programa de conscientização, política de incidentes
-                inexistente, processos de gestão de terceiros, gestão do
-                ciclo de vida da informação, etc.
-              </p>
-              <p className="text-xs text-gray-500 max-w-xl mx-auto">
-                Vai ser construído no <strong>GAP Analysis (Checkpoint 9)</strong>{" "}
-                e consolidado no Diagnóstico de Privacidade.
-              </p>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button asChild>
+                  <Link href="/dashboard/gap-analysis">
+                    Abrir GAP Analysis
+                    <ArrowRight className="h-4 w-4 ml-1.5" />
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -366,14 +452,38 @@ function ProcessRiskCard({ item }: { item: Item }) {
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {item.totalRisks > 0 ? (
-            <div className="text-right">
-              <div className="text-xl font-bold text-red-600 dark:text-red-400">
-                {item.totalRisks}
+            <>
+              <div className="flex flex-col items-end gap-0.5 text-[10px]">
+                {item.bySeverity.ALTO > 0 && (
+                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800">
+                    {item.bySeverity.ALTO} alto
+                  </Badge>
+                )}
+                {item.bySeverity.MEDIO > 0 && (
+                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800">
+                    {item.bySeverity.MEDIO} médio
+                  </Badge>
+                )}
+                {item.bySeverity.BAIXO > 0 && (
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800">
+                    {item.bySeverity.BAIXO} baixo
+                  </Badge>
+                )}
+                {item.bySeverity.NONE > 0 && (
+                  <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400">
+                    {item.bySeverity.NONE} s/ classif.
+                  </Badge>
+                )}
               </div>
-              <div className="text-xs text-gray-500">
-                de 13 ({pct}%)
+              <div className="text-right">
+                <div className="text-xl font-bold text-red-600 dark:text-red-400">
+                  {item.totalRisks}
+                </div>
+                <div className="text-xs text-gray-500">
+                  de 13 ({pct}%)
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <span className="text-sm text-gray-400">Sem riscos marcados</span>
           )}
@@ -381,5 +491,32 @@ function ProcessRiskCard({ item }: { item: Item }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+// ============================================================
+// SevPill — pílula colorida pra contagem por severidade
+// ============================================================
+
+function SevPill({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "red" | "amber" | "emerald" | "gray";
+}) {
+  const toneCls: Record<typeof tone, string> = {
+    red: "bg-red-50 text-red-800 border-red-300 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800",
+    amber: "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800",
+    emerald: "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800",
+    gray: "bg-gray-50 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+  };
+  return (
+    <div className={cn("border rounded-md p-2 text-center", toneCls[tone])}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-[11px]">{label}</div>
+    </div>
   );
 }

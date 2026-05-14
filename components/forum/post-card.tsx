@@ -18,6 +18,8 @@ import {
   type ForumPostDTO,
   type ForumCategory,
 } from "@/lib/forum-types";
+import ReactionBar from "./reaction-bar";
+import { stripMentionMarkdown } from "@/lib/forum-mentions";
 
 interface Props {
   post: ForumPostDTO;
@@ -106,7 +108,7 @@ export default function PostCard({ post, currentUserId, onClick }: Props) {
           </div>
 
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 line-clamp-2 break-words">
-            {post.content}
+            {stripMentionMarkdown(post.content)}
           </p>
 
           {/* Metadata */}
@@ -162,6 +164,17 @@ export default function PostCard({ post, currentUserId, onClick }: Props) {
               </span>
             )}
           </div>
+
+          {/* Reações — só aparecem se tem alguma OU se o user clicar no '+' */}
+          {(post.reactions?.length ?? 0) > 0 && (
+            <div className="mt-2.5">
+              <ReactionBar
+                postId={post.id}
+                reactions={post.reactions ?? []}
+                size="sm"
+              />
+            </div>
+          )}
         </div>
 
         <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0 mt-1" />

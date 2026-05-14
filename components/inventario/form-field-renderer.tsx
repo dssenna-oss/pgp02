@@ -6,10 +6,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, MinusCircle, RotateCcw } from "lucide-react";
 import type { FormField } from "@/lib/inventario-form-schema";
 import { cn } from "@/lib/utils";
 import { FieldHelp } from "./field-help";
+
+/**
+ * Sentinel pra marcar campo opcional explicitamente como "Não se aplica".
+ * Diferencia "vazio porque esqueci" de "vazio porque marquei N/A propositalmente".
+ *
+ * Storage:
+ *   - text-short/text-long/single-choice: string `"__NAO_APLICA__"`
+ *   - multi-choice: array `["__NAO_APLICA__"]`
+ */
+export const NAO_APLICA_SENTINEL = "__NAO_APLICA__";
+
+export function isNotApplied(v: string | string[] | undefined): boolean {
+  if (typeof v === "string") return v === NAO_APLICA_SENTINEL;
+  if (Array.isArray(v))
+    return v.length === 1 && v[0] === NAO_APLICA_SENTINEL;
+  return false;
+}
+
+export function isFieldEmpty(v: string | string[] | undefined): boolean {
+  if (v == null) return true;
+  if (typeof v === "string") return !v.trim();
+  if (Array.isArray(v)) return v.length === 0;
+  return true;
+}
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -24,6 +48,12 @@ interface FormFieldRendererProps {
   disabled?: boolean;
   /** Esconde label/description internos (útil quando o wrapper já mostra). */
   hideLabel?: boolean;
+  /**
+   * Origem do valor atual (provenance). Quando começa com "template:" o
+   * label exibe um badge "📋 Modelo" pra deixar claro que veio de
+   * pré-preenchimento. Ao editar, o wizard limpa essa marca.
+   */
+  provenance?: string;
 }
 
 /**
@@ -43,12 +73,16 @@ export function FormFieldRenderer({
   error,
   disabled,
   hideLabel,
+  provenance,
 }: FormFieldRendererProps) {
   const fieldId = useId();
+  const fromTemplate = provenance?.startsWith("template:") ?? false;
+  const fromAi = provenance?.startsWith("firecrawl:") ?? false;
 
   // Pergunta = label do campo. Destaque visual: ícone + negrito + cor de
   // acento, pra distinguir das labels das opções (checkbox/radio).
   // Quando há `field.help`, aparece também o botão "?" do FieldHelp ao lado.
+  // Campos !required ganham tag "Opcional" pra reduzir ambiguidade visual.
   const labelEl = (
     <div className="flex items-start gap-2 pt-1 pb-1 border-l-4 border-blue-500 dark:border-blue-400 pl-3 bg-blue-50/50 dark:bg-blue-950/30 rounded-r-md">
       <HelpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
@@ -58,6 +92,27 @@ export function FormFieldRenderer({
       >
         {field.label}
         {field.required && <span className="ml-1 text-red-500">*</span>}
+        {!field.required && (
+          <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 align-middle">
+            Opcional
+          </span>
+        )}
+        {fromTemplate && (
+          <span
+            className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 align-middle"
+            title="Pré-preenchido por um modelo padronizado. Você pode editar livremente."
+          >
+            📋 Modelo
+          </span>
+        )}
+        {fromAi && (
+          <span
+            className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 align-middle"
+            title={`Pré-preenchido por IA a partir de URL pública${provenance ? ` (${provenance.replace(/^firecrawl:/, "")})` : ""}. Revise antes de finalizar.`}
+          >
+            🤖 IA
+          </span>
+        )}
       </Label>
       {field.help && (
         <div className="mt-0.5">
@@ -79,12 +134,66 @@ export function FormFieldRenderer({
 
   const errorEl = error ? <p className="text-xs text-red-500">{error}</p> : null;
 
+  // N/A: só faz sentido pra opcionais. Quando ativo, esconde input e mostra
+  // banner "Marcado como não se aplica" + botão "Reverter".
+  const naApplied = isNotApplied(value);
+  const isOptional = !field.required;
+  const valueIsEmpty = isFieldEmpty(value);
+
+  function applyNA() {
+    if (field.type === "multi-choice") {
+      onChange([NAO_APLICA_SENTINEL]);
+    } else {
+      onChange(NAO_APLICA_SENTINEL);
+    }
+  }
+  function revertNA() {
+    if (field.type === "multi-choice") {
+      onChange([]);
+    } else {
+      onChange("");
+    }
+  }
+
+  /** Bloco visual quando N/A está ativo. */
+  const naBannerEl = naApplied ? (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 text-sm text-gray-600 dark:text-gray-400">
+      <MinusCircle className="h-4 w-4 shrink-0" />
+      <span className="flex-1">
+        Marcado como <strong>não se aplica</strong>
+      </span>
+      <button
+        type="button"
+        onClick={revertNA}
+        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        <RotateCcw className="h-3 w-3" />
+        Reverter
+      </button>
+    </div>
+  ) : null;
+
+  /** Botão "Não se aplica" abaixo de input vazio em campo opcional. */
+  const naButtonEl =
+    isOptional && !naApplied && valueIsEmpty && !readOnly && !disabled ? (
+      <button
+        type="button"
+        onClick={applyNA}
+        className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+      >
+        <MinusCircle className="h-3 w-3" />
+        Marcar como "Não se aplica"
+      </button>
+    ) : null;
+
   return (
     <div className={cn("space-y-2", error && "ring-red-200")}>
       {!hideLabel && labelEl}
       {!hideLabel && descEl}
 
-      {field.type === "text-short" && (
+      {naApplied && naBannerEl}
+
+      {!naApplied && field.type === "text-short" && (
         <Input
           id={fieldId}
           value={(value as string) ?? ""}
@@ -99,7 +208,7 @@ export function FormFieldRenderer({
         />
       )}
 
-      {field.type === "text-long" && (
+      {!naApplied && field.type === "text-long" && (
         <Textarea
           id={fieldId}
           value={(value as string) ?? ""}
@@ -115,7 +224,7 @@ export function FormFieldRenderer({
         />
       )}
 
-      {field.type === "single-choice" && field.options && (
+      {!naApplied && field.type === "single-choice" && field.options && (
         <RadioGroup
           value={(value as string) ?? ""}
           onValueChange={onChange}
@@ -140,7 +249,7 @@ export function FormFieldRenderer({
         </RadioGroup>
       )}
 
-      {field.type === "multi-choice" && field.options && (
+      {!naApplied && field.type === "multi-choice" && field.options && (
         <MultiChoiceField
           field={field}
           value={normalizeMultiValue(value)}
@@ -150,6 +259,7 @@ export function FormFieldRenderer({
         />
       )}
 
+      {naButtonEl}
       {errorEl}
     </div>
   );
@@ -211,8 +321,13 @@ function MultiChoiceField({
     setOtherChecked(checked);
     setOtherText(text);
     const withoutOther = value.filter((v) => !v.startsWith(otherPrefix));
-    if (checked && text.trim()) {
-      onChange([...withoutOther, otherPrefix + text.trim()]);
+    if (checked) {
+      // NÃO chamar text.trim() aqui: o useEffect (linhas 282-286)
+      // re-sincroniza otherText a partir do `value` recebido, e o trim
+      // descartava espaços intermediários durante a digitação — bug
+      // reportado pelo user em 2026-05-08 ("documentosaosorgãos").
+      // Trim só faz sentido em blur/save final, não em onChange.
+      onChange([...withoutOther, otherPrefix + text]);
     } else {
       onChange(withoutOther);
     }

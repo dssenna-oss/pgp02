@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Tour de Onboarding com narração ElevenLabs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  /* Spotlight */
+  .tour-overlay {
+    position: fixed; inset: 0; pointer-events: none; z-index: 50;
+  }
+  .tour-overlay svg { width: 100%; height: 100%; }
+  /* Painel lateral */
+  .tour-panel {
+    position: fixed; top: 24px; right: 24px; width: 380px; max-height: calc(100vh - 48px);
+    background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+    z-index: 60; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+  .tour-panel-dark {
+    background: linear-gradient(160deg, #1e1b4b 0%, #0f172a 100%);
+    color: #e0e7ff;
+  }
+  /* Animação de pulso na seta */
+  @keyframes pulse-arrow {
+    0%, 100% { opacity: 0.7; transform: translateX(0); }
+    50% { opacity: 1; transform: translateX(-6px); }
+  }
+  .arrow-pulse { animation: pulse-arrow 1.4s ease-in-out infinite; }
+  /* Onda do áudio */
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.4); }
+    50% { transform: scaleY(1); }
+  }
+  .wave-bar { animation: wave 0.9s ease-in-out infinite; transform-origin: center; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+  /* Highlight palavra atual da transcrição */
+  .word { transition: all 0.2s; }
+  .word.active { background: linear-gradient(120deg, rgba(167,139,250,0.4), rgba(99,102,241,0.4)); border-radius: 4px; padding: 0 3px; color: #fff; font-weight: 500; }
+  .word.spoken { color: rgba(224, 231, 255, 0.55); }
+  /* Spotlight no elemento */
+  .spotlit { position: relative; z-index: 55; box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.78), 0 0 30px rgba(167,139,250,0.6); border-radius: 8px; }
+  /* Ring animado em volta do spotlight */
+  @keyframes ring-pulse { 0% { box-shadow: 0 0 0 0 rgba(167,139,250,0.7); } 100% { box-shadow: 0 0 0 18px rgba(167,139,250,0); } }
+  .ring-pulse { animation: ring-pulse 2s ease-out infinite; border-radius: 8px; }
+  /* Botão arredondado flutuante (botão "Refazer tour") */
+  .floating-btn {
+    position: fixed; bottom: 24px; right: 24px; z-index: 40;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white; padding: 12px 20px; border-radius: 999px;
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+    font-weight: 500; cursor: pointer; transition: transform 0.2s;
+  }
+  .floating-btn:hover { transform: translateY(-2px); }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<!-- ===================== APP MOCKADO (fundo) ===================== -->
+<div class="flex min-h-screen">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r border-slate-200 p-4 space-y-1" id="sidebar">
+    <div class="flex items-center gap-2 px-2 py-3 mb-4">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold">P</div>
+      <div>
+        <div class="font-semibold text-slate-800 text-sm">LGPD - PGP</div>
+        <div class="text-xs text-slate-500">Programa de Governança</div>
+      </div>
+    </div>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-dashboard">📊 Dashboard</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 bg-indigo-50 text-indigo-700 text-sm font-medium" data-tour="nav-fases">🎓 Fases do PGP</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-inventario">📋 Inventário</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-riscos">⚠️ Riscos</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-gap">📐 GAP Analysis</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-plano">🎯 Plano de Ação</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-politicas">📜 Políticas</a>
+    <a class="sidebar-item flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 text-sm" data-tour="nav-maturidade">✨ Maturidade do PGP</a>
+  </aside>
+
+  <!-- Conteúdo principal -->
+  <main class="flex-1 p-8" id="main-content">
+    <header class="mb-8" data-tour="hero">
+      <h1 class="text-3xl font-bold text-slate-800">Fases do Programa</h1>
+      <p class="text-slate-500 mt-1">Caminho estruturado pra implementar a LGPD na sua organização.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="fases-grid">
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE PRELIMINAR</div>
+        <div class="font-semibold text-slate-800 mb-2">Capacitação LGPD</div>
+        <div class="text-sm text-slate-500">Onboarding · pílulas · prática · departamental · monitoramento</div>
+      </div>
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE 1</div>
+        <div class="font-semibold text-slate-800 mb-2">Formação das Equipes</div>
+        <div class="text-sm text-slate-500">DPO · contribuidores · setores cobertos</div>
+      </div>
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE 2</div>
+        <div class="font-semibold text-slate-800 mb-2">Diagnóstico de Privacidade</div>
+        <div class="text-sm text-slate-500">Score 0-100 · 4 pilares ponderados</div>
+      </div>
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE 3</div>
+        <div class="font-semibold text-slate-800 mb-2">Inventário · Riscos · Bases</div>
+        <div class="text-sm text-slate-500">Coração do programa · Art. 37 LGPD</div>
+      </div>
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE 4</div>
+        <div class="font-semibold text-slate-800 mb-2">GAP Analysis</div>
+        <div class="text-sm text-slate-500">119 controles · 28 domínios · snapshots</div>
+      </div>
+      <div class="phase-card bg-white rounded-xl border border-slate-200 p-5 hover:shadow-lg transition cursor-pointer">
+        <div class="text-xs font-semibold text-indigo-600 mb-1">FASE 5+</div>
+        <div class="font-semibold text-slate-800 mb-2">Plano · Políticas · Incidentes</div>
+        <div class="text-sm text-slate-500">Operacionalização contínua</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== TOUR OVERLAY ===================== -->
+
+<!-- Overlay escurecedor (recortado pelo spotlight via box-shadow inset no .spotlit) -->
+<div class="tour-overlay hidden" id="tourOverlay">
+  <!-- Setinha pulsante apontando do painel lateral pro elemento -->
+  <svg id="tourArrow" style="position: fixed; pointer-events: none; z-index: 58;" width="80" height="40">
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#a78bfa" />
+      </marker>
+    </defs>
+    <path d="M 70 20 Q 35 20 10 20" stroke="#a78bfa" stroke-width="2.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrowhead)" class="arrow-pulse" />
+  </svg>
+</div>
+
+<!-- Painel lateral fixo -->
+<div class="tour-panel tour-panel-dark hidden" id="tourPanel">
+  <!-- Header do painel -->
+  <div class="px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-sm">🎙️</div>
+      <div>
+        <div class="text-sm font-semibold">Tour PGP</div>
+        <div class="text-xs text-indigo-300">com narração</div>
+      </div>
+    </div>
+    <button id="tourClose" class="text-indigo-300 hover:text-white text-xl leading-none">×</button>
+  </div>
+
+  <!-- Progresso -->
+  <div class="px-5 py-3 border-b border-white/10">
+    <div class="flex items-center justify-between text-xs text-indigo-300 mb-1.5">
+      <span id="tourStepLabel">Passo 1 de 8</span>
+      <span id="tourStepName">Boas-vindas</span>
+    </div>
+    <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+      <div id="tourProgress" class="h-full bg-gradient-to-r from-indigo-400 to-violet-400 transition-all" style="width: 12.5%"></div>
+    </div>
+  </div>
+
+  <!-- Título do passo -->
+  <div class="px-5 pt-4">
+    <div class="text-lg font-semibold text-white" id="tourTitle">Bem-vindo ao PGP</div>
+  </div>
+
+  <!-- Transcrição -->
+  <div class="px-5 py-3 flex-1 overflow-y-auto">
+    <div class="text-sm leading-relaxed text-indigo-100" id="tourTranscript">
+      <!-- preenchido por JS -->
+    </div>
+  </div>
+
+  <!-- Player de áudio -->
+  <div class="px-5 py-4 border-t border-white/10 bg-black/20">
+    <div class="flex items-center gap-3 mb-3">
+      <button id="tourPlay" class="w-11 h-11 rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-lg shadow-lg hover:scale-105 transition">
+        <span id="tourPlayIcon">▶</span>
+      </button>
+      <!-- Onda animada -->
+      <div class="flex items-center gap-1 h-8 flex-1" id="tourWave">
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 60%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 80%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 100%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 70%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 90%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 50%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 75%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 95%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 65%"></div>
+        <div class="wave-bar w-1 bg-gradient-to-t from-indigo-500 to-violet-400 rounded-full" style="height: 85%"></div>
+      </div>
+      <span class="text-xs text-indigo-300 tabular-nums" id="tourTime">0:00</span>
+    </div>
+
+    <!-- Botões de navegação -->
+    <div class="flex items-center justify-between gap-2">
+      <button id="tourPrev" class="px-3 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-white/10 transition">← Anterior</button>
+      <button id="tourSkip" class="px-3 py-1.5 rounded-lg text-xs text-indigo-300 hover:bg-white/10 transition">Pular tour</button>
+      <button id="tourNext" class="px-4 py-1.5 rounded-lg text-xs bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-medium hover:opacity-90 transition">Próximo →</button>
+    </div>
+
+    <!-- Hint atalhos -->
+    <div class="text-[11px] text-indigo-400/70 mt-3 text-center">
+      Atalhos: <kbd class="px-1.5 py-0.5 bg-white/5 rounded">Espaço</kbd> play/pause · <kbd class="px-1.5 py-0.5 bg-white/5 rounded">→</kbd> próximo · <kbd class="px-1.5 py-0.5 bg-white/5 rounded">Esc</kbd> sair
+    </div>
+  </div>
+</div>
+
+<!-- Botão flutuante "Iniciar tour" (modo idle) -->
+<button class="floating-btn" id="tourStart">
+  🎙️ Fazer tour guiado
+</button>
+
+<!-- ===================== JS ===================== -->
+<script>
+  // Roteiro do tour mestre - 8 passos
+  const SCRIPT = [
+    {
+      target: null, // sem spotlight (tela cheia / boas-vindas)
+      title: "Bem-vindo ao PGP",
+      text: "Olá! Bem-vindo ao Programa de Governança em Privacidade. Este tour vai te apresentar as principais funcionalidades em poucos minutos. Você pode pausar ou pular a qualquer momento."
+    },
+    {
+      target: '[data-tour="nav-fases"]',
+      title: "Fases do programa",
+      text: "Esta é a sua barra de navegação. Comece pelas Fases do PGP. Cada fase é um passo guiado com conteúdo didático, checklist, documentação e uma ferramenta nativa pra colocar em prática."
+    },
+    {
+      target: '[data-tour="fases-grid"]',
+      title: "Caminho estruturado",
+      text: "O programa é dividido em nove fases sequenciais, da preliminar até a sétima. Não precisa fazer tudo de uma vez. Avance no seu ritmo."
+    },
+    {
+      target: '[data-tour="nav-inventario"]',
+      title: "O coração: Inventário",
+      text: "O Inventário é o coração do programa. Aqui você cataloga todo tratamento de dados pessoais que sua organização realiza, como exige o artigo trinta e sete da LGPD."
+    },
+    {
+      target: '[data-tour="nav-riscos"]',
+      title: "Análise automática",
+      text: "A partir do Inventário, o sistema gera análise de riscos, GAP Analysis e diagnóstico de privacidade automaticamente. Você não precisa preencher tudo manualmente."
+    },
+    {
+      target: '[data-tour="nav-plano"]',
+      title: "Plano de Ação central",
+      text: "Cada pendência identificada vira uma ação no Plano de Ação. Acompanhe prazos, responsáveis, prioridades, e exporte evidências pra auditoria da ANPD."
+    },
+    {
+      target: '[data-tour="nav-politicas"]',
+      title: "Instrumentos formais",
+      text: "Quando o programa amadurece, você publica políticas, RIPDs, contratos com terceiros e a Política do PGP, todos os documentos exigidos pela ANPD."
+    },
+    {
+      target: '[data-tour="nav-maturidade"]',
+      title: "Painel de Maturidade",
+      text: "O Painel de Maturidade mostra o estágio do programa em tempo real. Você pode refazer este tour a qualquer momento pelo botão flutuante. Boas práticas!"
+    }
+  ];
+
+  // Estado
+  let currentStep = 0;
+  let isPlaying = false;
+  let utterance = null;
+
+  const $overlay = document.getElementById('tourOverlay');
+  const $panel = document.getElementById('tourPanel');
+  const $start = document.getElementById('tourStart');
+  const $close = document.getElementById('tourClose');
+  const $skip = document.getElementById('tourSkip');
+  const $next = document.getElementById('tourNext');
+  const $prev = document.getElementById('tourPrev');
+  const $play = document.getElementById('tourPlay');
+  const $playIcon = document.getElementById('tourPlayIcon');
+  const $title = document.getElementById('tourTitle');
+  const $stepLabel = document.getElementById('tourStepLabel');
+  const $stepName = document.getElementById('tourStepName');
+  const $progress = document.getElementById('tourProgress');
+  const $transcript = document.getElementById('tourTranscript');
+  const $arrow = document.getElementById('tourArrow');
+  const $wave = document.getElementById('tourWave');
+
+  function setupTranscript(text) {
+    const words = text.split(/\s+/);
+    $transcript.innerHTML = words.map((w, i) => `<span class="word" data-idx="${i}">${w}</span>`).join(' ');
+  }
+
+  function highlightWord(idx) {
+    $transcript.querySelectorAll('.word').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+      el.classList.toggle('spoken', i < idx);
+    });
+  }
+
+  function clearSpotlight() {
+    document.querySelectorAll('.spotlit, .ring-pulse').forEach(el => {
+      el.classList.remove('spotlit', 'ring-pulse');
+    });
+    $arrow.style.display = 'none';
+  }
+
+  function applySpotlight(selector) {
+    clearSpotlight();
+    if (!selector) return;
+    const el = document.querySelector(selector);
+    if (!el) return;
+    el.classList.add('spotlit', 'ring-pulse');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    // Posicionar a setinha apontando do painel pro elemento
+    setTimeout(() => {
+      const rect = el.getBoundingClientRect();
+      const panelRect = $panel.getBoundingClientRect();
+      $arrow.style.display = 'block';
+      $arrow.style.top = (rect.top + rect.height/2 - 20) + 'px';
+      $arrow.style.left = (rect.right + 8) + 'px';
+    }, 100);
+  }
+
+  function renderStep() {
+    const step = SCRIPT[currentStep];
+    $title.textContent = step.title;
+    $stepLabel.textContent = `Passo ${currentStep + 1} de ${SCRIPT.length}`;
+    $stepName.textContent = step.title;
+    $progress.style.width = ((currentStep + 1) / SCRIPT.length * 100) + '%';
+    setupTranscript(step.text);
+    applySpotlight(step.target);
+    $prev.disabled = currentStep === 0;
+    $prev.style.opacity = currentStep === 0 ? '0.4' : '1';
+    if (currentStep === SCRIPT.length - 1) {
+      $next.textContent = 'Concluir ✓';
+    } else {
+      $next.textContent = 'Próximo →';
+    }
+  }
+
+  function speakCurrent() {
+    if (!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const text = SCRIPT[currentStep].text;
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    // Estimar word boundaries via charIndex
+    utterance.onboundary = (e) => {
+      if (e.name !== 'word') return;
+      // Calcular qual palavra com base no charIndex
+      const upTo = text.slice(0, e.charIndex);
+      const wordIdx = upTo.split(/\s+/).filter(w => w.length > 0).length;
+      highlightWord(wordIdx);
+    };
+    utterance.onend = () => {
+      isPlaying = false;
+      $playIcon.textContent = '▶';
+      $wave.style.opacity = '0.3';
+      // Auto-avança após 1s no fim do passo
+      setTimeout(() => {
+        if (!isPlaying && currentStep < SCRIPT.length - 1) {
+          // não auto-avança no mockup pra não confundir; usuário decide
+        }
+      }, 1000);
+    };
+    speechSynthesis.speak(utterance);
+    isPlaying = true;
+    $playIcon.textContent = '❚❚';
+    $wave.style.opacity = '1';
+  }
+
+  function pauseSpeaking() {
+    speechSynthesis.cancel();
+    isPlaying = false;
+    $playIcon.textContent = '▶';
+    $wave.style.opacity = '0.3';
+  }
+
+  function startTour() {
+    currentStep = 0;
+    $start.style.display = 'none';
+    $overlay.classList.remove('hidden');
+    $panel.classList.remove('hidden');
+    renderStep();
+    setTimeout(speakCurrent, 400);
+  }
+
+  function endTour() {
+    pauseSpeaking();
+    clearSpotlight();
+    $overlay.classList.add('hidden');
+    $panel.classList.add('hidden');
+    $start.style.display = '';
+    $start.textContent = '🔁 Refazer tour';
+  }
+
+  function nextStep() {
+    if (currentStep === SCRIPT.length - 1) { endTour(); return; }
+    currentStep++;
+    renderStep();
+    setTimeout(speakCurrent, 200);
+  }
+
+  function prevStep() {
+    if (currentStep === 0) return;
+    currentStep--;
+    renderStep();
+    setTimeout(speakCurrent, 200);
+  }
+
+  // Event listeners
+  $start.addEventListener('click', startTour);
+  $close.addEventListener('click', endTour);
+  $skip.addEventListener('click', endTour);
+  $next.addEventListener('click', nextStep);
+  $prev.addEventListener('click', prevStep);
+  $play.addEventListener('click', () => {
+    if (isPlaying) pauseSpeaking();
+    else speakCurrent();
+  });
+
+  // Atalhos
+  document.addEventListener('keydown', (e) => {
+    if ($panel.classList.contains('hidden')) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Escape') { endTour(); }
+    if (e.code === 'Space') { e.preventDefault(); $play.click(); }
+    if (e.code === 'ArrowRight') { nextStep(); }
+    if (e.code === 'ArrowLeft') { prevStep(); }
+  });
+
+  // Reposicionar a setinha quando a janela faz resize
+  window.addEventListener('resize', () => {
+    const step = SCRIPT[currentStep];
+    if (step && step.target) applySpotlight(step.target);
+  });
+</script>
+
+<!-- Aviso pro mockup -->
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-30">
+  <strong>⚠️ Mockup:</strong> a voz aqui usa <code>speechSynthesis</code> nativo do browser (qualidade fraca, robótica) só pra você sentir o fluxo. Na implementação real, será a <strong>Bella</strong> da ElevenLabs com qualidade premium.
+</div>
+
+</body>
+</html>

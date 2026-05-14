@@ -1,23 +1,27 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
-import { 
-  FileText, 
-  AlertTriangle, 
-  BarChart3, 
-  CheckCircle2, 
+import {
+  FileText,
+  AlertTriangle,
+  BarChart3,
+  CheckCircle2,
   Users,
   Calendar,
   TrendingUp,
-  Download,
-  Plus
+  Plus,
+  ClipboardList,
+  ArrowRight,
 } from "lucide-react";
+import { isDPO } from "@/lib/auth-helpers";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import ProximasEtapasCard from "@/components/dashboard/proximas-etapas-card";
+import TourHeaderButton from "@/components/tour/tour-header-button";
 
 interface DashboardContentProps {
   session: any;
@@ -27,13 +31,15 @@ export default function DashboardContent({ session }: DashboardContentProps) {
   const [stats, setStats] = useState({
     dataInventories: 0,
     riskAssessments: 0,
-    gapAnalyses: 0,
+    gapAnswered: 0,
     actionPlans: 0,
     documents: 0,
     incidents: 0
   });
 
   const [loading, setLoading] = useState(true);
+  const [inventarioPending, setInventarioPending] = useState<number>(0);
+  const userIsDPO = isDPO(session?.user?.role);
 
   // Buscar estatísticas reais da API
   useEffect(() => {
@@ -55,6 +61,39 @@ export default function DashboardContent({ session }: DashboardContentProps) {
     fetchStats();
   }, []);
 
+  // Conta inventários pedindo ação (só pra DPO mostrar o banner; pra contribuidor
+  // o badge da sidebar já alerta sobre os DEVOLVIDOs).
+  const fetchPendingRef = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (!userIsDPO) {
+      fetchPendingRef.current = null;
+      return;
+    }
+    const fetchPending = async () => {
+      try {
+        const r = await fetch("/api/inventario/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        setInventarioPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    fetchPending();
+    fetchPendingRef.current = fetchPending;
+    return () => {
+      fetchPendingRef.current = null;
+    };
+  }, [userIsDPO]);
+
+  // Polling adaptativo (substitui setInterval fixo de 60s).
+  useAdaptivePolling(() => fetchPendingRef.current?.(), {
+    activeMs: 60_000,
+    inactiveMs: 120_000,
+    refetchOnFocus: true,
+    enabled: userIsDPO,
+  });
+
   const quickActions = [
     {
       title: "Novo Inventário de Dados",
@@ -70,13 +109,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
       icon: <AlertTriangle className="h-5 w-5" />,
       color: "bg-orange-500"
     },
-    {
-      title: "GAP Analysis",
-      description: "Verificar conformidade LGPD",
-      href: "/dashboard/gap-analysis",
-      icon: <BarChart3 className="h-5 w-5" />,
-      color: "bg-green-500"
-    },
+    // GAP Analysis: link removido até a Sessão 3 do Checkpoint 9
+    // recriar `/dashboard/gap-analysis`. Cartão de stats abaixo continua
+    // aparecendo (mostra # de controles respondidos) mas sem href.
     {
       title: "Gerar RIPD",
       description: "Criar relatório de impacto",
@@ -132,16 +167,57 @@ export default function DashboardContent({ session }: DashboardContentProps) {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => alert('Função de relatório será implementada em breve')}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Relatório
-            </Button>
+            {/* Botão de Relatório Executivo (R3, 2026-05-10).
+                Vai pra página dedicada que renderiza print-friendly e
+                deixa o user clicar 'Imprimir / Salvar PDF' no toolbar. */}
+            {userIsDPO && (
+              <Link href="/dashboard/relatorio-executivo">
+                <button className="inline-flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <FileText className="h-4 w-4" />
+                  Relatório executivo
+                </button>
+              </Link>
+            )}
+
+            {/* Botão do tour integrado no header (Sugestão C, 2026-05-10).
+                Substituiu o stub 'Relatório' que mostrava apenas alert().
+                O TourFloatingButton continua nas outras telas — escondido
+                aqui pra evitar duplicação. */}
+            <TourHeaderButton />
           </div>
         </div>
+
+        {/* Próximas etapas (CP28) — substitui Painel de Retomada antigo.
+            Card prescritivo: regras de workflow + recomendações do Diagnóstico.
+            DPO e Contribuidor recebem listas distintas via engine no servidor. */}
+        <ProximasEtapasCard />
+
+        {/* Banner: Inventários aguardando revisão (só DPO, só quando há pendentes) */}
+        {userIsDPO && inventarioPending > 0 && (
+          <Link
+            href="/dashboard/inventario"
+            className="block rounded-lg border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/30 p-4 hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <ClipboardList className="h-6 w-6 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                    {inventarioPending}{" "}
+                    {inventarioPending === 1
+                      ? "inventário aguardando sua revisão"
+                      : "inventários aguardando sua revisão"}
+                  </h3>
+                  <p className="text-sm text-amber-800 dark:text-amber-200/90 mt-0.5">
+                    Mapeamento(s) submetido(s) pelo Contribuidor — clique pra
+                    abrir, iniciar revisão e aprovar ou devolver.
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            </div>
+          </Link>
+        )}
 
         {/* Stats Cards */}
         {loading ? (
@@ -205,9 +281,9 @@ export default function DashboardContent({ session }: DashboardContentProps) {
                 <BarChart3 className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.gapAnalyses}</div>
+                <div className="text-2xl font-bold">{stats.gapAnswered}<span className="text-sm font-normal text-muted-foreground"> / 119</span></div>
                 <p className="text-xs text-muted-foreground">
-                  Requisitos analisados
+                  Controles respondidos
                 </p>
               </CardContent>
             </Card>

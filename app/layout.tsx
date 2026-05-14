@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import CookieConsentMount from "@/components/cookies/cookie-consent-mount";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -53,7 +54,9 @@ export default function RootLayout({
         />
         <div className="relative z-10">
           <Providers>
-            {children}
+            <CookieConsentMount>
+              {children}
+            </CookieConsentMount>
           </Providers>
         </div>
       </body>

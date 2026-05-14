@@ -25,6 +25,7 @@ async function loadDPOAndProcess(id: string) {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user?.companyId) {
     return { error: NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 }) };

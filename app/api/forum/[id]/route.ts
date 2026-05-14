@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isDPO } from "@/lib/auth-helpers";
+import { aggregateReactions } from "@/lib/forum-types";
 import {
   VALID_FORUM_CATEGORIES,
 } from "@/lib/forum-types";
@@ -22,6 +23,7 @@ async function loadPost(id: string) {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user || !user.companyId) {
     return { error: NextResponse.json({ error: "Usuário sem organização" }, { status: 404 }) };
@@ -60,6 +62,7 @@ export async function GET(
         },
         orderBy: { createdAt: "asc" },
       },
+      reactions: { select: { emoji: true, userId: true } },
       _count: { select: { replies: true } },
     },
   });
@@ -77,6 +80,7 @@ export async function GET(
     post: {
       ...full,
       replyCount: full?._count.replies ?? 0,
+      reactions: aggregateReactions(full?.reactions ?? [], user.id),
       _count: undefined,
     },
   });

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mockup — Painel de Retomada (Dashboard PGP)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f8fafc; }
+    .pulse-soft { animation: pulse-soft 2.4s ease-in-out infinite; }
+    @keyframes pulse-soft { 0%,100% { opacity: 1; } 50% { opacity: .7; } }
+    .progress-bar { transition: width .6s cubic-bezier(.4,0,.2,1); }
+    details > summary { list-style: none; cursor: pointer; }
+    details > summary::-webkit-details-marker { display: none; }
+    .chip-icon { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="max-w-7xl mx-auto p-6">
+
+    <!-- Cabeçalho do Dashboard (mesmo do app) -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <p class="text-gray-500">Bem-vindo de volta, <span class="font-medium text-gray-700">Durval Senna</span> — DPO Principal · TCE-ES</p>
+    </div>
+
+    <!-- ==========================================================
+         PAINEL DE RETOMADA (novo) — 2 cards lado a lado
+         ========================================================== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+
+      <!-- ============================================
+           CARD 1 — DESDE SUA ÚLTIMA VISITA
+           ============================================ -->
+      <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+        <!-- Header do card -->
+        <header class="px-5 py-4 border-b border-gray-100 flex items-start justify-between bg-gradient-to-r from-blue-50/60 to-transparent">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              <h2 class="text-lg font-semibold text-gray-900">Desde sua última visita</h2>
+            </div>
+            <p class="text-xs text-gray-500">Há <span class="font-medium text-gray-700">3 dias</span> · 04/05/2026 às 16h22</p>
+          </div>
+          <button class="text-gray-400 hover:text-gray-600 text-sm" title="Marcar como visto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+          </button>
+        </header>
+
+        <div class="p-5 space-y-4">
+
+          <!-- 🔴 CRÍTICO -->
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="chip-icon bg-red-100 text-red-700 pulse-soft">🔴</span>
+              <h3 class="text-sm font-semibold text-red-700">Crítico — precisa da sua ação</h3>
+              <span class="ml-auto text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">3</span>
+            </div>
+            <ul class="space-y-1.5 pl-7">
+              <li class="text-sm text-gray-700 flex items-center gap-2 hover:text-red-700 cursor-pointer group">
+                <span class="text-gray-400">•</span>
+                <span class="group-hover:underline">RIPD <strong>"Cadastro de Servidores"</strong> aguardando sua aprovação</span>
+                <span class="text-xs text-gray-400 ml-auto">5h atrás</span>
+              </li>
+              <li class="text-sm text-gray-700 flex items-center gap-2 hover:text-red-700 cursor-pointer group">
+                <span class="text-gray-400">•</span>
+                <span class="group-hover:underline">Incidente registrado por <strong>DSSENNA</strong> — severidade ALTA, prazo ANPD em <strong class="text-red-600">48h</strong></span>
+                <span class="text-xs text-gray-400 ml-auto">4h atrás</span>
+              </li>
+              <li class="text-sm text-gray-700 flex items-center gap-2 hover:text-red-700 cursor-pointer group">
+                <span class="text-gray-400">•</span>
+                <span class="group-hover:underline">2 ações do Plano <strong>vencidas</strong> sem encerramento</span>
+                <span class="text-xs text-gray-400 ml-auto">2 dias atrás</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 🟠 SUAS COISAS -->
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="chip-icon bg-orange-100 text-orange-700">🟠</span>
+              <h3 class="text-sm font-semibold text-orange-700">Suas coisas</h3>
+              <span class="ml-auto text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-medium">2</span>
+            </div>
+            <ul class="space-y-1.5 pl-7">
+              <li class="text-sm text-gray-700 flex items-center gap-2 hover:text-orange-700 cursor-pointer group">
+                <span class="text-gray-400">•</span>
+                <span class="group-hover:underline">Política Interna <strong>v2</strong> que você publicou recebeu <strong>17 visualizações públicas</strong></span>
+                <span class="text-xs text-gray-400 ml-auto">2 dias atrás</span>
+              </li>
+              <li class="text-sm text-gray-700 flex items-center gap-2 hover:text-orange-700 cursor-pointer group">
+                <span class="text-gray-400">•</span>
+                <span class="group-hover:underline">LIA <strong>"Análise de Crédito"</strong> que você aprovou foi referenciada num novo RIPD</span>
+                <span class="text-xs text-gray-400 ml-auto">1 dia atrás</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- ⚪ GERAL -->
+          <details>
+            <summary class="flex items-center gap-2 mb-2 select-none">
+              <span class="chip-icon bg-gray-100 text-gray-600">⚪</span>
+              <h3 class="text-sm font-semibold text-gray-600">Geral — resto da organização</h3>
+              <span class="ml-auto text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">5</span>
+              <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ul class="space-y-1.5 pl-7 pt-1">
+              <li class="text-sm text-gray-600 flex items-center gap-2 hover:text-gray-900 cursor-pointer">
+                <span class="text-gray-400">•</span>
+                <span>3 novos processos cadastrados no Inventário</span>
+              </li>
+              <li class="text-sm text-gray-600 flex items-center gap-2 hover:text-gray-900 cursor-pointer">
+                <span class="text-gray-400">•</span>
+                <span>2 contribuidores convidados para cadastro</span>
+              </li>
+            </ul>
+          </details>
+
+        </div>
+      </section>
+
+      <!-- ============================================
+           CARD 2 — CONTINUE DE ONDE PAROU
+           ============================================ -->
+      <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+
+        <header class="px-5 py-4 border-b border-gray-100 flex items-start justify-between bg-gradient-to-r from-violet-50/60 to-transparent">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <svg class="w-5 h-5 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9m0 4v5l3 3"/></svg>
+              <h2 class="text-lg font-semibold text-gray-900">Continue de onde parou</h2>
+            </div>
+            <p class="text-xs text-gray-500">3 itens que você não terminou</p>
+          </div>
+        </header>
+
+        <div class="p-5 space-y-3">
+
+          <!-- Item 1 — Inventário 60% -->
+          <a href="#" class="block bg-gradient-to-br from-blue-50/40 to-white border border-blue-100 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wide text-blue-700 mb-0.5">📋 Inventário de Dados</div>
+                <div class="text-[15px] font-medium text-gray-900 group-hover:text-blue-700">Atendimento ao Cidadão</div>
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap">ontem 14h</span>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+              <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div class="progress-bar bg-blue-500 h-2" style="width: 60%"></div>
+              </div>
+              <span class="text-xs font-medium text-gray-600 whitespace-nowrap">60% preenchido</span>
+            </div>
+          </a>
+
+          <!-- Item 2 — RIPD em rascunho -->
+          <a href="#" class="block bg-gradient-to-br from-blue-50/40 to-white border border-blue-100 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all group">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wide text-blue-700 mb-0.5">📑 RIPD · Rascunho</div>
+                <div class="text-[15px] font-medium text-gray-900 group-hover:text-blue-700">Cadastro de Servidores</div>
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap">anteontem 11h</span>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+              <div class="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div class="progress-bar bg-blue-500 h-2" style="width: 35%"></div>
+              </div>
+              <span class="text-xs font-medium text-gray-600 whitespace-nowrap">3 de 8 seções</span>
+            </div>
+          </a>
+
+          <!-- Item 3 — Ação do Plano em andamento -->
+          <a href="#" class="block bg-gradient-to-br from-violet-50/40 to-white border border-violet-100 rounded-lg p-4 hover:border-violet-300 hover:shadow-sm transition-all group">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <div class="text-[11px] font-semibold uppercase tracking-wide text-violet-700 mb-0.5">🎯 Plano de Ação · Em andamento</div>
+                <div class="text-[15px] font-medium text-gray-900 group-hover:text-violet-700">Treinar equipe da Ouvidoria</div>
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap">3 dias atrás</span>
+            </div>
+            <div class="flex items-center gap-3 mt-2 text-xs text-gray-600">
+              <span class="px-2 py-0.5 rounded bg-violet-100 text-violet-700 font-medium">Prioridade ALTA</span>
+              <span>Prazo: <strong>15/05/2026</strong></span>
+              <span class="ml-auto text-emerald-600">No prazo</span>
+            </div>
+          </a>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ==========================================================
+         KPIs antigos do dashboard (reaproveita visual existente)
+         ========================================================== -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-blue-600">13</div>
+        <div class="text-xs text-gray-500">Inventários</div>
+      </div>
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-orange-600">2</div>
+        <div class="text-xs text-gray-500">Riscos avaliados</div>
+      </div>
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-emerald-600">5/119</div>
+        <div class="text-xs text-gray-500">GAP</div>
+      </div>
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-violet-600">5</div>
+        <div class="text-xs text-gray-500">Ações</div>
+      </div>
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-gray-700">0</div>
+        <div class="text-xs text-gray-500">Documentos</div>
+      </div>
+      <div class="bg-white rounded-lg border p-4">
+        <div class="text-2xl font-bold text-red-600">0</div>
+        <div class="text-xs text-gray-500">Incidentes</div>
+      </div>
+    </div>
+
+    <!-- Notas técnicas em rodapé (visíveis só no mockup, removidas no app real) -->
+    <div class="mt-12 p-5 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-900">
+      <p class="font-semibold mb-2">📝 Notas do mockup (essas anotações somem na versão real do app)</p>
+      <ul class="list-disc pl-5 space-y-1.5 text-yellow-800">
+        <li><strong>Card "Desde sua última visita"</strong>: aparece nas primeiras 24h após login. Some quando você clica no ✓ do canto superior direito ou após 24h dentro do app.</li>
+        <li><strong>3 baldes</strong>: Crítico expandido por padrão; Suas coisas expandido; Geral colapsado (clica pra abrir).</li>
+        <li><strong>Card "Continue de onde parou"</strong>: até 3 itens não-finalizados que você editou nos últimos 14 dias. Clicar leva direto pra continuar.</li>
+        <li><strong>Sem itens?</strong> Os cards somem (não ocupam espaço se não tem nada relevante a mostrar).</li>
+        <li><strong>Mobile</strong>: cards empilham na vertical (1 coluna), mantém prioridade Crítico → Continue.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

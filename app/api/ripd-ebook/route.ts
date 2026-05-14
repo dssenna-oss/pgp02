@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     // Buscar o usuário e verificar se é admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { role: true },
     });
 
     if (!user) {
@@ -101,6 +102,7 @@ export async function DELETE(request: NextRequest) {
     // Buscar o usuário e verificar se é admin
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { role: true },
     });
 
     if (!user) {

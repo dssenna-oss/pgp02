@@ -4,7 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
-import { isSuperAdmin } from "@/lib/auth-helpers";
+import { isSuperAdmin, ROLES } from "@/lib/auth-helpers";
 
 const prisma = new PrismaClient();
 
@@ -23,14 +23,40 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email e senha são obrigatórios");
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
-          },
-          include: {
-            company: true
+        let user;
+        try {
+          user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            },
+            include: {
+              company: true
+            }
+          });
+        } catch (err: any) {
+          // Diferencia falha de conexão (banco offline / credenciais do
+          // DB erradas / pooler caído) de credenciais de USUÁRIO inválidas.
+          // Sem isso, qualquer indisponibilidade do banco aparece como
+          // "Credenciais inválidas" e leva o usuário a achar que digitou
+          // senha errada quando o problema é infra.
+          const code = err?.code;
+          const msg = String(err?.message ?? "");
+          if (
+            code === "P1001" ||  // Can't reach database server
+            code === "P1002" ||  // Database connection timed out
+            code === "P1008" ||  // Operations timed out
+            code === "P1010" ||  // User was denied access
+            code === "P1017" ||  // Server closed the connection
+            msg.includes("reach database") ||
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("timed out")
+          ) {
+            console.error("[auth] Banco indisponível durante login:", code || msg);
+            throw new Error("Banco de dados indisponível. Tente novamente em alguns segundos ou contate o administrador.");
           }
-        });
+          // Erro genuinamente inesperado — propaga sem mascarar.
+          throw err;
+        }
 
         if (!user || !user.password) {
           throw new Error("Credenciais inválidas");
@@ -45,6 +71,23 @@ export const authOptions: NextAuthOptions = {
         // Verificar se o usuário está ativo
         if (!user.isActive) {
           throw new Error("Sua conta está inativa. Entre em contato com o administrador para ativá-la.");
+        }
+
+        // Painel de Retomada (CP27) — atualiza lastLoginAt + previousLoginAt.
+        // O valor antigo de lastLoginAt vira o novo previousLoginAt; assim o
+        // banner "Desde sua última visita" no Dashboard sabe a janela exata
+        // entre o login anterior e o atual. Falha aqui não bloqueia o login.
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              previousLoginAt: (user as any).lastLoginAt ?? null,
+              lastLoginAt: new Date(),
+            },
+          });
+        } catch (err) {
+          console.error("[auth] Falha ao atualizar lastLoginAt:", err);
+          // Não interrompe — login segue mesmo se o tracking falhar.
         }
 
         // Remove o logoUrl da empresa — base64 incha o JWT e estoura
@@ -117,7 +160,11 @@ export const authOptions: NextAuthOptions = {
         // SUPER_ADMIN_EMAIL é env var server-only — calculamos no JWT
         // (server side) e propagamos pra session pro client poder usar
         // sem causar mismatch de hidratação.
-        token.isSuperAdmin = isSuperAdmin(user.email);
+        // Fallback: aceita também role 'admin' legado (= SUPER_ADMIN +
+        // DPO_PRINCIPAL combinados). Garante que a conta inicial não fica
+        // sem privilégios caso SUPER_ADMIN_EMAIL não esteja setado em prod.
+        token.isSuperAdmin =
+          isSuperAdmin(user.email) || user.role === ROLES.ADMIN_LEGACY;
       }
       return token;
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,10 @@ export default function SysadminContent({ session }: SysadminContentProps) {
   const [dpoEmail, setDpoEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Contagem de cadastros pendentes — mostrada como badge no link "Aprovações"
+  // do header. Polling de 60s pra refletir cadastros novos sem precisar de F5.
+  const [pendingCount, setPendingCount] = useState(0);
+
   const loadOrgs = async () => {
     try {
       setLoading(true);
@@ -97,9 +101,25 @@ export default function SysadminContent({ session }: SysadminContentProps) {
     }
   };
 
+  const loadPendingCount = useCallback(async () => {
+    try {
+      const r = await fetch("/api/sysadmin/aprovacoes/pending-count", {
+        cache: "no-store",
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      setPendingCount(data.count ?? 0);
+    } catch {
+      // silencioso — badge cai pra 0 em caso de falha de rede
+    }
+  }, []);
+
   useEffect(() => {
     loadOrgs();
-  }, []);
+    loadPendingCount();
+    const interval = setInterval(loadPendingCount, 60_000);
+    return () => clearInterval(interval);
+  }, [loadPendingCount]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,6 +195,21 @@ export default function SysadminContent({ session }: SysadminContentProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="text-gray-200 hover:text-white hover:bg-white/10 relative"
+            >
+              <Link href="/sysadmin/aprovacoes">
+                <ClipboardList className="h-4 w-4 mr-1.5" /> Aprovações
+                {pendingCount > 0 && (
+                  <Badge className="ml-2 bg-amber-500 hover:bg-amber-500 text-white border-0">
+                    {pendingCount}
+                  </Badge>
+                )}
+              </Link>
+            </Button>
             <Button asChild variant="ghost" size="sm" className="text-gray-200 hover:text-white hover:bg-white/10">
               <Link href="/dashboard">
                 <ArrowLeft className="h-4 w-4 mr-1.5" /> Voltar pro dashboard

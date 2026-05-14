@@ -96,6 +96,22 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
     setLinks(newLinks);
   };
 
+  // Quando o user chega na fase via `#coloque-em-pratica` (ex: clicando
+  // no botão "Voltar" do Inventário/RIPD/Avisos), o Next router não
+  // scrolla automaticamente — o elemento só existe depois do mount.
+  // Após terminar de carregar, se a hash bater, faz scroll suave.
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#coloque-em-pratica") return;
+    const el = document.getElementById("coloque-em-pratica");
+    if (el) {
+      requestAnimationFrame(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [loading]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -105,14 +121,20 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
   }
 
   return (
+    <div
+      id="coloque-em-pratica"
+      data-phase-section-id="coloque-em-pratica"
+      data-tour-id="phase-practical"
+      className="scroll-mt-4"
+    >
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5 text-purple-600" />
-            Coloque em prática
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 flex-wrap min-w-0">
+            <ExternalLink className="h-5 w-5 text-purple-600 flex-shrink-0" />
+            <span>Coloque em prática</span>
             {!isAdmin && links.length > 0 && (
-              <span className="text-xs text-gray-500 ml-2 font-normal">
+              <span className="text-xs text-gray-500 font-normal inline-flex items-center">
                 <Lock className="h-3 w-3 inline mr-1" />
                 Gerenciado pelo Administrador
               </span>
@@ -123,6 +145,7 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
               variant="outline"
               size="sm"
               onClick={() => setEditing(true)}
+              className="self-start sm:self-auto"
             >
               <Edit2 className="h-4 w-4 mr-2" />
               {links.length > 0 ? "Editar" : "Adicionar"}
@@ -349,5 +372,6 @@ export default function PhasePracticalLinks({ phase }: PhasePracticalLinksProps)
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }

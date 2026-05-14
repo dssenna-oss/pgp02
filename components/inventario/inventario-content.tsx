@@ -25,6 +25,8 @@ import {
   AlignLeft,
   ShieldAlert,
   ListChecks,
+  FileText,
+  ArrowLeft,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -145,10 +147,40 @@ export default function InventarioContent({ session }: InventarioContentProps) {
   const [devolverTarget, setDevolverTarget] = useState<any | null>(null);
   const [devolverComment, setDevolverComment] = useState("");
   const [devolvendo, setDevolvendo] = useState(false);
+  /** Quantos processos APROVADO usam Consentimento mas não têm Termo
+   *  (decisão 3.A do cardápio — banner amarelo). DPO-only. */
+  const [missingConsentCount, setMissingConsentCount] = useState(0);
+  /** Ids de processos APROVADO cuja base = Consentimento E o tema é
+   *  cookies/analytics — coletado pelo Sistema de Cookies (CP26),
+   *  não precisa de Termo formal. Usado pra renderizar badge 🍪 no card. */
+  const [cookieRelatedIds, setCookieRelatedIds] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     loadInventarios();
-  }, []);
+    if (userIsDPO) {
+      // Carrega processos com Consentimento — alimenta o banner amarelo
+      // (count de missing) e o badge 🍪 nos cards (cookie-related ids).
+      // Falha silenciosa se endpoint quebrar.
+      fetch("/api/inventario/consent-status")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          if (j?.stats?.missingTerm != null) {
+            setMissingConsentCount(j.stats.missingTerm);
+          }
+          if (Array.isArray(j?.items)) {
+            const ids = new Set<string>(
+              j.items
+                .filter((it: any) => it?.isCookieRelated)
+                .map((it: any) => it.inventoryId),
+            );
+            setCookieRelatedIds(ids);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [userIsDPO]);
 
   const loadInventarios = async () => {
     try {
@@ -391,6 +423,16 @@ export default function InventarioContent({ session }: InventarioContentProps) {
               <ClipboardList className="h-7 w-7 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
+              {/* Link de volta pro card "Coloque em prática" da Fase 3 —
+                  contexto natural de onde o user veio. Sempre visível
+                  já que o Inventário é a ferramenta nativa da Fase 3. */}
+              <Link
+                href="/dashboard/fase-3#coloque-em-pratica"
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-300 mb-1.5 group"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+                Voltar pra Fase 3 · Coloque em prática
+              </Link>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 Inventário de Dados Pessoais
               </h1>
@@ -406,17 +448,53 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                 Novo Mapeamento
               </Link>
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={exportToExcel}
-              className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
-            >
-              <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
-              Exportar Excel
-            </Button>
+            {userIsDPO ? (
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
+                title="XLSX consolidado no formato oficial (3 abas: INVENTÁRIO + RISCOS + VISÃO DE RISCOS)"
+              >
+                <a href="/api/inventario/export" download>
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                  Exportar Excel (modelo oficial)
+                </a>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={exportToExcel}
+                className="border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/40 dark:hover:bg-emerald-950/30 flex-1 sm:flex-initial"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                Exportar Excel
+              </Button>
+            )}
           </div>
         </div>
+
+        {/* ===== Banner: processos com Consentimento sem Termo (decisão 3.A do cardápio) ===== */}
+        {userIsDPO && missingConsentCount > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20 p-3 flex items-start gap-3">
+            <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-amber-900 dark:text-amber-100">
+                <strong>{missingConsentCount} processo{missingConsentCount === 1 ? "" : "s"}</strong>{" "}
+                aprovado{missingConsentCount === 1 ? "" : "s"} usa{missingConsentCount === 1 ? "" : "m"}{" "}
+                <strong>Consentimento</strong> como base legal, mas ainda não tem Termo de
+                Consentimento associado. O Art. 8º da LGPD exige termo formal.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/termos-consentimento"
+              className="text-xs px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-medium shrink-0 whitespace-nowrap"
+            >
+              Resolver →
+            </Link>
+          </div>
+        )}
 
         {/* ===== Search + Filter + Sort ===== */}
         <div className="flex gap-3 flex-wrap items-center">
@@ -621,6 +699,7 @@ export default function InventarioContent({ session }: InventarioContentProps) {
                     showCreatorInfo={userIsDPO}
                     isUserDPO={userIsDPO}
                     currentUserId={session?.user?.id}
+                    isCookieRelated={cookieRelatedIds.has(item.id)}
                     onDelete={() => setDeleteId(item.id)}
                     onStatusChange={changeStatus}
                     onDevolverClick={(it) => setDevolverTarget(it)}
@@ -781,6 +860,7 @@ function InventarioRow({
   showCreatorInfo,
   isUserDPO,
   currentUserId,
+  isCookieRelated,
   onDelete,
   onStatusChange,
   onDevolverClick,
@@ -789,6 +869,7 @@ function InventarioRow({
   showCreatorInfo: boolean;
   isUserDPO: boolean;
   currentUserId: string | null | undefined;
+  isCookieRelated: boolean;
   onDelete: () => void;
   onStatusChange: (id: string, status: string) => void;
   onDevolverClick: (item: any) => void;
@@ -884,6 +965,26 @@ function InventarioRow({
             >
               {inventoryStatusLabel(status)}
             </Badge>
+            {/* Badge 🍪 — só DPO vê. Processo cookie-related; consentimento
+                vem do banner público (CP26), não de Termo formal (Art. 8º). */}
+            {isCookieRelated && isUserDPO && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900 cursor-help"
+                    aria-label="Consentimento via Sistema de Cookies"
+                  >
+                    🍪
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs max-w-xs">
+                    Consentimento via Sistema de Cookies (CP26) — coletado pelo
+                    banner público, não precisa de Termo formal aqui.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Metadados de contexto: setor + criador (só visível pro DPO,
@@ -1100,6 +1201,29 @@ function InventarioRow({
                   ? "Bases Legais preenchidas — clique pra revisar"
                   : "Preencher Bases Legais"}
               </TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* Aviso de Privacidade do serviço — atalho pra DPO gerar/editar
+              o documento público (Art. 9º LGPD). Só pra processos APROVADO. */}
+          {isUserDPO && isApproved && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-900/50 dark:text-violet-300 dark:hover:bg-violet-950/30"
+                >
+                  <Link
+                    href={`/dashboard/avisos-privacidade?inv=${item.id}`}
+                    aria-label="Aviso de Privacidade"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Aviso de Privacidade do serviço</TooltipContent>
             </Tooltip>
           )}
 

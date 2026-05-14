@@ -34,6 +34,7 @@ export async function PUT(
     // Verificar se o e-book existe e pertence à empresa do usuário
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { companyId: true },
     });
 
     const ebook = await prisma.phaseEbook.findFirst({
@@ -86,6 +87,7 @@ export async function DELETE(
     // Verificar se o e-book existe e pertence à empresa do usuário
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      select: { companyId: true },
     });
 
     if (!user?.companyId) {

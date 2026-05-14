@@ -9,6 +9,10 @@ import PhaseInfoManager from "./phase-info-manager";
 import PhaseChecklist from "./phase-checklist";
 import PhaseDescriptionManager from "./phase-description-manager";
 import PhasePracticalLinks from "./phase-practical-links";
+import PhaseSection from "./phase-section";
+import PhaseToolbar from "./phase-toolbar";
+import PhaseTOC from "./phase-toc";
+import PhaseReadingProgress from "./phase-reading-progress";
 
 export default function Fase0Content() {
   // Definir o checklist da Fase 0 - Entendendo o PGP
@@ -249,7 +253,10 @@ export default function Fase0Content() {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+      <PhaseReadingProgress />
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6">
+        <div className="space-y-6 min-w-0">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
           📚 Entendendo o PGP - Programa de Governança em Privacidade
@@ -268,12 +275,25 @@ export default function Fase0Content() {
         </AlertDescription>
       </Alert>
 
+      {/* Toolbar de UX (Recolher tudo / Expandir tudo + atalhos E/C) */}
+      <PhaseToolbar phase="entendendo-pgp" />
+
       {/* E-book Heyzine */}
       <PhaseInfoManager phase="entendendo-pgp" section="heyzine" />
 
       {/* Descrição da Fase */}
-      <PhaseDescriptionManager 
-        phase="entendendo-pgp" 
+      <PhaseSection
+        phase="entendendo-pgp"
+        section="descricao"
+        title="Descrição da Fase"
+        icon="📄"
+        subtitle="Visão geral da fase"
+        defaultOpen={true}
+        accent="blue"
+      >
+      <PhaseDescriptionManager
+        phase="entendendo-pgp"
+        noCard
         defaultContent={`
           <h3 class="text-xl font-bold mt-4 mb-3 text-gray-900 dark:text-white">O que é o PGP?</h3>
           <p class="text-gray-700 dark:text-gray-300 mb-4">
@@ -505,15 +525,37 @@ export default function Fase0Content() {
           </div>
         `}
       />
+      </PhaseSection>
 
       {/* Checklist de Implementação */}
-      <PhaseChecklist phase="entendendo-pgp" sections={checklistSections} />
+      <PhaseSection
+        phase="entendendo-pgp"
+        section="checklist"
+        title="Checklist de Implementação"
+        icon="✅"
+        subtitle="Itens de controle pra acompanhar o progresso da fase"
+        accent="emerald"
+      >
+        <PhaseChecklist phase="entendendo-pgp" sections={checklistSections} noCard />
+      </PhaseSection>
 
       {/* Na prática - Links para aplicativos externos */}
       <PhasePracticalLinks phase="entendendo-pgp" />
 
       {/* Documentação da Fase */}
-      <PhaseDocumentsUpload phase="entendendo-pgp" />
-    </div>
+      <PhaseSection
+        phase="entendendo-pgp"
+        section="documentacao"
+        title="Documentação da Fase"
+        icon="📂"
+        subtitle="E-books, textos, PDFs e vídeos relacionados a esta fase"
+        accent="blue"
+      >
+        <PhaseDocumentsUpload phase="entendendo-pgp" noCard />
+      </PhaseSection>
+        </div>
+        <PhaseTOC phase="entendendo-pgp" />
+      </div>
+    </>
   );
 }

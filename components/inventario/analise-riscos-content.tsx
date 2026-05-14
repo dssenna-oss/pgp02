@@ -38,11 +38,18 @@ import {
   RISK_STATUS,
   riskStatusLabel,
   riskStatusColor,
+  RISK_CATEGORIES_ORDERED,
+  RISK_CATEGORY_LABEL,
+  RISK_CATEGORY_DESCRIPTION,
+  RISK_CATEGORY_BY_CODE,
+  riscosByCategory,
   type RiskCode,
   type RiskStatus,
   type RiskSuggestion,
+  type RiskCategory,
 } from "@/lib/riscos-catalog";
 import { cn } from "@/lib/utils";
+import LinkedIncidentsCard from "@/components/incidentes/linked-incidents-card";
 
 interface Props {
   id: string;
@@ -297,9 +304,9 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
       {/* Header */}
       <div>
         <Button asChild variant="ghost" size="sm" className="mb-2 -ml-2">
-          <Link href="/dashboard/inventario">
+          <Link href="/dashboard/fase-3#coloque-em-pratica">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Voltar pra listagem
+            Voltar pra Fase 3 · Coloque em prática
           </Link>
         </Button>
         <div className="flex items-start gap-3 flex-wrap">
@@ -409,25 +416,52 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
         </div>
       )}
 
-      {/* Lista de 13 riscos */}
-      <div className="space-y-3">
-        {RISCOS_CATALOG.map((def) => {
-          const st = state[def.code];
-          if (!st) return null;
-          const suggestion = data.suggestions[def.code];
+      {/* Caminho inverso M:N IncidentDataInventory (D2, 2026-05-10):
+          mostra incidentes que envolveram este processo, se houver. */}
+      <LinkedIncidentsCard inventoryId={id} context="process" />
+
+      {/* Lista dos 13 riscos agrupados em 3 categorias com progresso por área.
+          Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
+          Refino 2026-05-09 (Opção 2): cada categoria vira Card único com
+          border-l-4 colorido + RiskRow flat dentro (divide-y).
+          Categorias em lib/riscos-catalog.ts (TRATAMENTO 7, COMPARTILHAMENTO 3, DIREITOS 3). */}
+      <div className="space-y-8">
+        {RISK_CATEGORIES_ORDERED.map((cat) => {
+          const risksInCat = riscosByCategory(cat);
+          const markedCount = risksInCat.filter(
+            (def) => state[def.code]?.marked,
+          ).length;
+          const total = risksInCat.length;
+          const pct = total > 0 ? Math.round((markedCount / total) * 100) : 0;
           return (
-            <RiskRow
-              key={def.code}
-              code={def.code}
-              marked={st.marked}
-              description={st.description}
-              status={st.status}
-              autoSuggested={st.autoSuggested}
-              suggestion={suggestion}
-              onToggle={(v) => setRiskMarked(def.code, v)}
-              onDescription={(v) => setRiskDescription(def.code, v)}
-              onStatus={(v) => setRiskStatus(def.code, v)}
-            />
+            <RiskCategoryGroup
+              key={cat}
+              category={cat}
+              markedCount={markedCount}
+              total={total}
+              pct={pct}
+            >
+              {risksInCat.map((def) => {
+                const st = state[def.code];
+                if (!st) return null;
+                const suggestion = data.suggestions[def.code];
+                return (
+                  <RiskRow
+                    key={def.code}
+                    code={def.code}
+                    invId={id}
+                    marked={st.marked}
+                    description={st.description}
+                    status={st.status}
+                    autoSuggested={st.autoSuggested}
+                    suggestion={suggestion}
+                    onToggle={(v) => setRiskMarked(def.code, v)}
+                    onDescription={(v) => setRiskDescription(def.code, v)}
+                    onStatus={(v) => setRiskStatus(def.code, v)}
+                  />
+                );
+              })}
+            </RiskCategoryGroup>
           );
         })}
       </div>
@@ -449,7 +483,7 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Button asChild variant="outline" className="flex-1 sm:flex-initial">
-            <Link href="/dashboard/inventario">Cancelar</Link>
+            <Link href="/dashboard/fase-3#coloque-em-pratica">Cancelar</Link>
           </Button>
           <Button
             onClick={handleSave}
@@ -471,6 +505,7 @@ export default function AnaliseRiscosContent({ id, session: _session }: Props) {
 
 function RiskRow({
   code,
+  invId,
   marked,
   description,
   status,
@@ -481,6 +516,7 @@ function RiskRow({
   onStatus,
 }: {
   code: RiskCode;
+  invId: string;
   marked: boolean;
   description: string;
   status: RiskStatus;
@@ -496,14 +532,19 @@ function RiskRow({
   const statusColor = riskStatusColor(status);
 
   return (
+    // Flat dentro do card da categoria — sem borda externa (era card-em-card),
+    // só faixa lateral colorida quando há sinal (marcado/alerta) e tint
+    // sutil de fundo. Hover discreto pra rows neutras.
+    // border-l-4 sempre presente (transparent quando neutra) pra evitar
+    // shift de layout quando o sinal aparece.
     <div
       className={cn(
-        "border rounded-lg p-4 transition-all",
+        "p-4 transition-colors border-l-4",
         marked
-          ? "border-red-300 dark:border-red-800/60 bg-red-50/40 dark:bg-red-950/15 border-l-4 border-l-red-500"
+          ? "border-l-red-500 bg-red-50/40 dark:bg-red-950/15"
           : isAlert
-          ? "border-amber-300 dark:border-amber-800/60 bg-amber-50/40 dark:bg-amber-950/15"
-          : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950"
+          ? "border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/15"
+          : "border-l-transparent hover:bg-gray-50/70 dark:hover:bg-gray-900/40",
       )}
     >
       <div className="flex items-start gap-4">
@@ -676,19 +717,133 @@ function RiskRow({
                     </SelectContent>
                   </Select>
                 </div>
-                {/* Bridge pro Checkpoint 6 */}
-                <Badge
+                {/* Detalhamento individual (Checkpoint 6) */}
+                <Button
+                  asChild
+                  size="sm"
                   variant="outline"
-                  className="text-xs font-normal text-gray-500 border-dashed cursor-not-allowed"
-                  title="Detalhamento de risco (impacto, probabilidade, plano de ação) — em breve no Checkpoint 6"
+                  className="text-xs h-7"
+                  title="Abrir detalhamento (probabilidade, impacto, plano de mitigação)"
                 >
-                  Detalhar (em breve)
-                </Badge>
+                  <Link href={`/dashboard/inventario/${invId}/risco/${code}`}>
+                    Detalhar →
+                  </Link>
+                </Button>
               </div>
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Wrapper de uma categoria de riscos (Tratamento / Compartilhamento /
+ * Direitos). Card único bem delimitado com border-left colorido na cor
+ * temática, header com nome + descrição + progresso, e os RiskRow filhos
+ * renderizados FLAT (sem borda própria) divididos por linha sutil.
+ *
+ * Decisão UX 2026-05-09 (Opção 2 do cardápio): cada categoria vira um
+ * Card grande contido — em vez de header + lista solta, fica óbvio
+ * onde o grupo começa e termina.
+ */
+function RiskCategoryGroup({
+  category,
+  markedCount,
+  total,
+  pct,
+  children,
+}: {
+  category: RiskCategory;
+  markedCount: number;
+  total: number;
+  pct: number;
+  children: React.ReactNode;
+}) {
+  // Cor temática por categoria. `borderL` controla a faixa lateral de
+  // 4px que sinaliza visualmente o grupo. `headerBg` é o fundo sutil do
+  // header (gradiente vai pra transparente). `dot` e `bar` são para
+  // bullet e barra de progresso.
+  const styles: Record<
+    RiskCategory,
+    { dot: string; bar: string; headerBg: string; borderL: string }
+  > = {
+    TRATAMENTO: {
+      dot: "bg-blue-500",
+      bar: "bg-blue-500",
+      headerBg: "bg-gradient-to-r from-blue-50/80 to-transparent dark:from-blue-950/30",
+      borderL: "border-l-blue-500",
+    },
+    COMPARTILHAMENTO: {
+      dot: "bg-violet-500",
+      bar: "bg-violet-500",
+      headerBg:
+        "bg-gradient-to-r from-violet-50/80 to-transparent dark:from-violet-950/30",
+      borderL: "border-l-violet-500",
+    },
+    DIREITOS: {
+      dot: "bg-amber-500",
+      bar: "bg-amber-500",
+      headerBg:
+        "bg-gradient-to-r from-amber-50/80 to-transparent dark:from-amber-950/30",
+      borderL: "border-l-amber-500",
+    },
+  };
+  const s = styles[category];
+
+  return (
+    <section
+      className={cn(
+        "rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm bg-white dark:bg-gray-950 overflow-hidden",
+        "border-l-4",
+        s.borderL,
+      )}
+    >
+      {/* Header do grupo */}
+      <div className={cn("px-5 py-4", s.headerBg)}>
+        <div className="flex items-center justify-between gap-3 mb-1.5">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span
+              className={cn("h-3 w-3 rounded-full flex-shrink-0", s.dot)}
+              aria-hidden
+            />
+            <h3 className="font-bold text-gray-900 dark:text-white text-base truncate">
+              {RISK_CATEGORY_LABEL[category]}
+            </h3>
+          </div>
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex-shrink-0 tabular-nums">
+            <span className="text-gray-900 dark:text-white">{markedCount}</span>{" "}
+            <span className="text-gray-400 dark:text-gray-500">/</span> {total}{" "}
+            <span className="text-gray-500 dark:text-gray-400 font-normal">
+              marcados
+            </span>
+          </div>
+        </div>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+          {RISK_CATEGORY_DESCRIPTION[category]}
+        </p>
+        {/* Barra de progresso */}
+        <div
+          className="h-2 w-full bg-gray-200/70 dark:bg-gray-700/50 rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${markedCount} de ${total} riscos marcados em ${RISK_CATEGORY_LABEL[category]}`}
+        >
+          <div
+            className={cn("h-full transition-all duration-300", s.bar)}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+      {/* Separador header → conteúdo */}
+      <div className="border-t border-gray-200 dark:border-gray-800" />
+      {/* Lista de toggles flat (sem borda própria) com divisor entre eles */}
+      <div className="divide-y divide-gray-100 dark:divide-gray-800/50">
+        {children}
+      </div>
+    </section>
   );
 }

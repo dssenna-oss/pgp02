@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Maturidade Cibernética (NIST CSF + UX 2+6+7+9+11+16)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; }
+  /* Tooltip */
+  .term { border-bottom: 1px dotted #6366f1; cursor: help; position: relative; }
+  .term:hover::after {
+    content: attr(data-tooltip);
+    position: absolute; top: 130%; left: 0; z-index: 50;
+    background: #1e1b4b; color: #e0e7ff; font-weight: 400;
+    padding: 8px 12px; border-radius: 6px;
+    font-size: 12px; line-height: 1.4;
+    width: 280px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    pointer-events: none;
+  }
+  .answer-btn { transition: all 0.15s; }
+  .answer-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.06); }
+  .selected { box-shadow: 0 0 0 3px currentColor; }
+  /* Stepper modo guiado */
+  .guided-progress { transition: width 0.3s ease-out; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<div class="max-w-7xl mx-auto p-6 space-y-5">
+
+  <!-- HEADER -->
+  <div class="flex items-start justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-100 p-2.5 rounded-lg">🛡️</div>
+      <div>
+        <h1 class="text-2xl font-bold">Maturidade Cibernética</h1>
+        <p class="text-sm text-slate-500">Avaliação de práticas de segurança da informação · Framework NIST CSF · 80 controles</p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-white">📜 Snapshots</button>
+      <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-white">📥 Excel</button>
+      <button class="px-3 py-1.5 rounded-lg text-xs border border-slate-200 hover:bg-white">🖨️ PDF</button>
+    </div>
+  </div>
+
+  <!-- HERO SCORE -->
+  <div class="bg-white rounded-xl border border-slate-200 p-6 grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 items-center">
+    <div class="text-center">
+      <div class="relative w-32 h-32 mx-auto">
+        <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+          <circle cx="50" cy="50" r="42" stroke="#e2e8f0" stroke-width="10" fill="none"/>
+          <circle cx="50" cy="50" r="42" stroke="url(#grad)" stroke-width="10" fill="none" stroke-dasharray="264" stroke-dashoffset="86" stroke-linecap="round"/>
+          <defs><linearGradient id="grad"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <div class="text-3xl font-bold">67</div>
+          <div class="text-[10px] text-slate-500">de 100</div>
+        </div>
+      </div>
+      <div class="mt-2 text-sm font-semibold text-indigo-700">Intermediário</div>
+    </div>
+    <div class="space-y-2">
+      <div class="flex items-center gap-3 flex-wrap">
+        <h2 class="text-lg font-semibold">Score atual de maturidade cibernética</h2>
+        <span class="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full">52/80 respondidos</span>
+        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">12 delegados à TI</span>
+      </div>
+      <p class="text-sm text-slate-600">Sua organização está no estágio <strong>Intermediário</strong>. Precisa avançar em <strong>Detectar</strong> (28%) e <strong>Recuperar</strong> (35%).</p>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
+        <div class="text-center p-2 rounded-lg bg-emerald-50">
+          <div class="text-xs text-slate-500">Identificar</div>
+          <div class="text-lg font-bold text-emerald-700">82%</div>
+        </div>
+        <div class="text-center p-2 rounded-lg bg-emerald-50">
+          <div class="text-xs text-slate-500">Proteger</div>
+          <div class="text-lg font-bold text-emerald-700">76%</div>
+        </div>
+        <div class="text-center p-2 rounded-lg bg-red-50">
+          <div class="text-xs text-slate-500">Detectar</div>
+          <div class="text-lg font-bold text-red-700">28%</div>
+        </div>
+        <div class="text-center p-2 rounded-lg bg-amber-50">
+          <div class="text-xs text-slate-500">Responder</div>
+          <div class="text-lg font-bold text-amber-700">58%</div>
+        </div>
+        <div class="text-center p-2 rounded-lg bg-amber-50">
+          <div class="text-xs text-slate-500">Recuperar</div>
+          <div class="text-lg font-bold text-amber-700">35%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOGGLE Modo guiado / Modo lista (UX 16) + Filtro por público (UX 7) -->
+  <div class="bg-white rounded-xl border border-slate-200 p-3 flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-slate-500 font-medium">Como você quer responder?</span>
+      <div class="bg-slate-100 rounded-lg p-1 flex">
+        <button id="modeListBtn" class="px-3 py-1.5 rounded-md text-xs bg-white shadow font-medium">📋 Modo lista</button>
+        <button id="modeGuidedBtn" class="px-3 py-1.5 rounded-md text-xs text-slate-600 hover:bg-slate-200/50">🧭 Modo guiado</button>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <span class="text-slate-500">Mostrar:</span>
+      <button class="px-2.5 py-1 rounded-full bg-violet-600 text-white">Tudo (80)</button>
+      <button class="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:bg-slate-100">👤 Jurídico/Governança (24)</button>
+      <button class="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:bg-slate-100">💻 TI (38)</button>
+      <button class="px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:bg-slate-100">🤝 Ambos (18)</button>
+    </div>
+  </div>
+
+  <!-- ===== MODO LISTA (default visível) ===== -->
+  <div id="modeList" class="space-y-3">
+
+    <!-- IDENTIFICAR (aberto pra ilustrar) -->
+    <details open class="bg-white rounded-xl border border-slate-200">
+      <summary class="cursor-pointer p-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <div class="w-2.5 h-10 rounded-full bg-emerald-500"></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold">1. Identificar (ID)</div>
+            <div class="text-xs text-slate-500">Inventário de ativos, gestão de risco, governança · 17 controles</div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="text-sm font-bold text-emerald-700">14/17 aderente · 82%</div>
+            <div class="w-32 h-2 bg-slate-100 rounded-full mt-1">
+              <div class="h-full bg-emerald-500 rounded-full" style="width:82%"></div>
+            </div>
+          </div>
+        </div>
+      </summary>
+
+      <div class="border-t border-slate-100 divide-y divide-slate-100">
+
+        <!-- Controle 1 — Pré-populado do CP9 GAP + jurídico-friendly (UX 7+9) -->
+        <div class="p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">👤 jurídico</span>
+            <div class="flex-1">
+              <div class="text-sm font-medium text-slate-900">
+                A empresa conhece as leis e normas de segurança que precisa cumprir?
+              </div>
+              <div class="text-xs text-slate-500 mt-1">
+                <strong>Ex.:</strong> LGPD, Marco Civil da Internet, normas setoriais (BACEN, ANS, ANATEL etc.). <span class="text-emerald-700 italic">✨ pré-populado a partir do GAP Analysis (CP9)</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 font-mono">NIST: ID.GV-3 — Legal and regulatory requirements</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="answer-btn selected text-emerald-700 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-lg text-xs font-medium">✓ Aderente</button>
+            <button class="answer-btn text-amber-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">⚠ Parcial</button>
+            <button class="answer-btn text-red-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">✗ Não aderente</button>
+            <button class="answer-btn text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">— Não se aplica</button>
+            <button class="answer-btn text-blue-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">⏩ Delegar à TI</button>
+          </div>
+          <div class="text-xs text-slate-500 italic">Evidência: ✨ extraído do GAP — controle BR-01 marcado como aderente.</div>
+        </div>
+
+        <!-- Controle 2 — Mais técnico, com tooltip + delegado à TI (UX 6+11) -->
+        <div class="p-4 space-y-3 bg-blue-50/30">
+          <div class="flex items-start gap-3">
+            <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">💻 TI</span>
+            <div class="flex-1">
+              <div class="text-sm font-medium text-slate-900">
+                A empresa identifica e atualiza periodicamente as
+                <span class="term" data-tooltip="Ameaça (threat): qualquer evento ou ator que pode causar dano — vírus, ataque hacker, fraude interna, falha humana, desastre natural.">ameaças</span>
+                relevantes ao seu setor?
+              </div>
+              <div class="text-xs text-slate-500 mt-1">
+                <strong>Ex.:</strong> ransomware, phishing, fraude interna. Pode ser uma matriz revisada anualmente em reunião de comitê de segurança.
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 font-mono">NIST: ID.RA-3 — Threats identified</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="answer-btn text-emerald-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">✓ Aderente</button>
+            <button class="answer-btn text-amber-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">⚠ Parcial</button>
+            <button class="answer-btn text-red-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">✗ Não aderente</button>
+            <button class="answer-btn text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">— Não se aplica</button>
+            <button class="answer-btn selected text-blue-700 bg-blue-100 border border-blue-300 px-3 py-1.5 rounded-lg text-xs font-medium">⏩ Delegado à TI</button>
+          </div>
+          <div class="rounded-lg border border-blue-200 bg-white p-2 text-xs flex items-center justify-between gap-2">
+            <span class="text-blue-900">📨 <strong>Pendente com TI:</strong> Pedro (TI) recebeu este item em 06/05. Resposta esperada até 13/05.</span>
+            <button class="text-blue-700 hover:underline text-xs">Lembrar</button>
+          </div>
+        </div>
+
+        <!-- Controle 3 — Não aderente com ponto de melhoria + ação no Plano -->
+        <div class="p-4 space-y-3">
+          <div class="flex items-start gap-3">
+            <span class="text-[10px] bg-violet-100 text-violet-800 px-1.5 py-0.5 rounded font-semibold">🤝 ambos</span>
+            <div class="flex-1">
+              <div class="text-sm font-medium text-slate-900">
+                Existe uma política formal de gestão de risco aprovada pela direção, definindo apetite de risco e responsabilidades?
+              </div>
+              <div class="text-xs text-slate-500 mt-1">
+                <strong>Ex.:</strong> documento que diga "risco baixo: TI decide / risco médio: gerência / risco alto: diretoria". Aprovado por ata.
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 font-mono">NIST: ID.RM-1 — Risk management process established</div>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="answer-btn text-emerald-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">✓ Aderente</button>
+            <button class="answer-btn text-amber-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">⚠ Parcial</button>
+            <button class="answer-btn selected text-red-700 bg-red-50 border border-red-300 px-3 py-1.5 rounded-lg text-xs font-medium">✗ Não aderente</button>
+            <button class="answer-btn text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">— Não se aplica</button>
+            <button class="answer-btn text-blue-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs">⏩ Delegar à TI</button>
+          </div>
+          <textarea
+            class="w-full text-sm border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
+            rows="2"
+            placeholder="Ponto de melhoria (qual o gap específico?)"
+          >Nunca foi formalizado por escrito. Há entendimento informal entre diretoria e TI mas sem documento aprovado.</textarea>
+          <button class="text-xs text-violet-700 bg-violet-50 hover:bg-violet-100 px-3 py-1 rounded-md font-medium inline-flex items-center gap-1">
+            ➕ Adicionar ao Plano de Ação
+          </button>
+        </div>
+
+        <div class="p-3 text-xs text-slate-400 text-center italic border-t border-slate-100">+14 controles desta categoria · clique para expandir</div>
+      </div>
+    </details>
+
+    <!-- DETECTAR (compacto crítico) -->
+    <details class="bg-white rounded-xl border-2 border-red-200">
+      <summary class="cursor-pointer p-4 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 flex-1 min-w-0">
+          <div class="w-2.5 h-10 rounded-full bg-red-500"></div>
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold flex items-center gap-2">
+              3. Detectar (DE)
+              <span class="text-[10px] bg-red-100 text-red-800 px-2 py-0.5 rounded-full">⚠ crítico</span>
+              <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">12 delegados à TI</span>
+            </div>
+            <div class="text-xs text-slate-500">Monitoramento contínuo · 18 controles</div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="text-sm font-bold text-red-700">5/18 · 28%</div>
+          </div>
+        </div>
+      </summary>
+    </details>
+
+    <details class="bg-white rounded-xl border border-slate-200">
+      <summary class="cursor-pointer p-4 flex items-center gap-3">
+        <div class="w-2.5 h-10 rounded-full bg-emerald-500"></div>
+        <div class="flex-1"><div class="font-semibold">2. Proteger (PR)</div><div class="text-xs text-slate-500">25 controles</div></div>
+        <div class="text-sm font-bold text-emerald-700 flex-shrink-0">19/25 · 76%</div>
+      </summary>
+    </details>
+
+    <details class="bg-white rounded-xl border border-slate-200">
+      <summary class="cursor-pointer p-4 flex items-center gap-3">
+        <div class="w-2.5 h-10 rounded-full bg-amber-400"></div>
+        <div class="flex-1"><div class="font-semibold">4. Responder (RS)</div><div class="text-xs text-slate-500">12 controles</div></div>
+        <div class="text-sm font-bold text-amber-700 flex-shrink-0">7/12 · 58%</div>
+      </summary>
+    </details>
+
+    <details class="bg-white rounded-xl border border-slate-200">
+      <summary class="cursor-pointer p-4 flex items-center gap-3">
+        <div class="w-2.5 h-10 rounded-full bg-amber-400"></div>
+        <div class="flex-1"><div class="font-semibold">5. Recuperar (RC)</div><div class="text-xs text-slate-500">8 controles</div></div>
+        <div class="text-sm font-bold text-amber-700 flex-shrink-0">3/8 · 35%</div>
+      </summary>
+    </details>
+  </div>
+
+  <!-- ===== MODO GUIADO (escondido por default) ===== -->
+  <div id="modeGuided" class="hidden">
+    <div class="bg-white rounded-xl border border-violet-200 shadow-sm p-6 max-w-3xl mx-auto">
+      <!-- Progresso -->
+      <div class="flex items-center justify-between text-xs text-slate-500 mb-2">
+        <span>Pergunta <strong class="text-violet-700">5</strong> de <strong>80</strong></span>
+        <span>Função: <strong>Identificar (ID)</strong> · Categoria: <strong>Risk Management</strong></span>
+      </div>
+      <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-6">
+        <div class="guided-progress h-full bg-gradient-to-r from-violet-500 to-indigo-500" style="width: 6.25%"></div>
+      </div>
+
+      <!-- Etiqueta de público -->
+      <div class="mb-3">
+        <span class="text-[10px] bg-violet-100 text-violet-800 px-1.5 py-0.5 rounded font-semibold">🤝 Esta pergunta é pra jurídico + TI responderem juntos</span>
+      </div>
+
+      <!-- Pergunta -->
+      <h3 class="text-xl font-semibold text-slate-900 mb-3 leading-relaxed">
+        Existe uma política formal de gestão de risco aprovada pela direção, definindo
+        <span class="term" data-tooltip="Apetite de risco: quanto risco a organização aceita em troca de oportunidade — ex: 'aceitamos risco baixo em operações financeiras, médio em marketing, nenhum em dados sensíveis'.">apetite de risco</span>
+        e responsabilidades?
+      </h3>
+
+      <!-- Dica em destaque -->
+      <div class="bg-amber-50 border-l-4 border-amber-400 px-4 py-3 rounded-r mb-4">
+        <p class="text-sm text-amber-900"><strong>💡 Dica:</strong> não precisa ser elaborada — uma página dizendo "risco baixo: TI decide / médio: gerência / alto: diretoria" + ata de aprovação já vale. Pergunta vem do controle <span class="font-mono text-xs">NIST ID.RM-1</span>.</p>
+      </div>
+
+      <!-- Exemplos concretos -->
+      <details class="mb-4">
+        <summary class="cursor-pointer text-xs text-violet-700 hover:underline">Ver exemplos do que conta como "Aderente"</summary>
+        <ul class="text-xs text-slate-600 list-disc pl-5 mt-2 space-y-1">
+          <li>Documento "Política de Gestão de Risco" aprovado em ata da diretoria</li>
+          <li>Manual operacional incluindo seção de risco com responsabilidades nominais</li>
+          <li>Procedimento ISO 31000 implementado e registrado</li>
+        </ul>
+      </details>
+
+      <!-- Resposta -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+        <button class="answer-btn p-3 rounded-lg border-2 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 text-center">
+          <div class="text-2xl">✓</div>
+          <div class="text-xs font-medium mt-1">Aderente</div>
+        </button>
+        <button class="answer-btn p-3 rounded-lg border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 text-center">
+          <div class="text-2xl">⚠</div>
+          <div class="text-xs font-medium mt-1">Parcial</div>
+        </button>
+        <button class="answer-btn p-3 rounded-lg border-2 border-red-300 bg-red-50 text-center selected text-red-700">
+          <div class="text-2xl">✗</div>
+          <div class="text-xs font-medium mt-1">Não aderente</div>
+        </button>
+        <button class="answer-btn p-3 rounded-lg border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 text-center">
+          <div class="text-2xl">—</div>
+          <div class="text-xs font-medium mt-1">Não se aplica</div>
+        </button>
+        <button class="answer-btn p-3 rounded-lg border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 text-center">
+          <div class="text-2xl">⏩</div>
+          <div class="text-xs font-medium mt-1">Delegar à TI</div>
+        </button>
+      </div>
+
+      <!-- Ponto de melhoria (aparece quando "Não aderente") -->
+      <div class="mb-5">
+        <label class="text-xs text-slate-500 font-medium">Ponto de melhoria (qual o gap específico?)</label>
+        <textarea class="w-full text-sm border border-slate-200 rounded-lg p-2 mt-1 focus:ring-2 focus:ring-violet-500 outline-none" rows="2">Nunca foi formalizado por escrito. Há entendimento informal mas sem documento aprovado.</textarea>
+      </div>
+
+      <!-- Navegação -->
+      <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+        <button class="px-4 py-2 rounded-lg text-sm border border-slate-200 hover:bg-slate-50 inline-flex items-center gap-1">← Anterior</button>
+        <span class="text-xs text-slate-400">💾 Auto-salvando…</span>
+        <button class="px-4 py-2 rounded-lg text-sm bg-violet-600 text-white hover:bg-violet-700 inline-flex items-center gap-1">Próxima →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOCO DE PENDÊNCIAS (sempre visível) -->
+  <div class="bg-gradient-to-br from-blue-50 to-violet-50 border border-blue-100 rounded-xl p-5">
+    <h3 class="font-semibold mb-3 flex items-center gap-2">📨 Pendentes com a TI (12)</h3>
+    <p class="text-xs text-slate-600 mb-3">Estas perguntas foram delegadas. Pode exportar a lista pra mandar pro responsável de TI por e-mail.</p>
+    <div class="flex gap-2 flex-wrap">
+      <button class="px-3 py-1.5 rounded-lg text-xs bg-white border border-blue-200 hover:bg-blue-50">📥 Exportar lista (.docx)</button>
+      <button class="px-3 py-1.5 rounded-lg text-xs bg-white border border-blue-200 hover:bg-blue-50">✉️ Enviar por e-mail</button>
+      <button class="px-3 py-1.5 rounded-lg text-xs bg-white border border-blue-200 hover:bg-blue-50">👁️ Ver todas</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('modeListBtn').addEventListener('click', () => {
+    document.getElementById('modeList').classList.remove('hidden');
+    document.getElementById('modeGuided').classList.add('hidden');
+    document.getElementById('modeListBtn').className = 'px-3 py-1.5 rounded-md text-xs bg-white shadow font-medium';
+    document.getElementById('modeGuidedBtn').className = 'px-3 py-1.5 rounded-md text-xs text-slate-600 hover:bg-slate-200/50';
+  });
+  document.getElementById('modeGuidedBtn').addEventListener('click', () => {
+    document.getElementById('modeList').classList.add('hidden');
+    document.getElementById('modeGuided').classList.remove('hidden');
+    document.getElementById('modeGuidedBtn').className = 'px-3 py-1.5 rounded-md text-xs bg-white shadow font-medium';
+    document.getElementById('modeListBtn').className = 'px-3 py-1.5 rounded-md text-xs text-slate-600 hover:bg-slate-200/50';
+  });
+</script>
+
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-30">
+  <strong>📝 Mockup interativo:</strong> alterne entre "📋 Modo lista" e "🧭 Modo guiado" no toggle do topo. Passe o mouse em palavras com tracejado (ex: <em>ameaças</em>, <em>apetite de risco</em>) pra ver o tooltip explicativo.
+</div>
+
+</body>
+</html>

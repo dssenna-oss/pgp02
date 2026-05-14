@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { sendEmailAsync } from "@/lib/email-sender";
+import { tplForumDm } from "@/lib/email-templates";
 
 /**
  * Mensagens diretas (DMs) — usa o mesmo modelo `ForumPost`,
@@ -21,6 +23,7 @@ async function getCurrentUser() {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, companyId: true },
   });
   if (!user || !user.companyId) {
     return { error: NextResponse.json({ error: "Usuário sem organização" }, { status: 404 }) };
@@ -112,7 +115,13 @@ export async function POST(req: NextRequest) {
   // Destinatário precisa ser da mesma organização
   const recipient = await prisma.user.findFirst({
     where: { id: recipientId, companyId: user.companyId! },
-    select: { id: true, name: true, email: true, role: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      emailNotifyDm: true,
+    },
   });
   if (!recipient) {
     return NextResponse.json(
@@ -142,6 +151,25 @@ export async function POST(req: NextRequest) {
   await prisma.forumPostRead
     .create({ data: { postId: message.id, userId: user.id } })
     .catch(() => {});
+
+  // Notifica destinatário por email (fire-and-forget — não bloqueia
+  // a resposta da API se Brevo demorar/falhar). Setup 2026-05-10.
+  // Respeita preferência User.emailNotifyDm (Etapa 26 — opt-out
+  // possível pra users que não querem ser notificados).
+  if (recipient.emailNotifyDm) {
+    sendEmailAsync({
+      to: { email: recipient.email, name: recipient.name ?? undefined },
+      tag: "forum-dm",
+      ...tplForumDm({
+        recipientName: recipient.name,
+        recipientEmail: recipient.email,
+        authorName: message.author.name ?? message.author.email,
+        postTitle: title,
+        postContentPreview: content,
+        postId: message.id,
+      }),
+    });
+  }
 
   return NextResponse.json({ message }, { status: 201 });
 }

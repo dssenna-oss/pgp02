@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 import RiscosDashboardContent from "@/components/riscos/riscos-dashboard-content";
 
 /**
@@ -21,7 +22,11 @@ export default async function RiscosDashboardPage() {
     redirect("/login");
   }
   if (!isDPO(session.user?.role)) {
-    redirect("/dashboard");
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Análise de Riscos" />
+      </DashboardLayout>
+    );
   }
 
   return (

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { isDPO } from "@/lib/auth-helpers";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import DpoOnlyFallback from "@/components/auth/dpo-only-fallback";
 import ContribuidoresContent from "@/components/contribuidores/contribuidores-content";
 
 /**
@@ -20,7 +21,11 @@ export default async function ContribuidoresPage() {
     redirect("/login");
   }
   if (!isDPO(session.user?.role)) {
-    redirect("/dashboard");
+    return (
+      <DashboardLayout session={session}>
+        <DpoOnlyFallback feature="Contribuidores" />
+      </DashboardLayout>
+    );
   }
 
   return (

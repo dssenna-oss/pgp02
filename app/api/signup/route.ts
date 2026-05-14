@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { ROLES } from "@/lib/auth-helpers";
 
 const prisma = new PrismaClient();
 
@@ -29,7 +30,8 @@ export async function POST(request: NextRequest) {
 
     // Verificar se usuário já existe
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: { id: true },
     });
 
     if (existingUser) {
@@ -42,15 +44,26 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Criar empresa e usuário
+    // Criar empresa e usuário.
+    // Quem se cadastra via formulário público é, por definição, o DPO
+    // Principal da nova organização (a primeira pessoa a representá-la).
+    // Sem definir role aqui, o user nascia null/Contribuidor — o que dava
+    // duas inconsistências: (1) UI mostrava "Contribuidor" no sidebar e
+    // (2) /sysadmin listava a empresa como "Sem DPO Principal cadastrado".
     const company = await prisma.company.create({
       data: {
         companyName,
+        // Espelhamos os dados do DPO direto na Company pra exibição em
+        // /sysadmin (que filtra `role IN [DPO_PRINCIPAL, admin]` mas
+        // também mostra `dpoName/dpoEmail` literais).
+        dpoName: fullName,
+        dpoEmail: email,
         users: {
           create: {
             name: fullName,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            role: ROLES.DPO_PRINCIPAL,
           }
         }
       },

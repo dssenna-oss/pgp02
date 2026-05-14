@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email! },
-      include: { company: true },
+      select: { companyId: true },
     });
 
     if (!user || !user.companyId) {
@@ -28,14 +28,14 @@ export async function GET(request: NextRequest) {
     const [
       dataInventories,
       riskAssessments,
-      gapAnalyses,
+      gapAnswered,
       actionPlans,
       documents,
       incidents
     ] = await Promise.all([
       prisma.dataInventory.count({ where: { companyId: user.companyId } }),
       prisma.riskAssessment.count({ where: { companyId: user.companyId } }),
-      prisma.gapAnalysis.count({ where: { companyId: user.companyId } }),
+      prisma.gapAnswer.count({ where: { companyId: user.companyId } }),
       prisma.actionPlan.count({ where: { companyId: user.companyId } }),
       prisma.document.count({ where: { companyId: user.companyId } }),
       prisma.incident.count({ where: { companyId: user.companyId } })
@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       dataInventories,
       riskAssessments,
-      gapAnalyses,
+      // gapAnswered = nº de controles do GAP já respondidos (de 119)
+      gapAnswered,
       actionPlans,
       documents,
       incidents

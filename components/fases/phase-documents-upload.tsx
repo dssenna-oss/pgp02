@@ -46,9 +46,11 @@ type SortOption = "name-asc" | "name-desc" | "date-asc" | "date-desc" | "type-as
 
 interface PhaseDocumentsUploadProps {
   phase: string;
+  /** Se true, não renderiza Card próprio (usado dentro de PhaseSection). */
+  noCard?: boolean;
 }
 
-export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProps) {
+export default function PhaseDocumentsUpload({ phase, noCard = false }: PhaseDocumentsUploadProps) {
   const { data: session } = useSession() || {};
   const [documents, setDocuments] = useState<PhaseDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,12 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
   const [uploadType, setUploadType] = useState<"file" | "video">("file");
   const [selectedDocument, setSelectedDocument] = useState<PhaseDocument | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+
+  // CP19 Fatia 4 — UI: busca + filtro de tipo + view mode (cards/tabela).
+  // Aplicado só no modo noCard (dentro de PhaseSection).
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
   
   // Formulário de upload
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -239,9 +247,30 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
     return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
   }
 
+  /** Aplica busca textual + filtro de tipo (CP19 Fatia 4). */
+  function getFilteredDocuments(): PhaseDocument[] {
+    let result = documents;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (d) =>
+          d.title?.toLowerCase().includes(q) ||
+          d.description?.toLowerCase().includes(q) ||
+          d.fileName?.toLowerCase().includes(q),
+      );
+    }
+    if (typeFilter !== "all") {
+      result = result.filter((d) => {
+        const tn = getFileTypeName(d);
+        return tn === typeFilter;
+      });
+    }
+    return result;
+  }
+
   function getSortedDocuments(): PhaseDocument[] {
-    const sorted = [...documents];
-    
+    const sorted = noCard ? [...getFilteredDocuments()] : [...documents];
+
     switch (sortBy) {
       case "name-asc":
         return sorted.sort((a, b) => a.title.localeCompare(b.title));
@@ -286,35 +315,57 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
     return doc.fileType?.toUpperCase() || "Arquivo";
   }
 
+  // Quando dentro de PhaseSection, evita Card duplo (PhaseSection já fornece
+  // o card externo com título). Renderizamos o conteúdo direto + ações inline.
+  const Wrapper = noCard ? "div" : Card;
+  const Header = noCard ? "div" : CardHeader;
+  const Content = noCard ? "div" : CardContent;
+
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                <span>Documentação da Fase</span>
-              </CardTitle>
-              <CardDescription>
-                E-books, textos, PDFs e vídeos relacionados a esta fase
-                {!isAdmin && (
-                  <span className="block mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" />
-                    Apenas o administrador pode fazer upload de documentos
-                  </span>
-                )}
-              </CardDescription>
+      <Wrapper>
+        {!noCard && (
+          <Header>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                  <span>Documentação da Fase</span>
+                </CardTitle>
+                <CardDescription>
+                  E-books, textos, PDFs e vídeos relacionados a esta fase
+                  {!isAdmin && (
+                    <span className="block mt-1 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                      <ShieldAlert className="h-3 w-3" />
+                      Apenas o administrador pode fazer upload de documentos
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              {isAdmin && (
+                <Button onClick={() => setShowUploadDialog(true)} className="self-start sm:self-auto">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Fazer Upload
+                </Button>
+              )}
             </div>
-            {isAdmin && (
-              <Button onClick={() => setShowUploadDialog(true)} className="self-start sm:self-auto">
-                <Upload className="h-4 w-4 mr-2" />
-                Fazer Upload
-              </Button>
-            )}
+          </Header>
+        )}
+        {noCard && isAdmin && (
+          <div className="flex justify-end mb-3">
+            <Button onClick={() => setShowUploadDialog(true)} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Fazer Upload
+            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+        )}
+        {noCard && !isAdmin && (
+          <p className="mb-3 text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+            <ShieldAlert className="h-3 w-3" />
+            Apenas o administrador pode fazer upload de documentos
+          </p>
+        )}
+        <Content>
           {loading ? (
             <div className="text-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-2" />
@@ -337,54 +388,224 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
             </div>
           ) : (
             <>
-              {/* Barra de ordenação */}
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
-                  <Label htmlFor="sort" className="text-sm font-medium">Ordenar por:</Label>
-                  <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
-                    <SelectTrigger id="sort" className="w-[180px] max-w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="date-desc">Mais recentes</SelectItem>
-                      <SelectItem value="date-asc">Mais antigos</SelectItem>
-                      <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
-                      <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
-                      <SelectItem value="type-asc">Tipo (A-Z)</SelectItem>
-                      <SelectItem value="type-desc">Tipo (Z-A)</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Barra de busca/filtro/ordenação (CP19 Fatia 4 — só noCard) */}
+              {noCard ? (
+                <div className="flex flex-col gap-2 mb-3">
+                  {/* Linha 1: busca + filtro tipo + view toggle */}
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <input
+                      type="search"
+                      placeholder="🔍 Buscar documento..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1 min-w-[180px] px-3 py-1.5 text-sm border dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os tipos</SelectItem>
+                        <SelectItem value="PDF">PDF</SelectItem>
+                        <SelectItem value="Documento">Word/Doc</SelectItem>
+                        <SelectItem value="Excel">Excel</SelectItem>
+                        <SelectItem value="Vídeo">Vídeo</SelectItem>
+                        <SelectItem value="Vídeo Online">Vídeo URL</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                      <SelectTrigger className="w-[150px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date-desc">Mais recentes</SelectItem>
+                        <SelectItem value="date-asc">Mais antigos</SelectItem>
+                        <SelectItem value="name-asc">Nome A-Z</SelectItem>
+                        <SelectItem value="name-desc">Nome Z-A</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <div className="inline-flex border dark:border-gray-700 rounded-md overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("table")}
+                        className={`px-2.5 py-1.5 text-xs ${
+                          viewMode === "table"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        }`}
+                        title="Visualização em tabela"
+                      >
+                        ☰
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setViewMode("cards")}
+                        className={`px-2.5 py-1.5 text-xs border-l dark:border-gray-700 ${
+                          viewMode === "cards"
+                            ? "bg-blue-600 text-white"
+                            : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        }`}
+                        title="Visualização em cards"
+                      >
+                        ▦
+                      </button>
+                    </div>
+                  </div>
+                  {/* Linha 2: contagem + clear filters */}
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>
+                      {getFilteredDocuments().length} de {documents.length} documento(s)
+                      {(searchQuery || typeFilter !== "all") && " (filtrado)"}
+                    </span>
+                    {(searchQuery || typeFilter !== "all") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setTypeFilter("all");
+                        }}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Limpar filtros
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {documents.length} {documents.length === 1 ? "documento" : "documentos"}
-                </span>
-              </div>
+              ) : (
+                /* Modo Card legado: mantém barra original */
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 w-full sm:w-auto">
+                    <ArrowUpDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                    <Label htmlFor="sort" className="text-sm font-medium">Ordenar por:</Label>
+                    <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                      <SelectTrigger id="sort" className="w-full sm:w-[180px] max-w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date-desc">Mais recentes</SelectItem>
+                        <SelectItem value="date-asc">Mais antigos</SelectItem>
+                        <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
+                        <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
+                        <SelectItem value="type-asc">Tipo (A-Z)</SelectItem>
+                        <SelectItem value="type-desc">Tipo (Z-A)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {documents.length} {documents.length === 1 ? "documento" : "documentos"}
+                  </span>
+                </div>
+              )}
 
-              {/* Lista de documentos */}
+              {/* Tabela compacta — só noCard em viewMode='table' (CP19 Fatia 4) */}
+              {noCard && viewMode === "table" ? (
+                getSortedDocuments().length === 0 ? (
+                  <p className="text-sm italic text-gray-500 dark:text-gray-400 py-4 text-center">
+                    Nenhum documento atende aos filtros.
+                  </p>
+                ) : (
+                  <div className="border dark:border-gray-700 rounded-md overflow-hidden overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 dark:bg-gray-800/40 text-xs text-gray-600 dark:text-gray-400">
+                        <tr className="text-left">
+                          <th className="px-3 py-2 font-medium">Documento</th>
+                          <th className="px-3 py-2 font-medium hidden sm:table-cell">Tipo</th>
+                          <th className="px-3 py-2 font-medium hidden md:table-cell">Tamanho</th>
+                          <th className="px-3 py-2 font-medium hidden md:table-cell">Data</th>
+                          <th className="px-3 py-2 font-medium text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y dark:divide-gray-700">
+                        {getSortedDocuments().map((doc) => (
+                          <tr
+                            key={doc.id}
+                            className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                          >
+                            <td className="px-3 py-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDocument(doc)}
+                                className="flex items-center gap-2 text-left text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400"
+                                title={doc.description ?? doc.title}
+                              >
+                                <span className="text-base shrink-0">{getFileIcon(doc)}</span>
+                                <span className="truncate max-w-xs">{doc.title}</span>
+                              </button>
+                            </td>
+                            <td className="px-3 py-2 hidden sm:table-cell">
+                              <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs">
+                                {getFileTypeName(doc)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 hidden md:table-cell text-gray-500 dark:text-gray-400">
+                              {doc.fileSize ? formatFileSize(doc.fileSize) : "—"}
+                            </td>
+                            <td className="px-3 py-2 hidden md:table-cell text-gray-500 dark:text-gray-400">
+                              {new Date(doc.createdAt).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                              <div className="inline-flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDocument(doc)}
+                                  className="p-1 text-gray-400 hover:text-blue-600"
+                                  title="Visualizar"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </button>
+                                {doc.downloadUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDownload(doc.downloadUrl!, doc.fileName || "document")}
+                                    className="p-1 text-gray-400 hover:text-emerald-600"
+                                    title="Baixar"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                                {isAdmin && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(doc.id)}
+                                    className="p-1 text-gray-400 hover:text-red-600"
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              ) : (
+              /* View cards (legado + noCard com viewMode='cards') */
               <div className="space-y-2">
                 {getSortedDocuments().map((doc) => (
                   <div
                     key={doc.id}
-                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer ${
-                      selectedDocument?.id === doc.id 
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                    className={`flex flex-col gap-3 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer sm:flex-row sm:items-center sm:justify-between sm:gap-2 ${
+                      selectedDocument?.id === doc.id
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                         : "border-gray-200 dark:border-gray-700"
                     }`}
                     onClick={() => setSelectedDocument(doc)}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-1 min-w-0 w-full">
                       <div className="text-2xl flex-shrink-0">{getFileIcon(doc)}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                        <p className="font-medium text-gray-900 dark:text-white break-words">
                           {doc.title}
                         </p>
                         {doc.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 break-words line-clamp-2">
                             {doc.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-500">
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-500 flex-wrap">
                           <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
                             {getFileTypeName(doc)}
                           </span>
@@ -395,7 +616,7 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-2">
+                    <div className="flex items-center gap-2 self-end sm:self-auto sm:ml-2 flex-shrink-0">
                       <Button
                         size="sm"
                         variant={selectedDocument?.id === doc.id ? "default" : "outline"}
@@ -437,6 +658,7 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
                   </div>
                 ))}
               </div>
+              )}
             </>
           )}
 
@@ -455,8 +677,8 @@ export default function PhaseDocumentsUpload({ phase }: PhaseDocumentsUploadProp
               </ul>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </Content>
+      </Wrapper>
 
       {/* Visualização do documento selecionado */}
       {selectedDocument && (

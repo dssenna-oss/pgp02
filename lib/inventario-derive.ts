@@ -16,9 +16,18 @@ import type { FormAnswers } from "./inventario-form-schema";
 const PLACEHOLDER = "Não informado";
 
 /** Junta valores de array (ou string) num separador legível. */
+/** Sentinel idêntico ao em components/inventario/form-field-renderer.tsx —
+ *  sinaliza que o user marcou explicitamente "Não se aplica" num campo
+ *  opcional. Não deve poluir os campos derivados (DOCX, XLSX etc.). */
+const NAO_APLICA = "__NAO_APLICA__";
+
 function asLine(v: unknown): string {
-  if (Array.isArray(v)) return v.filter(Boolean).join(", ");
-  if (typeof v === "string") return v.trim();
+  if (Array.isArray(v))
+    return v.filter((x) => Boolean(x) && x !== NAO_APLICA).join(", ");
+  if (typeof v === "string") {
+    const t = v.trim();
+    return t === NAO_APLICA ? "" : t;
+  }
   return "";
 }
 

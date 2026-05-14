@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,12 +27,33 @@ import {
   ListChecks,
   MessagesSquare,
   Scale,
+  Activity,
+  History,
+  Target,
+  FileText as FileTextIcon,
+  FileCheck2,
+  Handshake,
+  Sparkles,
+  GraduationCap,
+  Search,
   UserCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { roleLabel, isDPO } from "@/lib/auth-helpers";
+import { useAdaptivePolling } from "@/lib/use-adaptive-polling";
+import NotificationBell from "./notification-bell";
+import QuickIncidentModal from "@/components/incidentes/quick-incident-modal";
 import { onSidebarRefresh } from "@/lib/sidebar-events";
+import { useHashScroll } from "@/lib/use-hash-scroll";
+import TourProvider from "@/components/tour/tour-provider";
+import TourFloatingButton from "@/components/tour/tour-floating-button";
+import PhaseSearchModal from "@/components/fases/phase-search-modal";
+import PhaseSearchDeepLink from "@/components/fases/phase-search-deeplink";
+import {
+  SidebarExpansionProvider,
+} from "./sidebar-expansion-context";
+import SidebarNavItem from "./sidebar-nav-item";
 
 /** Nome do produto (brand fixo, igual em todas as organizações). */
 const APP_BRAND = "LGPD - PGP";
@@ -44,7 +65,12 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, session }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [quickIncidentOpen, setQuickIncidentOpen] = useState(false);
   const pathname = usePathname();
+  // Resolve bug em que clicar num sub-item da sidebar (ex: 'Coloque em
+  // prática') não scrollava na 1ª vez. Reage a hashchange e abre o
+  // accordion alvo se estiver fechado.
+  useHashScroll();
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   /**
    * Quantidade de tarefas atrasadas + vencendo hoje. Alimenta o badge
@@ -59,11 +85,49 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    */
   const [forumUnread, setForumUnread] = useState<number | null>(null);
   /**
-   * Contador de Requisições de Direitos do Titular pendentes (DPO-only).
-   * Polling a cada 60s. Endpoint só retorna >0 pra usuários DPO.
+   * RIPDs pedindo ação do usuário (Checkpoint 13 / F3):
+   *   - DPO: RIPDs em EM_REVISAO aguardando aprovação
+   *   - Contribuidor: RIPDs próprios em RASCUNHO devolvidos com
+   *     `rejectionNote` (precisam ajuste e reenvio)
+   * Polling 60s; refresh imediato via `notifySidebarRefresh()`.
+   */
+  const [ripdPending, setRipdPending] = useState<number | null>(null);
+  /**
+   * Operadores com pendência crítica (Checkpoint 14 G4):
+   * contrato vencido, sem contrato, risco contratual ALTO, ou avaliação
+   * mais recente com risco geral ALTO. Polling 60s.
+   */
+  const [operatorsPending, setOperatorsPending] = useState<number | null>(null);
+  /**
+   * Incidentes com prazo crítico (Checkpoint 16 / F4):
+   * severidade ALTO/MEDIO + sem comunicação ANPD + prazo regressivo de
+   * 72h em estado WARN (≤24h) ou CRITICAL (vencido). Polling 60s.
+   */
+  const [incidentsPending, setIncidentsPending] = useState<number | null>(null);
+  /**
+   * LIAs pedindo ação do usuário (Checkpoint 21):
+   *   - DPO: LIAs em EM_REVISAO aguardando aprovação
+   *   - Contribuidor: LIAs próprias devolvidas com `rejectionNote`
+   * Polling 60s.
+   */
+  const [liasPending, setLiasPending] = useState<number | null>(null);
+  /**
+   * Inventários pedindo ação do usuário:
+   *   - DPO: SUBMETIDO ou EM_REVISAO (fila de aprovação)
+   *   - Contribuidor: DEVOLVIDO (precisam ajuste)
+   * Polling 60s.
+   */
+  const [inventarioPending, setInventarioPending] = useState<number | null>(null);
+  /**
+   * Requisições de Direitos do Titular pendentes (DPO-only).
+   * Polling adaptativo. Endpoint só retorna >0 pra usuários DPO.
    */
   const [dsrPendentes, setDsrPendentes] = useState<number | null>(null);
   const [dsrVencidas, setDsrVencidas] = useState<number | null>(null);
+
+  // Ref pra expor o refreshAll do useEffect ao useAdaptivePolling.
+  // Init null — populado quando o useEffect monta.
+  const refreshAllRef = useRef<(() => void) | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -110,6 +174,61 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    const fetchRipdPending = async () => {
+      try {
+        const r = await fetch("/api/ripd/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setRipdPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    const fetchOperatorsPending = async () => {
+      try {
+        const r = await fetch("/api/operadores/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setOperatorsPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    const fetchIncidentsPending = async () => {
+      try {
+        const r = await fetch("/api/incidents/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setIncidentsPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    const fetchLiasPending = async () => {
+      try {
+        const r = await fetch("/api/lia/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setLiasPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
+    const fetchInventarioPending = async () => {
+      try {
+        const r = await fetch("/api/inventario/pending-count", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setInventarioPending(j.count ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     /**
      * DSR contadores — só consulta se o usuário for DPO. 403 é tratado
      * silenciosamente (zera o badge), não polui o console.
@@ -121,9 +240,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         return;
       }
       try {
-        const r = await fetch("/api/direitos-titulares/contadores", {
-          cache: "no-store",
-        });
+        const r = await fetch("/api/direitos-titulares/contadores", { cache: "no-store" });
         if (!r.ok) return;
         const j = await r.json();
         if (!active) return;
@@ -136,27 +253,37 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
+      void fetchRipdPending();
+      void fetchOperatorsPending();
+      void fetchIncidentsPending();
+      void fetchLiasPending();
+      void fetchInventarioPending();
       void fetchDsr();
     };
 
     refreshAll();
-    const taskId = setInterval(fetchAlerts, 60000);
-    const forumId = setInterval(fetchForumUnread, 30000);
-    const dsrId = setInterval(fetchDsr, 60000);
+    // Expõe pra fora do useEffect: o useAdaptivePolling top-level chama
+    // essa ref. Pausa quando a aba some, refetch imediato quando volta.
+    refreshAllRef.current = refreshAll;
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
-      clearInterval(taskId);
-      clearInterval(forumId);
-      clearInterval(dsrId);
+      refreshAllRef.current = null;
       offEvent();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.role]);
+  }, []);
+
+  // Polling adaptativo único (substitui os 7 setInterval fixos anteriores).
+  // 30s ativo · 60s sem foco · pausa quando a aba some.
+  useAdaptivePolling(() => refreshAllRef.current?.(), {
+    activeMs: 30_000,
+    inactiveMs: 60_000,
+    refetchOnFocus: true,
+  });
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Empresa", href: "/dashboard/empresa", icon: Building2 },
+    { name: "Empresa", href: "/dashboard/empresa", icon: Building2, dpoOnly: true },
     { 
       name: "📚 Conteúdos Didáticos", 
       description: "📖 Material Educativo e Recursos",
@@ -169,11 +296,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       href: "/dashboard/entendendo-pgp", 
       icon: BookOpen
     },
-    { 
-      name: "🚩 Fase Preliminar", 
+    {
+      name: "🚩 Fase Preliminar",
       description: "📝 Sensibilização e Engajamento",
-      href: "/dashboard/fase-preliminar", 
-      icon: Shield
+      href: "/dashboard/fase-preliminar",
+      icon: Shield,
+      tourId: "nav-fase-preliminar",
     },
     { 
       name: "🚩 Fase 1", 
@@ -231,11 +359,126 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: ListChecks,
     },
     {
+      name: "Minha atividade",
+      description: "Timeline dos últimos 30 dias",
+      href: "/dashboard/minha-atividade",
+      icon: History,
+    },
+    {
+      name: "Inventário",
+      description: "Mapeamentos de tratamento de dados",
+      href: "/dashboard/inventario",
+      icon: ClipboardList,
+    },
+    {
       name: "Análise de Riscos",
       description: "Riscos LGPD por processo",
       href: "/dashboard/riscos",
       icon: ShieldAlert,
       dpoOnly: true,
+      tourId: "nav-riscos",
+    },
+    {
+      name: "Glossário de Riscos",
+      description: "Os 13 tipos de risco LGPD explicados",
+      href: "/dashboard/riscos/glossario",
+      icon: BookOpen,
+    },
+    {
+      name: "GAP Analysis",
+      description: "Diagnóstico macro de adequação à LGPD",
+      href: "/dashboard/gap-analysis",
+      icon: ClipboardList,
+      dpoOnly: true,
+    },
+    {
+      name: "Diagnóstico de Privacidade",
+      description: "Visão executiva consolidada (score + recomendações)",
+      href: "/dashboard/diagnostico",
+      icon: Activity,
+      dpoOnly: true,
+    },
+    {
+      name: "Maturidade do PGP",
+      description: "Painel executivo do Programa de Governança em Privacidade",
+      href: "/dashboard/maturidade-pgp",
+      icon: Sparkles,
+      dpoOnly: true,
+      tourId: "nav-maturidade",
+    },
+    {
+      name: "Maturidade Cibernética",
+      description: "Avaliação NIST CSF de segurança da informação",
+      href: "/dashboard/maturidade-cyber",
+      icon: Shield,
+      dpoOnly: true,
+    },
+    {
+      name: "Plano de Ação",
+      description: "Ações institucionais com responsável e prazo",
+      href: "/dashboard/plano-acao",
+      icon: Target,
+      dpoOnly: true,
+      tourId: "nav-plano-acao",
+    },
+    {
+      name: "Políticas",
+      description: "Aviso de privacidade, termos, cookies e outras",
+      href: "/dashboard/politicas",
+      icon: FileTextIcon,
+      dpoOnly: true,
+      tourId: "nav-politicas",
+    },
+    {
+      name: "Avisos por Serviço",
+      description: "Aviso de Privacidade granular pra cada processo (Art. 9º LGPD)",
+      href: "/dashboard/avisos-privacidade",
+      icon: FileTextIcon,
+      dpoOnly: true,
+      tourId: "nav-avisos-privacidade",
+    },
+    {
+      name: "Termos de Consentimento",
+      description: "Coleta formal de consentimento do titular (Art. 8º LGPD)",
+      href: "/dashboard/termos-consentimento",
+      icon: FileTextIcon,
+      dpoOnly: true,
+      tourId: "nav-termos-consentimento",
+    },
+    {
+      name: "RIPD",
+      description: "Relatório de Impacto à Proteção de Dados",
+      href: "/dashboard/ripd",
+      icon: FileCheck2,
+      dpoOnly: true,
+    },
+    {
+      name: "LIA",
+      description: "Avaliação de Legítimo Interesse (Art. 7º IX)",
+      href: "/dashboard/lia",
+      icon: Scale,
+      dpoOnly: true,
+    },
+    {
+      name: "Gestão de Terceiros",
+      description: "Operadores, contratos e avaliação de risco",
+      href: "/dashboard/terceiros",
+      icon: Handshake,
+      dpoOnly: true,
+    },
+    {
+      name: "Incidentes",
+      description: "Resposta a incidentes (Art. 48 LGPD · 72h ANPD)",
+      href: "/dashboard/incidentes",
+      icon: AlertTriangle,
+      dpoOnly: true,
+    },
+    {
+      name: "Capacitação",
+      description: "Programa de treinamentos LGPD (Art. 41§2º · 50)",
+      href: "/dashboard/capacitacao",
+      icon: GraduationCap,
+      // Visível pra todos (Contribuidor visualiza, DPO gerencia)
     },
     {
       name: "Bases Legais",
@@ -303,7 +546,36 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
               {roleLabel(session?.user?.role)}
             </p>
           </div>
+          {/* Sino de notificações agregadas (Checkpoint 16 / H) — só pra DPO,
+              que é quem tem ações sobre incidentes/RIPDs/operadores. */}
+          {isDPO(session?.user?.role) && <NotificationBell />}
         </div>
+        {/* Busca global nas Fases (CP25) — abre modal Spotlight tipo Cmd+K. */}
+        <button
+          onClick={() => window.dispatchEvent(new Event("pgp:open-phase-search"))}
+          className="mt-3 w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-xs font-medium text-gray-700 dark:text-gray-200 transition-colors"
+          title="Buscar nas Fases (Ctrl+K)"
+        >
+          <span className="flex items-center gap-2">
+            <Search className="h-3.5 w-3.5" />
+            Buscar nas Fases…
+          </span>
+          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-500">
+            Ctrl K
+          </kbd>
+        </button>
+        {/* Botão de emergência (Checkpoint 16 / H) — DPO pode acionar de
+            qualquer tela; modal compacto cria incidente em segundos. */}
+        {isDPO(session?.user?.role) && (
+          <button
+            onClick={() => setQuickIncidentOpen(true)}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
+            title="Registrar incidente urgente"
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Registrar incidente urgente
+          </button>
+        )}
         {/* Atalho pro painel super admin. Flag `isSuperAdmin` é calculada
             server-side no JWT callback (lib/auth.ts) — usar via session
             evita mismatch de hidratação (process.env só existe no server). */}
@@ -320,7 +592,10 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 bg-white dark:bg-gray-800 overflow-y-auto">
+      <nav
+        data-tour-id={mobile ? undefined : "sidebar"}
+        className="flex-1 px-4 py-4 space-y-1 bg-white dark:bg-gray-800 overflow-y-auto"
+      >
         {navigation
           .filter((item) => {
             // Filtrar itens admin (sistema CMS — só super admin antigo)
@@ -337,16 +612,18 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           .map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <SidebarNavItem
               key={item.name}
               href={item.href}
+              isActive={isActive}
+              tourId={!mobile && (item as any).tourId ? (item as any).tourId : undefined}
               className={cn(
                 "flex items-start gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isActive
                   ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
               )}
-              onClick={() => mobile && setSidebarOpen(false)}
+              onNavigate={() => mobile && setSidebarOpen(false)}
             >
               <item.icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
               <div className="flex flex-col min-w-0 flex-1">
@@ -361,8 +638,45 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                         {taskAlerts}
                       </span>
                     )}
-                  {/* Badge de DSR pendentes (RECEBIDA + EM_ANALISE + AGUARDANDO_TITULAR).
-                      Cor vermelha quando há vencidas, âmbar caso contrário. */}
+                  {/* Badge de não-lidos do Fórum (posts públicos + DMs). */}
+                  {item.href === "/dashboard/forum" &&
+                    forumUnread !== null &&
+                    forumUnread > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {forumUnread}
+                      </span>
+                    )}
+                  {/* Badge de RIPDs aguardando ação:
+                      DPO → contagem de EM_REVISAO; Contribuidor → próprios devolvidos. */}
+                  {item.href === "/dashboard/ripd" &&
+                    ripdPending !== null &&
+                    ripdPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {ripdPending}
+                      </span>
+                    )}
+                  {/* Badge de operadores com pendência crítica
+                      (vencido / sem contrato / risco ALTO / avaliação ALTO). */}
+                  {item.href === "/dashboard/terceiros" &&
+                    operatorsPending !== null &&
+                    operatorsPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {operatorsPending}
+                      </span>
+                    )}
+                  {/* Badge de incidentes em prazo crítico (≤24h ou vencido,
+                      severidade ALTO/MEDIO sem comunicação ANPD). Vermelho
+                      por se tratar de prazo legal. */}
+                  {item.href === "/dashboard/incidentes" &&
+                    incidentsPending !== null &&
+                    incidentsPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold flex-shrink-0 animate-pulse">
+                        {incidentsPending}
+                      </span>
+                    )}
+                  {/* Badge de requisições de Direitos do Titular pendentes.
+                      Vermelho quando há vencidas, âmbar caso contrário
+                      (prazo legal de 15 dias corridos — art. 19 §1º LGPD). */}
                   {item.href === "/dashboard/requisicoes-titulares" &&
                     dsrPendentes !== null &&
                     dsrPendentes > 0 && (
@@ -375,12 +689,22 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                         {dsrPendentes}
                       </span>
                     )}
-                  {/* Badge de não-lidos do Fórum (posts públicos + DMs). */}
-                  {item.href === "/dashboard/forum" &&
-                    forumUnread !== null &&
-                    forumUnread > 0 && (
-                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
-                        {forumUnread}
+                  {/* Badge de LIAs pedindo ação:
+                      DPO → contagem em EM_REVISAO; Contribuidor → próprias devolvidas. */}
+                  {item.href === "/dashboard/lia" &&
+                    liasPending !== null &&
+                    liasPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-violet-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {liasPending}
+                      </span>
+                    )}
+                  {/* Badge de Inventários aguardando ação:
+                      DPO → SUBMETIDO/EM_REVISAO; Contribuidor → próprios DEVOLVIDOs. */}
+                  {item.href === "/dashboard/inventario" &&
+                    inventarioPending !== null &&
+                    inventarioPending > 0 && (
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-500 text-white text-[10px] font-bold flex-shrink-0">
+                        {inventarioPending}
                       </span>
                     )}
                 </span>
@@ -395,7 +719,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                   </span>
                 )}
               </div>
-            </Link>
+            </SidebarNavItem>
           );
         })}
       </nav>
@@ -415,6 +739,8 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
   );
 
   return (
+    <TourProvider>
+    <SidebarExpansionProvider>
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block bg-white dark:bg-gray-800 shadow-sm relative z-20">
@@ -484,6 +810,27 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           </div>
         </main>
       </div>
+
+      {/* Modal de registro emergencial de incidente (Checkpoint 16 / H) */}
+      {isDPO(session?.user?.role) && (
+        <QuickIncidentModal
+          open={quickIncidentOpen}
+          onClose={() => setQuickIncidentOpen(false)}
+        />
+      )}
+
+      {/* Botão flutuante "Fazer tour guiado" (Checkpoint 20 / Fatia 1) */}
+      <TourFloatingButton />
+
+      {/* Busca global Spotlight nas Fases (Ctrl+K) — CP25.
+          Suspense em volta do DeepLink: useSearchParams() exige boundary
+          no Next.js 14.2 pra builds estáticos não falharem. */}
+      <PhaseSearchModal />
+      <Suspense fallback={null}>
+        <PhaseSearchDeepLink />
+      </Suspense>
     </div>
+    </SidebarExpansionProvider>
+    </TourProvider>
   );
 }

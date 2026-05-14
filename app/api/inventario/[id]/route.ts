@@ -9,6 +9,7 @@ import {
   isDPO,
   INVENTORY_STATUS,
 } from "@/lib/auth-helpers";
+import { trackLastAction, statusToCompleteness, statusIsClosedCleanly } from "@/lib/track-last-action";
 
 /**
  * Helper interno: carrega o user da sessão + busca o inventário aplicando
@@ -23,6 +24,7 @@ async function loadAccessibleInventory(id: string) {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user?.companyId) {
     return {
@@ -140,6 +142,17 @@ export async function PUT(
     const updated = await prisma.dataInventory.update({
       where: { id },
       data: update,
+    });
+
+    // CP27 Fatia 3 — registra "Continue de onde parou"
+    await trackLastAction({
+      userId: user.id,
+      refType: "INVENTARIO",
+      refId: updated.id,
+      route: `/dashboard/inventario/${updated.id}`,
+      label: `Inventário "${updated.serviceName}"`,
+      completeness: statusToCompleteness(updated.status, "INVENTARIO"),
+      closedCleanly: statusIsClosedCleanly(updated.status, "INVENTARIO"),
     });
 
     return NextResponse.json(updated);

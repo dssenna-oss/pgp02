@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import MentionTextarea from "@/components/forum/mention-textarea";
 import {
   Select,
   SelectContent,
@@ -189,19 +189,21 @@ export default function NewPostDialog({
             />
           </div>
 
-          {/* Conteúdo */}
+          {/* Conteúdo — suporta @user pra menção */}
           <div>
             <Label htmlFor="post-content">
               Conteúdo <span className="text-red-500">*</span>
             </Label>
-            <Textarea
-              id="post-content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Escreva aqui..."
-              rows={6}
-              className="mt-1"
-            />
+            <div className="mt-1">
+              <MentionTextarea
+                id="post-content"
+                value={content}
+                onChange={setContent}
+                placeholder="Escreva aqui... Digite @ para mencionar alguém da organização."
+                rows={6}
+                hint="Dica: digite @ pra abrir a lista de usuários e mencionar alguém — recebem email avisando."
+              />
+            </div>
           </div>
 
           {/* Fixar (só DPO + só pra Comunicado faz mais sentido, mas

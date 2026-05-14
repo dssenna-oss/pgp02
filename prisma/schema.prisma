@@ -1,13 +1,13 @@
 generator client {
-    provider        = "prisma-client-js"
-    binaryTargets   = ["native", "rhel-openssl-3.0.x"]
-    previewFeatures = ["postgresqlExtensions"]
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-    provider   = "postgresql"
-    url        = env("DATABASE_URL")
-    extensions = [vector]
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
@@ -36,18 +36,51 @@ model User {
   sessions      Session[]
 
   // Relacionamento com empresa
-  companyId     String?
-  company       Company?  @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   // Quem cadastrou este usuário (DPO que criou a conta de Contribuidor).
   // null = usuário criado pelo super-admin ou pré-migração.
-  invitedById   String?
-  invitedBy     User?     @relation("InvitedUsers", fields: [invitedById], references: [id], onDelete: SetNull)
-  invitedUsers  User[]    @relation("InvitedUsers")
+  invitedById  String?
+  invitedBy    User?   @relation("InvitedUsers", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedUsers User[]  @relation("InvitedUsers")
 
   // Recuperação de senha
-  resetToken        String?   @unique
-  resetTokenExpiry  DateTime?
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+
+  // Painel de Retomada (Etapa 25 / Checkpoint 27)
+  // Quando o user logou pela última vez (atualiza no signIn callback).
+  lastLoginAt     DateTime?
+  // Quando o user logou da vez ANTERIOR à atual.
+  // Usado pelo banner "Desde sua última visita" pra calcular o que mudou
+  // entre os 2 logins. Atualiza junto com lastLoginAt: o valor antigo de
+  // lastLoginAt vira o novo previousLoginAt antes de gravar o NOW().
+  previousLoginAt DateTime?
+
+  // ----- Preferências de notificação por email (Etapa 26 — 2026-05-10) -----
+  /// Receber email quando alguém envia DM no Fórum. Default: true
+  /// (a maioria quer saber de mensagem direta).
+  emailNotifyDm            Boolean @default(true)
+  /// Receber email quando o DPO publica Comunicado oficial. Default: true.
+  emailNotifyAnnouncements Boolean @default(true)
+  /// Receber digest diário de Tarefas vencendo (cron 9h). Default: false
+  /// (opt-in — pode ser barulhento).
+  emailNotifyTaskDue       Boolean @default(false)
+  /// (DPO-only) Receber digest diário de ações atrasadas/vencendo no Plano
+  /// de Ação institucional (cron 9h). Default: true pra DPOs (opt-out).
+  /// Ignorado pra Contribuidores — eles não veem o Plano. Etapa 27.
+  emailNotifyActionPlan    Boolean @default(true)
+  /// (DPO-only) Receber email a cada aceite/revogação de Termo de
+  /// Consentimento na própria organização (real-time, sem digest).
+  /// Default: true (opt-out). Útil pra DPO acompanhar coleta sem ficar
+  /// abrindo o painel toda hora. Etapa 31.
+  emailNotifyConsent       Boolean @default(true)
+
+  // Coisas que o user editou recentemente — usado pelo card "Continue de
+  // onde parou". Capturado server-side em rotas PATCH/POST de cada
+  // entidade (Inventário, RIPD, Política, LIA, Incidente, Plano).
+  lastActions UserLastAction[]
 
   // Progresso do checklist RIPD
   ripdChecklistProgress RipdChecklistProgress?
@@ -56,8 +89,8 @@ model User {
   chatConversations ChatConversation[]
 
   // Inventários criados/revisados por este usuário
-  createdInventories  DataInventory[] @relation("InventoryCreatedBy")
-  reviewedInventories DataInventory[] @relation("InventoryReviewedBy")
+  createdInventories       DataInventory[] @relation("InventoryCreatedBy")
+  reviewedInventories      DataInventory[] @relation("InventoryReviewedBy")
   legalReviewedInventories DataInventory[] @relation("LegalReviewedBy")
 
   // Riscos identificados/revisados por este usuário (Análise de Riscos)
@@ -65,14 +98,76 @@ model User {
   reviewedRisks   ProcessRisk[] @relation("RiskReviewedBy")
 
   // Tarefas pessoais (caderno individual de cada usuário)
-  tasks         Task[]
-  taskMarkers   TaskMarker[]
+  tasks       Task[]
+  taskMarkers TaskMarker[]
 
   // Fórum + Mensagens (visibilidade compartilhada da org)
-  authoredForumPosts  ForumPost[] @relation("ForumPostAuthor")
-  receivedForumPosts  ForumPost[] @relation("ForumPostRecipient") // só DMs
+  authoredForumPosts   ForumPost[]     @relation("ForumPostAuthor")
+  receivedForumPosts   ForumPost[]     @relation("ForumPostRecipient") // só DMs
   authoredForumReplies ForumReply[]
-  forumReads          ForumPostRead[]
+  forumReads           ForumPostRead[]
+  forumReactions       ForumReaction[]
+
+  // GAP Analysis (Checkpoint 9) — quem respondeu cada controle e quem
+  // congelou os snapshots
+  gapAnswered  GapAnswer[]
+  gapSnapshots GapSnapshot[]
+
+  // Plano de Ação institucional (Checkpoint 11) — ações onde sou
+  // responsável vs onde criei
+  assignedActions ActionPlan[] @relation("AssignedActions")
+  createdActions  ActionPlan[] @relation("CreatedActions")
+
+  // Políticas (Checkpoint 12) — quem criou e quem publicou cada
+  // política/versão
+  createdPolicies   Policy[]        @relation("PolicyCreatedBy")
+  publishedPolicies Policy[]        @relation("PolicyPublishedBy")
+  publishedVersions PolicyVersion[] @relation("PolicyVersionPublishedBy")
+
+  // Avisos de Privacidade por Serviço (Checkpoint Avisos, 2026-05-10)
+  createdServicePrivacyNotices          ServicePrivacyNotice[]        @relation("ServicePrivacyNoticeCreatedBy")
+  publishedServicePrivacyNotices        ServicePrivacyNotice[]        @relation("ServicePrivacyNoticePublishedBy")
+  publishedServicePrivacyNoticeVersions ServicePrivacyNoticeVersion[] @relation("ServicePrivacyNoticeVersionPublishedBy")
+
+  // Termos de Consentimento do Titular (Checkpoint Consentimento, 2026-05-10)
+  createdConsentTerms          ConsentTerm[]        @relation("ConsentTermCreatedBy")
+  publishedConsentTerms        ConsentTerm[]        @relation("ConsentTermPublishedBy")
+  publishedConsentTermVersions ConsentTermVersion[] @relation("ConsentTermVersionPublishedBy")
+
+  // RIPD (Checkpoint 13) — quem criou, aprovou e congelou cada versão
+  createdRipds         Ripd[]        @relation("RipdCreatedBy")
+  approvedRipds        Ripd[]        @relation("RipdApprovedBy")
+  approvedRipdVersions RipdVersion[] @relation("RipdVersionApprovedBy")
+
+  // LIA — Avaliação de Legítimo Interesse (Checkpoint 21)
+  createdLias         Lia[]        @relation("LiaCreatedBy")
+  approvedLias        Lia[]        @relation("LiaApprovedBy")
+  approvedLiaVersions LiaVersion[] @relation("LiaVersionApprovedBy")
+
+  // Maturidade Cibernética — NIST CSF (Checkpoint 22)
+  cyberAnswers            CyberAnswer[]
+  createdCyberSnapshots   CyberSnapshot[] @relation("CyberSnapshotCreatedBy")
+  delegatedCyberQuestions CyberAnswer[]   @relation("CyberDelegatedTo")
+
+  // Gestão de Terceiros (Checkpoint 14) — operadores que cadastrei e
+  // operadores onde sou o responsável interno
+  createdOperators     Operator[]           @relation("OperatorCreatedBy")
+  responsibleOperators Operator[]           @relation("OperatorResponsible")
+  // Avaliações de terceiros (G2) — quem criou e quem revisou
+  createdAssessments   OperatorAssessment[] @relation("AssessmentCreatedBy")
+  reviewedAssessments  OperatorAssessment[] @relation("AssessmentReviewedBy")
+
+  // Incidentes (Checkpoint 16) — quem registrou, quem encerrou, e quem
+  // gerou comunicações pra ANPD/titulares.
+  createdIncidents       Incident[]              @relation("IncidentCreatedBy")
+  closedIncidents        Incident[]              @relation("IncidentClosedBy")
+  incidentCommunications IncidentCommunication[] @relation("IncidentCommGeneratedBy")
+
+  // Capacitação LGPD (Checkpoint 18) — quem registrou cada evento de capacitação.
+  createdCapacitacoes CapacitacaoEvento[] @relation("CapacitacaoCreatedBy")
+
+  // Sistema de Cookies (Checkpoint 26) — registros de consentimento.
+  cookieConsents CookieConsent[]
 
   // Requisições de direitos do titular respondidas (DPO)
   respondedDataSubjectRequests DataSubjectRequest[] @relation("DSRRespondedBy")
@@ -84,46 +179,67 @@ model User {
 }
 
 model Company {
-  id                String   @id @default(cuid())
-  companyName       String
-  tradeName         String?
-  cnpj              String?  @unique
-  address           String?
-  city              String?
-  state             String?
-  zipCode           String?
-  phone             String?
-  email             String?
-  website           String?
-  logoUrl           String?
+  id                  String  @id @default(cuid())
+  companyName         String
+  /// Slug único da org pra usar em URLs públicas (ex: /p/<slug>/privacidade).
+  /// Se null, a página pública não funciona — só rota interna. Gerado de
+  /// `companyName` no primeiro acesso à tela de Políticas (Checkpoint 12).
+  slug                String? @unique
+  tradeName           String?
+  cnpj                String? @unique
+  address             String?
+  city                String?
+  state               String?
+  zipCode             String?
+  phone               String?
+  email               String?
+  website             String?
+  logoUrl             String?
   legalRepresentative String?
-  dpoName           String?  // Data Protection Officer/Encarregado
-  dpoEmail          String?
-  dpoPhone          String?
-  businessSector    String?
-  employeesCount    Int?
-  ripdEbookUrl      String?  // URL do ebook Heyzine para RIPD
-  
+  dpoName             String? // Data Protection Officer/Encarregado
+  dpoEmail            String?
+  dpoPhone            String?
+  /// Domínio institucional sem protocolo (ex: "tcees.tc.br"). Usado pelo
+  /// auto-discovery de URLs no modal de "Pré-preencher por Carta de Serviços"
+  /// (Etapa 28, 2026-05-11). Permite extrair candidatos a partir do site
+  /// público sem o user precisar digitar URLs uma a uma.
+  institutionalDomain String?
+  businessSector      String?
+  employeesCount      Int?
+  ripdEbookUrl        String? // URL do ebook Heyzine para RIPD
+
   // Usuários da empresa
-  users             User[]
-  
+  users User[]
+
   // Documentos e inventários relacionados
-  dataInventories   DataInventory[]
-  processRisks      ProcessRisk[]
-  tasks             Task[]
-  taskMarkers       TaskMarker[]
-  forumPosts        ForumPost[]
-  riskAssessments   RiskAssessment[]
-  gapAnalyses       GapAnalysis[]
-  actionPlans       ActionPlan[]
-  ripds            RIPD[]
-  documents        Document[]
-  incidents        Incident[]
-  dataSubjectRequests DataSubjectRequest[]
-  phaseDocuments   PhaseDocument[]
-  phaseInfos       PhaseInfo[]
-  phaseEbooks      PhaseEbook[]
-  
+  dataInventories       DataInventory[]
+  processRisks          ProcessRisk[]
+  tasks                 Task[]
+  taskMarkers           TaskMarker[]
+  forumPosts            ForumPost[]
+  riskAssessments       RiskAssessment[]
+  // GAP Analysis (Checkpoint 9)
+  gapAnswers            GapAnswer[]
+  gapSnapshots          GapSnapshot[]
+  actionPlans           ActionPlan[]
+  policies              Policy[]
+  servicePrivacyNotices ServicePrivacyNotice[]
+  consentTerms          ConsentTerm[]
+  lias                  Lia[]
+  cyberAnswers          CyberAnswer[]
+  cyberSnapshots        CyberSnapshot[]
+  ripds                 Ripd[]
+  operators             Operator[]
+  documents             Document[]
+  incidents             Incident[]
+  // Mini-app Direitos do Titular (art. 18-20 LGPD)
+  dataSubjectRequests   DataSubjectRequest[]
+  phaseDocuments        PhaseDocument[]
+  phaseInfos            PhaseInfo[]
+  phaseEbooks           PhaseEbook[]
+  capacitacaoEventos    CapacitacaoEvento[]
+
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -131,30 +247,30 @@ model Company {
 }
 
 model DataInventory {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  serviceName     String
-  dataCategory    String   // Categorias como "dados pessoais sensíveis", "dados pessoais", etc.
-  personalData    String   // Tipos de dados coletados
-  legalBasis      String   // Base legal para tratamento
-  purpose         String   // Finalidade do tratamento
-  dataSubjects    String   // Titulares dos dados
-  retention       String   // Período de retenção
-  storage         String   // Local de armazenamento
-  sharing         String?  // Compartilhamento com terceiros
-  security        String   // Medidas de segurança
+  serviceName  String
+  dataCategory String // Categorias como "dados pessoais sensíveis", "dados pessoais", etc.
+  personalData String // Tipos de dados coletados
+  legalBasis   String // Base legal para tratamento
+  purpose      String // Finalidade do tratamento
+  dataSubjects String // Titulares dos dados
+  retention    String // Período de retenção
+  storage      String // Local de armazenamento
+  sharing      String? // Compartilhamento com terceiros
+  security     String // Medidas de segurança
 
   // Respostas completas do wizard de mapeamento (formato JSON tipado por
   // lib/inventario-form-schema.ts). Quando preenchido, é a fonte de
   // verdade — os campos String acima são derivados como resumo.
   // Estrutura: { respondent: {...}, sections: { sec2: {...}, ..., sec7: {...} } }
-  formAnswers     Json?
+  formAnswers Json?
   // Marca se o registro ainda é rascunho (wizard não concluído).
   // DEPRECATED em favor de `status` — mantido pra compatibilidade. Será
   // removido num checkpoint futuro depois que toda a UI usar `status`.
-  isDraft         Boolean  @default(false)
+  isDraft     Boolean @default(false)
 
   /// Status do processo no fluxo de aprovação. Valores:
   ///   - "RASCUNHO"   — Contribuidor preenchendo (não submetido ainda)
@@ -162,36 +278,36 @@ model DataInventory {
   ///   - "EM_REVISAO" — DPO está revisando
   ///   - "APROVADO"   — DPO aprovou; entra na Análise de Riscos
   ///   - "DEVOLVIDO"  — DPO devolveu pra ajustes (com comentário)
-  status          String   @default("RASCUNHO")
+  status String @default("RASCUNHO")
 
   /// Setor responsável (RH, Ouvidoria, etc.). Geralmente igual ao setor
   /// do usuário criador. Cacheado aqui pra facilitar filtros.
-  setor           String?
+  setor String?
 
   /// Usuário que criou o processo (Contribuidor da área).
-  createdById     String?
-  createdBy       User?    @relation("InventoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   User?   @relation("InventoryCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   /// Usuário (DPO) que revisou o processo.
-  reviewedById    String?
-  reviewedBy      User?    @relation("InventoryReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-  reviewedAt      DateTime?
+  reviewedById  String?
+  reviewedBy    User?     @relation("InventoryReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
   /// Comentário do DPO ao devolver pra ajustes (status DEVOLVIDO).
-  reviewComment   String?  @db.Text
+  reviewComment String?   @db.Text
 
   // ---------- Bases Legais (preenchido pelo DPO/jurídico após o mapeamento) ----------
   // Esses 4 campos correspondem às colunas J, K, L, M do Excel modelo.
   // O wizard do contribuidor não preenche isso — fica em branco pro
   // DPO complementar via tela dedicada.
   /// Previsão Legal — Lei/norma que obriga o tratamento (Excel coluna J)
-  previsaoLegal       String?  @db.Text
+  previsaoLegal       String?   @db.Text
   /// Base Legal aplicável a Dados Pessoais Sensíveis (Excel coluna K)
   legalBasisSensitive String?
   /// Comentários sobre as Bases Legais sugeridas (Excel coluna M)
-  legalBasisComments  String?  @db.Text
+  legalBasisComments  String?   @db.Text
   /// Quem do jurídico/DPO preencheu as bases legais
   legalReviewedById   String?
-  legalReviewedBy     User?    @relation("LegalReviewedBy", fields: [legalReviewedById], references: [id], onDelete: SetNull)
+  legalReviewedBy     User?     @relation("LegalReviewedBy", fields: [legalReviewedById], references: [id], onDelete: SetNull)
   legalReviewedAt     DateTime?
 
   // ---------- Análise de Riscos (Checkpoint 5) ----------
@@ -205,12 +321,34 @@ model DataInventory {
   // ("Atualizar política do Sistema X", "Conferir compartilhamento Y").
   tasks Task[]
 
+  // RIPDs gerados a partir deste processo (Checkpoint 13). Cada
+  // processo pode ter 0..N RIPDs (raro ter mais de 1 ativo, mas
+  // versões + arquivados acumulam).
+  ripds Ripd[]
+
+  // LIAs vinculados ao processo (Checkpoint 21). Tipicamente 0..1 ativo
+  // por processo (1 LIA aprovada cobre o tratamento). Histórico acumula.
+  lias Lia[]
+
+  // Operadores/Terceiros vinculados a este processo (Checkpoint 14).
+  // Cada vínculo descreve qual atividade o operador faz no processo.
+  operatorLinks OperatorProcessLink[]
+
+  // Incidentes envolvendo este processo (Checkpoint 16 / F2)
+  incidents IncidentDataInventory[]
+
+  // Aviso de Privacidade do serviço (1:1, opcional)
+  servicePrivacyNotice ServicePrivacyNotice?
+
+  // Termos de Consentimento que cobrem este processo (M:N via link table)
+  consentTermLinks ConsentTermInventoryLink[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("data_inventories")
   @@index([companyId, status])
   @@index([companyId, setor])
+  @@map("data_inventories")
 }
 
 /// Risco identificado num processo de tratamento específico (DataInventory).
@@ -224,9 +362,9 @@ model DataInventory {
 /// tela de detalhe (1 risco por vez), conforme metodologia da Denise:
 /// FATO → FUNDAMENTO LEGAL → RISCO IDENTIFICADO → RECOMENDAÇÕES.
 model ProcessRisk {
-  id              String   @id @default(cuid())
+  id              String        @id @default(cuid())
   companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   dataInventoryId String
   dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
 
@@ -238,43 +376,43 @@ model ProcessRisk {
   ///   BY=finalidade_diversa · BZ=compartilhamento_grupo
   ///   CA=aquisicao_indireta · CB=decisao_automatizada · CC=profiling
   ///   CD=background_check
-  riskCode        String
+  riskCode String
 
   /// Estado do ciclo de vida do risco:
   ///   - "IDENTIFICADO"  — DPO marcou; ainda sem plano (default)
   ///   - "EM_MITIGACAO"  — Plano de ação em execução
   ///   - "ACEITO"        — Empresa decidiu seguir mesmo com o risco
   ///   - "ELIMINADO"     — Mitigação aplicada e confirmada
-  status          String   @default("IDENTIFICADO")
+  status String @default("IDENTIFICADO")
 
   /// Observação curta livre — equivalente ao texto inline na coluna BR-CD do
   /// Excel (ex: BV "Estados Unidos" pra transferência internacional).
-  description     String?  @db.Text
+  description String? @db.Text
 
   /// Indica se a marcação foi sugerida automaticamente pelo sistema (com
   /// base nas respostas do wizard) e depois confirmada pelo DPO.
   /// Usado pra trilha de auditoria — mostra o que foi humano vs automático.
-  autoSuggested   Boolean  @default(false)
+  autoSuggested Boolean @default(false)
 
   // ---------- Campos pro Checkpoint 6 (Detalhamento) ----------
   // Ficam null no Checkpoint 5; preenchidos depois.
   /// Classificação combinada Severidade × Probabilidade: "BAIXO" | "MEDIO" | "ALTO"
-  severityLevel   String?
+  severityLevel  String?
   /// Plano de mitigação detalhado (texto livre + medidas marcadas)
-  mitigationPlan  String?  @db.Text
+  mitigationPlan String? @db.Text
   /// Referência legal específica (artigo/inciso da LGPD aplicável)
-  legalBasisRef   String?
+  legalBasisRef  String?
 
   // ---------- Auditoria ----------
-  identifiedById  String?
-  identifiedBy    User?    @relation("RiskIdentifiedBy", fields: [identifiedById], references: [id], onDelete: SetNull)
-  identifiedAt    DateTime @default(now())
-  reviewedById    String?
-  reviewedBy      User?    @relation("RiskReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
-  reviewedAt      DateTime?
+  identifiedById String?
+  identifiedBy   User?     @relation("RiskIdentifiedBy", fields: [identifiedById], references: [id], onDelete: SetNull)
+  identifiedAt   DateTime  @default(now())
+  reviewedById   String?
+  reviewedBy     User?     @relation("RiskReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt     DateTime?
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([dataInventoryId, riskCode])
   @@index([companyId, status])
@@ -292,27 +430,27 @@ model ProcessRisk {
 /// `companyId` está aqui só pra isolamento multi-tenant na cascade
 /// (se a org for excluída, as tarefas dos seus membros somem junto).
 model Task {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  title           String   @db.VarChar(200)
-  description     String?  @db.Text
+  title       String  @db.VarChar(200)
+  description String? @db.Text
 
   /// "A_FAZER" | "EM_ANDAMENTO" | "CONCLUIDA"
-  status          String   @default("A_FAZER")
+  status   String @default("A_FAZER")
   /// "BAIXA" | "MEDIA" | "ALTA"
-  priority        String   @default("MEDIA")
+  priority String @default("MEDIA")
 
   /// Data de prazo (sem horário — Date only). Tarefas sem prazo ficam null.
-  dueDate         DateTime?
+  dueDate DateTime?
 
   /// Marcadores aplicados a esta tarefa: JSON com array de nomes
   /// (ex: '["Urgente","Reunião"]'). Os nomes referenciam TaskMarker do
   /// próprio dono. Limite prático: 10 por tarefa.
-  markers         String?  @db.Text
+  markers String? @db.Text
 
   /// Vínculo opcional com um processo aprovado do Inventário
   /// (ex: "Atualizar retenção do Sistema de CRM"). Se o processo for
@@ -320,9 +458,9 @@ model Task {
   dataInventoryId String?
   dataInventory   DataInventory? @relation(fields: [dataInventoryId], references: [id], onDelete: SetNull)
 
-  completedAt     DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId, status])
   @@index([userId, dueDate])
@@ -333,15 +471,15 @@ model Task {
 /// Marcador (tag) personalizado pra organizar tarefas. Cada usuário tem
 /// o próprio conjunto, com nome único. Cor é uma das 6 da paleta.
 model TaskMarker {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyId String
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  name      String   @db.VarChar(60)
+  name  String @db.VarChar(60)
   /// "slate" | "indigo" | "amber" | "red" | "emerald" | "fuchsia"
-  color     String   @default("slate")
+  color String @default("slate")
 
   createdAt DateTime @default(now())
 
@@ -367,35 +505,36 @@ model TaskMarker {
 /// `active` é soft-delete: ao "excluir", marca como false. Posts inativos
 /// não aparecem nas listas mas ficam pra auditoria.
 model ForumPost {
-  id           String   @id @default(cuid())
-  companyId    String
-  company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  authorId     String
-  author       User     @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation("ForumPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   /// Mensagem direta: id do destinatário. Null = post público.
-  recipientId  String?
-  recipient    User?    @relation("ForumPostRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
+  recipientId String?
+  recipient   User?   @relation("ForumPostRecipient", fields: [recipientId], references: [id], onDelete: SetNull)
 
   /// "DISCUSSION" | "ANNOUNCEMENT"
-  type         String   @default("DISCUSSION")
+  type     String  @default("DISCUSSION")
   /// "GERAL" | "INVENTARIO" | "RISCOS" | "BASES_LEGAIS" | "DUVIDA"
   /// Null em mensagens diretas (não fazem sentido categorizadas).
-  category     String?
-  title        String   @db.VarChar(200)
-  content      String   @db.Text
+  category String?
+  title    String  @db.VarChar(200)
+  content  String  @db.Text
 
   /// Apenas DPO pode fixar/desafixar. Posts fixados aparecem no topo.
-  pinned       Boolean  @default(false)
+  pinned Boolean @default(false)
   /// Soft delete — false = oculto da UI mas mantido no banco.
-  active       Boolean  @default(true)
+  active Boolean @default(true)
 
-  replies      ForumReply[]
-  reads        ForumPostRead[]
+  replies   ForumReply[]
+  reads     ForumPostRead[]
+  reactions ForumReaction[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyId, recipientId])
   @@index([companyId, pinned, createdAt])
@@ -407,12 +546,12 @@ model ForumPost {
 
 /// Resposta a um ForumPost (1 nível — sem threads aninhadas).
 model ForumReply {
-  id        String   @id @default(cuid())
-  postId    String
-  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  content   String   @db.Text
+  id       String    @id @default(cuid())
+  postId   String
+  post     ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content  String    @db.Text
 
   createdAt DateTime @default(now())
 
@@ -423,151 +562,1135 @@ model ForumReply {
 
 /// Marca quando cada usuário leu cada post (pra contagem de não-lidos).
 model ForumPostRead {
-  id      String   @id @default(cuid())
-  postId  String
-  post    ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId  String
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  readAt  DateTime @default(now())
+  id     String    @id @default(cuid())
+  postId String
+  post   ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime  @default(now())
 
   @@unique([postId, userId])
   @@index([userId])
   @@map("forum_post_reads")
 }
 
+/// Reação de um usuário a um post do fórum.
+/// 1 reação por (post, user) — clicar num emoji diferente substitui a
+/// anterior; clicar no mesmo emoji que já reagiu remove.
+/// Emojis permitidos: 👍 ❤️ 🎯 🤔 🎉 (FORUM_REACTION_EMOJIS em
+/// lib/forum-types.ts). Etapa 25 da migração.
+model ForumReaction {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String // 1 emoji unicode da lista permitida
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("forum_reactions")
+}
+
 model RiskAssessment {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
   processName     String
   riskDescription String
-  likelihood      String   // "Baixo", "Médio", "Alto"
-  impact          String   // "Baixo", "Médio", "Alto"
-  riskLevel       String   // "Baixo", "Médio", "Alto", "Crítico"
-  controls        String   // Controles existentes
-  recommendations String   // Recomendações de melhoria
+  likelihood      String // "Baixo", "Médio", "Alto"
+  impact          String // "Baixo", "Médio", "Alto"
+  riskLevel       String // "Baixo", "Médio", "Alto", "Crítico"
+  controls        String // Controles existentes
+  recommendations String // Recomendações de melhoria
   responsibleArea String
   deadline        DateTime?
-  status          String   @default("Pendente")
-  
+  status          String    @default("Pendente")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("risk_assessments")
 }
 
-model GapAnalysis {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  requirement     String   // Requisito da LGPD
-  currentStatus   String   // Status atual: "Implementado", "Parcialmente Implementado", "Não Implementado"
-  evidence        String?  // Evidências
-  gap             String?  // Lacuna identificada
-  recommendation  String?  // Recomendação
-  priority        String   // "Alta", "Média", "Baixa"
-  responsibleArea String
-  deadline        DateTime?
-  
+/// Resposta de 1 controle do GAP Analysis (Checkpoint 9) — replica
+/// 1 LINHA do template oficial "Matriz de Controles e Avaliação de Gaps"
+/// (XLSX em `scripts/_gap-modelo-em-branco.xlsx`).
+///
+/// O catálogo dos 119 controles fica em `lib/gap-catalog.ts` (gerado por
+/// `scripts/generate-gap-catalog.ts` a partir do XLSX). Esta tabela só
+/// guarda as RESPOSTAS — os textos de pergunta/artigo/instrução vêm do
+/// catálogo em código.
+///
+/// Granularidade: cada `controlCode` (estável, ex: "001"-"119") representa
+/// 1 pergunta marcável (incluindo sub-perguntas condicionais e itens
+/// individuais de checkbox — todos podem receber resposta no template).
+///
+/// Visibilidade: só DPO (Principal/Substituto/Auxiliar) preenche.
+/// 1 GapAnswer "ativo" por (companyId, controlCode); versões congeladas
+/// vão pra `GapSnapshot`.
+model GapAnswer {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Código estável do controle no catálogo (ex: "001", "048", "119").
+  /// Referência: `lib/gap-catalog.ts::GAP_CONTROLS`. Não é FK — o
+  /// catálogo vive em código (versionado pelo git).
+  controlCode String
+
+  /// Coluna H do XLSX — "Cenário Atual" (texto livre descrevendo a
+  /// situação real da organização pra esse controle).
+  cenarioAtual String? @db.Text
+
+  /// Coluna I do XLSX — "Mapeamento". Valores aceitos:
+  ///   "NAO_INICIADO" | "EM_ANDAMENTO" | "FINALIZADO"
+  mapeamento String?
+
+  /// Coluna J do XLSX — "Aderência". Valores aceitos:
+  ///   "ADERENTE" | "PARCIAL" | "NAO_ADERENTE" | "NA"
+  aderencia String?
+
+  /// Coluna K do XLSX — "Ponto de Melhoria" (texto livre). Vira insumo
+  /// pra criar Tasks pessoais (bloco 8b da decisão).
+  pontoMelhoria String? @db.Text
+
+  /// Notas/observações livres do DPO sobre esse controle. Não vai pro
+  /// XLSX exportado; é um espaço pra registrar contexto interno (links,
+  /// decisões em andamento, citações de outras políticas, etc.) que
+  /// não cabe nos 4 campos formais do template.
+  notes String? @db.Text
+
+  /// Indica se o valor foi pré-preenchido pelo auto-suggest baseado no
+  /// Inventário (decisão 5b) e ainda não foi confirmado pelo DPO.
+  /// Vira `false` assim que o DPO salvar manualmente o controle.
+  autoSuggested Boolean @default(false)
+
+  /// DPO que respondeu por último.
+  answeredById String?
+  answeredBy   User?     @relation(fields: [answeredById], references: [id], onDelete: SetNull)
+  answeredAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("gap_analyses")
+  @@unique([companyId, controlCode])
+  @@index([companyId, mapeamento])
+  @@index([companyId, aderencia])
+  @@map("gap_answers")
 }
 
-model ActionPlan {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  action          String
-  description     String
-  objective       String
-  responsibleArea String
-  responsible     String
-  startDate       DateTime
-  endDate         DateTime
-  priority        String   // "Alta", "Média", "Baixa"
-  status          String   @default("Não Iniciado")
-  progress        Int      @default(0)
-  resources       String?
-  budget          Float?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Snapshot congelado do GAP Analysis (decisão 2c) — captura todas as
+/// respostas + perfil/aplicabilidade num ponto no tempo. Usado pra
+/// histórico de versões e pra Exportar Excel reproduzindo o estado
+/// daquela data (decisão 10b).
+model GapSnapshot {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  /// Rótulo curto livre dado pelo DPO ao congelar (ex: "Diagnóstico
+  /// inicial 2026-Q2"). Default: "Snapshot dd/mm/aaaa".
+  label String @db.VarChar(120)
+
+  /// Comentário opcional do DPO sobre essa versão.
+  notes String? @db.Text
+
+  /// Cópia congelada de todos os GapAnswer da empresa no momento da
+  /// criação. Estrutura: { answers: GapAnswer[], stats: {...},
+  /// generatedAt: ISO } — enxuto, só os dados de resposta (sem o catálogo,
+  /// que é fixo em código).
+  payload Json
+
+  /// DPO que criou o snapshot.
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("gap_snapshots")
+}
+
+/// Plano de Ação institucional — diferente das `Task` (que são pessoais).
+/// Lista oficial das ações que a organização precisa executar pra adequação
+/// LGPD, com responsável formal, prazo, prioridade. Pode ser criado
+/// manualmente pelo DPO ou auto-importado de:
+///   - GAP (controles NAO_ADERENTE/PARCIAL com Ponto de Melhoria)
+///   - Riscos (status IDENTIFICADO sem mitigação)
+///   - Bases Legais (processos APROVADOS sem base legal)
+///   - Operadores (contrato vencido / sem cláusulas / score ALTO / formulário pendente)
+///
+/// Refs polimórficos (`refGapCode`/`refRiskId`/`refInventoryId`/`refOperatorId`):
+/// só 1 fica preenchido por linha, conforme `origin`. Quando `origin = MANUAL`,
+/// todas as refs ficam null.
+model ActionPlan {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Conteúdo da ação
+  title       String
+  description String? @db.Text
+  notes       String? @db.Text
+
+  /// Origem: MANUAL | GAP | RISCO | BASES | OPERADOR | INCIDENTE | LIA | CYBER
+  origin         String    @default("MANUAL")
+  /// Refs polimórficos pra rastrear de onde a ação saiu
+  refGapCode     String? // GapAnswer.controlCode
+  refRiskId      String? // ProcessRisk.id
+  refInventoryId String? // DataInventory.id
+  refOperatorId  String? // Operator.id (Checkpoint 14 G4)
+  refIncidentId  String? // Incident.id (Checkpoint 16 F1)
+  refIncident    Incident? @relation("ActionPlanIncident", fields: [refIncidentId], references: [id], onDelete: SetNull)
+  /// Cyber NIST controlCode (Checkpoint 22 / Fatia 3). String simples — não
+  /// há FK porque o catálogo NIST é em código TS (lib/cyber-catalog.ts), não
+  /// uma tabela. A consistência é validada na criação da ação.
+  refCyberCode   String?
+
+  /// Responsável formal (User da org); null = ainda sem responsável
+  assigneeId String?
+  assignee   User?   @relation("AssignedActions", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  /// Prazo (data limite) e prioridade ALTA|MEDIA|BAIXA
+  dueDate  DateTime?
+  priority String    @default("MEDIA")
+
+  /// Ciclo de vida: A_FAZER | EM_ANDAMENTO | CONCLUIDA | CANCELADA
+  status      String    @default("A_FAZER")
+  completedAt DateTime?
+
+  /// Auditoria — quem criou (DPO)
+  createdById String
+  createdBy   User     @relation("CreatedActions", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, assigneeId])
+  @@index([companyId, dueDate])
+  @@index([companyId, refOperatorId])
+  @@index([companyId, refIncidentId])
+  @@index([companyId, refCyberCode])
   @@map("action_plans")
 }
 
-model RIPD {
-  id                    String   @id @default(cuid())
-  companyId             String
-  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  processName           String
-  processDescription    String
-  dataTypes             String   // Tipos de dados pessoais
-  dataSubjects          String   // Categorias de titulares
-  purpose               String   // Finalidades do tratamento
-  legalBasis            String   // Base legal
-  necessityAssessment   String   // Avaliação de necessidade
-  proportionalityAssessment String // Avaliação de proporcionalidade
-  riskIdentification    String   // Identificação de riscos
-  riskMitigation        String   // Medidas de mitigação
-  safeguards            String   // Salvaguardas
-  consultationDetails   String?  // Detalhes de consulta aos titulares
-  monitoring            String   // Monitoramento
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+/// Políticas LGPD da organização (Checkpoint 12). Documentos jurídicos
+/// gerados a partir de templates: política de privacidade externa
+/// (site), política interna, termos de uso, política de cookies, etc.
+///
+/// Cada `Policy` é um documento "vivo" com 1 conteúdo de rascunho e
+/// histórico de versões publicadas (`PolicyVersion`). Quando o DPO
+/// publica, snapshot do `currentContent` vira nova `PolicyVersion` e
+/// `publishedContent` é atualizado.
+///
+/// `slug` é único por (companyId, type) — pra construir URL pública
+/// `/p/<companySlug>/<policySlug>` (ex: `/p/lgpd-pgp/privacidade`).
+model Policy {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  /// Tipo da política — define template inicial e tela pública. Enum:
+  /// AVISO_PRIVACIDADE_EXTERNO | POLITICA_PRIVACIDADE_INTERNO |
+  /// NORMA_PRIVACIDADE | TERMOS_USO | POLITICA_COOKIES |
+  /// POLITICA_TERCEIROS | POLITICA_RETENCAO | POLITICA_TREINAMENTO |
+  /// POLITICA_TRANSFERENCIA | OUTRA
+  type String
+
+  title String
+  /// Slug interno desta política (pra URL pública). Único por (company, type).
+  slug  String
+
+  /// Status: RASCUNHO | PUBLICADA | ARQUIVADA
+  status String @default("RASCUNHO")
+
+  /// Conteúdo de rascunho (markdown). Sempre editável.
+  currentContent   String  @db.Text
+  /// Conteúdo publicado (snapshot da última publicação). null se nunca
+  /// foi publicada. Vai pra URL pública.
+  publishedContent String? @db.Text
+
+  /// Versão atual publicada (number). Increment a cada `publish`.
+  currentVersion Int @default(0)
+
+  /// Auditoria de publicação
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("PolicyPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  /// Quem criou
+  createdById String
+  createdBy   User     @relation("PolicyCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  /// Histórico de versões publicadas
+  versions PolicyVersion[]
+
+  /// Snapshot agregado do Inventário usado pra preencher placeholders
+  /// genéricos do template ({{categorias_dados}}, {{matriz_tratamento}},
+  /// {{tipos_compartilhamento}}). Gerado uma vez via botão "Atualizar
+  /// do Inventário" — depois fica congelado pra que edições manuais
+  /// não sejam sobrescritas. Estrutura tipada em `lib/policy-data-aggregator.ts`.
+  aggregatedDataSnapshot Json?
+  /// Quando o snapshot foi atualizado pela última vez. UI exibe ao DPO
+  /// pra que ele decida se vale rodar de novo (ex.: depois de cadastrar
+  /// novos processos no Inventário).
+  aggregatedAt           DateTime?
+
+  @@unique([companyId, type, slug])
+  @@index([companyId, status])
+  @@index([companyId, type])
+  @@map("policies")
+}
+
+/// Snapshot de uma versão publicada de Policy. Cada `publish` cria 1
+/// linha aqui — preserva o que foi publicado em cada momento, pra
+/// auditoria, comparação e possível rollback.
+model PolicyVersion {
+  id       String @id @default(cuid())
+  policyId String
+  policy   Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version   Int
+  /// Conteúdo congelado (markdown)
+  content   String  @db.Text
+  /// Changelog opcional (DPO descreve o que mudou)
+  changeLog String?
+
+  publishedAt   DateTime @default(now())
+  publishedById String
+  publishedBy   User     @relation("PolicyVersionPublishedBy", fields: [publishedById], references: [id])
+
+  @@unique([policyId, version])
+  @@index([policyId, publishedAt])
+  @@map("policy_versions")
+}
+
+/// Aviso de Privacidade por Serviço (Checkpoint Avisos, 2026-05-10).
+///
+/// 1 documento público por processo do Inventário aprovado. Diferente
+/// das Políticas (Policy) que são institucionais (1 documento agregado
+/// pra org inteira), aqui é granular: cada serviço/processo ganha seu
+/// próprio aviso com base nos dados específicos dele.
+///
+/// O Aviso é gerado automaticamente a partir do DataInventory + seleção
+/// de seções do DPO (vocabulário fechado em `lib/aviso-privacidade-sections.ts`).
+/// O DPO pode adicionar observações livres (`additionalNotes`) que
+/// aparecem como seção final. Quando o Inventário muda, o app detecta
+/// via comparação `lastSyncedFromInventoryAt < inventory.updatedAt` e
+/// banner sugere re-sincronização.
+///
+/// Versionamento espelha Policy: cada publish cria `ServicePrivacyNoticeVersion`
+/// com snapshot do markdown publicado, pra histórico e diff.
+model ServicePrivacyNotice {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Inventário fonte. 1:1 — apenas 1 Aviso ativo por processo.
+  dataInventoryId String        @unique
+  dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+
+  /// Slug do serviço pra URL pública. Único por org. Gerado de
+  /// `dataInventory.serviceName` no create; pode ser editado se houver
+  /// colisão. Ex: "ouvidoria", "cadastro-de-servidor".
+  slug String
+
+  /// Status: RASCUNHO | PUBLICADO | ARQUIVADO
+  status String @default("RASCUNHO")
+
+  /// Markdown atual em edição (sempre editável pelo DPO).
+  currentContent   String  @db.Text
+  /// Snapshot do markdown publicado (null se nunca foi publicado). Vai
+  /// pra URL pública. Quando arquivado, é nullado.
+  publishedContent String? @db.Text
+  /// Versão atual publicada (0 se nunca foi).
+  currentVersion   Int     @default(0)
+
+  /// JSON com as seções incluídas neste aviso. Estrutura:
+  ///   { sectionId: { included: boolean, content?: string } }
+  /// `sectionId` ∈ vocabulário fechado de `lib/aviso-privacidade-sections.ts`.
+  /// Seções obrigatórias (controlador, direitos) ignoram `included=false`.
+  includedSections Json
+
+  /// Texto livre adicional do DPO (markdown). Vira a última seção do
+  /// documento. Preservado quando re-sincroniza do Inventário.
+  additionalNotes String? @db.Text
+
+  /// Última vez que o conteúdo foi sincronizado a partir do Inventário.
+  /// Comparado com `dataInventory.updatedAt` pra detectar "desatualizado".
+  lastSyncedFromInventoryAt DateTime
+
+  /// Override do DPO: permite gerar Aviso mesmo sem APROVADO no Inventário.
+  /// Mostra warning na UI. Default false.
+  forcedDespiteNotApproved Boolean @default(false)
+
+  /// Auditoria de publicação
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("ServicePrivacyNoticePublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  /// Quem criou
+  createdById String
+  createdBy   User     @relation("ServicePrivacyNoticeCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions ServicePrivacyNoticeVersion[]
+
+  @@unique([companyId, slug])
+  @@index([companyId, status])
+  @@map("service_privacy_notices")
+}
+
+/// Snapshot de uma versão publicada de ServicePrivacyNotice.
+model ServicePrivacyNoticeVersion {
+  id       String               @id @default(cuid())
+  noticeId String
+  notice   ServicePrivacyNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  version   Int
+  /// Markdown congelado da versão publicada.
+  content   String  @db.Text
+  /// Changelog opcional (DPO descreve o que mudou).
+  changeLog String?
+
+  publishedAt   DateTime @default(now())
+  publishedById String
+  publishedBy   User     @relation("ServicePrivacyNoticeVersionPublishedBy", fields: [publishedById], references: [id])
+
+  @@unique([noticeId, version])
+  @@index([noticeId, publishedAt])
+  @@map("service_privacy_notice_versions")
+}
+
+/// Termo de Consentimento do Titular (Checkpoint Consentimento, 2026-05-10).
+///
+/// Documento formal exigido pelo Art. 8º LGPD quando a base legal do
+/// tratamento é "Consentimento" (Art. 7º I, Art. 11 I sensíveis ou
+/// Art. 14 menores). Diferente do Aviso de Privacidade — Aviso informa;
+/// Termo coleta MANIFESTAÇÃO ATIVA do titular.
+///
+/// 1 termo pode cobrir N processos do Inventário (M:N via
+/// ConsentTermInventoryLink). Suporta modo físico (DOCX/PDF impresso) e
+/// digital (URL pública com botão "Aceito" gerando ConsentRecord). DPO
+/// escolhe por termo (`allowsPhysical` / `allowsDigital`).
+///
+/// Versionamento espelha Policy/ServicePrivacyNotice: cada publish cria
+/// ConsentTermVersion com snapshot do markdown publicado. ConsentRecord
+/// referencia a versão exata aceita pra defesa em auditoria mesmo se o
+/// termo mudou depois.
+model ConsentTerm {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Tipo do template-base. Vocabulário fechado em
+  /// `lib/consent-templates.ts`. Valores aceitos:
+  ///   - GERAL       — uso quotidiano (cadastro, mailing, e-mail)
+  ///   - SENSIVEIS   — Art. 11 (saúde, biometria, origem racial)
+  ///   - MENOR       — Art. 14 (criança/adolescente, responsável legal)
+  ///   - IMAGEM_VOZ  — fotos/vídeos pra divulgação (Cód. Civil 11-21)
+  ///   - COMUNICACAO — opt-in granular pra newsletter, pesquisa, etc.
+  templateType String
+
+  /// Slug único por org pra URL pública `/p/<orgSlug>/termo/<slug>`.
+  slug String
+
+  /// Título amigável (mostra no painel + topo da URL pública).
+  title String
+
+  /// RASCUNHO | PUBLICADO | ARQUIVADO
+  status String @default("RASCUNHO")
+
+  /// Markdown atual (editável pelo DPO).
+  currentContent   String  @db.Text
+  /// Snapshot publicado (URL pública lê daqui). Null se nunca publicado.
+  publishedContent String? @db.Text
+  /// Versão atual publicada (0 = nunca publicado).
+  currentVersion   Int     @default(0)
+
+  /// Modos de coleta (decisão 2.C — físico + digital).
+  /// `allowsPhysical` = baixa DOCX/PDF pra assinatura física.
+  /// `allowsDigital` = URL pública com botão "Aceito" + grava ConsentRecord.
+  /// DPO pode habilitar 1 ou os 2.
+  allowsPhysical Boolean @default(true)
+  allowsDigital  Boolean @default(true)
+
+  publishedAt   DateTime?
+  publishedById String?
+  publishedBy   User?     @relation("ConsentTermPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User     @relation("ConsentTermCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions       ConsentTermVersion[]
+  records        ConsentRecord[]
+  inventoryLinks ConsentTermInventoryLink[]
+
+  @@unique([companyId, slug])
+  @@index([companyId, status])
+  @@index([companyId, templateType])
+  @@map("consent_terms")
+}
+
+/// Snapshot de uma versão publicada de ConsentTerm.
+model ConsentTermVersion {
+  id     String      @id @default(cuid())
+  termId String
+  term   ConsentTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  version   Int
+  content   String  @db.Text
+  changeLog String?
+
+  publishedAt   DateTime @default(now())
+  publishedById String
+  publishedBy   User     @relation("ConsentTermVersionPublishedBy", fields: [publishedById], references: [id])
+
+  records ConsentRecord[]
+
+  @@unique([termId, version])
+  @@index([termId, publishedAt])
+  @@map("consent_term_versions")
+}
+
+/// Vínculo M:N entre um Termo e processos do Inventário que ele cobre.
+/// Permite reutilizar o mesmo Termo Geral pra N serviços parecidos sem
+/// duplicar texto. UI do Inventário consulta isto pra mostrar "termo
+/// associado" / "termo faltando".
+model ConsentTermInventoryLink {
+  termId      String
+  term        ConsentTerm   @relation(fields: [termId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   DataInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([termId, inventoryId])
+  @@index([inventoryId])
+  @@map("consent_term_inventory_links")
+}
+
+/// Registro de aceite digital de um Termo de Consentimento. Cumpre o
+/// ônus da prova do Art. 8º §2º (controlador deve provar o consentimento).
+///
+/// Evidência mínima (decisão 4.A do cardápio):
+///   - identificação do titular (email e/ou CPF)
+///   - IP de origem
+///   - User-Agent completo
+///   - Timestamp (acceptedAt)
+///   - SHA-256 do `publishedContent` exatamente como o titular viu
+///     na hora do aceite (defesa: termo pode ter mudado depois mas
+///     o checksum prova qual versão foi aceita)
+///   - versionId — ponteiro pra ConsentTermVersion congelada
+///
+/// Revogação (Art. 8º §5º) registra `revokedAt` e opcionalmente uma
+/// razão. Não apaga o record — a evidência precisa sobreviver à
+/// revogação pra defender o controlador no período anterior.
+model ConsentRecord {
+  id        String             @id @default(cuid())
+  termId    String
+  term      ConsentTerm        @relation(fields: [termId], references: [id], onDelete: Cascade)
+  versionId String
+  version   ConsentTermVersion @relation(fields: [versionId], references: [id])
+
+  /// Email normalizado lowercase. Pode ser null se o termo coleta só CPF.
+  titularEmail String?
+  /// CPF strip → só 11 dígitos. Null se termo coleta só email.
+  titularCpf   String?
+  /// Nome do titular (texto livre — opcional, só pra UI exibir).
+  titularName  String?
+
+  /// IPv4 ou IPv6 do request (X-Forwarded-For ou conn.remoteAddress).
+  ip              String
+  /// User-Agent completo do browser.
+  userAgent       String @db.Text
+  /// SHA-256 hex do `publishedContent` no instante do aceite.
+  contentChecksum String
+
+  acceptedAt DateTime @default(now())
+
+  /// Revogação (Art. 8º §5º). Preservamos o record pra rastreabilidade
+  /// — só marca revogado; não deleta.
+  revokedAt        DateTime?
+  revocationReason String?   @db.Text
+
+  @@index([termId, acceptedAt])
+  @@index([termId, titularEmail])
+  @@index([termId, titularCpf])
+  @@map("consent_records")
+}
+
+/// Relatório de Impacto à Proteção de Dados Pessoais — RIPD
+/// (Checkpoint 13). Documento institucional que descreve um processo
+/// de tratamento que pode gerar risco alto aos titulares, exigido pela
+/// LGPD (arts. 5º XVII, 38) e regulamentado pela Resolução CD/ANPD
+/// nº 2/2022.
+///
+/// Cada Ripd é vinculado (opcional) a um `DataInventory` aprovado que
+/// serve de fonte pra pré-população das 8 seções (engine em
+/// `lib/ripd-prepopulate.ts`).
+///
+/// Fluxo de aprovação:
+///   - Contribuidor cria → RASCUNHO; pode editar e "enviar pra
+///     revisão" (EM_REVISAO)
+///   - DPO em RASCUNHO/EM_REVISAO próprio: aprova diretamente
+///   - DPO em EM_REVISAO de Contribuidor: aprova ou rejeita com
+///     `rejectionNote` (volta pra RASCUNHO)
+///   - Aprovação cria `RipdVersion` (snapshot) e atualiza
+///     `publishedContent` + `publishedAt` + `publishedVersionNum`
+///
+/// Estrutura do `data` (JSON): tipada por `RipdData` em
+/// `lib/ripd-helpers.ts` — 8 seções fixas (s1..s8).
+model Ripd {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Processo do Inventário origem dos dados (opcional — RIPDs avulsos
+  /// permitidos, mas o normal é ter). SetNull se o processo for excluído.
+  inventoryId String?
+  inventory   DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  title String
+
+  /// "RASCUNHO" | "EM_REVISAO" | "APROVADO" | "ARQUIVADO"
+  status String @default("RASCUNHO")
+
+  /// Conteúdo das 8 seções — ver RipdData em lib/ripd-helpers.ts
+  data Json
+
+  /// Nota do DPO ao rejeitar (volta pra RASCUNHO).
+  rejectionNote String? @db.Text
+
+  // ---------- Aprovação ----------
+  approvedById String?
+  approvedBy   User?     @relation("RipdApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt   DateTime?
+
+  // ---------- Versionamento (snapshot a cada aprovação) ----------
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+  versions            RipdVersion[]
+
+  // ---------- Auditoria ----------
+  createdById String
+  createdBy   User     @relation("RipdCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdById])
+  @@index([inventoryId])
   @@map("ripds")
 }
 
+/// Snapshot de uma versão aprovada do Ripd. 1 linha = 1 aprovação.
+/// Preserva o conteúdo congelado pra histórico, comparação e rollback.
+model RipdVersion {
+  id     String @id @default(cuid())
+  ripdId String
+  ripd   Ripd   @relation(fields: [ripdId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version   Int
+  /// Conteúdo congelado (mesma estrutura JSON do Ripd.data)
+  content   Json
+  /// Changelog opcional descrito pelo DPO ao aprovar.
+  changeLog String? @db.Text
+
+  approvedAt   DateTime @default(now())
+  approvedById String
+  approvedBy   User     @relation("RipdVersionApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([ripdId, version])
+  @@index([ripdId, approvedAt])
+  @@map("ripd_versions")
+}
+
+/// LIA — Avaliação de Legítimo Interesse (Checkpoint 21).
+///
+/// Documenta o teste de balanceamento exigido pelo Art. 10 §3º LGPD quando
+/// a base legal escolhida é o Art. 7º IX (legítimo interesse do controlador).
+///
+/// Estrutura clássica em 3 etapas (modelo ANPD/GDPR):
+///   1. Finalidade   — o interesse é legítimo, lícito e específico?
+///   2. Necessidade  — o tratamento é necessário? Há alternativa menos invasiva?
+///                     Bloqueante: dados sensíveis ou de crianças/adolescentes
+///                     vetam Art. 7º IX (Arts. 11 e 14 LGPD).
+///   3. Balanceamento — o interesse prevalece sobre direitos/expectativas
+///                       do titular? Quais salvaguardas mitigam impactos?
+///
+/// Workflow idêntico ao RIPD/Políticas:
+///   RASCUNHO → EM_REVISAO → APROVADO → ARQUIVADO  (cada aprovação cria LiaVersion)
+///   EM_REVISAO → RASCUNHO via rejeição com `rejectionNote`
+///
+/// `data` (JSON) é tipado por `LiaData` em `lib/lia-helpers.ts`.
+model Lia {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Processo do Inventário origem do tratamento (opcional — LIAs avulsos
+  /// permitidos, mas o normal é estarem vinculados). SetNull se o processo
+  /// for excluído pra preservar histórico.
+  inventoryId String?
+  inventory   DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  title String
+
+  /// "RASCUNHO" | "EM_REVISAO" | "APROVADO" | "ARQUIVADO"
+  status String @default("RASCUNHO")
+
+  /// Conteúdo das 3 etapas — ver LiaData em lib/lia-helpers.ts
+  data Json
+
+  /// Nota do DPO ao rejeitar (volta pra RASCUNHO).
+  rejectionNote String? @db.Text
+
+  // ---------- Aprovação ----------
+  approvedById String?
+  approvedBy   User?     @relation("LiaApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvedAt   DateTime?
+
+  // ---------- Versionamento (snapshot a cada aprovação) ----------
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+  versions            LiaVersion[]
+
+  // ---------- Auditoria ----------
+  createdById String
+  createdBy   User     @relation("LiaCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdById])
+  @@index([inventoryId])
+  @@map("lias")
+}
+
+/// Snapshot de uma versão aprovada da LIA. 1 linha = 1 aprovação.
+/// Preserva o conteúdo congelado pra histórico, comparação word-level e rollback.
+model LiaVersion {
+  id    String @id @default(cuid())
+  liaId String
+  lia   Lia    @relation(fields: [liaId], references: [id], onDelete: Cascade)
+
+  /// Número da versão (1, 2, 3, ...)
+  version   Int
+  /// Conteúdo congelado (mesma estrutura JSON do Lia.data)
+  content   Json
+  /// Changelog opcional descrito pelo DPO ao aprovar.
+  changeLog String? @db.Text
+
+  approvedAt   DateTime @default(now())
+  approvedById String
+  approvedBy   User     @relation("LiaVersionApprovedBy", fields: [approvedById], references: [id])
+
+  @@unique([liaId, version])
+  @@index([liaId, approvedAt])
+  @@map("lia_versions")
+}
+
+/// Operador / Terceiro / Fornecedor — Gestão de Terceiros (Checkpoint 14).
+///
+/// Inspirado na metodologia da Denise (consultoria PGP) — substitui o
+/// inventário-de-terceiros em XLSX por entidade estruturada com régua
+/// de risco automatizada (6 critérios ANPD), checklist de cláusulas
+/// LGPD, vínculo com processos do Inventário, e workflow de avaliação.
+///
+/// Posição (`relationType`):
+///   - "INDEFINIDO"      — encarregado ainda não classificou
+///   - "OPERADOR"        — terceiro trata dados em nome da Company
+///   - "CONTROLADOR"     — terceiro é outro controlador
+///   - "CO_CONTROLADOR"  — controladoria conjunta (decisões comuns/convergentes)
+///
+/// Régua de risco do CONTRATO (6 critérios ANPD — não confundir com
+/// avaliação do operador via Formulário em G2):
+///   - Critério geral:    largaEscala + afetaTitulares
+///   - Critério específico: novasTecnologias + vigilanciaPublica +
+///                          decisaoAutomatizada + dadosSensiveis
+///   - Cálculo: geral × específico ≥ 1 → ALTO;
+///              geral OU específico ≥ 1 → MEDIO; nenhum → BAIXO
+///
+/// Cláusula recomendada: derivada de (relationType + contractRiskClass)
+/// — engine em `lib/operadores-risco-contrato.ts`. Templates em G3.
+model Operator {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // ----- Identificação -----
+  /// Razão social do terceiro
+  name         String
+  tradeName    String?
+  cnpj         String?
+  /// País sede (pra detectar transferência internacional). Default "Brasil".
+  country      String? @default("Brasil")
+  /// Categorização livre (CLOUD/PAGAMENTOS/MARKETING/RH/AUDITORIA/
+  /// LOGISTICA/TI/JURIDICO/SAUDE/OUTRO). Apenas pra filtros — não
+  /// influencia regras.
+  operatorType String?
+  description  String? @db.Text
+  notes        String? @db.Text
+
+  // ----- Posição na relação (decisão 5: checklist + DPO confirma) -----
+  /// "INDEFINIDO" | "OPERADOR" | "CONTROLADOR" | "CO_CONTROLADOR"
+  relationType          String @default("INDEFINIDO")
+  /// Respostas do checklist de classificação (auto-sugestão).
+  /// Estrutura: { o1: bool, o2: bool, ..., c1: bool, ... }
+  /// Detalhe das perguntas em `lib/operadores-helpers.ts`.
+  classificationAnswers Json?
+
+  // ----- Contato do terceiro (DPO/responsável LGPD) -----
+  thirdPartyDpoName  String?
+  thirdPartyDpoEmail String?
+  thirdPartyDpoPhone String?
+
+  // ----- Responsável interno -----
+  /// User da Company que cuida deste operador (gerente do contrato).
+  responsibleId String?
+  responsible   User?   @relation("OperatorResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  // ----- Termo de Confidencialidade (decisão 6 — campo simples) -----
+  confidentialityTermSignedAt   DateTime?
+  /// Path no Vercel Blob (PDF do termo assinado).
+  confidentialityTermAttachment String?
+
+  // ----- Contrato (1 ativo por operador; histórico fica como pendência) -----
+  contractLabel          String?
+  contractSignedAt       DateTime?
+  contractExpiresAt      DateTime?
+  contractLastReviewedAt DateTime?
+  /// Data do contrato ORIGINAL — relevante quando o contrato é
+  /// pré-LGPD e está em adequação via termo aditivo. `contractSignedAt`
+  /// pode então virar a data do aditivo. (Checkpoint 14 H1)
+  contractOriginalDate   DateTime?
+  /// "VIGENTE" | "VENCENDO_90D" | "VENCIDO" | "EM_RENOVACAO" |
+  /// "SEM_CONTRATO" | "NAO_APLICAVEL"
+  /// "VENCENDO_90D" é calculado on-demand a partir de contractExpiresAt.
+  contractStatus         String    @default("SEM_CONTRATO")
+  /// Status do ciclo de adequação LGPD (Checkpoint 14 H1):
+  /// "NAO_AVALIADO" — default, ainda não passou por avaliação
+  /// "EM_ADEQUACAO"  — em campanha de adequação (5 ações no Plano)
+  /// "ADEQUADO"      — passou por avaliação e tem cláusulas LGPD ok
+  /// "NAO_APLICAVEL" — relação não trata dados pessoais (ex: aluguel imóvel)
+  lgpdComplianceStatus   String    @default("NAO_AVALIADO")
+
+  // ----- Régua de risco do CONTRATO (6 critérios ANPD) -----
+  largaEscala         Boolean @default(false)
+  afetaTitulares      Boolean @default(false)
+  novasTecnologias    Boolean @default(false)
+  vigilanciaPublica   Boolean @default(false)
+  decisaoAutomatizada Boolean @default(false)
+  dadosSensiveis      Boolean @default(false)
+  /// Calculado a partir dos 6 booleanos. Persistido pra filtros/index.
+  /// "ALTO" | "MEDIO" | "BAIXO"
+  contractRiskClass   String  @default("BAIXO")
+
+  /// Cláusula recomendada (calculada). Templates em G3.
+  /// "ROBUSTA" | "SIMPLES" | "CC" | "CLIENTE_OPERADOR" | "MINUTA" |
+  /// "INDEFINIDO"
+  recommendedClause String @default("INDEFINIDO")
+
+  // ----- Cláusulas presentes no contrato atual (checklist do XLSX modelo) -----
+  hasPrivacyClause             Boolean @default(false)
+  hasIncidentClause            Boolean @default(false)
+  /// Prazo (em dias) pra notificação de incidente (se contrato exige).
+  incidentNotificationDays     Int?
+  permitsSubcontracting        Boolean @default(false)
+  permitsInternationalTransfer Boolean @default(false)
+  /// Indica se o contrato segue minuta padrão da empresa.
+  isStandardMinute             Boolean @default(false)
+
+  /// Anexos do contrato: PDF principal + DPA + evidências.
+  /// Estrutura: [{ name, url, uploadedAt, kind: "CONTRATO" | "DPA" |
+  ///              "EVIDENCIA" | "OUTRO" }]
+  contractAttachments Json @default("[]")
+
+  // ----- Avaliação do terceiro (G2 — Formulário) -----
+  assessments OperatorAssessment[]
+
+  // ----- Vínculo com processos do Inventário -----
+  processLinks OperatorProcessLink[]
+
+  // ----- Vínculo com eventos de Capacitação (Checkpoint 18) -----
+  // Eventos de capacitação direcionados a este terceiro (ex: workshop
+  // sobre cláusulas contratuais, treinamento de obrigações LGPD).
+  capacitacaoEventos CapacitacaoEvento[]
+
+  // ----- Vínculo com Incidentes (Checkpoint 16 / F3) -----
+  // Incidentes em que este operador esteve envolvido (vazamento via
+  // prestador, falha contratual, etc.). Útil pra responsabilidade
+  // solidária e métricas por terceiro.
+  incidents IncidentOperator[]
+
+  // ----- Auditoria -----
+  createdById String
+  createdBy   User     @relation("OperatorCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, relationType])
+  @@index([companyId, contractRiskClass])
+  @@index([companyId, contractStatus])
+  @@index([companyId, lgpdComplianceStatus])
+  @@map("operators")
+}
+
+/// Vínculo M:N entre Operator e DataInventory — cada linha indica que
+/// um operador trata dados em um processo específico do Inventário,
+/// com descrição opcional da atividade exata.
+model OperatorProcessLink {
+  id              String        @id @default(cuid())
+  operatorId      String
+  operator        Operator      @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  dataInventoryId String
+  dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+
+  /// Atividade específica que o operador faz nesse processo
+  /// (ex: "Hospedagem do banco de dados de clientes").
+  activityDescription String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@unique([operatorId, dataInventoryId])
+  @@index([dataInventoryId])
+  @@map("operator_process_links")
+}
+
+/// Avaliação de Terceiro — formulário de risco preenchido pelo
+/// próprio terceiro (link público com token, sem auth) e revisado
+/// pelo encarregado.
+///
+/// Catálogo das 52 perguntas em `lib/operadores-formulario.ts` (7
+/// blocos, tags CYBER/LGPD/CYBER_LGPD).
+/// Engine de pontuação em `lib/operadores-pontuacao.ts` — calcula
+/// scores Cyber e LGPD SEPARADOS, classificando em ALTO/MEDIO/BAIXO
+/// com base em % do gabarito.
+///
+/// Fluxo:
+///   1. DPO cria → status=PENDENTE
+///   2. DPO "envia pra terceiro" → gera publicToken, status=AGUARDANDO_TERCEIRO
+///   3. Terceiro acessa `/avaliacao-terceiro/<token>` (sem auth) e
+///      preenche → status segue AGUARDANDO_TERCEIRO até clicar
+///      "Finalizar"
+///   4. Terceiro finaliza → status=RESPONDIDO + thirdPartyCompletedAt
+///   5. DPO revisa, anota, finaliza → status=REVISADO + scores
+///      consolidados (cyberScore, lgpdScore, percentages, riskClasses)
+model OperatorAssessment {
+  id         String   @id @default(cuid())
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  /// Rótulo opcional (ex: "Avaliação 2026", "Renovação")
+  label String?
+
+  /// "PENDENTE" | "AGUARDANDO_TERCEIRO" | "RESPONDIDO" | "REVISADO" | "CANCELADO"
+  status String @default("PENDENTE")
+
+  /// Token URL-safe do link público. Único — funciona como "chave"
+  /// pra autenticação sem login do terceiro. Revogar = setar null.
+  publicToken String? @unique
+
+  /// Quando DPO enviou pro terceiro (token gerado).
+  sentAt                DateTime?
+  /// Quando terceiro abriu o link pela 1ª vez.
+  thirdPartyStartedAt   DateTime?
+  /// Quando terceiro clicou em "Finalizar".
+  thirdPartyCompletedAt DateTime?
+
+  /// Respostas do terceiro:
+  ///   { qid: { answer: "S" | "N" | "NA", evidence?: string, comment?: string } }
+  /// Tipado por `FormResponses` em `lib/operadores-formulario.ts`.
+  thirdPartyAnswers Json @default("{}")
+
+  // ----- Revisão pelo DPO -----
+  /// Notas do DPO por pergunta:
+  ///   { qid: "comentário do DPO" }
+  dpoNotes Json @default("{}")
+
+  reviewedById String?
+  reviewedBy   User?     @relation("AssessmentReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+
+  // ----- Pontuação consolidada (calculada ao revisar) -----
+  cyberScore      Int     @default(0)
+  cyberMax        Int     @default(0)
+  cyberPercentage Float   @default(0)
+  cyberRiskClass  String? // ALTO | MEDIO | BAIXO
+
+  lgpdScore      Int     @default(0)
+  lgpdMax        Int     @default(0)
+  lgpdPercentage Float   @default(0)
+  lgpdRiskClass  String?
+
+  overallPercentage Float   @default(0)
+  overallRiskClass  String?
+
+  // ----- Auditoria -----
+  createdById String
+  createdBy   User     @relation("AssessmentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([operatorId, status])
+  @@map("operator_assessments")
+}
+
 model Document {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  title           String
-  type            String   // "privacy_policy", "terms_of_use", "cookie_notice", etc.
-  content         String   @db.Text
-  version         String   @default("1.0")
-  status          String   @default("Draft")
-  language        String   @default("pt-BR")
-  
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title    String
+  type     String // "privacy_policy", "terms_of_use", "cookie_notice", etc.
+  content  String @db.Text
+  version  String @default("1.0")
+  status   String @default("Draft")
+  language String @default("pt-BR")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("documents")
 }
 
+/// Incidente de segurança envolvendo dados pessoais (Checkpoint 16).
+///
+/// Base legal: Art. 48 LGPD + Resolução CD/ANPD nº 15/2024.
+/// Prazo legal: 3 dias úteis (≈72h) pra comunicar ANPD desde a ciência.
+///
+/// Workflow (status):
+///   DETECTADO → EM_ANALISE → EM_CONTENCAO →
+///     COMUNICADO_ANPD → COMUNICADO_TITULARES → ENCERRADO
+///   (ou FALSO_POSITIVO em qualquer momento)
+///
+/// Severidade:
+///   - "ALTO" / "MEDIO" — disparam obrigatoriedade de comunicação ANPD
+///     (Art. 48 §3º LGPD)
+///   - "BAIXO" — comunicação discricionária
+///
+/// Prazo regressivo: 72h desde `detectedAt` até `anpdNotifiedAt` (clock
+/// visual no editor + badge sidebar quando <24h).
+///
+/// Refatorado em 2026-05-05 substituindo o placeholder do template
+/// Abacus original (que era um CRUD raso sem workflow nem comunicação).
 model Incident {
-  id              String   @id @default(cuid())
-  companyId       String
-  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  title           String
-  description     String
-  incidentType    String   // "Vazamento", "Acesso não autorizado", "Perda de dados", etc.
-  severity        String   // "Baixa", "Média", "Alta", "Crítica"
-  affectedData    String   // Dados afetados
-  affectedSubjects Int?    // Número de titulares afetados
-  cause           String?  // Causa do incidente
-  detectionDate   DateTime
-  reportDate      DateTime @default(now())
-  containmentActions String? // Ações de contenção
-  correctiveActions String?  // Ações corretivas
-  preventiveActions String? // Ações preventivas
-  status          String   @default("Aberto")
-  reportedToAnpd  Boolean  @default(false)
-  anpdReportDate  DateTime?
-  
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // ----- Identificação -----
+  /// Título descritivo curto (ex: "Vazamento de e-mails do CRM")
+  title        String
+  /// Descrição livre (o que aconteceu, contexto narrativo)
+  description  String @db.Text
+  /// "VAZAMENTO" | "ACESSO_NAO_AUTORIZADO" | "PERDA" | "ALTERACAO_INDEVIDA"
+  /// | "INDISPONIBILIDADE" | "OUTRO"
+  incidentType String
+
+  // ----- Workflow + severidade -----
+  /// "DETECTADO" | "EM_ANALISE" | "EM_CONTENCAO" | "COMUNICADO_ANPD"
+  /// | "COMUNICADO_TITULARES" | "ENCERRADO" | "FALSO_POSITIVO"
+  status   String @default("DETECTADO")
+  /// "ALTO" | "MEDIO" | "BAIXO"
+  severity String @default("MEDIO")
+
+  // ----- Datas-chave -----
+  /// Quando o incidente ocorreu de fato (estimado; pode ser anterior à detecção)
+  occurredAt         DateTime?
+  /// Quando a empresa teve ciência. Start do prazo de 72h pra ANPD.
+  detectedAt         DateTime
+  /// Quando ANPD foi notificada (null = ainda não)
+  anpdNotifiedAt     DateTime?
+  /// Quando os titulares foram notificados (null = ainda não / não aplicável)
+  subjectsNotifiedAt DateTime?
+  /// Quando o incidente foi encerrado
+  closedAt           DateTime?
+
+  // ----- Dados afetados (texto livre no MVP; M:N com Inventário/Operadores
+  // fica pra refino futuro F2/F3) -----
+  /// Tipos/categorias de dados pessoais afetados
+  affectedDataTypes          String? @db.Text
+  /// Houve dados sensíveis (Art. 11 LGPD)?
+  hasSensitiveData           Boolean @default(false)
+  /// Categorias de titulares (clientes, funcionários, candidatos, ...)
+  affectedSubjectsCategories String? @db.Text
+  /// Volume estimado de titulares afetados
+  affectedSubjectsCount      Int?
+
+  // ----- Técnico -----
+  /// Causa raiz identificada
+  rootCause         String? @db.Text
+  /// Vetor de origem (Phishing, Erro humano, Falha técnica, Acesso indevido, etc.)
+  attackVector      String?
+  /// Sistemas/ativos afetados (texto livre)
+  affectedSystems   String? @db.Text
+  /// Operadores/terceiros envolvidos (texto livre)
+  affectedOperators String? @db.Text
+
+  // ----- Risco e medidas (Res. CD/ANPD nº 15/2024) -----
+  /// Avaliação de risco aos titulares
+  riskAssessment          String? @db.Text
+  /// Medidas técnicas e administrativas que estavam em vigor
+  securityMeasuresInPlace String? @db.Text
+  /// Medidas de contenção (curto prazo)
+  containmentMeasures     String? @db.Text
+  /// Medidas corretivas/preventivas (médio/longo prazo)
+  correctiveMeasures      String? @db.Text
+  /// Justificativa de eventual demora pra comunicar ANPD (Res. 15/2024)
+  delayJustification      String? @db.Text
+
+  // ----- Encerramento -----
+  /// Notas finais / lições aprendidas
+  closureNotes String? @db.Text
+
+  // ----- Auditoria -----
+  /// Quem registrou (qualquer papel)
+  createdById String?
+  createdBy   User?   @relation("IncidentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  /// Quem encerrou (DPO)
+  closedById  String?
+  closedBy    User?   @relation("IncidentClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+
+  // ----- Histórico de comunicações -----
+  communications IncidentCommunication[]
+
+  // ----- Plug Plano de Ação (F1) -----
+  /// Ações geradas a partir deste incidente (origin = INCIDENTE)
+  actionPlans ActionPlan[] @relation("ActionPlanIncident")
+
+  // ----- Plug Capacitação Corretiva (Checkpoint 18) -----
+  /// Eventos de capacitação registrados como ação corretiva pós-incidente
+  /// (ex: treinamento de phishing após incidente por engenharia social).
+  capacitacaoEventos CapacitacaoEvento[]
+
+  // ----- Vínculos M:N com Inventário e Operadores (Checkpoint 16 / F2-F3) -----
+  /// Processos do Inventário afetados por este incidente. Permite consultar
+  /// "quais incidentes envolveram o Sistema CRM?" sem texto livre.
+  dataInventories       IncidentDataInventory[]
+  /// Operadores (terceiros) envolvidos no incidente (vazamento via prestador,
+  /// falha em fornecedor, etc.). Útil pra responsabilidade solidária.
+  affectedOperatorsList IncidentOperator[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([companyId, status])
+  @@index([companyId, severity])
+  @@index([companyId, detectedAt])
   @@map("incidents")
 }
 
@@ -655,6 +1778,67 @@ model DataSubjectRequest {
   @@map("data_subject_requests")
 }
 
+/// Histórico de comunicações de um incidente — pra ANPD ou titulares.
+/// Cada vez que o DPO gera o ofício, criamos uma linha aqui pra
+/// auditoria (quem gerou, quando, qual canal, snapshot do conteúdo).
+model IncidentCommunication {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  /// "ANPD" | "TITULARES"
+  target  String
+  /// Snapshot do conteúdo gerado (markdown ou texto livre)
+  content String  @db.Text
+  /// "EMAIL" | "PROTOCOLO_ANPD" | "OFICIO" | "OUTRO" | null
+  channel String?
+
+  /// Quem gerou
+  createdById String?
+  createdBy   User?   @relation("IncidentCommGeneratedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([incidentId])
+  @@map("incident_communications")
+}
+
+// ============================================================
+// IncidentDataInventory (Checkpoint 16 / F2) — vínculo M:N
+// Incidente <-> Processo do Inventário
+// ============================================================
+// Permite consultar "quais incidentes envolveram este processo?" e
+// "quais processos foram afetados pelo incidente X?". Sem texto livre.
+model IncidentDataInventory {
+  incidentId      String
+  incident        Incident      @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  dataInventoryId String
+  dataInventory   DataInventory @relation(fields: [dataInventoryId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+
+  @@id([incidentId, dataInventoryId])
+  @@index([dataInventoryId])
+  @@map("incident_data_inventories")
+}
+
+// ============================================================
+// IncidentOperator (Checkpoint 16 / F3) — vínculo M:N
+// Incidente <-> Operador (Terceiro)
+// ============================================================
+// Permite consultar "quais incidentes envolveram este terceiro?" pra
+// avaliar responsabilidade solidária e renegociar contratos.
+model IncidentOperator {
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([incidentId, operatorId])
+  @@index([operatorId])
+  @@map("incident_operators")
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -698,25 +1882,25 @@ model VerificationToken {
 }
 
 model PhaseDocument {
-  id              String   @id @default(cuid())
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  phase           String   // "preliminar", "fase-1", "fase-2", etc.
-  title           String
-  description     String?
-  
+  id        String   @id @default(cuid())
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  phase       String // "preliminar", "fase-1", "fase-2", etc.
+  title       String
+  description String?
+
   // Para arquivos enviados
-  fileName        String?
-  fileType        String?  // "pdf", "doc", "video", etc.
-  fileSize        Int?     // Tamanho em bytes
-  mimeType        String?
+  fileName           String?
+  fileType           String? // "pdf", "doc", "video", etc.
+  fileSize           Int? // Tamanho em bytes
+  mimeType           String?
   cloud_storage_path String? // Caminho do arquivo no S3
-  
+
   // Para vídeos via URL
-  videoUrl        String?  // URL do vídeo (YouTube, Vimeo, etc.)
-  isVideoUrl      Boolean  @default(false) // Indica se é um vídeo via URL
-  
+  videoUrl   String? // URL do vídeo (YouTube, Vimeo, etc.)
+  isVideoUrl Boolean @default(false) // Indica se é um vídeo via URL
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -724,34 +1908,34 @@ model PhaseDocument {
 }
 
 model PhaseInfo {
-  id              String   @id @default(cuid())
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  phase           String   // "preliminar", "fase-1", "fase-2", etc.
-  section         String   @default("description") // "description", "consideracoes", etc.
-  
+  id        String   @id @default(cuid())
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  phase   String // "preliminar", "fase-1", "fase-2", etc.
+  section String @default("description") // "description", "consideracoes", etc.
+
   // E-book Heyzine (antes da descrição) - SOMENTE ADMIN PODE EDITAR
-  heyzineEmbedUrl String?  @db.Text // URL de embed do Heyzine
-  
+  heyzineEmbedUrl String? @db.Text // URL de embed do Heyzine
+
   // Descrição da Fase - SOMENTE ADMIN PODE EDITAR
-  description     String?  @db.Text // Conteúdo HTML da descrição da fase
-  
+  description String? @db.Text // Conteúdo HTML da descrição da fase
+
   // Checklist de Implementação (depois da descrição) - SOMENTE ADMIN PODE EDITAR  
-  howToProceed    String?  @db.Text // Passo-a-passo em formato texto/HTML
-  
+  howToProceed String? @db.Text // Passo-a-passo em formato texto/HTML
+
   // Conteúdo HTML editável do Checklist de implementação - SOMENTE ADMIN PODE EDITAR
-  checklistHtml   String?  @db.Text // HTML personalizado para o checklist
-  
+  checklistHtml String? @db.Text // HTML personalizado para o checklist
+
   // Estado dos checkboxes do checklist (JSON) - USUÁRIOS PODEM SALVAR SEU PROGRESSO
-  checklistState  Json?    // { "item-id": true/false }
-  
+  checklistState Json? // { "item-id": true/false }
+
   // URLs "Na prática" - links para aplicativos externos - SOMENTE ADMIN PODE EDITAR
-  practicalUrls   Json?    // Array de objetos: [{ title: string, url: string, description?: string, displayMode?: "new-tab" | "embed" }]
-  
+  practicalUrls Json? // Array de objetos: [{ title: string, url: string, description?: string, displayMode?: "new-tab" | "embed" }]
+
   // Indica se é um e-book global (criado pelo admin) ou específico da empresa
-  isGlobal        Boolean  @default(false)
-  
+  isGlobal Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -761,225 +1945,225 @@ model PhaseInfo {
 
 model GlobalSettings {
   id String @id @default(cuid())
-  
+
   // URL do e-book do RIPD (compartilhado por todas as empresas)
   ripdEbookUrl String? @db.Text
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("global_settings")
 }
 
 model RipdChecklistProgress {
   id     String @id @default(cuid())
   userId String
-  
+
   // Estado do checklist (JSON com os IDs dos itens marcados)
   completedItems Json @default("[]")
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@unique([userId])
   @@map("ripd_checklist_progress")
 }
 
 model SystemSettings {
-  id String @id @default(cuid())
+  id        String @id @default(cuid())
   companyId String @unique
-  
+
   // Configurações de Email
-  smtpServer String?
-  smtpPort String?
-  smtpUser String?
+  smtpServer   String?
+  smtpPort     String?
+  smtpUser     String?
   smtpPassword String?
-  
+
   // Notificações
   emailNotifications Boolean @default(true)
-  pushNotifications Boolean @default(true)
-  deadlineReminders Boolean @default(true)
-  incidentAlerts Boolean @default(true)
-  
+  pushNotifications  Boolean @default(true)
+  deadlineReminders  Boolean @default(true)
+  incidentAlerts     Boolean @default(true)
+
   // Segurança
-  twoFactorAuth Boolean @default(false)
-  sessionTimeout Boolean @default(true)
-  sessionTimeoutMinutes Int @default(30)
-  
+  twoFactorAuth         Boolean @default(false)
+  sessionTimeout        Boolean @default(true)
+  sessionTimeoutMinutes Int     @default(30)
+
   // Sistema
-  autoBackup Boolean @default(true)
-  backupTime String @default("02:00")
+  autoBackup   Boolean @default(true)
+  backupTime   String  @default("02:00")
   autoDarkMode Boolean @default(false)
-  language String @default("pt-BR")
-  
+  language     String  @default("pt-BR")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("system_settings")
 }
 
 model ContentCategory {
-  id          String   @id @default(cuid())
-  name        String   // Nome da categoria, ex: "LGPD - Artigos comentados"
-  description String?  @db.Text // Descrição da categoria
-  imageUrl    String?  // URL da imagem representativa
-  order       Int      @default(0) // Ordem de exibição
-  
+  id          String  @id @default(cuid())
+  name        String // Nome da categoria, ex: "LGPD - Artigos comentados"
+  description String? @db.Text // Descrição da categoria
+  imageUrl    String? // URL da imagem representativa
+  order       Int     @default(0) // Ordem de exibição
+
   // Relacionamento com conteúdos
   contentItems ContentItem[]
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("content_categories")
 }
 
 model ContentItem {
-  id          String   @id @default(cuid())
-  categoryId  String
-  category    ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  title       String   // Título do conteúdo
-  description String?  @db.Text // Descrição do conteúdo
-  type        String   // "ebook", "word", "pdf", "excel", "url", "video"
-  order       Int      @default(0) // Ordem de exibição
-  
+  id         String          @id @default(cuid())
+  categoryId String
+  category   ContentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  title       String // Título do conteúdo
+  description String? @db.Text // Descrição do conteúdo
+  type        String // "ebook", "word", "pdf", "excel", "url", "video"
+  order       Int     @default(0) // Ordem de exibição
+
   // Para arquivos (word, pdf, excel)
-  fileName        String?
-  fileSize        Int?     // Tamanho em bytes
-  mimeType        String?
+  fileName           String?
+  fileSize           Int? // Tamanho em bytes
+  mimeType           String?
   cloud_storage_path String? // Caminho do arquivo no S3
-  
+
   // Para e-books Heyzine e embeds de URL/vídeo
-  embedUrl    String?  @db.Text // URL de embed (Heyzine, YouTube, páginas web, etc.)
-  
+  embedUrl String? @db.Text // URL de embed (Heyzine, YouTube, páginas web, etc.)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("content_items")
 }
 
 model PhaseEbook {
-  id              String   @id @default(cuid())
-  companyId       String?
-  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  
-  phase           String   // "fase-6", etc.
-  title           String   // Título do e-book
-  embedUrl        String   @db.Text // URL de embed do Heyzine ou outro
-  order           Int      @default(0) // Ordem de exibição
-  
+  id        String   @id @default(cuid())
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  phase    String // "fase-6", etc.
+  title    String // Título do e-book
+  embedUrl String @db.Text // URL de embed do Heyzine ou outro
+  order    Int    @default(0) // Ordem de exibição
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  @@map("phase_ebooks")
+
   @@index([companyId, phase])
+  @@map("phase_ebooks")
 }
 
 // ========== CHATBOT DETETIVE DA PRIVACIDADE ==========
 
 model ChatConversation {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  title           String?  // Título da conversa (gerado a partir da primeira mensagem)
-  lastPageContext String?  // Última página onde o usuário estava
-  mode            String   @default("simple") // "simple" ou "technical"
-  
-  messages        ChatMessage[]
-  
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title           String? // Título da conversa (gerado a partir da primeira mensagem)
+  lastPageContext String? // Última página onde o usuário estava
+  mode            String  @default("simple") // "simple" ou "technical"
+
+  messages ChatMessage[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  @@map("chat_conversations")
+
   @@index([userId])
+  @@map("chat_conversations")
 }
 
 model ChatMessage {
-  id              String   @id @default(cuid())
-  conversationId  String
-  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
-  role            String   // "user" ou "assistant"
-  content         String   @db.Text
-  pageContext     String?  // Página onde a mensagem foi enviada (ex: "fase-1", "dashboard")
-  
+  id             String           @id @default(cuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role        String // "user" ou "assistant"
+  content     String  @db.Text
+  pageContext String? // Página onde a mensagem foi enviada (ex: "fase-1", "dashboard")
+
   // Detecção de sentimento (apenas para mensagens do usuário)
-  sentiment       String?  // "positive", "neutral", "negative", "frustrated", "confused"
-  sentimentScore  Float?   // Score de confiança (0-1)
-  
+  sentiment      String? // "positive", "neutral", "negative", "frustrated", "confused"
+  sentimentScore Float? // Score de confiança (0-1)
+
   // Arquivo anexado
-  hasAttachment   Boolean  @default(false)
-  
-  feedback        ChatFeedback?
-  
+  hasAttachment Boolean @default(false)
+
+  feedback ChatFeedback?
+
   createdAt DateTime @default(now())
-  
-  @@map("chat_messages")
+
   @@index([conversationId])
+  @@map("chat_messages")
 }
 
 model ChatFeedback {
-  id              String   @id @default(cuid())
-  messageId       String   @unique
-  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  rating          String   // "like" ou "dislike"
-  comment         String?  @db.Text // Comentário opcional do usuário
-  
+  id        String      @id @default(cuid())
+  messageId String      @unique
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  rating  String // "like" ou "dislike"
+  comment String? @db.Text // Comentário opcional do usuário
+
   createdAt DateTime @default(now())
-  
+
   @@map("chat_feedbacks")
 }
 
 // Arquivos anexados ao chat
 model ChatFile {
-  id              String   @id @default(cuid())
-  messageId       String?
-  conversationId  String
-  
-  fileName        String
-  fileType        String   // "pdf", "doc", "docx", "txt", "xlsx"
-  fileSize        Int      // Tamanho em bytes
-  mimeType        String
+  id             String  @id @default(cuid())
+  messageId      String?
+  conversationId String
+
+  fileName           String
+  fileType           String // "pdf", "doc", "docx", "txt", "xlsx"
+  fileSize           Int // Tamanho em bytes
+  mimeType           String
   cloud_storage_path String // Caminho no S3
-  
+
   // Conteúdo extraído do arquivo (para análise)
-  extractedText   String?  @db.Text
-  
+  extractedText String? @db.Text
+
   createdAt DateTime @default(now())
-  
-  @@map("chat_files")
+
   @@index([conversationId])
+  @@map("chat_files")
 }
 
 // Sistema de cotas de uso do chatbot
 model ChatQuota {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  
+  id     String @id @default(cuid())
+  userId String @unique
+
   // Limites diários
-  dailyMessages   Int      @default(0)      // Mensagens enviadas hoje
-  dailyFiles      Int      @default(0)      // Arquivos enviados hoje
-  lastResetDate   DateTime @default(now())  // Data do último reset
-  
+  dailyMessages Int      @default(0) // Mensagens enviadas hoje
+  dailyFiles    Int      @default(0) // Arquivos enviados hoje
+  lastResetDate DateTime @default(now()) // Data do último reset
+
   // Limites mensais
-  monthlyMessages Int      @default(0)      // Mensagens enviadas este mês
-  monthlyFiles    Int      @default(0)      // Arquivos enviados este mês
-  lastMonthReset  DateTime @default(now())  // Data do último reset mensal
-  
+  monthlyMessages Int      @default(0) // Mensagens enviadas este mês
+  monthlyFiles    Int      @default(0) // Arquivos enviados este mês
+  lastMonthReset  DateTime @default(now()) // Data do último reset mensal
+
   // Configurações de limite (podem ser customizadas por usuário)
-  maxDailyMessages   Int   @default(50)     // Limite diário de mensagens
-  maxDailyFiles      Int   @default(10)     // Limite diário de arquivos
-  maxMonthlyMessages Int   @default(500)    // Limite mensal de mensagens
-  maxMonthlyFiles    Int   @default(50)     // Limite mensal de arquivos
-  
+  maxDailyMessages   Int @default(50) // Limite diário de mensagens
+  maxDailyFiles      Int @default(10) // Limite diário de arquivos
+  maxMonthlyMessages Int @default(500) // Limite mensal de mensagens
+  maxMonthlyFiles    Int @default(50) // Limite mensal de arquivos
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@map("chat_quotas")
 }
 
@@ -988,12 +2172,12 @@ model ChatQuota {
 // O campo "embedding" é gerenciado por SQL bruto pois Prisma não tipa
 // vector(N) nativamente.
 model DocumentChunk {
-  id          String   @id @default(cuid())
-  source      String   // path público do arquivo original ("/phase-documents/...")
-  sourceTitle String   // título humano ("1 - Cronograma...")
-  phase       String?  // "fase-1", "preliminar", etc — null se for global
-  chunkIndex  Int      // posição do chunk dentro do documento
-  text        String   @db.Text
+  id          String                      @id @default(cuid())
+  source      String // path público do arquivo original ("/phase-documents/...")
+  sourceTitle String // título humano ("1 - Cronograma...")
+  phase       String? // "fase-1", "preliminar", etc — null se for global
+  chunkIndex  Int // posição do chunk dentro do documento
+  text        String                      @db.Text
   // embedding vector(768) — adicionado via migração raw SQL.
   embedding   Unsupported("vector(768)")?
 
@@ -1004,3 +2188,283 @@ model DocumentChunk {
   @@map("document_chunks")
 }
 
+// ============================================================
+// CapacitacaoEvento (Checkpoint 18) — Capacitação LGPD
+// ============================================================
+// Registro temporal de evidências de que a Instituição promoveu/promoverá
+// capacitações para fomento de sensibilização e engajamento. Base legal:
+//   - Art. 41 §2º I LGPD (papel do Encarregado de orientar funcionários)
+//   - Art. 50 (programa de governança e boas práticas)
+//   - Art. 6º VIII (princípio da Prevenção)
+//   - Art. 52 §1º VIII (dosimetria — mitigação de penalidade)
+//
+// Organizado por 5 EIXOS de atuação:
+//   - ONBOARDING       — Integração e nivelamento de novos colaboradores
+//   - PILULAS          — Comunicação interna constante (newsletter, wallpaper)
+//   - PRATICA          — Atividades práticas e gamificação (phishing, quizzes)
+//   - DEPARTAMENTAL    — Treinamentos específicos por área
+//   - MONITORAMENTO    — Matriz de treinamento, pesquisas, revisão
+//
+// E por PÚBLICO-alvo: GERAL · RH_MARKETING · TI_SEGURANCA · EXTERNOS ·
+// DIRETORIA · ATENDIMENTO · NOVOS_COLABORADORES.
+//
+// Vínculos polimórficos opcionais: pode ser linkado a um Operator (capacitação
+// pra terceiro) ou a um Incident (capacitação corretiva pós-incidente).
+model CapacitacaoEvento {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // ----- Identificação -----
+  title       String
+  description String? @db.Text
+
+  /// Eixo de atuação no programa de capacitação
+  /// "ONBOARDING" | "PILULAS" | "PRATICA" | "DEPARTAMENTAL" | "MONITORAMENTO"
+  eixo String
+
+  /// Tipo de atividade
+  /// "PALESTRA" | "WORKSHOP" | "TREINAMENTO" | "EMAIL" | "VIDEO" |
+  /// "CAMPANHA" | "SIMULADO" | "QUIZ" | "OUTRO"
+  type String
+
+  /// Público-alvo da capacitação
+  /// "GERAL" | "RH_MARKETING" | "TI_SEGURANCA" | "EXTERNOS" |
+  /// "DIRETORIA" | "ATENDIMENTO" | "NOVOS_COLABORADORES"
+  audience String
+
+  // ----- Dimensão temporal -----
+  /// Quando vai/foi planejado pra acontecer
+  scheduledAt DateTime?
+  /// Quando efetivamente aconteceu (preenchido ao concluir)
+  completedAt DateTime?
+
+  /// "PLANEJADO" | "REALIZADO" | "CANCELADO"
+  status String @default("PLANEJADO")
+
+  /// Recorrência da atividade (pra cronograma anual)
+  /// "UNICO" | "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL"
+  recurrence String @default("UNICO")
+
+  // ----- Evidências (Art. 52 §1º VIII — comprovação pra ANPD) -----
+  /// URL pública do arquivo no Vercel Blob (lista presença, foto, vídeo, PDF)
+  evidenceUrl      String?
+  evidenceFileName String?
+  /// Número de participantes (input manual, opcional)
+  attendeesCount   Int?
+
+  // ----- Notas internas -----
+  notes String? @db.Text
+
+  // ----- Vínculos polimórficos opcionais -----
+  /// Capacitação direcionada a um terceiro específico (workshop de cláusulas, etc.)
+  operatorId String?
+  operator   Operator? @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+  /// Capacitação corretiva após incidente (treinamento phishing pós-vazamento, etc.)
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  // ----- Auditoria -----
+  createdById String?
+  createdBy   User?    @relation("CapacitacaoCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, scheduledAt])
+  @@index([companyId, eixo])
+  @@index([companyId, audience])
+  @@index([operatorId])
+  @@index([incidentId])
+  @@map("capacitacao_eventos")
+}
+
+/// Maturidade Cibernética — Avaliação NIST CSF (Checkpoint 22).
+///
+/// Diferente do GAP Analysis (Checkpoint 9) que mede aderência LGPD em
+/// 119 controles, aqui medimos segurança da informação em geral via
+/// NIST Cybersecurity Framework v1.1 (5 funções × ~16 categorias × ~80
+/// subcategorias). Catálogo em `lib/cyber-catalog.ts` (gerado/manual).
+///
+/// Modelo de avaliação igual ao GAP:
+///   - 1 resposta por controle (CyberAnswer) com aderência + ponto melhoria
+///   - Snapshots imutáveis pra histórico (CyberSnapshot)
+///
+/// Mitigações UX (combo 2+6+7+9+11+16):
+///   - Opção extra "DELEGADO_TI" (delegado ao responsável técnico) com
+///     `delegatedToId` apontando pro user de TI que recebeu o pedido.
+///   - Opção "NAO_APLICA" pra controles que não cabem na realidade da org.
+///   - Pré-população: alguns controles vêm marcados como ADERENTE com
+///     `evidenceFrom` apontando pra outro Checkpoint (CP9 GAP, CP16
+///     Incidentes, CP18 Capacitação) — economia de retrabalho.
+model CyberAnswer {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Código do controle no catálogo NIST (ex.: "ID.AM-1", "PR.AC-3").
+  controlCode String
+
+  /// "ADERENTE" | "PARCIAL" | "NAO_ADERENTE" | "NAO_APLICA" | "DELEGADO_TI"
+  aderencia String
+
+  /// Texto livre — gap específico (preenchido em PARCIAL/NAO_ADERENTE).
+  pontoMelhoria String? @db.Text
+
+  /// Texto livre — evidência da aderência (preenchido em ADERENTE).
+  evidence String? @db.Text
+
+  /// Quando pré-populado de outro Checkpoint, indica origem.
+  /// Valores: "GAP" | "INCIDENTES" | "CAPACITACAO" | "TERCEIROS" | null
+  evidenceFrom String?
+
+  /// Quando aderencia="DELEGADO_TI": user que recebeu a delegação.
+  delegatedToId String?
+  delegatedTo   User?     @relation("CyberDelegatedTo", fields: [delegatedToId], references: [id], onDelete: SetNull)
+  delegatedAt   DateTime?
+  /// Prazo opcional pra TI responder.
+  delegatedDue  DateTime?
+
+  // Auditoria
+  answeredById String
+  answeredBy   User     @relation(fields: [answeredById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([companyId, controlCode])
+  @@index([companyId, aderencia])
+  @@index([delegatedToId])
+  @@map("cyber_answers")
+}
+
+/// Snapshot imutável de uma avaliação NIST congelada (igual GapSnapshot).
+/// Útil pra comparar evolução ao longo do tempo, exportar versões
+/// históricas pra auditoria, e voltar atrás se preciso.
+model CyberSnapshot {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Nome amigável (ex.: "Q1 2026 — Pré-auditoria ISO").
+  name        String
+  /// Texto livre — contexto/motivação do snapshot.
+  description String? @db.Text
+
+  /// Snapshot completo das respostas no momento da criação. JSON com
+  /// formato: `{ controlCode: { aderencia, pontoMelhoria, evidence, ... } }`
+  answers Json
+
+  /// Score consolidado calculado e congelado (0-100 + por função).
+  score Json
+
+  createdById String
+  createdBy   User     @relation("CyberSnapshotCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@map("cyber_snapshots")
+}
+
+/// Registro de consentimento de cookies (Checkpoint 26 — Sistema de Cookies).
+/// Cada vez que um usuário/visitante faz uma escolha (aceitar todos / rejeitar
+/// não essenciais / configurar granularmente), uma linha nova é criada aqui
+/// pra fins de auditoria LGPD (evidência de consentimento perante a ANPD).
+///
+/// Modelo baseado no Guia Orientativo da ANPD sobre Cookies (2022) e em
+/// referências do app Detetive da Privacidade (Posso Confiar?). 4 categorias
+/// suportadas: necessary (sempre true) · analytics · marketing · preferences.
+///
+/// O banner aparece SÓ em páginas públicas do PGP (login, signup, /p/...).
+/// Usuários logados são considerados como já tendo consentido implicitamente
+/// (mas o registro permanece se vier de uma sessão pré-login).
+model CookieConsent {
+  id String @id @default(cuid())
+
+  // ----- Identificação (todos opcionais — visitor anônimo é OK) -----
+  /// User logado quando deu o consentimento. Null = visitante anônimo.
+  userId            String?
+  user              User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  /// Fingerprint do dispositivo (cookie `device_fp` setado client-side).
+  /// Permite rastrear consentimentos do mesmo browser entre sessões sem
+  /// exigir login.
+  deviceFingerprint String?
+  /// IP anonimizado (zera os últimos 8 bits IPv4 ou últimos 80 bits IPv6).
+  /// LGPD recomenda anonimização do IP pra registro de eventos.
+  ipAddress         String?
+  /// User agent do browser — útil pra suporte e auditoria.
+  userAgent         String?
+
+  // ----- Preferências (4 categorias) -----
+  /// Cookies necessários — sempre true. Não pode ser desativado pelo titular
+  /// (legítimo interesse, Art. 7º IX da LGPD).
+  necessary   Boolean @default(true)
+  /// Cookies analíticos (Google Analytics, métricas de uso).
+  /// Base legal: consentimento (Art. 7º I).
+  analytics   Boolean @default(false)
+  /// Cookies de marketing (remarketing, pixels de conversão, redes sociais).
+  /// Base legal: consentimento (Art. 7º I).
+  marketing   Boolean @default(false)
+  /// Cookies de preferências (tema, idioma, layout).
+  /// Base legal: consentimento (Art. 7º I).
+  preferences Boolean @default(false)
+
+  // ----- Metadados -----
+  /// Como o consentimento foi coletado: "banner" | "settings" | "api".
+  consentMethod  String @default("banner")
+  /// Versão da política de cookies vigente quando o consentimento foi dado.
+  /// Permite re-pedir consentimento quando há mudança material na política.
+  consentVersion String @default("1.0")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  /// Data de revogação. Null = consentimento ativo. Setado via DELETE
+  /// no endpoint /api/cookies/consent (titular revoga).
+  revokedAt DateTime?
+
+  @@index([userId])
+  @@index([deviceFingerprint])
+  @@index([createdAt])
+  @@map("cookie_consents")
+}
+
+// ============================================================
+// Painel de Retomada (Etapa 25 / Checkpoint 27)
+// ============================================================
+// Tracking de "Continue de onde parou" — registra o que o user
+// editou nas rotas PATCH/POST de cada entidade. 1 row por
+// (user, refType, refId) — upsert na rota de mutation.
+// Listagem no Dashboard filtra por status != APROVADO/PUBLICADO/
+// ENCERRADO + openedAt nos últimos 14 dias.
+//
+// refType:
+//   - "INVENTARIO"   → DataInventory
+//   - "RIPD"         → Ripd
+//   - "POLITICA"     → Policy
+//   - "INCIDENTE"    → Incident
+//   - "LIA"          → Lia
+//   - "PLANO_ACAO"   → ActionPlan
+//
+// closedCleanly: true quando user finalizou (publish/approve/close).
+// Quando closedCleanly = true, o item some do "Continue de onde parou"
+// mesmo se foi editado nos últimos 14 dias.
+// ============================================================
+model UserLastAction {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refType       String
+  refId         String
+  /// Rota pra retomar diretamente (ex: /dashboard/inventario/abc).
+  route         String
+  /// Label denormalizada pro display ("Inventário CRM"), evita JOIN.
+  label         String
+  /// Progresso 0..100 quando aplicável (Inventário, RIPD).
+  /// Null quando a entidade não tem progresso linear (Plano de Ação).
+  completeness  Int?
+  openedAt      DateTime @default(now())
+  closedCleanly Boolean  @default(false)
+
+  @@unique([userId, refType, refId])
+  @@index([userId, openedAt(sort: Desc)])
+  @@map("user_last_actions")
+}

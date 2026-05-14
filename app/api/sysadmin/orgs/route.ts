@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import bcrypt from "bcryptjs";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { isSuperAdmin, ROLES } from "@/lib/auth-helpers";
+import { hasSuperAdminAccess, ROLES } from "@/lib/auth-helpers";
 
 /**
  * Super admin endpoint — gerencia organizações.
@@ -28,7 +28,7 @@ async function requireSuperAdmin() {
   if (!session?.user?.email) {
     return { error: "Não autenticado", status: 401 };
   }
-  if (!isSuperAdmin(session.user.email)) {
+  if (!hasSuperAdminAccess(session.user as any)) {
     return { error: "Acesso restrito ao super admin", status: 403 };
   }
   return { session };
@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
   // Email único?
   const existing = await prisma.user.findUnique({
     where: { email: dpoEmail.trim().toLowerCase() },
+    select: { id: true },
   });
   if (existing) {
     return NextResponse.json(

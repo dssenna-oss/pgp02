@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mockup — Highlights Pesquisáveis</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; }
+  mark.hl {
+    background: linear-gradient(120deg, rgba(252,211,77,0.85), rgba(251,191,36,0.85));
+    padding: 0 3px;
+    border-radius: 3px;
+    font-weight: 600;
+    color: #78350f;
+  }
+  .fade-up { animation: fadeUp 0.25s ease-out; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  kbd { font-family: ui-monospace, monospace; font-size: 0.75em; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+<div class="max-w-4xl mx-auto p-6 space-y-5">
+
+  <!-- HEADER -->
+  <div class="text-center pt-4">
+    <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white text-2xl mb-3">🔎</div>
+    <h1 class="text-2xl font-bold">Buscar em todas as Fases</h1>
+    <p class="text-sm text-slate-500 mt-1">Encontra qualquer trecho de conteúdo das 9 fases · descrições · considerações · checklists · documentação</p>
+  </div>
+
+  <!-- BARRA DE BUSCA -->
+  <div class="relative">
+    <input
+      id="searchBox"
+      type="text"
+      value="biometria"
+      class="w-full px-12 py-4 text-lg rounded-2xl border-2 border-violet-200 bg-white focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-100 transition"
+      placeholder="Digite uma palavra ou frase..."
+    />
+    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl">🔎</span>
+    <button class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">✕</button>
+  </div>
+
+  <!-- HINT -->
+  <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+    <span>Atalho global: <kbd>Ctrl</kbd> + <kbd>K</kbd> abre essa busca de qualquer tela</span>
+    <span><strong>11</strong> resultados em <strong>4 fases</strong></span>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="flex flex-wrap gap-2 text-xs">
+    <button class="px-3 py-1.5 rounded-full bg-violet-600 text-white font-medium">Todas (11)</button>
+    <button class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100">Descrição (3)</button>
+    <button class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100">Considerações (5)</button>
+    <button class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100">Checklist (2)</button>
+    <button class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100">Documentação (1)</button>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="space-y-3 fade-up">
+
+    <!-- Resultado 1 -->
+    <a href="#" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-violet-300 hover:shadow-sm transition">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">🚩 Fase 3</span>
+        <span class="text-xs text-slate-500">Mapeamento e Análise de Riscos</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Considerações</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Tipos de dados sensíveis</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        Atenção especial pra dados <mark class="hl">biometria</mark> facial usada em sistemas de ponto eletrônico, controle de acesso ou autenticação. A LGPD trata esses dados como sensíveis (Art. 5º II), exigindo consentimento específico em destaque…
+      </p>
+      <div class="mt-2 text-xs text-violet-600">Abrir trecho na Fase 3 →</div>
+    </a>
+
+    <!-- Resultado 2 -->
+    <a href="#" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-violet-300 hover:shadow-sm transition">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">🚩 Fase 6</span>
+        <span class="text-xs text-slate-500">Execução</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Considerações</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">RIPD obrigatório</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        Quando há tratamento de <mark class="hl">biometria</mark> ou outro dado sensível em larga escala, a elaboração do Relatório de Impacto à Proteção de Dados (RIPD) torna-se mandatória, conforme Art. 38 da LGPD…
+      </p>
+      <div class="mt-2 text-xs text-violet-600">Abrir trecho na Fase 6 →</div>
+    </a>
+
+    <!-- Resultado 3 -->
+    <a href="#" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-violet-300 hover:shadow-sm transition">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">🚩 Fase 4</span>
+        <span class="text-xs text-slate-500">GAP Analysis</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Descrição</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        … o controle BR-12 verifica se a organização aplica criptografia ou pseudonimização em dados especialmente protegidos como <mark class="hl">biometria</mark>, dados de saúde, opinião política…
+      </p>
+      <div class="mt-2 text-xs text-violet-600">Abrir trecho na Fase 4 →</div>
+    </a>
+
+    <!-- Resultado 4 -->
+    <a href="#" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-violet-300 hover:shadow-sm transition">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">🚩 Fase Preliminar</span>
+        <span class="text-xs text-slate-500">Capacitação LGPD</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Checklist</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        Treinamento específico pro time de RH e TI sobre risco de tratar <mark class="hl">biometria</mark> sem consentimento explícito — caso de uso comum em controle de ponto e acesso.
+      </p>
+      <div class="mt-2 text-xs text-violet-600">Abrir trecho na Fase Preliminar →</div>
+    </a>
+
+    <!-- Resultado 5 -->
+    <a href="#" class="block bg-white rounded-xl border border-slate-200 p-4 hover:border-violet-300 hover:shadow-sm transition">
+      <div class="flex items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded">🚩 Fase 3</span>
+        <span class="text-xs text-slate-500">Mapeamento e Análise de Riscos</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Considerações</span>
+        <span class="text-slate-300">›</span>
+        <span class="text-xs text-slate-600">Inventário</span>
+      </div>
+      <p class="text-sm text-slate-700 leading-relaxed">
+        … coleta de <mark class="hl">biometria</mark> requer registro detalhado no Inventário (Art. 37): finalidade, base legal sensível (Art. 11), tempo de retenção e mecanismo de eliminação.
+      </p>
+      <div class="mt-2 text-xs text-violet-600">Abrir trecho na Fase 3 →</div>
+    </a>
+
+    <!-- Mostrar mais -->
+    <div class="text-center pt-2">
+      <button class="text-sm text-violet-600 hover:underline">Mostrar mais 6 resultados ↓</button>
+    </div>
+  </div>
+</div>
+
+<div class="fixed bottom-4 left-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 max-w-sm shadow z-30">
+  <strong>📝 Mockup estático:</strong> ilustra a busca global. No app real, atalho <kbd>Ctrl+K</kbd> abre o overlay de qualquer tela. Resultados respondem em tempo real conforme você digita; clicar leva à fase + rola até o trecho com highlight aplicado.
+</div>
+
+</body>
+</html>

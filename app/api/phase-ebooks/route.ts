@@ -22,21 +22,28 @@ export async function GET(request: NextRequest) {
     // Buscar empresa do usuário
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { company: true },
+      select: { companyId: true },
     });
 
     if (!user?.companyId) {
       return NextResponse.json({ error: "Usuário sem empresa associada" }, { status: 400 });
     }
 
-    // Buscar e-books da fase, ordenados
+    // Buscar e-books da fase: globais (companyId=null, conteúdo didático
+    // mantido pelo admin do sistema) + específicos desta empresa.
+    // Conteúdo didático nasce global pra que toda empresa nova já encontre
+    // material publicado. Empresas podem ter ebooks próprios cadastrados
+    // adicionalmente — aparecem misturados na ordem definida.
     const ebooks = await prisma.phaseEbook.findMany({
       where: {
-        companyId: user.companyId,
         phase: phase,
+        OR: [
+          { companyId: null },
+          { companyId: user.companyId },
+        ],
       },
       orderBy: {
-        order: 'asc',
+        order: "asc",
       },
     });
 
@@ -77,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Buscar empresa do usuário
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { company: true },
+      select: { companyId: true },
     });
 
     if (!user?.companyId) {

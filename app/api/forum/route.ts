@@ -8,7 +8,12 @@ import {
   VALID_FORUM_TYPES,
   VALID_FORUM_CATEGORIES,
   FORUM_POST_TYPE,
+  FORUM_CATEGORY_LABEL,
+  aggregateReactions,
 } from "@/lib/forum-types";
+import { sendEmailAsync } from "@/lib/email-sender";
+import { tplForumAnnouncement, tplForumMention } from "@/lib/email-templates";
+import { extractMentionedUserIds, stripMentionMarkdown } from "@/lib/forum-mentions";
 
 /**
  * Endpoints da listagem pública do Fórum.
@@ -30,6 +35,7 @@ async function getCurrentUser() {
   }
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
+    select: { id: true, role: true, companyId: true },
   });
   if (!user || !user.companyId) {
     return { error: NextResponse.json({ error: "Usuário sem organização" }, { status: 404 }) };
@@ -64,6 +70,7 @@ export async function GET(req: NextRequest) {
       },
       _count: { select: { replies: true } },
       reads: { where: { userId: user.id }, select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: 100,
@@ -71,13 +78,13 @@ export async function GET(req: NextRequest) {
 
   // Stats agregadas
   const totalPublicCount = await prisma.forumPost.count({
-    where: { companyId: user.companyId, active: true, recipientId: null },
+    where: { companyId: user.companyId ?? undefined, active: true, recipientId: null },
   });
   const myPublicReadsCount = await prisma.forumPostRead.count({
     where: {
       userId: user.id,
       post: {
-        companyId: user.companyId,
+        companyId: user.companyId ?? undefined,
         active: true,
         recipientId: null,
       },
@@ -87,7 +94,7 @@ export async function GET(req: NextRequest) {
 
   const totalDMsCount = await prisma.forumPost.count({
     where: {
-      companyId: user.companyId,
+      companyId: user.companyId ?? undefined,
       active: true,
       recipientId: user.id, // só DMs onde EU sou destinatário
     },
@@ -96,7 +103,7 @@ export async function GET(req: NextRequest) {
     where: {
       userId: user.id,
       post: {
-        companyId: user.companyId,
+        companyId: user.companyId ?? undefined,
         active: true,
         recipientId: user.id,
       },
@@ -108,6 +115,7 @@ export async function GET(req: NextRequest) {
     ...p,
     read: p.reads.length > 0,
     replyCount: p._count.replies,
+    reactions: aggregateReactions(p.reactions, user.id),
     reads: undefined,
     _count: undefined,
   }));
@@ -194,6 +202,77 @@ export async function POST(req: NextRequest) {
       data: { postId: post.id, userId: user.id },
     })
     .catch(() => {});
+
+  // Notifica usuários mencionados via @[Nome](mention:userId). Aplica
+  // pra qualquer tipo de post (discussion ou announcement), pra qualquer
+  // user (não só DPO). Respeita opt-out `emailNotifyDm` (mesma natureza
+  // institucional — alguém te chamou pelo nome).
+  const mentionedIds = extractMentionedUserIds(content).filter(
+    (uid) => uid !== user.id, // não notifica menção a si mesmo
+  );
+  if (mentionedIds.length > 0) {
+    const mentioned = await prisma.user.findMany({
+      where: {
+        id: { in: mentionedIds },
+        companyId: user.companyId!, // garante mesma org (defesa contra
+                                    // payload manipulado com userId externo)
+        isActive: true,
+        emailNotifyDm: true,
+      },
+      select: { email: true, name: true },
+    });
+    const previewText = stripMentionMarkdown(content);
+    for (const u of mentioned) {
+      sendEmailAsync({
+        to: { email: u.email, name: u.name ?? undefined },
+        tag: "forum-mention",
+        ...tplForumMention({
+          recipientName: u.name,
+          recipientEmail: u.email,
+          authorName: post.author.name ?? post.author.email,
+          source: "post",
+          postTitle: title,
+          contentPreview: previewText,
+          postId: post.id,
+        }),
+      });
+    }
+  }
+
+  // Notifica todos os usuários da org por email QUANDO é Comunicado
+  // oficial (Announcement). Discussions normais não disparam email pra
+  // não virar spam — user só sabe pelo polling do Fórum.
+  if (type === FORUM_POST_TYPE.ANNOUNCEMENT) {
+    const orgUsers = await prisma.user.findMany({
+      where: {
+        companyId: user.companyId!,
+        id: { not: user.id }, // não notifica o próprio autor
+        emailNotifyAnnouncements: true, // Etapa 26 — respeita opt-out
+      },
+      select: { email: true, name: true },
+    });
+    if (orgUsers.length > 0) {
+      const categoryLabel = category
+        ? FORUM_CATEGORY_LABEL[category as keyof typeof FORUM_CATEGORY_LABEL] ??
+          category
+        : "Geral";
+      for (const u of orgUsers) {
+        sendEmailAsync({
+          to: { email: u.email, name: u.name ?? undefined },
+          tag: "forum-announcement",
+          ...tplForumAnnouncement({
+            recipientName: u.name,
+            recipientEmail: u.email,
+            authorName: post.author.name ?? post.author.email,
+            postTitle: title,
+            postContentPreview: content,
+            postId: post.id,
+            category: categoryLabel,
+          }),
+        });
+      }
+    }
+  }
 
   return NextResponse.json({ post }, { status: 201 });
 }

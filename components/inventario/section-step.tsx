@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
   Accordion,
@@ -9,7 +9,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
+  ChevronsDownUp,
+  ChevronsUpDown,
+} from "lucide-react";
 import { FormFieldRenderer } from "./form-field-renderer";
 import { FieldHelp } from "./field-help";
 import { getSectionMeta } from "./section-meta";
@@ -28,6 +35,11 @@ interface SectionStepProps {
   onFieldChange: (fieldId: string, value: string | string[]) => void;
   /** Erros por field id. */
   errors?: Record<string, string>;
+  /**
+   * Origem por campo dessa seção (`{ fieldId: "template:<id>" }`).
+   * Usado pra exibir badge "📋 Modelo" nos campos pré-preenchidos.
+   */
+  provenance?: Record<string, string>;
 }
 
 /**
@@ -40,6 +52,7 @@ export function SectionStep({
   sectionAnswers,
   onFieldChange,
   errors,
+  provenance,
 }: SectionStepProps) {
   // Visíveis filtrados (dependsOn)
   const visibleFields = useMemo(
@@ -52,6 +65,40 @@ export function SectionStep({
     () => Object.keys(errors ?? {}),
     [errors]
   );
+
+  // Estado controlado do accordion (sec3 — collapseFields=true).
+  // Comportamento default: single-open. Clicar em um item fecha os outros.
+  // Toolbar permite "Expandir tudo" pra modo livre / "Recolher tudo".
+  // Quando aparece erro de validação, força a abertura dos campos com erro.
+  const [openValues, setOpenValues] = useState<string[]>(forceOpenIds);
+  useEffect(() => {
+    if (forceOpenIds.length > 0) {
+      setOpenValues((prev) => {
+        const merged = new Set(prev);
+        for (const id of forceOpenIds) merged.add(id);
+        return Array.from(merged);
+      });
+    }
+  }, [forceOpenIds]);
+
+  function handleValueChange(next: string[]) {
+    const opening = next.find((v) => !openValues.includes(v));
+    if (opening) {
+      // Usuário abriu um item novo → modo single: fecha os outros
+      setOpenValues([opening]);
+    } else {
+      // Usuário fechou algo (ou veio de "Expandir tudo") → preserva o resto
+      setOpenValues(next);
+    }
+  }
+
+  const allFieldIds = useMemo(
+    () => visibleFields.map((f) => f.id),
+    [visibleFields],
+  );
+  const allOpen =
+    allFieldIds.length > 0 && allFieldIds.every((id) => openValues.includes(id));
+  const allClosed = openValues.length === 0;
 
   const meta = getSectionMeta(section.id);
   const SectionIcon = meta.Icon;
@@ -71,21 +118,53 @@ export function SectionStep({
       </CardHeader>
       <CardContent className={section.collapseFields ? "p-0" : "space-y-6"}>
         {section.collapseFields ? (
-          <Accordion
-            type="multiple"
-            defaultValue={forceOpenIds}
-            className="w-full"
-          >
-            {visibleFields.map((field) => (
-              <FieldAccordionItem
-                key={field.id}
-                field={field}
-                value={sectionAnswers[field.id]}
-                onChange={(v) => onFieldChange(field.id, v)}
-                error={errors?.[field.id]}
-              />
-            ))}
-          </Accordion>
+          <>
+            {visibleFields.length > 1 && (
+              <div className="flex items-center justify-end gap-2 px-4 pt-2 pb-1 border-b">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  onClick={() => setOpenValues(allFieldIds)}
+                  disabled={allOpen}
+                  aria-label="Expandir todas as categorias"
+                >
+                  <ChevronsUpDown className="h-3.5 w-3.5 mr-1" />
+                  Expandir tudo
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                  onClick={() => setOpenValues([])}
+                  disabled={allClosed}
+                  aria-label="Recolher todas as categorias"
+                >
+                  <ChevronsDownUp className="h-3.5 w-3.5 mr-1" />
+                  Recolher tudo
+                </Button>
+              </div>
+            )}
+            <Accordion
+              type="multiple"
+              value={openValues}
+              onValueChange={handleValueChange}
+              className="w-full"
+            >
+              {visibleFields.map((field) => (
+                <FieldAccordionItem
+                  key={field.id}
+                  field={field}
+                  value={sectionAnswers[field.id]}
+                  onChange={(v) => onFieldChange(field.id, v)}
+                  error={errors?.[field.id]}
+                  provenance={provenance?.[field.id]}
+                />
+              ))}
+            </Accordion>
+          </>
         ) : (
           visibleFields.map((field) => (
             <FormFieldRenderer
@@ -95,6 +174,7 @@ export function SectionStep({
               onChange={(v) => onFieldChange(field.id, v)}
               readOnly={!!field.autoFillFrom}
               error={errors?.[field.id]}
+              provenance={provenance?.[field.id]}
             />
           ))
         )}
@@ -112,16 +192,23 @@ function FieldAccordionItem({
   value,
   onChange,
   error,
+  provenance,
 }: {
   field: FormField;
   value: string | string[] | undefined;
   onChange: (v: string | string[]) => void;
   error?: string;
+  provenance?: string;
 }) {
+  const fromTemplate = provenance?.startsWith("template:") ?? false;
+  const fromAi = provenance?.startsWith("firecrawl:") ?? false;
   const filled = Array.isArray(value)
     ? value.length > 0
     : !!value?.toString().trim();
   const count = Array.isArray(value) ? value.length : 0;
+  /** Pra single-choice mostramos o valor escolhido em vez do count zero. */
+  const singleLabel =
+    !Array.isArray(value) && filled ? value!.toString().trim() : null;
 
   return (
     <AccordionItem
@@ -147,10 +234,31 @@ function FieldAccordionItem({
           <span className="font-bold text-sm text-gray-900 dark:text-gray-100">
             {field.label}
             {field.required && <span className="ml-1 text-red-500">*</span>}
+            {fromTemplate && (
+              <span
+                className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 align-middle"
+                title="Pré-preenchido por um modelo padronizado. Você pode editar livremente."
+              >
+                📋 Modelo
+              </span>
+            )}
+            {fromAi && (
+              <span
+                className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 align-middle"
+                title="Pré-preenchido por IA a partir de URL pública. Revise antes de finalizar."
+              >
+                🤖 IA
+              </span>
+            )}
           </span>
           {count > 0 && (
             <Badge variant="secondary" className="ml-auto mr-2 text-xs">
               {count} selecionado{count !== 1 ? "s" : ""}
+            </Badge>
+          )}
+          {singleLabel && (
+            <Badge variant="secondary" className="ml-auto mr-2 text-xs">
+              {singleLabel}
             </Badge>
           )}
         </div>
@@ -184,6 +292,7 @@ function FieldAccordionItem({
             onChange={onChange}
             error={error}
             hideLabel
+            provenance={provenance}
           />
         </div>
       </AccordionContent>

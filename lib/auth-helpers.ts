@@ -75,6 +75,29 @@ export function isSuperAdmin(
 }
 
 /**
+ * Versão "robusta" de `isSuperAdmin` que aceita também o role do banco.
+ *
+ * Aceita SUPER_ADMIN se:
+ *   1. Email bate com SUPER_ADMIN_EMAIL (env var), OU
+ *   2. Role é `admin` (legado) — equivale a SUPER_ADMIN + DPO_PRINCIPAL.
+ *
+ * Use esta função em endpoints/páginas que precisam aceitar a conta
+ * legada mesmo se SUPER_ADMIN_EMAIL não estiver setado em produção.
+ *
+ * Recebe email + role separados (não a session inteira) pra ser usável
+ * tanto em páginas server-side (com getServerSession) quanto em endpoints
+ * de API (com tokens).
+ */
+export function hasSuperAdminAccess(
+  user: { email?: string | null; role?: string | null } | null | undefined
+): boolean {
+  if (!user) return false;
+  if (isSuperAdmin(user.email)) return true;
+  if (user.role === ROLES.ADMIN_LEGACY) return true;
+  return false;
+}
+
+/**
  * Label amigável pra mostrar na UI (sidebar, configurações).
  */
 export function roleLabel(role: string | null | undefined): string {

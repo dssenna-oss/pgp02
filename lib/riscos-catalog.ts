@@ -381,6 +381,87 @@ export const RISCOS_BY_CODE: Record<RiskCode, RiskDefinition> =
     RiskDefinition
   >;
 
+/**
+ * Lookup do nome curto pra exibição. Sempre devolve string —
+ * cai no próprio código se não achar (fail-safe pra dados antigos).
+ *
+ * Use em qualquer lugar onde o código bruto apareceria pra usuário
+ * final (ex: "BU"). Combine com `formatRiskTitle()` quando montar
+ * frases tipo "Tratar risco …".
+ */
+export function riskShortLabel(code: string | null | undefined): string {
+  if (!code) return "";
+  const def = RISCOS_BY_CODE[code as RiskCode];
+  return def?.shortLabel ?? code;
+}
+
+/**
+ * Frase pronta pra title de cards/recomendações:
+ *   "Falta de transparência (BU)"
+ * Caso o código não esteja no catálogo, devolve só ele.
+ */
+export function formatRiskTitle(code: string | null | undefined): string {
+  if (!code) return "";
+  const def = RISCOS_BY_CODE[code as RiskCode];
+  if (!def) return code;
+  return `${def.shortLabel} (${def.code})`;
+}
+
+// ============================================================
+// Agrupamento por categoria — pra UI de Análise de Riscos exibir
+// os 13 tipos em 3 grupos lógicos com barra de progresso por área.
+// Decisão UX 2026-05-08: agrupar em vez de scrollar 13 toggles.
+// ============================================================
+
+export type RiskCategory = "TRATAMENTO" | "COMPARTILHAMENTO" | "DIREITOS";
+
+export const RISK_CATEGORY_LABEL: Record<RiskCategory, string> = {
+  TRATAMENTO: "Tratamento de Dados",
+  COMPARTILHAMENTO: "Compartilhamento e Transferências",
+  DIREITOS: "Decisões Automatizadas e Direitos do Titular",
+};
+
+export const RISK_CATEGORY_DESCRIPTION: Record<RiskCategory, string> = {
+  TRATAMENTO:
+    "Princípios da LGPD aplicados ao processamento: base legal, minimização, transparência, finalidade, retenção e formas de coleta (Arts. 6º, 7º, 11, 14, 15)",
+  COMPARTILHAMENTO:
+    "Riscos de quando os dados saem do controlador: transferência internacional, operadores terceiros, empresas do grupo (Arts. 26-33)",
+  DIREITOS:
+    "Riscos relacionados a decisões automatizadas, profiling e direitos do titular (Art. 20)",
+};
+
+/** Mapa código → categoria. Cobre os 13 riscos BR..CD do catálogo. */
+export const RISK_CATEGORY_BY_CODE: Record<RiskCode, RiskCategory> = {
+  // Tratamento (7) — bases legais + princípios + coleta
+  BR: "TRATAMENTO", // Ausência de legitimação
+  BS: "TRATAMENTO", // Crianças/Adolescentes
+  BT: "TRATAMENTO", // Tratamento excessivo
+  BU: "TRATAMENTO", // Falta de transparência
+  BX: "TRATAMENTO", // Armazenagem indeterminada
+  BY: "TRATAMENTO", // Finalidade diversa
+  CA: "TRATAMENTO", // Aquisição indireta
+  // Compartilhamento (3)
+  BV: "COMPARTILHAMENTO", // Transferência internacional
+  BW: "COMPARTILHAMENTO", // Compartilhamento com terceiro
+  BZ: "COMPARTILHAMENTO", // Compartilhamento empresas do grupo
+  // Decisões automatizadas + Direitos (3)
+  CB: "DIREITOS", // Decisão automatizada
+  CC: "DIREITOS", // Profiling
+  CD: "DIREITOS", // Background check
+};
+
+/** Ordem de exibição das categorias na UI. */
+export const RISK_CATEGORIES_ORDERED: RiskCategory[] = [
+  "TRATAMENTO",
+  "COMPARTILHAMENTO",
+  "DIREITOS",
+];
+
+/** Helper: retorna riscos de uma categoria. */
+export function riscosByCategory(cat: RiskCategory): RiskDefinition[] {
+  return RISCOS_CATALOG.filter((r) => RISK_CATEGORY_BY_CODE[r.code] === cat);
+}
+
 // ============================================================
 // Lifecycle / status helpers
 // ============================================================
@@ -445,6 +526,162 @@ export function riskStatusColor(status: string | null | undefined): {
       };
   }
 }
+
+// ============================================================
+// Severidade (Checkpoint 6 — Detalhamento de Riscos)
+// ============================================================
+//
+// Matriz Probabilidade × Impacto → Severidade. Lógica padrão LGPD PRO
+// (combinação dos níveis Baixo/Médio/Alto em cada eixo). DPO escolhe
+// Probabilidade e Impacto manualmente; Severidade é DERIVADA — não dá
+// pra editar direto.
+
+export type RiskProbability = "BAIXA" | "MEDIA" | "ALTA";
+export type RiskImpact = "BAIXO" | "MEDIO" | "ALTO";
+export type RiskSeverity = "BAIXO" | "MEDIO" | "ALTO";
+
+export const RISK_PROBABILITY = {
+  BAIXA: "BAIXA",
+  MEDIA: "MEDIA",
+  ALTA: "ALTA",
+} as const;
+
+export const RISK_IMPACT = {
+  BAIXO: "BAIXO",
+  MEDIO: "MEDIO",
+  ALTO: "ALTO",
+} as const;
+
+export const RISK_SEVERITY = {
+  BAIXO: "BAIXO",
+  MEDIO: "MEDIO",
+  ALTO: "ALTO",
+} as const;
+
+/**
+ * Matriz 3×3 de severidade. Linhas = Probabilidade, Colunas = Impacto.
+ *
+ *               Impacto
+ *               BAIXO  MEDIO  ALTO
+ *   Prob BAIXA  BAIXO  BAIXO  MEDIO
+ *        MEDIA  BAIXO  MEDIO  ALTO
+ *        ALTA   MEDIO  ALTO   ALTO
+ *
+ * Justificativa: risco isolado de baixa probabilidade + alto impacto
+ * ainda merece atenção (= MEDIO); alta probabilidade + baixo impacto
+ * idem (recorrência amplifica). Os cantos opostos da diagonal são
+ * neutralizados em MEDIO.
+ */
+const SEVERITY_MATRIX: Record<RiskProbability, Record<RiskImpact, RiskSeverity>> = {
+  BAIXA: { BAIXO: "BAIXO", MEDIO: "BAIXO", ALTO: "MEDIO" },
+  MEDIA: { BAIXO: "BAIXO", MEDIO: "MEDIO", ALTO: "ALTO" },
+  ALTA:  { BAIXO: "MEDIO", MEDIO: "ALTO",  ALTO: "ALTO" },
+};
+
+export function computeSeverity(
+  probability: RiskProbability,
+  impact: RiskImpact,
+): RiskSeverity {
+  return SEVERITY_MATRIX[probability][impact];
+}
+
+/**
+ * Persistência: salvamos os 3 valores juntos no campo `severityLevel`
+ * do model `ProcessRisk` num formato chave-valor estável "P:M;I:A;S:ALTO".
+ * Vantagens: 1 campo só (não precisa migration nova); fácil parse;
+ * legível direto no banco.
+ */
+export interface SeverityState {
+  probability: RiskProbability;
+  impact: RiskImpact;
+  severity: RiskSeverity;
+}
+
+export function encodeSeverity(s: SeverityState): string {
+  return `P:${s.probability[0]};I:${s.impact[0]};S:${s.severity}`;
+}
+
+export function decodeSeverity(raw: string | null | undefined): SeverityState | null {
+  if (!raw) return null;
+  // Aceita formato novo "P:M;I:A;S:ALTO" e tolera ruído
+  const m = raw.match(/P:([BMA]);I:([BMA]);S:(BAIXO|MEDIO|ALTO)/);
+  if (m) {
+    const probLetter = m[1] as "B" | "M" | "A";
+    const impLetter = m[2] as "B" | "M" | "A";
+    const probMap: Record<"B" | "M" | "A", RiskProbability> = {
+      B: "BAIXA", M: "MEDIA", A: "ALTA",
+    };
+    const impMap: Record<"B" | "M" | "A", RiskImpact> = {
+      B: "BAIXO", M: "MEDIO", A: "ALTO",
+    };
+    return {
+      probability: probMap[probLetter],
+      impact: impMap[impLetter],
+      severity: m[3] as RiskSeverity,
+    };
+  }
+  // Compat: se o campo só tem o nível final ("BAIXO"|"MEDIO"|"ALTO")
+  // de uma versão antiga, devolvemos só severity (P/I null).
+  if (raw === "BAIXO" || raw === "MEDIO" || raw === "ALTO") {
+    return { probability: "MEDIA", impact: "MEDIO", severity: raw };
+  }
+  return null;
+}
+
+export function severityLabel(s: string | null | undefined): string {
+  switch (s) {
+    case "BAIXO": return "Baixo";
+    case "MEDIO": return "Médio";
+    case "ALTO":  return "Alto";
+    default:      return "—";
+  }
+}
+
+export function probabilityLabel(p: string | null | undefined): string {
+  switch (p) {
+    case "BAIXA": return "Baixa";
+    case "MEDIA": return "Média";
+    case "ALTA":  return "Alta";
+    default:      return "—";
+  }
+}
+
+export function impactLabel(i: string | null | undefined): string {
+  switch (i) {
+    case "BAIXO": return "Baixo";
+    case "MEDIO": return "Médio";
+    case "ALTO":  return "Alto";
+    default:      return "—";
+  }
+}
+
+/** Classes Tailwind pra badge de severidade. */
+export function severityBadgeClass(s: string | null | undefined): string {
+  switch (s) {
+    case "ALTO":
+      return "bg-red-100 text-red-800 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800";
+    case "MEDIO":
+      return "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+    case "BAIXO":
+      return "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700";
+  }
+}
+
+/** Tooltip explicativo de cada nível de probabilidade. */
+export const PROBABILITY_HINTS: Record<RiskProbability, string> = {
+  BAIXA: "Pouco provável de ocorrer. Cenários raros, controles existentes funcionam bem.",
+  MEDIA: "Pode ocorrer ocasionalmente. Existe alguma exposição mas não é frequente.",
+  ALTA:  "Muito provável ou já ocorre. Falhas estruturais ou controles ausentes/falhos.",
+};
+
+/** Tooltip explicativo de cada nível de impacto. */
+export const IMPACT_HINTS: Record<RiskImpact, string> = {
+  BAIXO: "Consequência limitada: pequenos ajustes operacionais ou impacto restrito a poucos titulares.",
+  MEDIO: "Multa moderada da ANPD, danos à imagem internos, indenização individual.",
+  ALTO:  "Multa de até 2% do faturamento, dano massivo à reputação, ação coletiva ou TAC do MPT.",
+};
 
 // ============================================================
 // Auto-suggest engine

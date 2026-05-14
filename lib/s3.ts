@@ -1,23 +1,59 @@
 /**
  * Camada de storage unificada.
  *
- * Por padrão, novos uploads vão para Vercel Blob (https://vercel.com/storage/blob).
+ * Em produção, novos uploads vão para Vercel Blob (https://vercel.com/storage/blob).
  * O bucket S3 ainda existe atrás dessa API por compatibilidade legada — quando
  * `cloud_storage_path` parece uma chave S3 (ex.: "phase-documents/abc"),
  * o código cai de volta no SDK da AWS. Quando for uma URL HTTPS (Vercel Blob)
- * ou um caminho relativo (`/phase-documents/...`, servido pelo Next), o
- * arquivo é tratado como já público.
+ * ou um caminho relativo (`/phase-documents/...` ou `/uploads/...`, servido
+ * pelo Next), o arquivo é tratado como já público.
+ *
+ * Em dev local SEM token Vercel Blob configurado, há fallback automático:
+ * uploads são salvos em `public/uploads/<subdir>/<timestamp>-<nome>` e a
+ * URL retornada é o path relativo `/uploads/<subdir>/<timestamp>-<nome>`,
+ * servido como estático pelo Next. Permite testar upload localmente sem
+ * depender da infra de prod.
  *
  * Pra produção:
  *   - Habilite Vercel Blob no painel do projeto (Storage → Connect Store → Blob)
  *   - O env var BLOB_READ_WRITE_TOKEN é injetado automaticamente nos
- *     deploys e nas funções serverless. Para `next dev` local, copie o
- *     token (Storage → .env.local) para o seu .env.
+ *     deploys e nas funções serverless.
  */
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { put, del } from "@vercel/blob";
+import { promises as fs } from "fs";
+import path from "path";
 import { createS3Client, getBucketConfig } from "./aws-config";
+
+/**
+ * Indica se devemos usar o fallback local em vez de Vercel Blob.
+ * Verdadeiro quando o token NÃO está configurado (típico de dev local).
+ */
+function shouldUseLocalFallback(): boolean {
+  return !process.env.BLOB_READ_WRITE_TOKEN;
+}
+
+/**
+ * Salva um buffer em `public/uploads/<subDir>/` com nome seguro
+ * `<timestamp>-<fileNameSanitizado>` e retorna o caminho relativo público
+ * (ex.: `/uploads/phase-documents/1714999999-arquivo.pdf`).
+ */
+async function saveLocalFile(
+  buffer: Buffer,
+  subDir: string,
+  fileName: string,
+): Promise<string> {
+  // Sanitiza: mantém só alfanumérico, ponto, hífen e underline.
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const finalName = `${Date.now()}-${safeName}`;
+  const dir = path.join(process.cwd(), "public", "uploads", subDir);
+  await fs.mkdir(dir, { recursive: true });
+  const filePath = path.join(dir, finalName);
+  await fs.writeFile(filePath, buffer);
+  // Path relativo a partir da raiz do site, servido pelo Next.
+  return `/uploads/${subDir}/${finalName}`;
+}
 
 // Lazy init pra evitar erro em dev quando AWS não está configurado
 let _s3Client: ReturnType<typeof createS3Client> | null = null;
@@ -44,7 +80,11 @@ function isLocalPath(p: string | null | undefined): boolean {
 }
 
 export async function uploadFile(buffer: Buffer, fileName: string, mimeType: string) {
-  // Vercel Blob: o pathname permite agrupar os arquivos por prefixo.
+  // Fallback dev: sem token Vercel Blob → salva em public/uploads/.
+  if (shouldUseLocalFallback()) {
+    return await saveLocalFile(buffer, "phase-documents", fileName);
+  }
+  // Produção: Vercel Blob — o pathname agrupa por prefixo.
   const pathname = `${folderPrefix}phase-documents/${Date.now()}-${fileName}`;
   const result = await put(pathname, buffer, {
     access: "public",
@@ -56,6 +96,9 @@ export async function uploadFile(buffer: Buffer, fileName: string, mimeType: str
 }
 
 export async function uploadLogo(buffer: Buffer, fileName: string, mimeType: string) {
+  if (shouldUseLocalFallback()) {
+    return await saveLocalFile(buffer, "logos", fileName);
+  }
   const pathname = `${folderPrefix}logos/${Date.now()}-${fileName}`;
   const result = await put(pathname, buffer, {
     access: "public",
@@ -106,7 +149,24 @@ export async function getFileUrl(
 }
 
 export async function deleteFile(key: string) {
-  // Caminho local servido pelo Next: nada a apagar (arquivo está no repo).
+  // Fallback local: arquivo gravado em public/uploads/ pelo dev local.
+  // Apaga do disco. Com guarda anti-traversal — só caminhos sob /uploads/.
+  if (key.startsWith("/uploads/")) {
+    try {
+      // path.join + normalize garante que o caminho fica sob public/uploads.
+      const safeRelative = path.posix.normalize(key).replace(/^\/+/, "");
+      if (!safeRelative.startsWith("uploads/")) return;
+      const filePath = path.join(process.cwd(), "public", safeRelative);
+      await fs.unlink(filePath);
+    } catch (err: any) {
+      // ENOENT é OK (arquivo já apagado ou nunca existiu localmente).
+      if (err?.code !== "ENOENT") throw err;
+    }
+    return;
+  }
+
+  // Caminhos legados servidos pelo Next a partir de `public/` (ex.: docs do
+  // seed que vivem no repo): nada a apagar — controle é via git.
   if (isLocalPath(key)) return;
 
   // Vercel Blob: usa o SDK próprio.

@@ -1141,8 +1141,17 @@ INDICAR O CANAL DE CONTATO`,
         id: "share_with_whom",
         label:
           "Considerando a questão acima, indique com quem é compartilhado informando o nome do departamento, ou do terceiro (Prestador de Serviços).",
-        type: "text-short",
+        type: "text-long",
         required: false,
+        dependsOn: {
+          fieldId: "share_targets",
+          values: [
+            "Sim, entre os departamentos da empresa",
+            "Sim, entre empresas do Grupo",
+            "Sim, com terceiros ou parceiros de negócio",
+            "Instituições governamentais",
+          ],
+        },
         help: {
           why: "É fundamental saber com quem seus dados são compartilhados para garantir que eles continuem protegidos e para cumprir o princípio da responsabilização. Você precisa saber quem tem acesso aos dados que você coleta.",
           lgpd: {
@@ -1165,6 +1174,15 @@ INDICAR O CANAL DE CONTATO`,
         description: "(Ex. para responder uma solicitação do cliente, para ação de marketing, etc.)",
         type: "text-long",
         required: false,
+        dependsOn: {
+          fieldId: "share_targets",
+          values: [
+            "Sim, entre os departamentos da empresa",
+            "Sim, entre empresas do Grupo",
+            "Sim, com terceiros ou parceiros de negócio",
+            "Instituições governamentais",
+          ],
+        },
         help: {
           why: "Você precisa justificar o porquê de compartilhar dados pessoais. Isso garante que o compartilhamento é legítimo, transparente e alinhado com a finalidade original da coleta, protegendo os direitos do titular.",
           lgpd: {
@@ -1186,6 +1204,15 @@ INDICAR O CANAL DE CONTATO`,
         label: "Quais Dados Pessoais são compartilhados com o Terceiro?",
         type: "text-long",
         required: false,
+        dependsOn: {
+          fieldId: "share_targets",
+          values: [
+            "Sim, entre os departamentos da empresa",
+            "Sim, entre empresas do Grupo",
+            "Sim, com terceiros ou parceiros de negócio",
+            "Instituições governamentais",
+          ],
+        },
         help: {
           why: "Você precisa saber exatamente quais dados pessoais são compartilhados pra garantir que apenas o essencial seja transferido e que o titular seja informado. Isso ajuda a controlar os riscos e a cumprir o princípio da minimização de dados.",
           lgpd: {
@@ -1215,6 +1242,15 @@ INDICAR O CANAL DE CONTATO`,
           "N/A",
         ],
         allowOther: true,
+        dependsOn: {
+          fieldId: "share_targets",
+          values: [
+            "Sim, entre os departamentos da empresa",
+            "Sim, entre empresas do Grupo",
+            "Sim, com terceiros ou parceiros de negócio",
+            "Instituições governamentais",
+          ],
+        },
         help: {
           why: "Identificar o meio de compartilhamento é vital pra avaliar a segurança dos dados durante a transferência. Ajuda a garantir que você usa métodos seguros e evita vazamentos ou acessos não autorizados.",
           lgpd: {

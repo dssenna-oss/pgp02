@@ -161,7 +161,7 @@ function validateHelp(obj: any, fieldId: string): FieldHelp | null {
     help.exemplos = obj.exemplos
       .filter((x: any) => typeof x === "string" && x.trim())
       .map((x: string) => x.trim());
-    if (help.exemplos.length === 0) delete help.exemplos;
+    if (help.exemplos && help.exemplos.length === 0) delete help.exemplos;
   }
   return help;
 }
