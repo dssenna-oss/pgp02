@@ -78,6 +78,22 @@ export default function PoliticasContent() {
     refresh();
   }, []);
 
+  // Atalho do card "Aviso de Privacidade" da Fase 6: quando vem com
+  // `?novo=AVISO_PRIVACIDADE_EXTERNO`, abre o modal de criação direto.
+  // Limpa a query string depois pra não reabrir em refresh.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("novo")) {
+      setShowCreate(true);
+      params.delete("novo");
+      const qs = params.toString();
+      const cleanUrl =
+        window.location.pathname + (qs ? `?${qs}` : "") + window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
+
   const handleCreateFromTemplate = async (type: string) => {
     setCreating(type);
     try {
