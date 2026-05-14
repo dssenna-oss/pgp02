@@ -48,6 +48,10 @@ export interface CompanyPlaceholders {
   dpoEmail: string | null;
   dpoPhone: string | null;
   legalRepresentative: string | null;
+  /** ID da Company — usado pelo link público do form DSR `/direitos-titulares/<id>`. */
+  companyId?: string | null;
+  /** Slug público da Company — usado por links cruzados entre políticas (`/p/<slug>/cookies`). */
+  companySlug?: string | null;
 }
 
 export function applyPlaceholders(
@@ -73,6 +77,8 @@ export function applyPlaceholders(
     "{{representante_legal}}": c.legalRepresentative || "[Representante Legal]",
     "{{data_publicacao}}": date,
     "{{ano}}": year,
+    "{{company_id}}": c.companyId || "[id da organização]",
+    "{{company_slug}}": c.companySlug || "[slug da organização]",
   };
   let out = template;
   for (const [k, v] of Object.entries(map)) {
@@ -252,7 +258,7 @@ const T_AVISO_EXTERNO: PolicyTemplate = {
   type: "AVISO_PRIVACIDADE_EXTERNO",
   defaultTitle: "Aviso de Privacidade",
   blurb:
-    "Documento público que esclarece e informa aos titulares como a organização trata seus dados pessoais — operações de coleta, uso, armazenamento, compartilhamento e eliminação. Modelo institucional alinhado ao Aviso de Privacidade da ANPD (12 seções). Indicado para o portal oficial. Use 'Atualizar do Inventário' (Bloco B — em construção) para popular a tabela de tratamento automaticamente a partir dos processos cadastrados.",
+    "Documento público que esclarece e informa aos titulares como a organização trata seus dados pessoais — operações de coleta, uso, armazenamento, compartilhamento e eliminação. Modelo institucional alinhado ao Aviso de Privacidade da ANPD (12 seções), com subseções para Transferência Internacional (Cap. V LGPD) e Decisões Automatizadas (art. 20 LGPD). Plugado com o formulário público de Requisições de Direitos do Titular (botão 'Exercer meus direitos →') e com a Política de Cookies da organização. Indicado para o portal oficial.",
   content: `# Aviso de Privacidade — {{empresa}}
 
 **Última atualização:** {{data_publicacao}}
@@ -340,7 +346,7 @@ const T_AVISO_EXTERNO: PolicyTemplate = {
 
 **4.3.** Utilizamos também *cookies* de **desempenho** e de **terceiros** que são opcionais e dependem do consentimento do titular. Os de desempenho visam à melhoria do sítio eletrônico por meio da coleta de dados anonimizados sobre navegação. Os de terceiros suportam serviços como compartilhamento em redes sociais ou exibição de vídeos incorporados.
 
-**4.4.** As configurações podem ser realizadas no banner de cookies ou modificadas, a qualquer tempo, no ícone de configurações de cookies do sítio. Para detalhes completos sobre os *cookies* utilizados, consulte nossa **Política de Cookies**.
+**4.4.** As configurações podem ser realizadas no banner de cookies ou modificadas, a qualquer tempo, no ícone de configurações de cookies do sítio. Para detalhes completos sobre os *cookies* utilizados, consulte nossa **[Política de Cookies](/p/{{company_slug}}/cookies)**.
 
 [Voltar ao Sumário](#sumário)
 
@@ -386,6 +392,12 @@ const T_AVISO_EXTERNO: PolicyTemplate = {
 
 **7.4.** Ao compartilharmos seus dados pessoais com operadores de dados, exigiremos que sejam tratados de acordo com nossas instruções, o que inclui o armazenamento seguro, retenção apenas pelo período instruído e o não compartilhamento subsequente com outras organizações sem nossa prévia e expressa autorização.
 
+### 7.5. Transferência internacional de dados pessoais
+
+**7.5.1.** A {{empresa}} prioriza o tratamento de dados pessoais em território nacional. Quando, em razão de necessidade técnica, operacional ou contratual, seus dados pessoais forem transferidos para outros países, observaremos as exigências do **Capítulo V da LGPD (arts. 33 a 36)** e do **Regulamento de Transferência Internacional de Dados (Resolução CD/ANPD nº 19/2024)**, adotando ao menos uma das salvaguardas previstas em lei (decisão de adequação da ANPD, cláusulas-padrão contratuais, normas corporativas globais, código de conduta ou certificação reconhecida pela ANPD, consentimento específico do titular ou demais hipóteses do art. 33).
+
+**7.5.2.** Caso a {{empresa}} **não realize** transferência internacional de dados pessoais, esta seção é declarativa: a transferência só ocorrerá se houver alteração formal deste Aviso de Privacidade.
+
 [Voltar ao Sumário](#sumário)
 
 ---
@@ -430,7 +442,21 @@ const T_AVISO_EXTERNO: PolicyTemplate = {
 - Revogação do consentimento, quando aplicável;
 - Solicitação de revisão de decisões tomadas unicamente com base em tratamento automatizado de dados pessoais.
 
-**10.2.** Caso deseje exercer seus direitos, utilize \`[descrever o canal: "a Plataforma Fala.BR" / "o e-mail do Encarregado" / "o formulário disponível em <link>"]\`. O exercício de seus direitos é **gratuito** e a {{empresa_nome_curto}} avaliará a possibilidade do imediato atendimento; caso não seja possível, você será informado dos motivos ou dos prazos necessários.
+**10.2.** Caso deseje exercer seus direitos, a {{empresa_nome_curto}} disponibiliza um **formulário público de Requisições de Direitos do Titular** — basta acessar o link abaixo e preencher os dados solicitados. O exercício de seus direitos é **gratuito** e a {{empresa_nome_curto}} avaliará a possibilidade do imediato atendimento; caso não seja possível, você será informado dos motivos ou dos prazos necessários, dentro do prazo legal de **15 (quinze) dias corridos** (art. 19, II da LGPD).
+
+> ### 👉 [Exercer meus direitos →](/direitos-titulares/{{company_id}})
+>
+> *Formulário público — não requer cadastro. Você receberá um protocolo por e-mail para acompanhar o andamento.*
+
+**10.2.1.** Alternativamente, você também pode enviar sua solicitação diretamente ao **Encarregado pelo Tratamento de Dados Pessoais** pelos canais listados na **Seção 12**.
+
+### 10.3. Decisões tomadas com base em tratamento automatizado (art. 20 da LGPD)
+
+**10.3.1.** Caso a {{empresa}} venha a tomar decisões que afetem seus interesses **unicamente com base em tratamento automatizado** de seus dados pessoais — incluindo decisões destinadas a definir seu perfil pessoal, profissional, de consumo, de crédito ou aspectos de sua personalidade — você terá direito a **solicitar a revisão** dessas decisões, nos termos do **art. 20 da LGPD**.
+
+**10.3.2.** Você também tem direito a obter **informações claras e adequadas** a respeito dos critérios e dos procedimentos utilizados para a decisão automatizada, observados os segredos comercial e industrial (art. 20, § 1º da LGPD).
+
+**10.3.3.** Para exercer este direito, utilize o mesmo formulário público da Seção 10.2 (selecionando a opção "Revisão de decisão automatizada (art. 20)") ou contate o Encarregado.
 
 [Voltar ao Sumário](#sumário)
 

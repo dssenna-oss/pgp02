@@ -123,6 +123,8 @@ export async function POST(request: NextRequest) {
     dpoEmail: company.dpoEmail,
     dpoPhone: company.dpoPhone,
     legalRepresentative: company.legalRepresentative,
+    companyId: company.id,
+    companySlug: company.slug,
   });
 
   // Garante uniqueness de (companyId, type, slug). Retry com sufixo se colisão.

@@ -1340,6 +1340,7 @@ function Fase6Tools() {
       <RipdCardTools />
       <LiaCardTools />
       <TerceirosCardTools />
+      <AvisoPrivacidadeCard />
       <PoliticasCard />
       <AvisosServicoCard />
       <TermosConsentimentoCard />
@@ -1838,6 +1839,144 @@ function PoliticasCard() {
           ? "Esta tela é trabalhada pelo DPO da organização."
           : total === 0
             ? "Comece pelos 3 mais comuns: Aviso de Privacidade, Termos de Uso e Política de Cookies."
+            : undefined
+      }
+    />
+  );
+}
+
+// ============================================================
+// AvisoPrivacidadeCard — destaque institucional do Aviso de
+// Privacidade externo (D5 do cardápio Aviso). Reaproveita a API
+// /api/politicas e foca apenas no item type=AVISO_PRIVACIDADE_EXTERNO.
+// Mostra status (sem · rascunho · publicado), abre direto no editor
+// quando existe e oferece "Ver URL pública" quando está publicado.
+// ============================================================
+
+interface AvisoPolicyItem {
+  id: string;
+  type: string;
+  status: string;
+  publicUrl: string | null;
+  publishedAt: string | null;
+  currentContent: string;
+  publishedContent: string | null;
+}
+
+function AvisoPrivacidadeCard() {
+  const [items, setItems] = useState<AvisoPolicyItem[] | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/politicas");
+        if (res.ok) {
+          const data = await res.json();
+          setItems(
+            (data.items ?? []).filter(
+              (p: AvisoPolicyItem) => p.type === "AVISO_PRIVACIDADE_EXTERNO",
+            ),
+          );
+        } else if (res.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Pega o aviso publicado (preferido) ou o rascunho mais recente.
+  const publicado = items?.find((p) => p.status === "PUBLICADA") ?? null;
+  const rascunho = items?.find((p) => p.status === "RASCUNHO") ?? null;
+  const aviso = publicado ?? rascunho ?? null;
+  const outdated =
+    publicado &&
+    publicado.publishedContent !== null &&
+    publicado.currentContent !== publicado.publishedContent;
+
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : !aviso
+      ? "neutral"
+      : publicado && !outdated
+        ? "success"
+        : "warning";
+
+  const stats: Stat[] = forbidden
+    ? []
+    : !aviso
+      ? []
+      : publicado
+        ? [
+            {
+              label: "publicado",
+              value:
+                publicado.publishedAt
+                  ? new Date(publicado.publishedAt).toLocaleDateString("pt-BR")
+                  : "sim",
+              color: "emerald",
+              icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+            },
+            ...(outdated
+              ? [
+                  {
+                    label: "rascunho mais novo",
+                    value: "atualize a publicação",
+                    color: "amber" as const,
+                    icon: <AlertCircle className="h-3.5 w-3.5" />,
+                  },
+                ]
+              : []),
+          ]
+        : [
+            {
+              label: "rascunho",
+              value: "aguardando publicação",
+              color: "amber",
+              icon: <Clock className="h-3.5 w-3.5" />,
+            },
+          ];
+
+  const primaryAction = aviso
+    ? {
+        label: publicado ? "Abrir Aviso publicado" : "Concluir rascunho",
+        href: `/dashboard/politicas/${aviso.id}`,
+      }
+    : {
+        label: "Criar do template",
+        href: "/dashboard/politicas?novo=AVISO_PRIVACIDADE_EXTERNO",
+      };
+
+  const secondaryAction =
+    publicado && publicado.publicUrl
+      ? {
+          label: "Ver URL pública",
+          href: publicado.publicUrl,
+          icon: <ExternalLink className="h-3.5 w-3.5" />,
+        }
+      : undefined;
+
+  return (
+    <ToolCard
+      icon={<Shield className="h-6 w-6" />}
+      iconColor="text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-950/40"
+      title="Aviso de Privacidade"
+      description="Documento público institucional (Art. 9º LGPD) no formato ANPD — 12 seções estruturadas, com link pro formulário público de Direitos do Titular e pra Política de Cookies. Versionado, exportável em DOCX/PDF e publicado em URL pública pra titulares."
+      progressColor={color}
+      loading={loading}
+      primaryAction={primaryAction}
+      secondaryAction={secondaryAction}
+      stats={stats}
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : !aviso
+            ? "Sem Aviso de Privacidade publicado. Crie do template oficial ANPD — já vem preenchido com os dados da sua organização."
             : undefined
       }
     />

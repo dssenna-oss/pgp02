@@ -124,6 +124,16 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    */
   const [dsrPendentes, setDsrPendentes] = useState<number | null>(null);
   const [dsrVencidas, setDsrVencidas] = useState<number | null>(null);
+  /**
+   * URLs públicas de políticas publicadas (Aviso de Privacidade,
+   * Política de Cookies) — alimenta o rodapé com link sempre-disponível
+   * (D7 do cardápio Aviso). Buscadas 1x no mount; só aparecem se status
+   * = PUBLICADA na origem, evitando link pra 404.
+   */
+  const [publicLinks, setPublicLinks] = useState<{
+    avisoPrivacidadeUrl: string | null;
+    cookiesUrl: string | null;
+  }>({ avisoPrivacidadeUrl: null, cookiesUrl: null });
 
   // Ref pra expor o refreshAll do useEffect ao useAdaptivePolling.
   // Init null — populado quando o useEffect monta.
@@ -144,6 +154,27 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
     };
 
     fetchLogo();
+  }, []);
+
+  // Busca URLs públicas (Aviso de Privacidade + Política de Cookies)
+  // pra montar o rodapé do app — só mostra link se publicada na origem.
+  useEffect(() => {
+    let active = true;
+    fetch("/api/company/public-links")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        setPublicLinks({
+          avisoPrivacidadeUrl: data.avisoPrivacidadeUrl ?? null,
+          cookiesUrl: data.cookiesUrl ?? null,
+        });
+      })
+      .catch(() => {
+        // silencioso — rodapé só esconde os links
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Polling dos contadores (tarefas urgentes + fórum não-lidos).
@@ -428,6 +459,14 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: FileTextIcon,
       dpoOnly: true,
       tourId: "nav-politicas",
+    },
+    {
+      name: "Aviso de Privacidade",
+      description: "Documento público institucional (Art. 9º LGPD, formato ANPD)",
+      href: "/dashboard/aviso-privacidade",
+      icon: Shield,
+      dpoOnly: true,
+      tourId: "nav-aviso-privacidade",
     },
     {
       name: "Avisos por Serviço",
@@ -808,6 +847,37 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
           <div className="p-6 lg:p-8 max-w-7xl mx-auto w-full">
             {children}
           </div>
+
+          {/* Rodapé permanente (D7 do cardápio Aviso) — links públicos pras
+              políticas institucionais. Só renderiza quando há ao menos um
+              documento publicado, evitando ruído visual. */}
+          {(publicLinks.avisoPrivacidadeUrl || publicLinks.cookiesUrl) && (
+            <footer className="border-t border-gray-200 dark:border-gray-800 bg-white/60 dark:bg-gray-900/40 mt-2">
+              <div className="max-w-7xl mx-auto px-6 lg:px-8 py-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+                {publicLinks.avisoPrivacidadeUrl && (
+                  <a
+                    href={publicLinks.avisoPrivacidadeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-sky-700 dark:hover:text-sky-300 hover:underline inline-flex items-center gap-1"
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    Aviso de Privacidade
+                  </a>
+                )}
+                {publicLinks.cookiesUrl && (
+                  <a
+                    href={publicLinks.cookiesUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-amber-700 dark:hover:text-amber-300 hover:underline"
+                  >
+                    Política de Cookies
+                  </a>
+                )}
+              </div>
+            </footer>
+          )}
         </main>
       </div>
 
