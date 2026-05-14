@@ -26,7 +26,8 @@ import {
   Library,
   ListChecks,
   MessagesSquare,
-  Scale
+  Scale,
+  UserCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -57,6 +58,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * sobrecarregar o servidor.
    */
   const [forumUnread, setForumUnread] = useState<number | null>(null);
+  /**
+   * Contador de Requisições de Direitos do Titular pendentes (DPO-only).
+   * Polling a cada 60s. Endpoint só retorna >0 pra usuários DPO.
+   */
+  const [dsrPendentes, setDsrPendentes] = useState<number | null>(null);
+  const [dsrVencidas, setDsrVencidas] = useState<number | null>(null);
 
   // Busca o logo da empresa
   useEffect(() => {
@@ -103,22 +110,49 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    /**
+     * DSR contadores — só consulta se o usuário for DPO. 403 é tratado
+     * silenciosamente (zera o badge), não polui o console.
+     */
+    const fetchDsr = async () => {
+      if (!isDPO(session?.user?.role)) {
+        setDsrPendentes(0);
+        setDsrVencidas(0);
+        return;
+      }
+      try {
+        const r = await fetch("/api/direitos-titulares/contadores", {
+          cache: "no-store",
+        });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setDsrPendentes(j.pendentes ?? 0);
+        setDsrVencidas(j.vencidas ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
+      void fetchDsr();
     };
 
     refreshAll();
     const taskId = setInterval(fetchAlerts, 60000);
     const forumId = setInterval(fetchForumUnread, 30000);
+    const dsrId = setInterval(fetchDsr, 60000);
     const offEvent = onSidebarRefresh(refreshAll);
     return () => {
       active = false;
       clearInterval(taskId);
       clearInterval(forumId);
+      clearInterval(dsrId);
       offEvent();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.role]);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -215,6 +249,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       description: "Gerenciar usuários da organização",
       href: "/dashboard/contribuidores",
       icon: Users,
+      dpoOnly: true,
+    },
+    {
+      name: "Direitos do Titular",
+      description: "Requisições do art. 18 LGPD (prazo 15 dias)",
+      href: "/dashboard/requisicoes-titulares",
+      icon: UserCheck,
       dpoOnly: true,
     },
     { name: "Painel Chatbot", href: "/dashboard/admin/chatbot", icon: BarChart3, adminOnly: true },
@@ -318,6 +359,20 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     taskAlerts > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold flex-shrink-0">
                         {taskAlerts}
+                      </span>
+                    )}
+                  {/* Badge de DSR pendentes (RECEBIDA + EM_ANALISE + AGUARDANDO_TITULAR).
+                      Cor vermelha quando há vencidas, âmbar caso contrário. */}
+                  {item.href === "/dashboard/requisicoes-titulares" &&
+                    dsrPendentes !== null &&
+                    dsrPendentes > 0 && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-white text-[10px] font-bold flex-shrink-0",
+                          (dsrVencidas ?? 0) > 0 ? "bg-red-500" : "bg-amber-500",
+                        )}
+                      >
+                        {dsrPendentes}
                       </span>
                     )}
                   {/* Badge de não-lidos do Fórum (posts públicos + DMs). */}

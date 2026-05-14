@@ -74,6 +74,9 @@ model User {
   authoredForumReplies ForumReply[]
   forumReads          ForumPostRead[]
 
+  // Requisições de direitos do titular respondidas (DPO)
+  respondedDataSubjectRequests DataSubjectRequest[] @relation("DSRRespondedBy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -116,6 +119,7 @@ model Company {
   ripds            RIPD[]
   documents        Document[]
   incidents        Incident[]
+  dataSubjectRequests DataSubjectRequest[]
   phaseDocuments   PhaseDocument[]
   phaseInfos       PhaseInfo[]
   phaseEbooks      PhaseEbook[]
@@ -565,6 +569,90 @@ model Incident {
   updatedAt DateTime @updatedAt
 
   @@map("incidents")
+}
+
+/// Requisição de Direitos do Titular (arts. 18, 19 e 20 da LGPD).
+/// Fluxo: titular preenche form público → cria registro com status "RECEBIDA"
+/// → DPO move pra "EM_ANALISE" → conclui em "RESPONDIDA" ou "INDEFERIDA".
+/// Prazo legal de resposta: 15 dias corridos do recebimento (art. 19, §1º).
+model DataSubjectRequest {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Protocolo institucional (REQ-YYYY-NNNN, único por empresa)
+  protocolNumber  String   @unique
+
+  // Identificação do titular
+  titularName     String
+  titularCpf      String
+  titularDocType  String?  // RG, CNH, Passaporte, etc.
+  titularDocNumber String?
+  titularBirthDate DateTime?
+  titularPhone    String
+  titularEmail    String
+  titularAddress  String?
+  titularCategory String   // "cidadao" | "servidor" | "fornecedor" | "jurisdicionado" | "outro"
+  titularCategoryOther String?
+
+  // Representante legal/procurador (se aplicável)
+  hasRepresentative   Boolean @default(false)
+  representativeName  String?
+  representativeCpf   String?
+  representativeType  String?  // "legal" | "procurador" | "outro"
+  representativeTypeOther String?
+  representativeEmail String?
+  representativePhone String?
+
+  // Direitos solicitados (arts. 18 I–IX, §2º; 19; 20 da LGPD)
+  // Armazenado como string[] dos códigos: ["I","II",...,"XII"]
+  requestedRights String[]
+
+  // Detalhamento livre do pedido
+  detailedRequest String   @db.Text
+
+  // Canal preferido de resposta
+  responseChannel      String   // "email" | "postal" | "presencial" | "outro"
+  responseChannelOther String?
+
+  // Anexos (URLs do Vercel Blob)
+  identityDocUrl       String?  // documento de identidade (obrigatório)
+  representationDocUrl String?  // procuração/comprovante de representação
+  additionalDocs       Json?    // [{ name, url }] outros docs anexados
+
+  // Workflow / status do atendimento
+  // "RECEBIDA" | "EM_ANALISE" | "AGUARDANDO_TITULAR" | "RESPONDIDA" | "INDEFERIDA"
+  status          String   @default("RECEBIDA")
+
+  // Resposta institucional
+  decision        String?  // "DEFERIDO" | "DEFERIDO_PARCIAL" | "INDEFERIDO"
+  responseText    String?  @db.Text
+  responseActions String?  @db.Text
+  responseDate    DateTime?
+  responseChannelUsed String?
+
+  // Quem respondeu (DPO ou auxiliar)
+  respondedByUserId String?
+  respondedByUser   User?   @relation("DSRRespondedBy", fields: [respondedByUserId], references: [id], onDelete: SetNull)
+
+  // Vínculo com Tarefa auto-criada no recebimento
+  relatedTaskId   String?  @unique
+
+  // Aceite/Declaração de autenticidade + auditoria
+  authenticityAccepted Boolean @default(false)
+  ipAddress       String?
+  userAgent       String?  @db.Text
+
+  // Prazo legal (15 dias corridos do recebimento — base do countdown)
+  dueDate         DateTime
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@index([protocolNumber])
+  @@map("data_subject_requests")
 }
 
 model Account {

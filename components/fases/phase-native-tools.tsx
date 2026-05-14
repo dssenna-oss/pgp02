@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,8 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  UserCheck,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +36,9 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
   if (phase === "fase-3") {
     return <Fase3Tools />;
   }
+  if (phase === "fase-6") {
+    return <Fase6Tools />;
+  }
   // Outras fases ainda sem mini-apps nativos.
   return null;
 }
@@ -40,7 +46,7 @@ export default function PhaseNativeTools({ phase }: { phase: string }) {
 /** Indica se uma fase tem ferramentas nativas (pra `PhasePracticalLinks`
  * decidir se mostra ou não a mensagem "nenhum link adicionado"). */
 export function phaseHasNativeTools(phase: string): boolean {
-  return phase === "fase-3";
+  return phase === "fase-3" || phase === "fase-6";
 }
 
 // ============================================================
@@ -270,6 +276,134 @@ function Fase3Tools() {
             : !riscos || riscos.stats.totalProcesses === 0
             ? "Aprove pelo menos 1 processo no Inventário pra começar a Análise de Riscos."
             : undefined
+        }
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// Fase 6 — Requisições de Direitos do Titular
+// ============================================================
+
+interface DsrCountersResponse {
+  pendentes: number;
+  vencidas: number;
+  criticas: number;
+}
+
+function Fase6Tools() {
+  const { data: session } = useSession();
+  const companyId = session?.user?.companyId || null;
+  const [dsr, setDsr] = useState<DsrCountersResponse | null>(null);
+  const [dsrForbidden, setDsrForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/direitos-titulares/contadores");
+        if (r.ok) {
+          setDsr(await r.json());
+        } else if (r.status === 401 || r.status === 403) {
+          setDsrForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Cor de progresso: verde se sem pendência, âmbar se há crítica, vermelho se vencida
+  const dsrColor: ToolCardColor = dsrForbidden
+    ? "neutral"
+    : !dsr
+      ? "neutral"
+      : (dsr.vencidas || 0) > 0
+        ? "warning"
+        : (dsr.criticas || 0) > 0
+          ? "warning"
+          : (dsr.pendentes || 0) === 0
+            ? "success"
+            : "neutral";
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* ===== Card Direitos do Titular ===== */}
+      <ToolCard
+        icon={<UserCheck className="h-6 w-6" />}
+        iconColor="text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/40"
+        title="Direitos do Titular"
+        description="Atenda requisições do art. 18 da LGPD com prazo de 15 dias corridos."
+        progressColor={dsrColor}
+        loading={loading}
+        primaryAction={{
+          label:
+            dsr && dsr.pendentes > 0
+              ? `Abrir painel (${dsr.pendentes} pendente${dsr.pendentes === 1 ? "" : "s"})`
+              : "Abrir painel",
+          href: "/dashboard/requisicoes-titulares",
+        }}
+        secondaryAction={
+          companyId
+            ? {
+                label: "Ver formulário público",
+                href: `/direitos-titulares/${companyId}`,
+                icon: <ExternalLink className="h-4 w-4" />,
+              }
+            : undefined
+        }
+        stats={
+          dsrForbidden
+            ? []
+            : dsr && dsr.pendentes > 0
+              ? [
+                  {
+                    label: "pendentes",
+                    value: dsr.pendentes,
+                    color: "amber",
+                    icon: <Clock className="h-3.5 w-3.5" />,
+                  },
+                  ...(dsr.criticas > 0
+                    ? [
+                        {
+                          label: "prazo crítico (≤3d)",
+                          value: dsr.criticas,
+                          color: "amber" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                  ...(dsr.vencidas > 0
+                    ? [
+                        {
+                          label: "vencidas",
+                          value: dsr.vencidas,
+                          color: "red" as const,
+                          icon: <AlertCircle className="h-3.5 w-3.5" />,
+                        },
+                      ]
+                    : []),
+                ]
+              : dsr && dsr.pendentes === 0
+                ? [
+                    {
+                      label: "tudo em dia",
+                      value: "✓",
+                      color: "emerald",
+                      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                    },
+                  ]
+                : []
+        }
+        emptyHint={
+          dsrForbidden
+            ? "Esta tela é trabalhada pelo DPO da organização."
+            : !dsr
+              ? "Carregando dados das requisições."
+              : undefined
         }
       />
     </div>
