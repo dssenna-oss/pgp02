@@ -1,4 +1,4 @@
-import { prisma } from "../lib/db";
+import { prisma } from "../../lib/db";
 
 async function main() {
   const dsrs = await prisma.dataSubjectRequest.findMany({
@@ -15,7 +15,16 @@ async function main() {
     select: { id: true, title: true, dueDate: true, status: true, priority: true },
   });
   console.log("Tasks DSR total:", tasks.length);
-  tasks.forEach((t) => console.log("  ", t.title, "| prio:", t.priority, "| due:", t.dueDate.toISOString().slice(0, 10)));
+  tasks.forEach((t) =>
+    console.log(
+      "  ",
+      t.title,
+      "| prio:",
+      t.priority,
+      "| due:",
+      t.dueDate ? t.dueDate.toISOString().slice(0, 10) : "—",
+    ),
+  );
 
   await prisma.$disconnect();
 }

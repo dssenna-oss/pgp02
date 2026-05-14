@@ -3,8 +3,8 @@
  * pra validar visualmente o painel DPO.
  * Run: npx tsx scripts/_smoke-dsr-s3.ts
  */
-import { prisma } from "../lib/db";
-import { computeDueDate, generateProtocolNumber } from "../lib/data-subject-requests";
+import { prisma } from "../../lib/db";
+import { computeDueDate, generateProtocolNumber } from "../../lib/data-subject-requests";
 
 async function main() {
   const dpo = await prisma.user.findFirst({

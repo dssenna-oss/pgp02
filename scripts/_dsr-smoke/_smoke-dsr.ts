@@ -6,12 +6,12 @@
  * Run: npx tsx scripts/_smoke-dsr.ts
  */
 
-import { prisma } from "../lib/db";
+import { prisma } from "../../lib/db";
 import {
   computeDueDate,
   generateProtocolNumber,
   validateDsrSubmission,
-} from "../lib/data-subject-requests";
+} from "../../lib/data-subject-requests";
 
 async function main() {
   // Pega a primeira empresa cadastrada pra usar no teste

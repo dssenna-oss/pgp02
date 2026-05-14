@@ -3,8 +3,8 @@
  * pra validar visualmente o layout sem precisar passar pelo endpoint.
  * Output: E:\_________PGP\_test-export-resposta.docx
  */
-import { prisma } from "../lib/db";
-import { generateDsrResponseDocx } from "../lib/dsr-docx";
+import { prisma } from "../../lib/db";
+import { generateDsrResponseDocx } from "../../lib/dsr-docx";
 import fs from "fs";
 
 async function main() {
