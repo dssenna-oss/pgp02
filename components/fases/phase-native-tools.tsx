@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,7 @@ import {
   GraduationCap,
   Scale,
   Shield,
+  ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -1341,7 +1343,135 @@ function Fase6Tools() {
       <PoliticasCard />
       <AvisosServicoCard />
       <TermosConsentimentoCard />
+      <DireitosTitularCardTools />
     </div>
+  );
+}
+
+// ============================================================
+// DireitosTitularCardTools — Requisições de Direitos do Titular
+// (arts. 18, 19, 20 da LGPD — prazo 15 dias corridos)
+// ============================================================
+
+interface DsrCountersResponse {
+  pendentes: number;
+  vencidas: number;
+  criticas: number;
+}
+
+function DireitosTitularCardTools() {
+  const { data: session } = useSession();
+  const companyId = session?.user?.companyId || null;
+  const [dsr, setDsr] = useState<DsrCountersResponse | null>(null);
+  const [forbidden, setForbidden] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/direitos-titulares/contadores");
+        if (r.ok) {
+          setDsr(await r.json());
+        } else if (r.status === 401 || r.status === 403) {
+          setForbidden(true);
+        }
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const pendentes = dsr?.pendentes ?? 0;
+  const vencidas = dsr?.vencidas ?? 0;
+  const criticas = dsr?.criticas ?? 0;
+
+  const color: ToolCardColor = forbidden
+    ? "neutral"
+    : !dsr
+      ? "neutral"
+      : vencidas > 0 || criticas > 0
+        ? "warning"
+        : pendentes === 0
+          ? "success"
+          : "neutral";
+
+  return (
+    <ToolCard
+      icon={<UserCheck className="h-6 w-6" />}
+      iconColor="text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/40"
+      title="Direitos do Titular"
+      description="Atenda requisições do art. 18 da LGPD (acesso, correção, eliminação, portabilidade etc.) com prazo legal de 15 dias corridos. Inclui art. 19 (explicações) e art. 20 (revisão de decisão automatizada)."
+      progressColor={color}
+      loading={loading}
+      primaryAction={{
+        label:
+          pendentes > 0
+            ? `Abrir painel (${pendentes} pendente${pendentes === 1 ? "" : "s"})`
+            : "Abrir painel",
+        href: "/dashboard/requisicoes-titulares",
+      }}
+      secondaryAction={
+        companyId
+          ? {
+              label: "Formulário público",
+              href: `/direitos-titulares/${companyId}`,
+              icon: <ExternalLink className="h-4 w-4" />,
+            }
+          : undefined
+      }
+      stats={
+        forbidden
+          ? []
+          : pendentes > 0
+            ? [
+                {
+                  label: "pendentes",
+                  value: pendentes,
+                  color: "amber",
+                  icon: <Clock className="h-3.5 w-3.5" />,
+                },
+                ...(criticas > 0
+                  ? [
+                      {
+                        label: "prazo crítico (≤3d)",
+                        value: criticas,
+                        color: "amber" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+                ...(vencidas > 0
+                  ? [
+                      {
+                        label: "vencidas",
+                        value: vencidas,
+                        color: "red" as const,
+                        icon: <AlertCircle className="h-3.5 w-3.5" />,
+                      },
+                    ]
+                  : []),
+              ]
+            : dsr
+              ? [
+                  {
+                    label: "tudo em dia",
+                    value: "✓",
+                    color: "emerald",
+                    icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+                  },
+                ]
+              : []
+      }
+      emptyHint={
+        forbidden
+          ? "Esta tela é trabalhada pelo DPO da organização."
+          : !dsr
+            ? "Carregando dados das requisições."
+            : undefined
+      }
+    />
   );
 }
 

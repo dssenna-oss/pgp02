@@ -40,7 +40,9 @@ async function getCurrentUser() {
   if (!user || !user.companyId) {
     return { error: NextResponse.json({ error: "Usuário sem organização" }, { status: 404 }) };
   }
-  return { user };
+  // Type narrowing: depois do guard acima, companyId é garantidamente string.
+  // Sem o cast, o Prisma where rejeita o tipo `string | null`.
+  return { user: user as typeof user & { companyId: string } };
 }
 
 export async function GET(req: NextRequest) {

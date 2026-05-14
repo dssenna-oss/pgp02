@@ -35,7 +35,8 @@ import {
   Handshake,
   Sparkles,
   GraduationCap,
-  Search
+  Search,
+  UserCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -117,6 +118,12 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
    * Polling 60s.
    */
   const [inventarioPending, setInventarioPending] = useState<number | null>(null);
+  /**
+   * Requisições de Direitos do Titular pendentes (DPO-only).
+   * Polling adaptativo. Endpoint só retorna >0 pra usuários DPO.
+   */
+  const [dsrPendentes, setDsrPendentes] = useState<number | null>(null);
+  const [dsrVencidas, setDsrVencidas] = useState<number | null>(null);
 
   // Ref pra expor o refreshAll do useEffect ao useAdaptivePolling.
   // Init null — populado quando o useEffect monta.
@@ -222,6 +229,27 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
         // silencioso
       }
     };
+    /**
+     * DSR contadores — só consulta se o usuário for DPO. 403 é tratado
+     * silenciosamente (zera o badge), não polui o console.
+     */
+    const fetchDsr = async () => {
+      if (!isDPO(session?.user?.role)) {
+        setDsrPendentes(0);
+        setDsrVencidas(0);
+        return;
+      }
+      try {
+        const r = await fetch("/api/direitos-titulares/contadores", { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!active) return;
+        setDsrPendentes(j.pendentes ?? 0);
+        setDsrVencidas(j.vencidas ?? 0);
+      } catch {
+        // silencioso
+      }
+    };
     const refreshAll = () => {
       void fetchAlerts();
       void fetchForumUnread();
@@ -230,6 +258,7 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       void fetchIncidentsPending();
       void fetchLiasPending();
       void fetchInventarioPending();
+      void fetchDsr();
     };
 
     refreshAll();
@@ -465,6 +494,13 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       icon: Users,
       dpoOnly: true,
     },
+    {
+      name: "Direitos do Titular",
+      description: "Requisições do art. 18 LGPD (prazo 15 dias)",
+      href: "/dashboard/requisicoes-titulares",
+      icon: UserCheck,
+      dpoOnly: true,
+    },
     { name: "Painel Chatbot", href: "/dashboard/admin/chatbot", icon: BarChart3, adminOnly: true },
   ];
 
@@ -636,6 +672,21 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
                     incidentsPending > 0 && (
                       <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-red-600 text-white text-[10px] font-bold flex-shrink-0 animate-pulse">
                         {incidentsPending}
+                      </span>
+                    )}
+                  {/* Badge de requisições de Direitos do Titular pendentes.
+                      Vermelho quando há vencidas, âmbar caso contrário
+                      (prazo legal de 15 dias corridos — art. 19 §1º LGPD). */}
+                  {item.href === "/dashboard/requisicoes-titulares" &&
+                    dsrPendentes !== null &&
+                    dsrPendentes > 0 && (
+                      <span
+                        className={cn(
+                          "inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-white text-[10px] font-bold flex-shrink-0",
+                          (dsrVencidas ?? 0) > 0 ? "bg-red-500" : "bg-amber-500",
+                        )}
+                      >
+                        {dsrPendentes}
                       </span>
                     )}
                   {/* Badge de LIAs pedindo ação:
