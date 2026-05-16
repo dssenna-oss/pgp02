@@ -40,96 +40,143 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Turma "${nome}" já existe. Use outro nome ou resete-a primeiro.` }, { status: 409 });
   }
 
+  // Verifica se já existem users dos grupos que vamos criar (vestígio de tentativa anterior
+  // que falhou no meio do caminho). Os emails seguem padrão `papel.gN@curso.lgpd` e são
+  // únicos no banco — não dá pra criar uma turma "Ensaio-Solo-2" se a "Ensaio-Solo"
+  // anterior já deixou dpo.g1@curso.lgpd cadastrado. Detecta cedo e dá mensagem clara.
+  const totalGrupos = qtdPM + qtdCM;
+  const emailsQueSerao: string[] = [];
+  for (let n = 1; n <= totalGrupos; n++) {
+    const orgaoTipo = n <= qtdPM ? "PM" : "CM";
+    for (const p of papeisPorOrgao(orgaoTipo)) {
+      emailsQueSerao.push(`${p.emailPrefix}.g${n}@curso.lgpd`);
+    }
+  }
+  const colisoes = await prisma.user.findMany({
+    where: { email: { in: emailsQueSerao } },
+    select: { email: true },
+  });
+  if (colisoes.length > 0) {
+    return NextResponse.json({
+      error: `Já existem ${colisoes.length} usuários com emails do padrão usado (ex: ${colisoes[0].email}). Provavelmente sobrou de tentativa anterior. Resete TODAS as turmas existentes em /admin/criar-turma antes de tentar de novo.`,
+    }, { status: 409 });
+  }
+
   const passwordHash = await bcrypt.hash(senhaPadrao, 10);
 
   // Cria turma
-  const turma = await prisma.cursoTurma.create({
-    data: {
-      nome,
-      cidade,
-      status: "ATIVA",
-    },
-  });
+  let turma: { id: string; nome: string; cidade: string };
+  try {
+    turma = await prisma.cursoTurma.create({
+      data: { nome, cidade, status: "ATIVA" },
+      select: { id: true, nome: true, cidade: true },
+    });
+  } catch (e: any) {
+    console.error("[criar-turma] falhou no create da turma:", e);
+    return NextResponse.json({
+      error: `Falha ao criar turma no banco: ${e.message ?? "erro desconhecido"}`,
+    }, { status: 500 });
+  }
 
   const loginsGerados: Array<{
     grupo: number; orgao: string; papel: string; nome: string; email: string;
   }> = [];
 
   // Cria grupos em ordem: primeiro todos PM, depois todos CM
-  let numeroGrupo = 0;
   const especificacoes: Array<{ orgao: "PM" | "CM"; idxLocal: number }> = [
     ...Array.from({ length: qtdPM }, (_, i) => ({ orgao: "PM" as const, idxLocal: i + 1 })),
     ...Array.from({ length: qtdCM }, (_, i) => ({ orgao: "CM" as const, idxLocal: i + 1 })),
   ];
 
-  for (const spec of especificacoes) {
-    numeroGrupo++;
-    const orgaoNome = spec.orgao === "PM" ? "Prefeitura Municipal" : "Câmara Municipal";
+  let numeroGrupo = 0;
+  try {
+    for (const spec of especificacoes) {
+      numeroGrupo++;
+      const orgaoNome = spec.orgao === "PM" ? "Prefeitura Municipal" : "Câmara Municipal";
 
-    // 1. Cria a Company do grupo
-    const company = await prisma.company.create({
-      data: {
-        name: `${orgaoNome} de ${cidade} — Grupo ${numeroGrupo}`,
-        orgao: spec.orgao,
-        cidade,
-        cnpj: spec.orgao === "PM"
-          ? `00.000.000/000${numeroGrupo}-${spec.idxLocal.toString().padStart(2, "0")}`
-          : `11.111.111/000${numeroGrupo}-${spec.idxLocal.toString().padStart(2, "0")}`,
-      },
-    });
-
-    // 2. Vincula ao CursoGrupo
-    await prisma.cursoGrupo.create({
-      data: {
-        turmaId: turma.id,
-        numero: numeroGrupo,
-        orgao: spec.orgao,
-        companyId: company.id,
-      },
-    });
-
-    // 3. Cria os 5 users
-    const papeisDef = papeisPorOrgao(spec.orgao);
-    const usersCriados: Record<string, string> = {}; // papel -> userId
-
-    for (const p of papeisDef) {
-      const email = `${p.emailPrefix}.g${numeroGrupo}@curso.lgpd`;
-      const u = await prisma.user.create({
+      // 1. Cria a Company do grupo
+      const company = await prisma.company.create({
         data: {
-          email,
-          name: `${p.nomeAmigavel} · Grupo ${numeroGrupo}`,
-          password: passwordHash,
-          role: p.role,
+          name: `${orgaoNome} de ${cidade} — Grupo ${numeroGrupo}`,
+          orgao: spec.orgao,
+          cidade,
+          cnpj: spec.orgao === "PM"
+            ? `00.000.000/000${numeroGrupo}-${spec.idxLocal.toString().padStart(2, "0")}`
+            : `11.111.111/000${numeroGrupo}-${spec.idxLocal.toString().padStart(2, "0")}`,
+        },
+      });
+
+      // 2. Vincula ao CursoGrupo
+      await prisma.cursoGrupo.create({
+        data: {
+          turmaId: turma.id,
+          numero: numeroGrupo,
+          orgao: spec.orgao,
+          companyId: company.id,
+        },
+      });
+
+      // 3. Cria os 5 users
+      const papeisDef = papeisPorOrgao(spec.orgao);
+      const usersCriados: Record<string, string> = {}; // papel -> userId
+
+      for (const p of papeisDef) {
+        const email = `${p.emailPrefix}.g${numeroGrupo}@curso.lgpd`;
+        const u = await prisma.user.create({
+          data: {
+            email,
+            name: `${p.nomeAmigavel} · Grupo ${numeroGrupo}`,
+            password: passwordHash,
+            role: p.role,
+            papel: p.papel,
+            companyId: company.id,
+            isActive: true,
+          },
+        });
+        usersCriados[p.papel] = u.id;
+        loginsGerados.push({
+          grupo: numeroGrupo,
+          orgao: spec.orgao,
           papel: p.papel,
-          companyId: company.id,
-          isActive: true,
-        },
-      });
-      usersCriados[p.papel] = u.id;
-      loginsGerados.push({
-        grupo: numeroGrupo,
-        orgao: spec.orgao,
-        papel: p.papel,
-        nome: p.nomeAmigavel,
-        email,
-      });
-    }
+          nome: p.nomeAmigavel,
+          email,
+        });
+      }
 
-    // 4. Cria os 2 processos pré-cadastrados com createdById apontando pro dono
-    const processos = processosPorOrgao(spec.orgao);
-    for (const proc of processos) {
-      const donoId = usersCriados[proc.papelDono];
-      await prisma.dataInventory.create({
-        data: {
-          companyId: company.id,
-          nome: proc.nome,
-          setor: proc.setor,
-          finalidade: proc.finalidade,
-          status: "RASCUNHO",
-          createdById: donoId,
-        },
-      });
+      // 4. Cria os 2 processos pré-cadastrados com createdById apontando pro dono
+      const processos = processosPorOrgao(spec.orgao);
+      for (const proc of processos) {
+        const donoId = usersCriados[proc.papelDono];
+        await prisma.dataInventory.create({
+          data: {
+            companyId: company.id,
+            nome: proc.nome,
+            setor: proc.setor,
+            finalidade: proc.finalidade,
+            status: "RASCUNHO",
+            createdById: donoId,
+          },
+        });
+      }
     }
+  } catch (e: any) {
+    console.error(`[criar-turma] falhou no grupo ${numeroGrupo}:`, e);
+    // Cleanup best-effort: deleta tudo que pertence a essa turma pra não deixar lixo
+    try {
+      const grupos = await prisma.cursoGrupo.findMany({ where: { turmaId: turma.id }, select: { companyId: true } });
+      const companyIds = grupos.map((g) => g.companyId);
+      // Ordem inversa de criação respeitando FKs
+      await prisma.dataInventory.deleteMany({ where: { companyId: { in: companyIds } } });
+      await prisma.user.deleteMany({ where: { companyId: { in: companyIds } } });
+      await prisma.cursoGrupo.deleteMany({ where: { turmaId: turma.id } });
+      await prisma.company.deleteMany({ where: { id: { in: companyIds } } });
+      await prisma.cursoTurma.delete({ where: { id: turma.id } });
+    } catch (cleanupErr) {
+      console.error("[criar-turma] falhou no cleanup também:", cleanupErr);
+    }
+    return NextResponse.json({
+      error: `Falha ao criar grupo ${numeroGrupo}: ${e.message ?? "erro desconhecido"}. Limpamos o que tinha sido criado — pode tentar de novo.`,
+    }, { status: 500 });
   }
 
   return NextResponse.json({

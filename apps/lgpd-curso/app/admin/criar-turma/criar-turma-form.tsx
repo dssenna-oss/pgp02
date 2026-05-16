@@ -39,8 +39,15 @@ export function CriarTurmaForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ nome, cidade, qtdPM, qtdCM, senhaPadrao }),
         });
-        const data = await res.json();
-        if (!res.ok) { toast.error(data.error || "Erro"); return; }
+        // Lê como texto primeiro pra absorver resposta vazia (timeout da Vercel
+        // ou crash da função sem body) e não estourar "Unexpected end of JSON input".
+        const raw = await res.text();
+        let data: any = null;
+        try { data = raw ? JSON.parse(raw) : null; } catch {
+          toast.error(`Resposta inválida do servidor (status ${res.status}). Provavelmente timeout — espere 30s e tente de novo. Se persistir, resete turmas existentes.`);
+          return;
+        }
+        if (!res.ok) { toast.error(data?.error || `Erro ${res.status}`); return; }
         toast.success(`Turma "${data.turma.nome}" criada · ${data.turma.totalLogins} logins`);
         setResultado(data);
         router.refresh();
