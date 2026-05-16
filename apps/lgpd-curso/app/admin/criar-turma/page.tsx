@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
+// Neon pode levar 10-20s pra acordar. Folga pra absorver retry do Prisma.
+export const maxDuration = 30;
 
 export default async function Page() {
   await requireAdmin();

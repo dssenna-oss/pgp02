@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 
 export const dynamic = "force-dynamic";
+// Neon free-tier pode levar 10-20s pra acordar. Com retry de ~13s no Prisma
+// (lib/prisma.ts) + tempo da query, vale ter folga generosa aqui.
+export const maxDuration = 30;
 
 export default async function FacilitadorPage() {
   await requireAdmin();
