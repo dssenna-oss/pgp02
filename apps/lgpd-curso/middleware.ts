@@ -8,6 +8,12 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
+    // Admin não pertence a grupo — clicar em mini-app de participante
+    // estouraria 500 ("companyId ausente"). Redireciona pro painel.
+    if (pathname.startsWith("/dashboard") && token?.role === "ADMIN") {
+      return NextResponse.redirect(new URL("/facilitador", req.url));
+    }
+
     // /admin e /facilitador exigem role ADMIN
     if ((pathname.startsWith("/admin") || pathname.startsWith("/facilitador")) && token?.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
@@ -24,6 +30,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/dashboard",
     "/dashboard/:path*",
     "/admin/:path*",
     "/facilitador/:path*",
