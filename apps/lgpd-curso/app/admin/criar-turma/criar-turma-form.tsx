@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, FileDown, Printer } from "lucide-react";
+import { Plus, Minus, FileDown, Printer, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,26 @@ export function CriarTurmaForm() {
   const [pending, startTransition] = useTransition();
 
   const totalLogins = (qtdPM + qtdCM) * 5;
+
+  async function limparOrfaos() {
+    if (!confirm("Isto vai deletar TODOS os usuários órfãos do curso (papel.gN@curso.lgpd sem grupo vinculado). Não afeta o login do facilitador. Continuar?")) return;
+    startTransition(async () => {
+      try {
+        const res = await fetch("/api/curso/limpar-orfaos", { method: "POST" });
+        const raw = await res.text();
+        let data: any = null;
+        try { data = raw ? JSON.parse(raw) : null; } catch {
+          toast.error(`Resposta inválida (status ${res.status}). Tente de novo.`);
+          return;
+        }
+        if (!res.ok) { toast.error(data?.error || `Erro ${res.status}`); return; }
+        toast.success(`Limpeza OK · ${data.usersDeletados} usuários + ${data.companiesDeletadas} empresas órfãs deletados`);
+        router.refresh();
+      } catch (e: any) {
+        toast.error(e.message || "Erro de rede");
+      }
+    });
+  }
 
   async function criar() {
     if (!nome.trim()) { toast.error("Dê um nome à turma"); return; }
@@ -135,7 +155,17 @@ export function CriarTurmaForm() {
       )}
 
       {/* Ação */}
-      <div className="flex justify-end gap-2 pt-2 border-t">
+      <div className="flex justify-between gap-2 pt-2 border-t items-center flex-wrap">
+        <Button
+          onClick={limparOrfaos}
+          disabled={pending}
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:bg-red-50"
+          title="Use só se um criar-turma anterior falhou no meio e deixou usuários órfãos"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> Limpar usuários órfãos
+        </Button>
         <Button onClick={criar} disabled={pending} size="lg">
           {pending ? "Criando..." : "Criar turma + gerar materiais →"}
         </Button>
