@@ -95,7 +95,14 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
             <div className="mt-3 text-xs text-emerald-700 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4" />
               Publicado em: <code className="text-[11px] bg-emerald-50 px-1.5 py-0.5 rounded">{aviso.publicSlug}</code>
-              <span className="text-gray-500">(URL pública será gerada na S3 com `/p/<slug>`)</span>
+              <a
+                href={`/p/${aviso.publicSlug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald-700 underline hover:text-emerald-900"
+              >
+                Abrir URL pública →
+              </a>
             </div>
           )}
         </div>
