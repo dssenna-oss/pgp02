@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import { saveInventario } from "./actions";
+import { LgpdHelp } from "@/components/lgpd-help";
+import { sugestoesDoProcesso, type SugestoesProcesso } from "@/lib/lgpd-refs";
 import toast from "react-hot-toast";
 
 type Inv = Awaited<ReturnType<typeof import("./actions").listInventario>>[number];
@@ -24,22 +27,64 @@ export function InventarioForm({
   const isEdit = !!inv;
   const [loading, setLoading] = useState(false);
 
+  // Form controlado pra permitir botão "Sugerir" preencher os campos
+  const [nome, setNome] = useState("");
+  const [setor, setSetor] = useState("");
+  const [finalidade, setFinalidade] = useState("");
+  const [baseLegal, setBaseLegal] = useState("");
+  const [tiposDados, setTiposDados] = useState("");
+  const [dadosSensiveis, setDadosSensiveis] = useState(false);
+  const [retencao, setRetencao] = useState("");
+  const [compartilhamento, setCompartilhamento] = useState("");
+  const [medidasSeguranca, setMedidasSeguranca] = useState("");
+
+  // Sincroniza estado quando o `inv` muda (abre o modal em outro processo).
+  useEffect(() => {
+    if (open) {
+      setNome(inv?.nome || "");
+      setSetor(inv?.setor || "");
+      setFinalidade(inv?.finalidade || "");
+      setBaseLegal(inv?.baseLegal || "");
+      setTiposDados(inv?.tiposDados || "");
+      setDadosSensiveis(inv?.dadosSensiveis ?? false);
+      setRetencao(inv?.retencao || "");
+      setCompartilhamento(inv?.compartilhamento || "");
+      setMedidasSeguranca(inv?.medidasSeguranca || "");
+    }
+  }, [open, inv]);
+
+  const sugestoes = sugestoesDoProcesso(nome);
+
+  function aplicarSugestao(campo: keyof SugestoesProcesso) {
+    if (!sugestoes) return;
+    const v = sugestoes[campo];
+    if (v === undefined) return;
+    switch (campo) {
+      case "baseLegal":         setBaseLegal(String(v)); break;
+      case "tiposDados":        setTiposDados(String(v)); break;
+      case "dadosSensiveis":    setDadosSensiveis(Boolean(v)); break;
+      case "retencao":          setRetencao(String(v)); break;
+      case "compartilhamento":  setCompartilhamento(String(v)); break;
+      case "medidasSeguranca":  setMedidasSeguranca(String(v)); break;
+    }
+    toast("Sugestão aplicada — REVISE antes de salvar", { icon: "✨" });
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    const fd = new FormData(e.currentTarget);
     try {
       await saveInventario({
         id: inv?.id,
-        nome: String(fd.get("nome") || ""),
-        setor: String(fd.get("setor") || ""),
-        finalidade: String(fd.get("finalidade") || ""),
-        baseLegal: String(fd.get("baseLegal") || ""),
-        tiposDados: String(fd.get("tiposDados") || ""),
-        dadosSensiveis: fd.get("dadosSensiveis") === "on",
-        retencao: String(fd.get("retencao") || ""),
-        compartilhamento: String(fd.get("compartilhamento") || ""),
-        medidasSeguranca: String(fd.get("medidasSeguranca") || ""),
+        nome,
+        setor,
+        finalidade,
+        baseLegal,
+        tiposDados,
+        dadosSensiveis,
+        retencao,
+        compartilhamento,
+        medidasSeguranca,
       });
       toast.success(isEdit ? "Processo atualizado" : "Processo criado");
       onOpenChange(false);
@@ -57,6 +102,11 @@ export function InventarioForm({
           <DialogTitle>{isEdit ? "Editar processo" : "Novo processo no Inventário"}</DialogTitle>
           <DialogDescription>
             Preencha na ordem: titulares → dados coletados → finalidade → base legal → retenção → compartilhamentos.
+            {sugestoes && (
+              <span className="block mt-1 text-brand-700">
+                💡 Este processo tem sugestões. Use o botão ✨ ao lado de cada campo pra preencher (revise antes de salvar).
+              </span>
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -64,15 +114,23 @@ export function InventarioForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="col-span-2">
               <Label>Nome do processo / serviço</Label>
-              <Input name="nome" required defaultValue={inv?.nome || ""} placeholder="Ex: Atendimento no Posto Dr. Joaquim Bento" />
+              <Input value={nome} onChange={(e) => setNome(e.target.value)} required placeholder="Ex: Atendimento no Posto Dr. Joaquim Bento" />
             </div>
             <div>
               <Label>Setor responsável</Label>
-              <Input name="setor" defaultValue={inv?.setor || ""} placeholder="Ex: Secretaria de Saúde" />
+              <Input value={setor} onChange={(e) => setSetor(e.target.value)} placeholder="Ex: Secretaria de Saúde" />
             </div>
             <div>
-              <Label>Base legal (Art. 7º / 11)</Label>
-              <Select name="baseLegal" defaultValue={inv?.baseLegal || ""}>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Label className="mb-0 flex items-center gap-1">
+                  Base legal (Art. 7º / 11)
+                  <LgpdHelp campoKey="baseLegal" />
+                </Label>
+                {sugestoes?.baseLegal && (
+                  <BotaoSugerir onClick={() => aplicarSugestao("baseLegal")} />
+                )}
+              </div>
+              <Select value={baseLegal} onChange={(e) => setBaseLegal(e.target.value)}>
                 <option value="">— escolha —</option>
                 <optgroup label="Art. 7º — Dados pessoais comuns">
                   <option value="art7-i">I — Consentimento</option>
@@ -99,33 +157,71 @@ export function InventarioForm({
             </div>
             <div className="col-span-2">
               <Label>Finalidade do tratamento</Label>
-              <Textarea name="finalidade" rows={2} defaultValue={inv?.finalidade || ""} placeholder="Para que esses dados são tratados? Qual o resultado esperado?" />
+              <Textarea value={finalidade} onChange={(e) => setFinalidade(e.target.value)} rows={2} placeholder="Para que esses dados são tratados? Qual o resultado esperado?" />
             </div>
             <div className="col-span-2">
-              <Label>Tipos de dados coletados</Label>
-              <Textarea name="tiposDados" rows={2} defaultValue={inv?.tiposDados || ""} placeholder="Ex: nome, CPF, endereço, dados de saúde, prontuário..." />
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Label className="mb-0 flex items-center gap-1">
+                  Tipos de dados coletados
+                  <LgpdHelp campoKey="tiposDados" />
+                </Label>
+                {sugestoes?.tiposDados && (
+                  <BotaoSugerir onClick={() => aplicarSugestao("tiposDados")} />
+                )}
+              </div>
+              <Textarea value={tiposDados} onChange={(e) => setTiposDados(e.target.value)} rows={3} placeholder="Ex: nome, CPF, endereço, dados de saúde, prontuário..." />
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <input
                 type="checkbox"
-                name="dadosSensiveis"
                 id="dadosSensiveis"
-                defaultChecked={inv?.dadosSensiveis ?? false}
+                checked={dadosSensiveis}
+                onChange={(e) => setDadosSensiveis(e.target.checked)}
                 className="h-4 w-4"
               />
-              <Label htmlFor="dadosSensiveis" className="mb-0">Contém dados pessoais sensíveis (saúde, origem, religião, biométricos...)</Label>
+              <Label htmlFor="dadosSensiveis" className="mb-0 flex items-center gap-1">
+                Contém dados pessoais sensíveis (saúde, origem, religião, biométricos...)
+                <LgpdHelp campoKey="dadosSensiveis" />
+              </Label>
+              {sugestoes?.dadosSensiveis !== undefined && (
+                <BotaoSugerir onClick={() => aplicarSugestao("dadosSensiveis")} />
+              )}
             </div>
             <div>
-              <Label>Prazo de retenção</Label>
-              <Input name="retencao" defaultValue={inv?.retencao || ""} placeholder="Ex: 5 anos após encerramento" />
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Label className="mb-0 flex items-center gap-1">
+                  Prazo de retenção
+                  <LgpdHelp campoKey="retencao" />
+                </Label>
+                {sugestoes?.retencao && (
+                  <BotaoSugerir onClick={() => aplicarSugestao("retencao")} />
+                )}
+              </div>
+              <Input value={retencao} onChange={(e) => setRetencao(e.target.value)} placeholder="Ex: 5 anos após encerramento" />
             </div>
             <div>
-              <Label>Compartilhamentos</Label>
-              <Input name="compartilhamento" defaultValue={inv?.compartilhamento || ""} placeholder="Ex: Laboratório terceirizado, Sec. Estadual de Saúde" />
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Label className="mb-0 flex items-center gap-1">
+                  Compartilhamentos
+                  <LgpdHelp campoKey="compartilhamento" />
+                </Label>
+                {sugestoes?.compartilhamento && (
+                  <BotaoSugerir onClick={() => aplicarSugestao("compartilhamento")} />
+                )}
+              </div>
+              <Input value={compartilhamento} onChange={(e) => setCompartilhamento(e.target.value)} placeholder="Ex: Laboratório terceirizado, Sec. Estadual de Saúde" />
             </div>
             <div className="col-span-2">
-              <Label>Medidas de segurança</Label>
-              <Textarea name="medidasSeguranca" rows={2} defaultValue={inv?.medidasSeguranca || ""} placeholder="Controles de acesso, criptografia, backup, logs..." />
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <Label className="mb-0 flex items-center gap-1">
+                  Medidas de segurança
+                  <LgpdHelp campoKey="medidasSeguranca" />
+                </Label>
+                {sugestoes?.medidasSeguranca && (
+                  <BotaoSugerir onClick={() => aplicarSugestao("medidasSeguranca")} />
+                )}
+              </div>
+              <Textarea value={medidasSeguranca} onChange={(e) => setMedidasSeguranca(e.target.value)} rows={3} placeholder="Controles de acesso, criptografia, backup, logs..." />
             </div>
           </div>
 
@@ -136,5 +232,18 @@ export function InventarioForm({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function BotaoSugerir({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+      title="Preenche com sugestão típica pra este processo (revise antes de salvar)"
+    >
+      <Sparkles className="h-3 w-3" /> Sugerir
+    </button>
   );
 }
