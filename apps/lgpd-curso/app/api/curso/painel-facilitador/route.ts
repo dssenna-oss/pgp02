@@ -6,6 +6,10 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
 
+// Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
+// pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
+export const maxDuration = 30;
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin();
