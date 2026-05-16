@@ -7,6 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { papeisPorOrgao, processosPorOrgao } from "@/lib/seeds/processos-vegas";
 
+// ~10 ops sequenciais no banco por grupo (company + cursoGrupo + 5 users +
+// 2 processos) + bcrypt hash. Com Neon dormindo pode passar de 15s.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
