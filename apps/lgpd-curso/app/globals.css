@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+/* Banner permanente de "AMBIENTE DE TREINAMENTO" — fixo no topo */
+.training-banner {
+  background: repeating-linear-gradient(
+    45deg,
+    #FBBF24,
+    #FBBF24 8px,
+    #F59E0B 8px,
+    #F59E0B 16px
+  );
+}

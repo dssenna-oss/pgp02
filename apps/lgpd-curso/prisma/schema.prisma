@@ -1,0 +1,397 @@
+// =============================================================================
+// PGP Treinamento — schema enxuto do curso presencial LGPD (Modalidade A)
+// =============================================================================
+// Reduz o schema do app de produção mantendo SOMENTE os 8 mini-apps do curso:
+//   Inventário · Riscos · GAP · RIPD · Terceiros · DSR · Aviso · Incidentes
+// + tabelas específicas do curso (CursoTurma, CursoGrupo).
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// -----------------------------------------------------------------------------
+// MULTI-TENANT BASE
+// -----------------------------------------------------------------------------
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String // ex: "Prefeitura Municipal de Vegas — Grupo 1"
+  cnpj      String?
+  orgao     String? // "PM" ou "CM"
+  cidade    String?  @default("Vegas")
+  dpoName   String?
+  dpoEmail  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  inventories DataInventory[]
+  risks       ProcessRisk[]
+  gapAnswers  GapAnswer[]
+  actions     ActionPlan[]
+  policies    Policy[]
+  incidents   Incident[]
+  ripds       Ripd[]
+  operators   Operator[]
+  dsrRequests DsrRequest[]
+  cursoGrupo  CursoGrupo?
+
+  @@map("companies")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String // bcrypt hash
+  role      String   @default("MEMBER") // ADMIN | DPO | MEMBER
+  papel     String? // descritivo do papel no jogo: DPO | SAUDE | RH | TI | COMUNICACAO ...
+  isActive  Boolean  @default(true)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([email])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// CURSO — turmas + grupos
+// -----------------------------------------------------------------------------
+
+model CursoTurma {
+  id           String    @id @default(cuid())
+  nome         String    @unique // ex: "Outubro-2026"
+  cidade       String    @default("Vegas") // padrão Vegas, editável
+  dataPrevista DateTime?
+  status       String    @default("ATIVA") // ATIVA | ENCERRADA
+  observacao   String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  grupos CursoGrupo[]
+
+  @@map("curso_turmas")
+}
+
+model CursoGrupo {
+  id        String     @id @default(cuid())
+  turmaId   String
+  turma     CursoTurma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  numero    Int // 1, 2, 3, 4, 5
+  orgao     String // "PM" ou "CM"
+  companyId String     @unique
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([turmaId, numero])
+  @@map("curso_grupos")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 1 — INVENTÁRIO
+// -----------------------------------------------------------------------------
+
+model DataInventory {
+  id               String   @id @default(cuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  nome             String // nome do processo/serviço
+  setor            String?
+  finalidade       String?
+  baseLegal        String?
+  tiposDados       String? // JSON serializado
+  dadosSensiveis   Boolean? @default(false)
+  retencao         String?
+  compartilhamento String?
+  medidasSeguranca String?
+  status           String   @default("RASCUNHO") // RASCUNHO | SUBMETIDO | APROVADO | DEVOLVIDO
+  formAnswers      Json? // resposta livre (mesma do app de prod)
+  feedbackDpo      String? // motivo da devolução pelo DPO (quando status=DEVOLVIDO)
+  createdById      String?
+  reviewedById     String?
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  riscos        ProcessRisk[]
+  incidentLinks IncidentInventoryLink[]
+
+  @@index([companyId])
+  @@map("data_inventories")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 2 — ANÁLISE DE RISCOS
+// -----------------------------------------------------------------------------
+
+model ProcessRisk {
+  id             String         @id @default(cuid())
+  companyId      String
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  inventoryId    String?
+  inventory      DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  riscoTitulo    String
+  descricao      String?
+  categoria      String?
+  severityLevel  String? // P:B|M|A;I:B|M|A;S:BAIXO|MEDIO|ALTO
+  mitigationPlan String?
+  status         String         @default("ATIVO")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  assessments RiskAssessment[]
+
+  @@index([companyId])
+  @@map("process_risks")
+}
+
+model RiskAssessment {
+  id            String      @id @default(cuid())
+  riskId        String
+  risk          ProcessRisk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  probabilidade String // BAIXA | MEDIA | ALTA
+  impacto       String // BAIXO | MEDIO | ALTO
+  observacao    String?
+  createdAt     DateTime    @default(now())
+
+  @@map("risk_assessments")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 3 — GAP ANALYSIS (10 controles curados do pacote)
+// -----------------------------------------------------------------------------
+
+model GapAnswer {
+  id            String   @id @default(cuid())
+  companyId     String
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  controleId    Int // 1 a 10
+  controleTexto String // congelado no momento da resposta
+  area          String // Governança | Bases Legais | Direitos | Segurança | Incidentes
+  resposta      String // ADERENTE | PARCIAL | NAO_ADERENTE
+  justificativa String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, controleId])
+  @@index([companyId])
+  @@map("gap_answers")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 4 — PLANO DE AÇÃO (simplificado, alimentado por Riscos)
+// -----------------------------------------------------------------------------
+
+model ActionPlan {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  origem      String // RISCO | GAP | DIAGNOSTICO | MANUAL
+  origemRef   String? // id do risco/gap relacionado
+  acao        String
+  responsavel String?
+  prazo       DateTime?
+  status      String    @default("ABERTA") // ABERTA | EM_ANDAMENTO | CONCLUIDA
+  prioridade  String? // BAIXA | MEDIA | ALTA
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([companyId])
+  @@map("action_plans")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 5 — POLÍTICAS (Política do PGP automática + Aviso de Privacidade)
+// -----------------------------------------------------------------------------
+
+model Policy {
+  id          String    @id @default(cuid())
+  companyId   String
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  slug        String // "aviso-privacidade" | "politica-pgp"
+  titulo      String
+  conteudoMd  String    @db.Text
+  status      String    @default("RASCUNHO") // RASCUNHO | PUBLICADO
+  publicSlug  String?   @unique
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  versions PolicyVersion[]
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+  @@map("policies")
+}
+
+model PolicyVersion {
+  id         String   @id @default(cuid())
+  policyId   String
+  policy     Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  numero     Int
+  conteudoMd String   @db.Text
+  changelog  String?
+  createdAt  DateTime @default(now())
+
+  @@unique([policyId, numero])
+  @@map("policy_versions")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 6 — INCIDENTES
+// -----------------------------------------------------------------------------
+
+model Incident {
+  id                String    @id @default(cuid())
+  companyId         String
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  titulo            String
+  descricao         String?
+  severidade        String    @default("MEDIA") // BAIXA | MEDIA | ALTA | CRITICA
+  status            String    @default("RASCUNHO") // RASCUNHO | EM_ANALISE | ENCERRADO
+  ocorridoEm        DateTime?
+  detectadoEm       DateTime?
+  comunicadoAnpd    Boolean   @default(false)
+  comunicadoTitular Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  inventoryLinks IncidentInventoryLink[]
+  operatorLinks  IncidentOperatorLink[]
+
+  @@index([companyId])
+  @@map("incidents")
+}
+
+model IncidentInventoryLink {
+  id          String        @id @default(cuid())
+  incidentId  String
+  incident    Incident      @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  inventoryId String
+  inventory   DataInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, inventoryId])
+  @@map("incident_inventory_links")
+}
+
+model IncidentOperatorLink {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@unique([incidentId, operatorId])
+  @@map("incident_operator_links")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 7 — RIPD
+// -----------------------------------------------------------------------------
+
+model Ripd {
+  id           String    @id @default(cuid())
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  titulo       String
+  inventoryRef String? // referência ao processo
+  status       String    @default("RASCUNHO") // RASCUNHO | SUBMETIDO | APROVADO | DEVOLVIDO
+  feedbackDpo  String? // motivo da devolução pelo DPO
+  createdById  String?
+  reviewedById String?
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sections RipdSection[]
+
+  @@index([companyId])
+  @@map("ripds")
+}
+
+model RipdSection {
+  id        String   @id @default(cuid())
+  ripdId    String
+  ripd      Ripd     @relation(fields: [ripdId], references: [id], onDelete: Cascade)
+  numero    Int // 1 a 8 (seções ANPD)
+  titulo    String
+  conteudo  String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([ripdId, numero])
+  @@map("ripd_sections")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 8 — GESTÃO DE TERCEIROS (Operadores)
+// -----------------------------------------------------------------------------
+
+model Operator {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  nome      String
+  cnpj      String?
+  servico   String?
+  papel     String?  @default("OPERADOR") // OPERADOR | CONTROLADOR | CONJUNTO
+  contato   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts     OperatorContract[]
+  incidentLinks IncidentOperatorLink[]
+
+  @@index([companyId])
+  @@map("operators")
+}
+
+model OperatorContract {
+  id             String    @id @default(cuid())
+  operatorId     String
+  operator       Operator  @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  numero         String?
+  objeto         String?
+  vigenciaInicio DateTime?
+  vigenciaFim    DateTime?
+  clausulasLgpd  Boolean   @default(false)
+  observacao     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("operator_contracts")
+}
+
+// -----------------------------------------------------------------------------
+// MINI-APP 9 — DIREITOS DO TITULAR (DSR)
+// -----------------------------------------------------------------------------
+
+model DsrRequest {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  titularNome     String
+  titularContato  String
+  tipoSolicitacao String // ACESSO | CORRECAO | EXCLUSAO | PORTABILIDADE | OPOSICAO | INFO | OUTRO
+  descricao       String?
+  status          String    @default("ABERTA") // ABERTA | EM_ANALISE | RESPONDIDA | NEGADA
+  respostaTexto   String?   @db.Text
+  respondidoEm    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([companyId])
+  @@map("dsr_requests")
+}
