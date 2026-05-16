@@ -64,7 +64,7 @@ export default async function DashboardPage() {
         <p className="text-xs text-training-900 leading-relaxed">
           Você e seu grupo vão percorrer 5 missões cronometradas, na ordem da sidebar.
           Cada missão termina com check-in coletivo do facilitador. Não tente pular a Missão 4a (RIPD + Terceiros + DSR) — ela alimenta a Missão 4b (Aviso de Privacidade).
-          Errar é parte do aprendizado. Pergunte aos observadores do seu grupo se ficar em dúvida — eles têm o flipchart.
+          Errar é parte do aprendizado. Pergunte aos observadores do seu grupo se ficar em dúvida — eles têm o mural do grupo na mesa.
         </p>
       </section>
     </div>

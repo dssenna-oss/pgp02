@@ -1,5 +1,5 @@
 // Gera o Mural A3 paisagem do grupo (Modalidade A).
-// Estrutura pra grupo de 10: 5 ativos com login + 5 observadores no flipchart.
+// Estrutura pra grupo de 10: 5 ativos com login + 5 observadores anotando no mural A3.
 //
 // Uso (do diretório apps/lgpd-curso):
 //   node scripts/gerar-mural-grupo.js
