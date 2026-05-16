@@ -325,7 +325,7 @@ children.push(tbl([3000, 6026],
   ["Situação", "Como agir"],
   [
     ["Internet cai",
-     "Distribuir o briefing impresso e continuar a discussão sem app. Quando voltar, os grupos digitam decisões já tomadas no flipchart."],
+     "Distribuir o briefing impresso e continuar a discussão sem app. Quando voltar, os grupos digitam decisões já anotadas no mural do grupo."],
     ["Compute do Neon dormiu (primeiro request lento)",
      "App tem retry automático — aguardar até 15s. Se persistir, recarregar a página 1x."],
     ["Grupo termina muito antes",
