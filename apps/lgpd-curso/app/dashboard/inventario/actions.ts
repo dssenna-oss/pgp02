@@ -83,6 +83,12 @@ export async function saveInventario(input: {
     return result;
   }
 
+  // Criação — só DPO ou ADMIN podem criar novos processos no curso.
+  // Contribuidores editam os 2 processos pré-cadastrados pela criar-turma.
+  if (session.user.role !== "DPO" && session.user.role !== "ADMIN") {
+    throw new Error("Apenas o DPO do grupo pode adicionar novos processos. Você (contribuidor) só edita os processos pré-cadastrados.");
+  }
+
   // Criação
   const result = await prisma.dataInventory.create({
     data: {

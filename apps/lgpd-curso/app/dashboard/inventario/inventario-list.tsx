@@ -78,17 +78,24 @@ export function InventarioList({ items }: { items: Inv[] }) {
 
   return (
     <>
-      <div className="flex justify-end mb-3">
-        <Button onClick={abrirNovo}>
-          <Plus className="h-4 w-4" /> Novo processo
-        </Button>
-      </div>
+      {/* "Novo processo" só pra DPO/ADMIN — contribuidores só editam o pré-seed. */}
+      {isDpo && (
+        <div className="flex justify-end mb-3">
+          <Button onClick={abrirNovo}>
+            <Plus className="h-4 w-4" /> Novo processo
+          </Button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptyState
           title="Nenhum processo no Inventário ainda"
-          description="O grupo recebe 2 processos pré-cadastrados pela 'Criar turma'. Se ainda não aparecem, peça ao facilitador. Você também pode adicionar novos processos."
-          action={<Button onClick={abrirNovo}><Plus className="h-4 w-4" /> Adicionar processo</Button>}
+          description={
+            isDpo
+              ? "O grupo recebe 2 processos pré-cadastrados pela 'Criar turma'. Se ainda não aparecem, peça ao facilitador. Você (DPO) também pode adicionar novos processos."
+              : "O grupo recebe 2 processos pré-cadastrados pela 'Criar turma'. Se ainda não aparecem, peça ao facilitador ou ao DPO do grupo."
+          }
+          action={isDpo ? <Button onClick={abrirNovo}><Plus className="h-4 w-4" /> Adicionar processo</Button> : undefined}
         />
       ) : (
         <div className="space-y-3">
