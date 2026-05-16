@@ -92,7 +92,9 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {navItems.map((item) => {
+          {/* Itens de participante — escondidos pro admin (ele não tem grupo,
+              clicar daria 500 por companyId ausente). */}
+          {!isAdmin && navItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             return (
@@ -119,7 +121,7 @@ export function Sidebar() {
           })}
 
           {isAdmin && (
-            <div className="pt-3 mt-3 border-t">
+            <div>
               <div className="px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500">
                 Facilitador
               </div>
