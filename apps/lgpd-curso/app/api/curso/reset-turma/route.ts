@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 
+// Cascata pode deletar dezenas de registros. Folga pra Neon dormindo.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();

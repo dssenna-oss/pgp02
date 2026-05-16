@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 
+// Cria 1 incidente por grupo do órgão (até 5 grupos). Folga pra cold start.
+export const maxDuration = 60;
+
 const CENARIOS = {
   PM: {
     titulo: "🚨 Pendrive com prontuários encontrado em ônibus municipal",
