@@ -18,6 +18,7 @@ import {
 } from "./actions";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { handlePhaseSkip } from "@/lib/phase-skip-handler";
 
 type Acao = any;
 
@@ -61,20 +62,20 @@ export function PlanoAcaoList({ items }: { items: Acao[] }) {
       });
       toast.success(editing ? "Ação atualizada" : "Ação criada");
       setOpen(false);
-    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover esta ação?")) return;
     try { await deletarPlanoAcao(id); toast.success("Removida"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
 
   async function mudarStatus(id: string, novoStatus: string) {
     try {
       await atualizarStatus(id, novoStatus);
       toast.success("Status atualizado");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
 
   async function importar() {
@@ -89,7 +90,7 @@ export function PlanoAcaoList({ items }: { items: Acao[] }) {
       } else {
         toast.success(`${res.criados} nova(s) ação(ões) criada(s) automaticamente!`);
       }
-    } catch (e: any) { toast.error(e.message); } finally { setImportando(false); }
+    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); } finally { setImportando(false); }
   }
 
   return (

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { saveDsr, deletarDsr } from "./actions";
 import toast from "react-hot-toast";
+import { handlePhaseSkip } from "@/lib/phase-skip-handler";
 
 type Dsr = any;
 
@@ -50,13 +51,13 @@ export function DsrList({ items }: { items: Dsr[] }) {
       });
       toast.success(editing ? "Solicitação atualizada" : "Solicitação registrada");
       setOpen(false);
-    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover esta solicitação?")) return;
     try { await deletarDsr(id); toast.success("Removida"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
 
   return (

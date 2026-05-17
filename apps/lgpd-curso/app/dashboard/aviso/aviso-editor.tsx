@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { saveAviso, publicarAviso } from "./actions";
 import { AVISO_SECOES } from "@/lib/aviso-secoes";
 import toast from "react-hot-toast";
+import { handlePhaseSkip } from "@/lib/phase-skip-handler";
 
 type Aviso = {
   id: string;
@@ -40,7 +41,7 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
   function salvar() {
     startTransition(async () => {
       try { await saveAviso(conteudo); toast.success("Rascunho salvo"); }
-      catch (e: any) { toast.error(e.message); }
+      catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
     });
   }
 
@@ -55,7 +56,7 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
     }
     startTransition(async () => {
       try { await publicarAviso(); toast.success("Aviso publicado!"); }
-      catch (e: any) { toast.error(e.message); }
+      catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
     });
   }
 
