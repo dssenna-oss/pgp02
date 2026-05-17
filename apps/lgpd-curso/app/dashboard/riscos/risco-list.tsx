@@ -272,14 +272,15 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
   const devolvendoInv = inventariosAprovados.find((i) => i.id === devolvendoInvId);
   const tramitandoInv = inventariosAprovados.find((i) => i.id === tramitandoInvId);
 
-  // Pra Contribuidor: detecta se TODOS os processos dele têm análise FECHADA
-  // (sinal de "parte dele acabou — hora de passar pro DPO conduzir M3-M5")
+  // Pra Contribuidor: detecta se a "parte dele" está pronta — todos os processos
+  // dele têm pelo menos 1 risco, e nada em RASCUNHO/DEVOLVIDO pendente.
+  // Estado "todos SUBMETIDO ou APROVADO" = ele já fez tudo, agora aguarda DPO/segue M3+
   const meusInventarios = isDpoOuAdmin
     ? []
     : inventariosAprovados.filter((i) => i.createdById === userId);
-  const meusTodosFechados = meusInventarios.length > 0 && meusInventarios.every((inv) => {
+  const meusTodosCompletos = meusInventarios.length > 0 && meusInventarios.every((inv) => {
     const s = statsPorInv.get(inv.id);
-    return s && s.total > 0 && s.aprovado === s.total;
+    return s && s.total > 0 && s.rascunho === 0 && s.devolvido === 0;
   });
 
   return (
@@ -298,14 +299,14 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
         </button>
       </div>
 
-      {/* Banner de transição — Contribuidor finalizou sua parte */}
-      {meusTodosFechados && (
+      {/* Banner de transição — Contribuidor finalizou sua parte (tudo submetido/aprovado) */}
+      {meusTodosCompletos && (
         <div className="border-l-4 border-emerald-500 bg-emerald-50 rounded p-4 mb-4">
           <div className="flex items-start gap-3">
             <Users className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
             <div className="flex-1">
               <div className="font-semibold text-emerald-900 mb-1 text-sm">
-                Sua análise de riscos foi aprovada pelo DPO! 🎉
+                Sua parte da análise de riscos está pronta! 🎉
               </div>
               <p className="text-emerald-900 text-xs leading-relaxed">
                 As próximas etapas (<strong>GAP Analysis, RIPD, Gestão de Terceiros, Aviso de Privacidade, Incidentes</strong>) são conduzidas pelo <strong>DPO do grupo</strong> — você não vê esses mini-apps na sua sidebar de propósito.

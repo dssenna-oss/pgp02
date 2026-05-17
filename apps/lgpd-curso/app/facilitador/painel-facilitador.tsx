@@ -191,10 +191,12 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
     window.open(`/api/curso/certificado?grupoId=${grupo.grupoId}`, "_blank");
   }
 
-  // Detecta "Pronto pra etapa DPO" — M1 completa (≥2 aprovados) e M2 tem aprovado
+  // Detecta "Pronto pra etapa DPO" — M1 completa (≥2 aprovados) + M2 com algum
+  // progresso (submetido ou aprovado) + M3 ainda não começou.
+  // Sinaliza que é hora do facilitador convidar o grupo a se reunir com o DPO.
   const prontoParaEtapaDPO =
     k.inventario.aprovados >= 2 &&
-    k.riscos.aprovados >= 1 &&
+    (k.riscos.aprovados >= 1 || k.riscos.submetidos >= 1) &&
     k.gap.respondidos === 0 && // ainda não começou M3
     !k.aviso.status;
 
