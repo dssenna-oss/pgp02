@@ -23,6 +23,7 @@ type NavItem = {
   missao?: string;
   icon: React.ComponentType<{ className?: string }>;
   adminOnly?: boolean;
+  dpoOnly?: boolean; // mini-apps que só DPO acessa (Contribuidor não vê)
   progressoKey?: ProgressoKey; // qual flag do progresso indica "feito"
 };
 
@@ -30,12 +31,12 @@ const navItems: NavItem[] = [
   { href: "/dashboard",            label: "Início",                                   icon: LayoutDashboard },
   { href: "/dashboard/inventario", label: "Inventário",                missao: "M1",  icon: Database,        progressoKey: "m1" },
   { href: "/dashboard/riscos",     label: "Análise de Riscos",         missao: "M2",  icon: ShieldAlert,     progressoKey: "m2" },
-  { href: "/dashboard/gap",        label: "GAP Analysis",              missao: "M3",  icon: ClipboardCheck,  progressoKey: "m3" },
-  { href: "/dashboard/ripd",       label: "RIPD",                      missao: "M4a", icon: FileSearch,      progressoKey: "m4a_ripd" },
-  { href: "/dashboard/terceiros",  label: "Gestão de Terceiros",       missao: "M4a", icon: Building2,       progressoKey: "m4a_terceiros" },
-  { href: "/dashboard/dsr",        label: "Direitos do Titular",       missao: "M4a", icon: UserCheck,       progressoKey: "m4a_dsr" },
-  { href: "/dashboard/aviso",      label: "Aviso de Privacidade",      missao: "M4b", icon: FileText,        progressoKey: "m4b" },
-  { href: "/dashboard/incidentes", label: "Incidentes",                missao: "M5",  icon: AlertTriangle,   progressoKey: "m5" },
+  { href: "/dashboard/gap",        label: "GAP Analysis",              missao: "M3",  icon: ClipboardCheck,  progressoKey: "m3",            dpoOnly: true },
+  { href: "/dashboard/ripd",       label: "RIPD",                      missao: "M4a", icon: FileSearch,      progressoKey: "m4a_ripd",      dpoOnly: true },
+  { href: "/dashboard/terceiros",  label: "Gestão de Terceiros",       missao: "M4a", icon: Building2,       progressoKey: "m4a_terceiros", dpoOnly: true },
+  { href: "/dashboard/dsr",        label: "Direitos do Titular",       missao: "M4a", icon: UserCheck,       progressoKey: "m4a_dsr",       dpoOnly: true },
+  { href: "/dashboard/aviso",      label: "Aviso de Privacidade",      missao: "M4b", icon: FileText,        progressoKey: "m4b",           dpoOnly: true },
+  { href: "/dashboard/incidentes", label: "Incidentes",                missao: "M5",  icon: AlertTriangle,   progressoKey: "m5",            dpoOnly: true },
 ];
 
 const adminItems: NavItem[] = [
@@ -46,7 +47,9 @@ const adminItems: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const role = session?.user?.role;
+  const isAdmin = role === "ADMIN";
+  const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [progresso, setProgresso] = useState<MissoesProgresso | null>(null);
 
@@ -116,8 +119,11 @@ export function Sidebar() {
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {/* Itens de participante — escondidos pro admin (ele não tem grupo,
-              clicar daria 500 por companyId ausente). */}
-          {!isAdmin && navItems.map((item) => {
+              clicar daria 500 por companyId ausente).
+              Mini-apps dpoOnly também escondidos pra Contribuidor (M3-M5). */}
+          {!isAdmin && navItems
+            .filter((item) => !item.dpoOnly || isDpoOuAdmin)
+            .map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
             const feito = item.progressoKey && progresso ? progresso[item.progressoKey] : false;

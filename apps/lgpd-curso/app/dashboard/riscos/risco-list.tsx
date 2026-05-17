@@ -55,6 +55,7 @@ const PAPEIS_DE_APOIO = [
   { value: "TI", label: "TI (Tecnologia da Informação)" },
   { value: "PROCURADORIA", label: "Procuradoria / Jurídico" },
   { value: "COMUNICACAO", label: "Comunicação" },
+  { value: "ADMINISTRATIVO", label: "Administrativo (Contratos)" },
 ];
 
 function severityBadge(level: string | null) {
