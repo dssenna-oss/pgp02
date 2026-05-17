@@ -191,6 +191,13 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
     window.open(`/api/curso/certificado?grupoId=${grupo.grupoId}`, "_blank");
   }
 
+  // Detecta "Pronto pra etapa DPO" — M1 completa (≥2 aprovados) e M2 tem aprovado
+  const prontoParaEtapaDPO =
+    k.inventario.aprovados >= 2 &&
+    k.riscos.aprovados >= 1 &&
+    k.gap.respondidos === 0 && // ainda não começou M3
+    !k.aviso.status;
+
   return (
     <div className={`border-2 ${orgaoCor} ${orgaoFundo} rounded-lg p-3 bg-white`}>
       <header className="flex items-center justify-between mb-2">
@@ -200,6 +207,14 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
           {statusAtividade.txt}
         </span>
       </header>
+
+      {/* Banner de transição — momento de reunir grupo com o DPO */}
+      {prontoParaEtapaDPO && (
+        <div className="bg-emerald-100 border border-emerald-300 rounded p-2 mb-2 text-[11px] text-emerald-900">
+          <div className="font-semibold mb-0.5">🎯 Pronto pra etapa DPO</div>
+          <div className="leading-snug">M1 e M2 fechadas. Reúna o grupo com o(a) DPO pra conduzirem juntos as próximas missões (GAP, RIPD, Aviso, Incidentes).</div>
+        </div>
+      )}
 
       {/* Score em destaque */}
       <div className={`${scoreCor} rounded p-2 mb-2 text-center`}>
