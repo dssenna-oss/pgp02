@@ -2,34 +2,51 @@
 // (GAP Analysis). Quando bloqueia, registra a tentativa em PhaseSkipAttempt
 // pra que o Facilitador veja em tempo real no painel.
 //
+// IMPORTANTE — por que RETURN em vez de THROW:
+// O Next.js 14+ SANITIZA mensagens de erro de server actions em produção
+// (security feature). Se a gente fizer throw new Error("PHASE_SKIP_M3:..."),
+// o client recebe um erro genérico SEM o prefixo — o handler não consegue
+// detectar e o erro cai no Error Boundary como "Server Components render".
+// Por isso retornamos um objeto especial que sobrevive à serialização.
+//
 // Uso em qualquer action de Plano de Ação, RIPD, Terceiros, DSR, Aviso ou
 // Incidente:
 //
-//   await ensureGapConcluido("FASE_5", "Criar Plano de Acao");
-//
-// Se GAP não tem 10 respostas, registra a tentativa e dispara erro com prefixo
-// "PHASE_SKIP_M3:" — o client detecta e mostra o Dialog em vez de toast genérico.
+//   const skip = await checkGapConcluido("FASE_5", "Criar Plano de Acao");
+//   if (skip) return skip;  // <— bloqueia ANTES de qualquer mutação
+//   // ... resto da action
 
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 
-export const PHASE_SKIP_PREFIX = "PHASE_SKIP_M3:";
+export const PHASE_SKIP_FLAG = "__phaseSkipBlocked";
 export const PHASE_SKIP_MESSAGE =
   "VOCÊ AINDA NÃO CONCLUIU A FASE 4 - GAP ANALYSIS. Seu grupo perderá pontos se prosseguir!";
 
 export type FaseTentada = "FASE_5" | "FASE_6" | "FASE_7";
+
+export type PhaseSkipResult = {
+  [PHASE_SKIP_FLAG]: true;
+  fase: FaseTentada;
+  message: string;
+};
 
 export async function gapConcluido(companyId: string): Promise<boolean> {
   const qtd = await prisma.gapAnswer.count({ where: { companyId } });
   return qtd >= 10;
 }
 
-export async function ensureGapConcluido(
+/**
+ * Se o GAP NÃO está concluído, registra a tentativa de pulo e retorna um
+ * PhaseSkipResult. A action deve `return skip` imediatamente.
+ * Se o GAP está OK, retorna `null` e a action segue normalmente.
+ */
+export async function checkGapConcluido(
   faseTentada: FaseTentada,
   acaoTentada?: string,
-): Promise<void> {
+): Promise<PhaseSkipResult | null> {
   const { session, companyId } = await requireCompany();
-  if (await gapConcluido(companyId)) return;
+  if (await gapConcluido(companyId)) return null;
 
   // Registra tentativa pro Facilitador ver. Não bloqueia caso falhe (best-effort).
   try {
@@ -58,15 +75,16 @@ export async function ensureGapConcluido(
       }
     }
   } catch (e) {
-    // Não bloqueia o usuário por causa de falha de telemetria
     console.error("[phase-guard] falha ao registrar tentativa:", e);
   }
 
-  throw new Error(`${PHASE_SKIP_PREFIX}${PHASE_SKIP_MESSAGE}`);
+  return {
+    [PHASE_SKIP_FLAG]: true,
+    fase: faseTentada,
+    message: PHASE_SKIP_MESSAGE,
+  };
 }
 
-export function isPhaseSkipError(err: unknown): boolean {
-  if (!err) return false;
-  const msg = (err as any).message || String(err);
-  return typeof msg === "string" && msg.startsWith(PHASE_SKIP_PREFIX);
+export function isPhaseSkipResult(x: unknown): x is PhaseSkipResult {
+  return !!x && typeof x === "object" && (x as any)[PHASE_SKIP_FLAG] === true;
 }

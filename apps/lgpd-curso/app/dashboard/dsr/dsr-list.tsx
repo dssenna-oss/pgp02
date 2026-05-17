@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { saveDsr, deletarDsr } from "./actions";
 import toast from "react-hot-toast";
-import { handlePhaseSkip } from "@/lib/phase-skip-handler";
+import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Dsr = any;
 
@@ -40,7 +40,7 @@ export function DsrList({ items }: { items: Dsr[] }) {
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      await saveDsr({
+      const r = await saveDsr({
         id: editing?.id,
         titularNome: String(fd.get("titularNome") || ""),
         titularContato: String(fd.get("titularContato") || ""),
@@ -49,15 +49,19 @@ export function DsrList({ items }: { items: Dsr[] }) {
         respostaTexto: String(fd.get("respostaTexto") || ""),
         status: String(fd.get("status") || "ABERTA"),
       });
+      if (handlePhaseSkipResult(r)) return;
       toast.success(editing ? "Solicitação atualizada" : "Solicitação registrada");
       setOpen(false);
-    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover esta solicitação?")) return;
-    try { await deletarDsr(id); toast.success("Removida"); }
-    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    try {
+      const r = await deletarDsr(id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("Removida");
+    } catch (e: any) { toast.error(e.message); }
   }
 
   return (

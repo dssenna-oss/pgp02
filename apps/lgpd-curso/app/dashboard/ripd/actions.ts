@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { RIPD_SECOES } from "@/lib/ripd-secoes";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 // Inventários aprovados que ainda NÃO têm RIPD criado — pra preencher o
 // dropdown de "Novo RIPD" na tela.
@@ -60,7 +60,8 @@ export async function listRipds() {
 }
 
 export async function createRipd(input: { titulo: string; inventoryRef?: string }) {
-  await ensureGapConcluido("FASE_6", "Criar RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Criar RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
 
   // Pré-requisitos legais — Art. 38 LGPD exige descrição dos dados (M1)
@@ -102,7 +103,8 @@ export async function createRipd(input: { titulo: string; inventoryRef?: string 
 }
 
 export async function saveSecao(ripdId: string, numero: number, conteudo: string) {
-  await ensureGapConcluido("FASE_6", "Salvar secao do RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Salvar secao do RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
   const ripd = await prisma.ripd.findFirst({ where: { id: ripdId, companyId } });
   if (!ripd) throw new Error("RIPD não encontrado");
@@ -127,7 +129,8 @@ export async function saveSecao(ripdId: string, numero: number, conteudo: string
 }
 
 export async function submeterRipd(id: string) {
-  await ensureGapConcluido("FASE_6", "Submeter RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Submeter RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
   const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
   if (!ripd) throw new Error("RIPD não encontrado");
@@ -145,7 +148,8 @@ export async function submeterRipd(id: string) {
 }
 
 export async function aprovarRipd(id: string) {
-  await ensureGapConcluido("FASE_6", "Aprovar RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Aprovar RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
   if (!["DPO", "ADMIN"].includes(session.user.role)) {
     throw new Error("Apenas o DPO pode aprovar RIPDs");
@@ -161,7 +165,8 @@ export async function aprovarRipd(id: string) {
 }
 
 export async function devolverRipd(id: string, motivo: string) {
-  await ensureGapConcluido("FASE_6", "Devolver RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Devolver RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
   if (!["DPO", "ADMIN"].includes(session.user.role)) {
     throw new Error("Apenas o DPO pode devolver RIPDs");
@@ -180,7 +185,8 @@ export async function devolverRipd(id: string, motivo: string) {
 }
 
 export async function deletarRipd(id: string) {
-  await ensureGapConcluido("FASE_6", "Deletar RIPD");
+  const skip = await checkGapConcluido("FASE_6", "Deletar RIPD");
+  if (skip) return skip;
   const { companyId, session } = await requireCompany();
   const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
   if (!ripd) throw new Error("RIPD não encontrado");

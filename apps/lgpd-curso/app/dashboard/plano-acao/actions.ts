@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { requireCompany, requireSession } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { GAP_PACOTE } from "@/lib/gap-pacote";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 const STATUS_VALIDOS = ["ABERTA", "EM_ANDAMENTO", "CONCLUIDA"] as const;
 const PRIORIDADES = ["BAIXA", "MEDIA", "ALTA"] as const;
@@ -33,7 +33,8 @@ export async function savePlanoAcao(input: {
   status?: string;
   prioridade?: string;
 }) {
-  await ensureGapConcluido("FASE_5", input.id ? "Editar acao do Plano" : "Criar acao do Plano");
+  const skip = await checkGapConcluido("FASE_5", input.id ? "Editar acao do Plano" : "Criar acao do Plano");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   if (!input.acao?.trim()) throw new Error("Ação obrigatória");
 
@@ -66,7 +67,8 @@ export async function savePlanoAcao(input: {
 }
 
 export async function atualizarStatus(id: string, novoStatus: string) {
-  await ensureGapConcluido("FASE_5", `Atualizar status -> ${novoStatus}`);
+  const skip = await checkGapConcluido("FASE_5", `Atualizar status -> ${novoStatus}`);
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   if (!STATUS_VALIDOS.includes(novoStatus as any)) throw new Error("Status inválido");
   const result = await prisma.actionPlan.update({
@@ -78,7 +80,8 @@ export async function atualizarStatus(id: string, novoStatus: string) {
 }
 
 export async function deletarPlanoAcao(id: string) {
-  await ensureGapConcluido("FASE_5", "Deletar acao do Plano");
+  const skip = await checkGapConcluido("FASE_5", "Deletar acao do Plano");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   await prisma.actionPlan.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/plano-acao");
@@ -87,7 +90,8 @@ export async function deletarPlanoAcao(id: string) {
 // Auto-importa Riscos ALTO + GAP NÃO ADERENTE como ações pré-preenchidas.
 // Idempotente: usa `origemRef` pra detectar o que já foi importado.
 export async function importarDeRiscosEGap() {
-  await ensureGapConcluido("FASE_5", "Importar Riscos + GAP");
+  const skip = await checkGapConcluido("FASE_5", "Importar Riscos + GAP");
+  if (skip) return skip;
   await requireSession();
   const { companyId } = await requireCompany();
 

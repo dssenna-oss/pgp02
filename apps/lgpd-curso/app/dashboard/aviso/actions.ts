@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 const SLUG = "aviso-privacidade";
 
@@ -33,7 +33,8 @@ export async function getPrerequisitos() {
 }
 
 export async function saveAviso(conteudoMd: string) {
-  await ensureGapConcluido("FASE_6", "Salvar Aviso de Privacidade");
+  const skip = await checkGapConcluido("FASE_6", "Salvar Aviso de Privacidade");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   const result = await prisma.policy.upsert({
     where: { companyId_slug: { companyId, slug: SLUG } },
@@ -51,7 +52,8 @@ export async function saveAviso(conteudoMd: string) {
 }
 
 export async function publicarAviso() {
-  await ensureGapConcluido("FASE_6", "Publicar Aviso de Privacidade");
+  const skip = await checkGapConcluido("FASE_6", "Publicar Aviso de Privacidade");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
 
   // Pré-requisito legal — Art. 9 LGPD lista informações obrigatórias no Aviso

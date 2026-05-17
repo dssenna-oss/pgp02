@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { saveAviso, publicarAviso } from "./actions";
 import { AVISO_SECOES } from "@/lib/aviso-secoes";
 import toast from "react-hot-toast";
-import { handlePhaseSkip } from "@/lib/phase-skip-handler";
+import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Aviso = {
   id: string;
@@ -40,8 +40,11 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
 
   function salvar() {
     startTransition(async () => {
-      try { await saveAviso(conteudo); toast.success("Rascunho salvo"); }
-      catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+      try {
+        const r = await saveAviso(conteudo);
+        if (handlePhaseSkipResult(r)) return;
+        toast.success("Rascunho salvo");
+      } catch (e: any) { toast.error(e.message); }
     });
   }
 
@@ -55,8 +58,11 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
       if (!confirm("Pré-requisitos da Missão 4a incompletos. Publicar mesmo assim?")) return;
     }
     startTransition(async () => {
-      try { await publicarAviso(); toast.success("Aviso publicado!"); }
-      catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+      try {
+        const r = await publicarAviso();
+        if (handlePhaseSkipResult(r)) return;
+        toast.success("Aviso publicado!");
+      } catch (e: any) { toast.error(e.message); }
     });
   }
 
