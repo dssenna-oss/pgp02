@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Send, AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +19,7 @@ type Aviso = {
 } | null;
 
 type Prereq = {
+  inventariosAprovados: number;
   ripds: number;
   ripdsAprovados: number;
   operadores: number;
@@ -31,6 +33,10 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
   const [pending, startTransition] = useTransition();
   const publicado = aviso?.status === "PUBLICADO";
 
+  // Pré-requisito legal HARD — Art. 9 LGPD exige descrição clara do que é
+  // tratado. Sem Inventário aprovado, o Aviso não tem matéria-prima.
+  const bloqueadoPublicar = prereq.inventariosAprovados === 0;
+
   function salvar() {
     startTransition(async () => {
       try { await saveAviso(conteudo); toast.success("Rascunho salvo"); }
@@ -40,6 +46,10 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
 
   function publicar() {
     if (!aviso) { toast.error("Salve um rascunho primeiro"); return; }
+    if (bloqueadoPublicar) {
+      toast.error("Aprove ao menos 1 processo no Inventário antes de publicar");
+      return;
+    }
     if (prereq.ripds === 0 || prereq.operadores === 0 || prereq.dsr === 0) {
       if (!confirm("Pré-requisitos da Missão 4a incompletos. Publicar mesmo assim?")) return;
     }
@@ -49,15 +59,41 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
     });
   }
 
-  const prereqOk = prereq.ripds > 0 && prereq.operadores > 0 && prereq.dsr > 0;
+  const prereqM4aOk = prereq.ripds > 0 && prereq.operadores > 0 && prereq.dsr > 0;
 
   return (
     <div className="space-y-6">
-      {/* Quadro de pré-requisitos */}
+      {/* Bloqueio FIRME quando falta Inventário aprovado (Art. 9 LGPD) */}
+      {bloqueadoPublicar && (
+        <div className="border-l-4 border-red-500 bg-red-50 rounded p-4">
+          <div className="flex items-start gap-3">
+            <Lock className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold text-red-900 mb-1 text-sm">
+                Pré-requisito legal do Aviso não atendido
+              </div>
+              <p className="text-red-900 text-xs leading-relaxed mb-2">
+                O <strong>Art. 9 da LGPD</strong> exige que o Aviso descreva claramente: finalidade, forma e duração do tratamento, identificação do controlador, uso compartilhado com terceiros, direitos do titular. Sem Inventário aprovado, esses dados não existem.
+              </p>
+              <Link
+                href="/dashboard/inventario"
+                className="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-2 rounded"
+              >
+                Ir pro Inventário (Missão 1) <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <div className="text-[11px] text-red-700 mt-2">
+                ❌ Inventário — 0 processo(s) aprovado(s) (mínimo: 1) · Você pode editar o rascunho do Aviso, mas <strong>publicar fica bloqueado</strong>.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quadro de pré-requisitos da M4a (RIPD, Terceiros, DSR — soft) */}
       <div className="border rounded-lg p-4 bg-white">
         <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-          Pré-requisitos da Missão 4a
-          {prereqOk
+          Pré-requisitos da Missão 4a (recomendados, não bloqueiam)
+          {prereqM4aOk
             ? <Badge variant="success">Completos</Badge>
             : <Badge variant="warning">Incompletos</Badge>
           }
@@ -78,8 +114,14 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={salvar} disabled={pending}>Salvar rascunho</Button>
-            <Button size="sm" variant="success" onClick={publicar} disabled={pending || publicado}>
-              <Send className="h-3.5 w-3.5" /> {publicado ? "Já publicado" : "Publicar"}
+            <Button
+              size="sm"
+              variant="success"
+              onClick={publicar}
+              disabled={pending || publicado || bloqueadoPublicar}
+              title={bloqueadoPublicar ? "Aprove ao menos 1 processo no Inventário antes de publicar" : undefined}
+            >
+              <Send className="h-3.5 w-3.5" /> {publicado ? "Já publicado" : bloqueadoPublicar ? "🔒 Publicar" : "Publicar"}
             </Button>
           </div>
         </header>

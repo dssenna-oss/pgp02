@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, FileDown, AlertTriangle, Clock } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pencil, Trash2, FileDown, AlertTriangle, Clock, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -23,12 +24,22 @@ function sevBadge(s: string) {
   return <Badge variant="default">BAIXA</Badge>;
 }
 
-export function IncidentesList({ items }: { items: Inc[] }) {
+export function IncidentesList({ items, qtdInventariosAprovados }: { items: Inc[]; qtdInventariosAprovados: number }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Inc | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function abrirNovo() { setEditing(null); setOpen(true); }
+  // Bloqueio firme APENAS pra criar novo manualmente. Incidentes disparados
+  // pelo facilitador (M5) continuam aparecendo e sendo editáveis.
+  const bloqueadoCriarNovo = qtdInventariosAprovados === 0;
+
+  function abrirNovo() {
+    if (bloqueadoCriarNovo) {
+      toast.error("Aprove ao menos 1 processo no Inventário antes de registrar incidente manualmente");
+      return;
+    }
+    setEditing(null); setOpen(true);
+  }
   function abrirEdicao(i: Inc) { setEditing(i); setOpen(true); }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -75,9 +86,40 @@ export function IncidentesList({ items }: { items: Inc[] }) {
 
   return (
     <>
+      {/* Banner explicativo quando o registro manual está bloqueado */}
+      {bloqueadoCriarNovo && (
+        <div className="border-l-4 border-red-500 bg-red-50 rounded p-3 mb-3">
+          <div className="flex items-start gap-2">
+            <Lock className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold text-red-900 text-sm mb-1">
+                Registro manual de incidente bloqueado
+              </div>
+              <p className="text-red-900 text-xs leading-relaxed mb-2">
+                O <strong>Art. 48 §1º LGPD</strong> exige que a comunicação de incidente descreva a <em>"natureza dos dados pessoais afetados"</em> e os <em>"tipos de titulares afetados"</em> — informações que vêm do Inventário. Aprove ao menos 1 processo no Inventário antes de registrar incidente manualmente.
+              </p>
+              <Link
+                href="/dashboard/inventario"
+                className="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-2 rounded"
+              >
+                Ir pro Inventário (Missão 1) <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <div className="text-[11px] text-red-700 mt-2">
+                💡 Incidentes <strong>já existentes</strong> (incluindo os disparados pelo facilitador na M5) continuam visíveis e editáveis abaixo — o bloqueio é só pra criar novos.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end mb-3">
-        <Button onClick={abrirNovo} variant="destructive">
-          <AlertTriangle className="h-4 w-4" /> Registrar incidente
+        <Button
+          onClick={abrirNovo}
+          variant="destructive"
+          disabled={bloqueadoCriarNovo}
+          title={bloqueadoCriarNovo ? "Aprove ao menos 1 processo no Inventário antes" : undefined}
+        >
+          {bloqueadoCriarNovo ? <Lock className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />} Registrar incidente
         </Button>
       </div>
 

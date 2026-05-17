@@ -12,6 +12,13 @@ export async function listIncidentes() {
   });
 }
 
+// Pré-requisito do registro de incidente — pra dimensionar dados afetados,
+// classificar severidade e notificar titulares, precisa do Inventário.
+export async function contarInventariosAprovados() {
+  const { companyId } = await requireCompany();
+  return prisma.dataInventory.count({ where: { companyId, status: "APROVADO" } });
+}
+
 export async function getIncidente(id: string) {
   const { companyId } = await requireCompany();
   return prisma.incident.findFirst({ where: { id, companyId } });
@@ -42,8 +49,18 @@ export async function saveIncidente(input: {
   };
   let result;
   if (input.id) {
+    // Editar incidente existente (incluindo os disparados pelo facilitador) sempre OK.
     result = await prisma.incident.update({ where: { id: input.id }, data: { ...data, companyId: undefined } });
   } else {
+    // Criar incidente manualmente requer Inventário aprovado — Art. 48 §1º LGPD
+    // exige notificar titulares afetados e ANPD com "natureza dos dados pessoais
+    // afetados", "tipos de titulares afetados" — info que vem do Inventário.
+    const aprovados = await prisma.dataInventory.count({ where: { companyId, status: "APROVADO" } });
+    if (aprovados === 0) {
+      throw new Error(
+        "Pré-requisito legal: aprove ao menos 1 processo no Inventário antes de registrar incidente manualmente. Art. 48 §1º LGPD exige descrever 'natureza dos dados pessoais afetados' e 'tipos de titulares' — sem Inventário não é possível dimensionar."
+      );
+    }
     result = await prisma.incident.create({ data });
   }
   revalidatePath("/dashboard/incidentes");
