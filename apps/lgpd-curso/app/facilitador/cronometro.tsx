@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Pause, ChevronRight, ChevronLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 
 const MISSOES = [
   { id: 0,  nome: "M0 · Quem somos nós?",                  duracaoSeg:  5 * 60 },
@@ -15,6 +16,8 @@ const MISSOES = [
   { id: 7,  nome: "Debrief",                                duracaoSeg: 15 * 60 },
 ];
 
+const STORAGE_KEY = "curso-cronometro-missao-idx";
+
 function formatTime(seg: number): string {
   const abs = Math.abs(seg);
   const m = Math.floor(abs / 60).toString().padStart(2, "0");
@@ -26,9 +29,31 @@ export function Cronometro() {
   const [missaoIdx, setMissaoIdx] = useState(0);
   const [restanteSeg, setRestanteSeg] = useState(MISSOES[0].duracaoSeg);
   const [rodando, setRodando] = useState(false);
+  const [hidratado, setHidratado] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const missao = MISSOES[missaoIdx];
+
+  // Carrega missão do localStorage no mount — sobrevive a logout/login do facilitador
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const idx = parseInt(saved, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < MISSOES.length) {
+        setMissaoIdx(idx);
+        setRestanteSeg(MISSOES[idx].duracaoSeg);
+      }
+    }
+    setHidratado(true);
+  }, []);
+
+  // Salva missão no localStorage sempre que mudar (depois da hidratação inicial)
+  useEffect(() => {
+    if (hidratado && typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, String(missaoIdx));
+    }
+  }, [missaoIdx, hidratado]);
 
   useEffect(() => {
     if (rodando) {
@@ -44,22 +69,17 @@ export function Cronometro() {
   function play() { setRodando(true); }
   function pause() { setRodando(false); }
   function reset() { setRestanteSeg(missao.duracaoSeg); setRodando(false); }
-  function proxima() {
-    if (missaoIdx < MISSOES.length - 1) {
-      const novoIdx = missaoIdx + 1;
+
+  function irPara(novoIdx: number) {
+    if (novoIdx >= 0 && novoIdx < MISSOES.length && novoIdx !== missaoIdx) {
       setMissaoIdx(novoIdx);
       setRestanteSeg(MISSOES[novoIdx].duracaoSeg);
       setRodando(false);
     }
   }
-  function anterior() {
-    if (missaoIdx > 0) {
-      const novoIdx = missaoIdx - 1;
-      setMissaoIdx(novoIdx);
-      setRestanteSeg(MISSOES[novoIdx].duracaoSeg);
-      setRodando(false);
-    }
-  }
+
+  function proxima() { irPara(missaoIdx + 1); }
+  function anterior() { irPara(missaoIdx - 1); }
 
   // Cor do cronômetro baseada no tempo restante
   const minTotal = missao.duracaoSeg;
@@ -83,10 +103,12 @@ export function Cronometro() {
         </div>
         <div className="flex gap-1 flex-wrap justify-center">
           <Button size="sm" variant="ghost" onClick={anterior} disabled={missaoIdx === 0}
+            title="Missão anterior (sem ativar cronômetro)"
             className="bg-white/10 hover:bg-white/20 text-white border-white/20">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="ghost" onClick={reset}
+            title="Resetar tempo desta missão"
             className="bg-white/10 hover:bg-white/20 text-white border-white/20">
             <RotateCcw className="h-4 w-4" />
           </Button>
@@ -96,10 +118,30 @@ export function Cronometro() {
             : <Button size="sm" variant="ghost" onClick={play}
                 className="bg-emerald-500 hover:bg-emerald-600 text-white"><Play className="h-4 w-4" /> Iniciar</Button>}
           <Button size="sm" variant="ghost" onClick={proxima} disabled={missaoIdx === MISSOES.length - 1}
+            title="Próxima missão (sem ativar cronômetro)"
             className="bg-white/10 hover:bg-white/20 text-white border-white/20">
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+      </div>
+
+      {/* Salto direto pra qualquer missão (sem precisar clicar várias vezes ◀/▶) */}
+      <div className="mt-3 flex items-center gap-2 text-xs flex-wrap">
+        <span className="opacity-70">Pular pra:</span>
+        <Select
+          value={String(missaoIdx)}
+          onChange={(e) => irPara(parseInt(e.target.value, 10))}
+          className="text-gray-900 max-w-xs bg-white"
+        >
+          {MISSOES.map((m, i) => (
+            <option key={i} value={i}>
+              {m.nome} ({Math.round(m.duracaoSeg / 60)}min)
+            </option>
+          ))}
+        </Select>
+        <span className="opacity-60 text-[10px]">
+          ↻ Estado é salvo no navegador — sobrevive a logout/login
+        </span>
       </div>
 
       {/* Barra de progresso */}
