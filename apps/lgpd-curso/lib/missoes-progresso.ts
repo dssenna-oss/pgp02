@@ -36,9 +36,9 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscos, qtdGap, qtdRipdsAprovados, qtdOperadores, qtdDsr, aviso, incidentes] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdRipdsAprovados, qtdOperadores, qtdDsr, aviso, incidentes] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
-    prisma.processRisk.count({ where: { companyId } }),
+    prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
     prisma.ripd.count({ where: { companyId, status: "APROVADO" } }),
     prisma.operator.count({ where: { companyId } }),
@@ -52,7 +52,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
 
   return {
     m1: invs.length >= 2 && invs.every((i) => i.status === "APROVADO"),
-    m2: qtdRiscos > 0,
+    m2: qtdRiscosAprovados > 0,
     m3: qtdGap >= 10,
     m4a_ripd: qtdRipdsAprovados > 0,
     m4a_terceiros: qtdOperadores > 0,
