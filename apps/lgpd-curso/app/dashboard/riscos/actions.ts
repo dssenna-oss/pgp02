@@ -17,7 +17,8 @@ export async function listInventoriesForSelect() {
   const { companyId } = await requireCompany();
   return prisma.dataInventory.findMany({
     where: { companyId },
-    select: { id: true, nome: true },
+    select: { id: true, nome: true, setor: true, status: true, dadosSensiveis: true },
+    orderBy: { createdAt: "asc" },
   });
 }
 

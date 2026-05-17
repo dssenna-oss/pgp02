@@ -3,16 +3,19 @@
 // Sidebar do curso — drawer em mobile, fixa em desktop.
 // 8 mini-apps na ordem da jornada PGP.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
-  FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X,
+  FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { cn } from "@/lib/utils";
+import type { MissoesProgresso } from "@/lib/missoes-progresso";
+
+type ProgressoKey = keyof MissoesProgresso;
 
 type NavItem = {
   href: string;
@@ -20,18 +23,19 @@ type NavItem = {
   missao?: string;
   icon: React.ComponentType<{ className?: string }>;
   adminOnly?: boolean;
+  progressoKey?: ProgressoKey; // qual flag do progresso indica "feito"
 };
 
 const navItems: NavItem[] = [
   { href: "/dashboard",            label: "Início",                                   icon: LayoutDashboard },
-  { href: "/dashboard/inventario", label: "Inventário",                missao: "M1",  icon: Database },
-  { href: "/dashboard/riscos",     label: "Análise de Riscos",         missao: "M2",  icon: ShieldAlert },
-  { href: "/dashboard/gap",        label: "GAP Analysis",              missao: "M3",  icon: ClipboardCheck },
-  { href: "/dashboard/ripd",       label: "RIPD",                      missao: "M4a", icon: FileSearch },
-  { href: "/dashboard/terceiros",  label: "Gestão de Terceiros",       missao: "M4a", icon: Building2 },
-  { href: "/dashboard/dsr",        label: "Direitos do Titular",       missao: "M4a", icon: UserCheck },
-  { href: "/dashboard/aviso",      label: "Aviso de Privacidade",      missao: "M4b", icon: FileText },
-  { href: "/dashboard/incidentes", label: "Incidentes",                missao: "M5",  icon: AlertTriangle },
+  { href: "/dashboard/inventario", label: "Inventário",                missao: "M1",  icon: Database,        progressoKey: "m1" },
+  { href: "/dashboard/riscos",     label: "Análise de Riscos",         missao: "M2",  icon: ShieldAlert,     progressoKey: "m2" },
+  { href: "/dashboard/gap",        label: "GAP Analysis",              missao: "M3",  icon: ClipboardCheck,  progressoKey: "m3" },
+  { href: "/dashboard/ripd",       label: "RIPD",                      missao: "M4a", icon: FileSearch,      progressoKey: "m4a_ripd" },
+  { href: "/dashboard/terceiros",  label: "Gestão de Terceiros",       missao: "M4a", icon: Building2,       progressoKey: "m4a_terceiros" },
+  { href: "/dashboard/dsr",        label: "Direitos do Titular",       missao: "M4a", icon: UserCheck,       progressoKey: "m4a_dsr" },
+  { href: "/dashboard/aviso",      label: "Aviso de Privacidade",      missao: "M4b", icon: FileText,        progressoKey: "m4b" },
+  { href: "/dashboard/incidentes", label: "Incidentes",                missao: "M5",  icon: AlertTriangle,   progressoKey: "m5" },
 ];
 
 const adminItems: NavItem[] = [
@@ -44,8 +48,27 @@ export function Sidebar() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [progresso, setProgresso] = useState<MissoesProgresso | null>(null);
 
   function closeMobile() { setMobileOpen(false); }
+
+  // Polling do progresso a cada 10s pra atualizar ticks ✓ — só pra participantes,
+  // admin não tem grupo (companyId null), endpoint retorna vazio.
+  useEffect(() => {
+    if (isAdmin || !session?.user?.id) return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/missoes-progresso", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setProgresso(data);
+      } catch {}
+    }
+    load();
+    const id = setInterval(load, 10000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [isAdmin, session?.user?.id]);
 
   return (
     <>
@@ -97,6 +120,7 @@ export function Sidebar() {
           {!isAdmin && navItems.map((item) => {
             const active = pathname === item.href;
             const Icon = item.icon;
+            const feito = item.progressoKey && progresso ? progresso[item.progressoKey] : false;
             return (
               <Link
                 key={item.href}
@@ -111,6 +135,9 @@ export function Sidebar() {
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1">{item.label}</span>
+                {feito && (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" aria-label="Missão concluída" />
+                )}
                 {item.missao && (
                   <span className="text-[10px] bg-gray-200 text-gray-600 px-1 py-0.5 rounded">
                     {item.missao}
