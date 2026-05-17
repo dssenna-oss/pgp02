@@ -1,10 +1,11 @@
-// Progresso do grupo nas 8 missões — usado pela sidebar pra mostrar ticks ✓
+// Progresso do grupo nas missões — usado pela sidebar pra mostrar ticks ✓
 // ao lado de cada mini-app, ajudando o participante a ver onde está.
 //
 // Critério "done" por missão:
 //   M1 (Inventário)  — pelo menos 2 processos APROVADOS (curso vem com 2 pré-cadastrados)
-//   M2 (Riscos)      — pelo menos 1 risco registrado
+//   M2 (Riscos)      — pelo menos 1 risco registrado e APROVADO
 //   M3 (GAP)         — todos os 10 controles respondidos
+//   Plano de Ação    — pelo menos 1 ação registrada (origem RISCO/GAP/MANUAL)
 //   M4a (RIPD)       — pelo menos 1 RIPD APROVADO
 //   M4a (Terceiros)  — pelo menos 1 operador cadastrado
 //   M4a (DSR)        — pelo menos 1 solicitação registrada
@@ -18,6 +19,7 @@ export type MissoesProgresso = {
   m1: boolean;
   m2: boolean;
   m3: boolean;
+  plano_acao: boolean;
   m4a_ripd: boolean;
   m4a_terceiros: boolean;
   m4a_dsr: boolean;
@@ -27,6 +29,7 @@ export type MissoesProgresso = {
 
 const EMPTY: MissoesProgresso = {
   m1: false, m2: false, m3: false,
+  plano_acao: false,
   m4a_ripd: false, m4a_terceiros: false, m4a_dsr: false,
   m4b: false, m5: false,
 };
@@ -36,10 +39,11 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscosAprovados, qtdGap, qtdRipdsAprovados, qtdOperadores, qtdDsr, aviso, incidentes] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, qtdOperadores, qtdDsr, aviso, incidentes] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
     prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
+    prisma.actionPlan.count({ where: { companyId } }),
     prisma.ripd.count({ where: { companyId, status: "APROVADO" } }),
     prisma.operator.count({ where: { companyId } }),
     prisma.dsrRequest.count({ where: { companyId } }),
@@ -54,6 +58,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     m1: invs.length >= 2 && invs.every((i) => i.status === "APROVADO"),
     m2: qtdRiscosAprovados > 0,
     m3: qtdGap >= 10,
+    plano_acao: qtdAcoes > 0,
     m4a_ripd: qtdRipdsAprovados > 0,
     m4a_terceiros: qtdOperadores > 0,
     m4a_dsr: qtdDsr > 0,
