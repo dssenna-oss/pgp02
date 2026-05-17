@@ -13,7 +13,7 @@ const MISSOES = [
   { id: 4,  nome: "M4a · RIPD + Terceiros + DSR",          duracaoSeg:  8 * 60 },
   { id: 5,  nome: "M4b · Aviso de Privacidade",            duracaoSeg: 12 * 60 },
   { id: 6,  nome: "🚨 M5 · Incidente Surpresa",            duracaoSeg: 25 * 60 },
-  { id: 7,  nome: "Debrief",                                duracaoSeg: 15 * 60 },
+  { id: 7,  nome: "Reflexão Final",                         duracaoSeg: 15 * 60 },
 ];
 
 const STORAGE_KEY = "curso-cronometro-missao-idx";

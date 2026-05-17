@@ -224,7 +224,7 @@ function buildMural(orgao) {
 
     // Rodapé
     new Paragraph({
-      children: [new TextRun({ text: "💡 Lembre-se: errar é o objetivo, não o pecado. Anotem dúvidas e descobertas pra discutir no debrief final.", italics: true, size: 20, color: "666666" })],
+      children: [new TextRun({ text: "💡 Lembre-se: errar é o objetivo, não o pecado. Anotem dúvidas e descobertas pra discutir na Reflexão Final.", italics: true, size: 20, color: "666666" })],
       alignment: AlignmentType.CENTER,
       spacing: { before: 240, after: 0 },
     }),

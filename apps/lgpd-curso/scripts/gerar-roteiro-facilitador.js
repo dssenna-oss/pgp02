@@ -176,7 +176,7 @@ children.push(tbl([1500, 2500, 5026],
     ["14:00-14:15", "Briefing do jogo",                       "Explicar Vegas + grupos PM/CM + papéis. Distribuir cartões de login."],
     ["14:15-14:25", "Configurar dispositivos",                "Cada participante faz login + visita as 8 telas da sidebar (~3 min)."],
     ["14:25-17:25", "AULA PRÁTICA — 6 missões",               "Detalhamento na Seção 3 deste roteiro."],
-    ["17:25-17:55", "Debrief + premiação",                    "Comparação dos grupos · pegadinhas reveladas · entrega de certificados."],
+    ["17:25-17:55", "Reflexão Final + premiação",             "Comparação dos grupos · pegadinhas reveladas · entrega de certificados."],
     ["17:55-18:00", "Encerramento",                           "Foto da turma com selo 'LGPD-Friendly'."],
   ]
 ));
@@ -187,7 +187,7 @@ children.push(tbl([1500, 2500, 5026],
 children.push(H1("3. Aula prática — roteiro das 6 missões", true));
 
 children.push(p([
-  R("Tempo total: "), B("~3 horas"), R(" cronometradas + check-ins de 3 min entre missões + 15 min de debrief.")
+  R("Tempo total: "), B("~3 horas"), R(" cronometradas + check-ins de 3 min entre missões + 15 min de Reflexão Final.")
 ]));
 children.push(p([
   R("Princípio: "), B("errar é o objetivo, não o pecado"), R(". Deixe o grupo descobrir as armadilhas em segurança.")
@@ -263,7 +263,7 @@ for (const m of MISSOES) {
 // ============================================================
 children.push(H1("4. Pegadinhas plantadas — quando revelar", true));
 
-children.push(p("As 4 pegadinhas ficam escondidas no Briefing dos processos. Grupos que flagam ganham bônus na premiação 🕵️ Olho Clínico. Revelar somente no debrief — após a Missão 5."));
+children.push(p("As 4 pegadinhas ficam escondidas no Briefing dos processos. Grupos que flagam ganham bônus na premiação 🕵️ Olho Clínico. Revelar somente na Reflexão Final — após a Missão 5."));
 
 children.push(H2("Pegadinha 1 — PM Posto: marketing parceiro"));
 children.push(p([
@@ -294,9 +294,9 @@ children.push(p([
 children.push(p([B("Por que é pegadinha: "), R("interesse legítimo aqui NÃO passa no teste de balanceamento (Art. 10 LGPD) — o titular não esperaria razoavelmente receber esse email só por ter reclamado de algo. Mistura de finalidades.")]));
 
 // ============================================================
-// 5. DEBRIEF
+// 5. REFLEXÃO FINAL
 // ============================================================
-children.push(H1("5. Debrief (15 min)", true));
+children.push(H1("5. Reflexão Final (15 min)", true));
 
 children.push(H2("Estrutura sugerida"));
 [
@@ -305,12 +305,12 @@ children.push(H2("Estrutura sugerida"));
   "Revelar as 4 pegadinhas. Quem flagou ganha bônus 🕵️ Olho Clínico.",
   "Comparar tempo da Missão 5 entre grupos — quem foi mais rápido? Quem foi mais completo?",
   "Comparar score Maturidade — quem chegou mais alto? Por quê?",
-  "Pergunta final ao grupão: 'Se a ANPD bater na porta amanhã da cidade real onde vocês trabalham, qual destes municípios fictícios sai melhor?'",
+  "Pergunta final ao grupão: 'Se a ANPD bater na porta amanhã, Vegas tem como comprovar a sua conformidade com a LGPD?'",
 ].forEach((t) => children.push(bullet(t)));
 
 children.push(H2("Categorias de premiação"));
 [
-  "🥇 Município mais maduro — maior score Maturidade do PGP",
+  "🥇 Grupo mais maduro — maior score Maturidade do PGP",
   "📜 Melhor Aviso de Privacidade — clareza pro cidadão (avaliação do facilitador)",
   "⚡ Resposta mais rápida ao incidente — menor tempo entre disparo e geração do DOCX",
   "🕵️ Olho clínico — quem flagou as pegadinhas",
