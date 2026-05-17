@@ -31,8 +31,8 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
       "Cadastro de fornecedor: Art. 7º II (obrigação legal de licitar)",
     ],
     linkAnpd: {
-      texto: "Guia ANPD sobre bases legais",
-      url: "https://www.gov.br/anpd/pt-br/documentos-e-publicacoes/guia-de-tratamento-de-dados-pessoais-pela-administracao-publica",
+      texto: "Guia ANPD — Tratamento de Dados pelo Poder Público (PDF)",
+      url: "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-poder-publico-anpd-versao-final.pdf/@@display-file/file",
     },
   },
 
