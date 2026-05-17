@@ -48,7 +48,11 @@ export async function GET(req: NextRequest) {
       submetidos: c.inventories.filter((i) => i.status === "SUBMETIDO").length,
       devolvidos: c.inventories.filter((i) => i.status === "DEVOLVIDO").length,
     },
-    riscos: { total: c.risks.length },
+    riscos: {
+      total: c.risks.length,
+      aprovados: c.risks.filter((r: any) => r.status === "APROVADO").length,
+      submetidos: c.risks.filter((r: any) => r.status === "SUBMETIDO").length,
+    },
     gap: {
       respondidos: c.gapAnswers.length,
       aderentes: gapAderentes,
