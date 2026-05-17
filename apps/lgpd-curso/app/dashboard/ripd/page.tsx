@@ -1,14 +1,15 @@
 import { PageHeader } from "@/components/page-header";
 import { RipdEditor } from "./ripd-editor";
-import { listRipds, listInventariosAprovadosSemRipd, contarRiscos } from "./actions";
+import { listRipds, listInventariosAprovadosSemRipd, contarRiscos, contarInventariosAprovados } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function RipdPage() {
-  const [ripds, inventariosDisponiveis, qtdRiscos] = await Promise.all([
+  const [ripds, inventariosDisponiveis, qtdRiscos, qtdInventariosAprovados] = await Promise.all([
     listRipds(),
     listInventariosAprovadosSemRipd(),
     contarRiscos(),
+    contarInventariosAprovados(),
   ]);
 
   return (
@@ -22,6 +23,7 @@ export default async function RipdPage() {
         ripds={ripds as any}
         inventariosDisponiveis={inventariosDisponiveis}
         qtdRiscos={qtdRiscos}
+        qtdInventariosAprovados={qtdInventariosAprovados}
       />
     </div>
   );

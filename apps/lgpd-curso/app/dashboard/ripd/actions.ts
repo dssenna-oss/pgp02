@@ -24,10 +24,16 @@ export async function listInventariosAprovadosSemRipd() {
   return aprovados.filter((i) => !jaTemRipd.has(i.id));
 }
 
-// Quantos riscos a Company já registrou — pré-requisito recomendado pro RIPD
+// Quantos riscos a Company já registrou — pré-requisito do RIPD (Art. 38 LGPD)
 export async function contarRiscos() {
   const { companyId } = await requireCompany();
   return prisma.processRisk.count({ where: { companyId } });
+}
+
+// Quantos inventários APROVADOS — pré-requisito do RIPD (Art. 38 LGPD)
+export async function contarInventariosAprovados() {
+  const { companyId } = await requireCompany();
+  return prisma.dataInventory.count({ where: { companyId, status: "APROVADO" } });
 }
 
 export async function listRipds() {
@@ -54,6 +60,29 @@ export async function listRipds() {
 
 export async function createRipd(input: { titulo: string; inventoryRef?: string }) {
   const { companyId, session } = await requireCompany();
+
+  // Pré-requisitos legais — Art. 38 LGPD exige descrição dos dados (M1)
+  // e análise dos riscos (M2). RIPD sem isso nasce vazio por definição.
+  const [aprovados, riscos] = await Promise.all([
+    prisma.dataInventory.count({ where: { companyId, status: "APROVADO" } }),
+    prisma.processRisk.count({ where: { companyId } }),
+  ]);
+  if (aprovados === 0) {
+    throw new Error(
+      "Pré-requisito legal: tenha ao menos 1 processo APROVADO no Inventário antes de criar RIPD. Art. 38, parágrafo único LGPD exige descrição dos tipos de dados coletados."
+    );
+  }
+  if (riscos === 0) {
+    throw new Error(
+      "Pré-requisito legal: identifique ao menos 1 risco antes de criar RIPD. Art. 38, parágrafo único LGPD exige análise das medidas de mitigação de risco — não dá pra mitigar o que não foi mapeado."
+    );
+  }
+  if (!input.inventoryRef) {
+    throw new Error(
+      "RIPD precisa estar vinculado a um processo do Inventário. Escolha um na lista do dropdown."
+    );
+  }
+
   const ripd = await prisma.ripd.create({
     data: {
       companyId,
