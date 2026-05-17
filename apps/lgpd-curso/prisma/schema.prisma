@@ -157,6 +157,12 @@ model ProcessRisk {
   reviewedById   String?
   submittedAt    DateTime?
   reviewedAt     DateTime?
+  // Tramitação multi-setor: DPO pode pedir apoio a TI/PROCURADORIA/COMUNICACAO
+  // antes de aprovar. Quando tramitadoPara != null, o setor de apoio tem
+  // acesso de leitura/escrita só nesses riscos.
+  tramitadoPara  String?
+  tramitacaoNota String?
+  tramitadoEm    DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
