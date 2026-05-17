@@ -4,10 +4,39 @@ import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
+// Lista riscos com MESMA segregação que listInventoriesForSelect:
+//   DPO/ADMIN          → vê todos os riscos do grupo
+//   Contribuidor dono  → vê só riscos dos processos onde é createdById
+//   Setor de apoio     → também vê riscos com tramitadoPara matching seu papel
 export async function listRiscos() {
-  const { companyId } = await requireCompany();
+  const { companyId, session } = await requireCompany();
+  const isDpoOuAdmin = session.user.role === "DPO" || session.user.role === "ADMIN";
+
+  if (isDpoOuAdmin) {
+    return prisma.processRisk.findMany({
+      where: { companyId },
+      include: { inventory: { select: { id: true, nome: true, createdById: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  // Não-admin: combina (inventários onde é dono) + (riscos tramitados pro papel)
+  const meusInvIds = (
+    await prisma.dataInventory.findMany({
+      where: { companyId, createdById: session.user.id },
+      select: { id: true },
+    })
+  ).map((i) => i.id);
+
+  const orClauses: any[] = [];
+  if (meusInvIds.length > 0) orClauses.push({ inventoryId: { in: meusInvIds } });
+  if (session.user.papel) orClauses.push({ tramitadoPara: session.user.papel });
+
+  // Se Contribuidor não é dono de nenhum processo nem tem tramitação, retorna vazio
+  if (orClauses.length === 0) return [];
+
   return prisma.processRisk.findMany({
-    where: { companyId },
+    where: { companyId, OR: orClauses },
     include: { inventory: { select: { id: true, nome: true, createdById: true } } },
     orderBy: { createdAt: "asc" },
   });
