@@ -8,16 +8,25 @@ export async function listRiscos() {
   const { companyId } = await requireCompany();
   return prisma.processRisk.findMany({
     where: { companyId },
-    include: { inventory: { select: { id: true, nome: true } } },
+    include: { inventory: { select: { id: true, nome: true, createdById: true } } },
     orderBy: { createdAt: "asc" },
   });
 }
 
+// Lista inventários do grupo, MAS filtra por papel:
+//   - DPO / ADMIN  → vê todos (precisa enxergar tudo pra aprovar/coordenar)
+//   - Contribuidor → vê SÓ os processos onde é createdById (dono do processo)
+// Justificativa: Contribuidor conhece o processo dele, não os dos outros setores.
 export async function listInventoriesForSelect() {
-  const { companyId } = await requireCompany();
+  const { companyId, session } = await requireCompany();
+  const role = session.user.role;
+  const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
   return prisma.dataInventory.findMany({
-    where: { companyId },
-    select: { id: true, nome: true, setor: true, status: true, dadosSensiveis: true },
+    where: {
+      companyId,
+      ...(isDpoOuAdmin ? {} : { createdById: session.user.id }),
+    },
+    select: { id: true, nome: true, setor: true, status: true, dadosSensiveis: true, createdById: true },
     orderBy: { createdAt: "asc" },
   });
 }
@@ -32,7 +41,33 @@ export async function saveRisco(input: {
   impacto: "BAIXO" | "MEDIO" | "ALTO";
   mitigationPlan?: string;
 }) {
-  const { companyId } = await requireCompany();
+  const { companyId, session } = await requireCompany();
+  const isDpoOuAdmin = session.user.role === "DPO" || session.user.role === "ADMIN";
+
+  // Segregação: Contribuidor só pode criar/editar risco em processo que ELE é dono.
+  // DPO e admin podem qualquer coisa (precisam coordenar a análise toda).
+  if (input.inventoryId && !isDpoOuAdmin) {
+    const inv = await prisma.dataInventory.findFirst({
+      where: { id: input.inventoryId, companyId },
+      select: { createdById: true },
+    });
+    if (!inv) throw new Error("Processo não encontrado");
+    if (inv.createdById !== session.user.id) {
+      throw new Error("Você só pode adicionar risco em processo que você é dono. Peça ao DPO se quiser registrar risco em processo de outro setor.");
+    }
+  }
+
+  // Edição: idem — se for editar risco existente, checa dono do processo
+  if (input.id && !isDpoOuAdmin) {
+    const existente = await prisma.processRisk.findFirst({
+      where: { id: input.id, companyId },
+      include: { inventory: { select: { createdById: true } } },
+    });
+    if (!existente) throw new Error("Risco não encontrado");
+    if (existente.inventory && existente.inventory.createdById !== session.user.id) {
+      throw new Error("Você só pode editar riscos dos seus processos. Peça ao DPO se for de outro setor.");
+    }
+  }
 
   const sevP = input.probabilidade.charAt(0);            // B|M|A
   const sevI = input.impacto.charAt(0);                  // B|M|A
@@ -69,7 +104,21 @@ function computeSeverity(p: string, i: string): "BAIXO" | "MEDIO" | "ALTO" {
 }
 
 export async function deletarRisco(id: string) {
-  const { companyId } = await requireCompany();
+  const { companyId, session } = await requireCompany();
+  const isDpoOuAdmin = session.user.role === "DPO" || session.user.role === "ADMIN";
+
+  // Segregação: Contribuidor só pode deletar risco em processo que ELE é dono.
+  if (!isDpoOuAdmin) {
+    const existente = await prisma.processRisk.findFirst({
+      where: { id, companyId },
+      include: { inventory: { select: { createdById: true } } },
+    });
+    if (!existente) throw new Error("Risco não encontrado");
+    if (existente.inventory && existente.inventory.createdById !== session.user.id) {
+      throw new Error("Apenas o DPO ou o dono do processo pode remover este risco.");
+    }
+  }
+
   await prisma.processRisk.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/riscos");
 }

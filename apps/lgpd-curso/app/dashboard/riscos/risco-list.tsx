@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Pencil, Trash2, FileText, AlertTriangle, ArrowRight } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { Plus, Pencil, Trash2, FileText, AlertTriangle, ArrowRight, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -18,7 +19,7 @@ type Risco = {
   descricao: string | null;
   severityLevel: string | null;
   inventoryId: string | null;
-  inventory: { id: string; nome: string } | null;
+  inventory: { id: string; nome: string; createdById: string | null } | null;
 };
 
 type Inventory = {
@@ -27,6 +28,7 @@ type Inventory = {
   setor: string | null;
   status: string;
   dadosSensiveis: boolean | null;
+  createdById: string | null;
 };
 
 function severityBadge(level: string | null) {
@@ -38,11 +40,23 @@ function severityBadge(level: string | null) {
 }
 
 export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventories: Inventory[] }) {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const role = session?.user?.role;
+  const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
+
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [inventarioPreSelecionado, setInventarioPreSelecionado] = useState<string | null>(null);
 
   const inventariosAprovados = inventories.filter((i) => i.status === "APROVADO");
+
+  // Helper — pode editar/deletar este risco?
+  function podeMexer(r: Risco): boolean {
+    if (isDpoOuAdmin) return true;
+    if (!r.inventory) return false; // risco sem vínculo = só DPO
+    return r.inventory.createdById === userId;
+  }
 
   function abrirNovoParaProcesso(inventoryId: string) {
     setEditing(null);
@@ -102,45 +116,55 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
       ) : (
         <div className="mb-4">
           <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2">
-            Processos aprovados — clique no botão pra registrar risco vinculado
+            {isDpoOuAdmin
+              ? "Processos aprovados — clique no botão pra registrar risco vinculado"
+              : "Seu(s) processo(s) — você só vê o que você é dono"}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {inventariosAprovados.map((inv) => {
-              const qtd = contagemPorInv.get(inv.id) || 0;
-              return (
-                <div key={inv.id} className="border-2 border-gray-200 hover:border-brand-300 rounded-lg p-3 bg-white transition-colors">
-                  <div className="flex items-start gap-2 mb-2">
-                    <FileText className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm leading-snug">{inv.nome}</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5">{inv.setor || "—"}</div>
+          {inventariosAprovados.length === 0 ? (
+            <div className="border border-dashed rounded-lg p-4 text-center text-xs text-gray-500">
+              Você não é dono de nenhum processo aprovado deste grupo. Peça ao seu DPO se houver risco que você queira registrar.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {inventariosAprovados.map((inv) => {
+                const qtd = contagemPorInv.get(inv.id) || 0;
+                return (
+                  <div key={inv.id} className="border-2 border-gray-200 hover:border-brand-300 rounded-lg p-3 bg-white transition-colors">
+                    <div className="flex items-start gap-2 mb-2">
+                      <FileText className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-sm leading-snug">{inv.nome}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5">{inv.setor || "—"}</div>
+                      </div>
+                      {inv.dadosSensiveis && <Badge variant="destructive" className="shrink-0">SENSÍVEIS</Badge>}
                     </div>
-                    {inv.dadosSensiveis && <Badge variant="destructive" className="shrink-0">SENSÍVEIS</Badge>}
+                    <div className="flex items-center justify-between gap-2 mt-3">
+                      <Badge variant={qtd > 0 ? "primary" : "ghost"}>
+                        {qtd} risco{qtd !== 1 ? "s" : ""}
+                      </Badge>
+                      <Button size="sm" variant="primary" onClick={() => abrirNovoParaProcesso(inv.id)}>
+                        <Plus className="h-3.5 w-3.5" /> Adicionar risco
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between gap-2 mt-3">
-                    <Badge variant={qtd > 0 ? "primary" : "ghost"}>
-                      {qtd} risco{qtd !== 1 ? "s" : ""}
-                    </Badge>
-                    <Button size="sm" variant="primary" onClick={() => abrirNovoParaProcesso(inv.id)}>
-                      <Plus className="h-3.5 w-3.5" /> Adicionar risco
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Linha de ação: risco sem vínculo */}
-      <div className="flex items-center justify-between mb-4 text-xs flex-wrap gap-2">
-        <span className="text-gray-500">
-          Tem um risco transversal (sem processo específico)? {semVinculo > 0 && <span>· {semVinculo} já registrado{semVinculo > 1 ? "s" : ""}</span>}
-        </span>
-        <Button size="sm" variant="ghost" onClick={abrirNovoSemProcesso}>
-          <Plus className="h-3.5 w-3.5" /> Risco sem vínculo a processo
-        </Button>
-      </div>
+      {/* Linha de ação: risco sem vínculo — só DPO/admin */}
+      {isDpoOuAdmin && (
+        <div className="flex items-center justify-between mb-4 text-xs flex-wrap gap-2">
+          <span className="text-gray-500">
+            Tem um risco transversal (sem processo específico)? {semVinculo > 0 && <span>· {semVinculo} já registrado{semVinculo > 1 ? "s" : ""}</span>}
+          </span>
+          <Button size="sm" variant="ghost" onClick={abrirNovoSemProcesso}>
+            <Plus className="h-3.5 w-3.5" /> Risco sem vínculo a processo
+          </Button>
+        </div>
+      )}
 
       {/* Matriz visual */}
       {riscos.length > 0 && (
@@ -179,12 +203,20 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
                   <TD>{severityBadge(r.severityLevel)}</TD>
                   <TD>
                     <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => abrirEdicao(r)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => deletar(r.id)}>
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
+                      {podeMexer(r) ? (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => abrirEdicao(r)} title="Editar">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => deletar(r.id)} title="Remover">
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-[11px] text-gray-400 inline-flex items-center gap-1" title="Risco de outro processo — só o dono ou DPO pode editar">
+                          <Eye className="h-3 w-3" /> só visualização
+                        </span>
+                      )}
                     </div>
                   </TD>
                 </TR>
