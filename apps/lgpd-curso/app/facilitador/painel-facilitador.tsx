@@ -1,12 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Zap, Award, Printer, Pause, Play, RotateCcw, Clock, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import {
+  Zap, Award, Pause, Play, RotateCcw, ChevronRight,
+  Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
+  BarChart3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import toast from "react-hot-toast";
 import { Cronometro } from "./cronometro";
+import { TimelineGrupo, type BolinhaMissao } from "./timeline-grupo";
+import { CentralSos, type SosItem } from "./central-sos";
+import { ResumoTurmaDialog } from "./resumo-turma";
 
 type Turma = { id: string; nome: string; cidade: string };
 type Grupo = {
@@ -26,7 +32,45 @@ type Grupo = {
     aviso: { status: string | null; publicSlug: string | null };
     incidentes: { total: number; comunicadosAnpd: number };
   };
+  timeline: BolinhaMissao[];
+  sos: SosItem[];
 };
+
+// Bip sintético via Web Audio (sem arquivo MP3).
+function tocarBip(audioCtx: AudioContext | null) {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 880;
+    osc.type = "sine";
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    osc.start(now);
+    osc.stop(now + 0.4);
+    // 2º bip rápido pra ficar "tritom"
+    setTimeout(() => {
+      try {
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.frequency.value = 1320;
+        osc2.type = "sine";
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        const t = audioCtx.currentTime;
+        gain2.gain.setValueAtTime(0, t);
+        gain2.gain.linearRampToValueAtTime(0.18, t + 0.01);
+        gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+        osc2.start(t);
+        osc2.stop(t + 0.4);
+      } catch {}
+    }, 150);
+  } catch {}
+}
 
 export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [turmaId, setTurmaId] = useState<string>(turmas[0]?.id || "");
@@ -35,7 +79,12 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [dispatchingPM, setDispatchingPM] = useState(false);
   const [dispatchingCM, setDispatchingCM] = useState(false);
   const [pollingActive, setPollingActive] = useState(true);
+  const [somAtivo, setSomAtivo] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
+  const [resumoOpen, setResumoOpen] = useState(false);
   const lastFetchRef = useRef<Date | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sosIdsConhecidosRef = useRef<Set<string>>(new Set());
 
   async function fetchState(silencioso = false) {
     if (!turmaId) return;
@@ -49,6 +98,26 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
       }
       setGrupos(data.grupos);
       lastFetchRef.current = new Date();
+
+      // Detecta SOS novos (PENDING que não estava na lista anterior) — bip + toast
+      const idsNovos = new Set<string>();
+      for (const g of data.grupos as Grupo[]) {
+        for (const s of g.sos || []) {
+          if (s.status === "PENDING") idsNovos.add(s.id);
+        }
+      }
+      const eraConhecido = sosIdsConhecidosRef.current;
+      const recemChegados = [...idsNovos].filter((id) => !eraConhecido.has(id));
+      if (recemChegados.length > 0 && eraConhecido.size > 0) {
+        // só toca/avisa depois do 1º load — evita bip ao abrir a página com SOS pré-existentes
+        tocarBip(audioCtxRef.current);
+        const grupoNomes = (data.grupos as Grupo[])
+          .filter((g) => g.sos.some((s) => recemChegados.includes(s.id)))
+          .map((g) => `G${g.numero}·${g.orgao}`)
+          .join(", ");
+        toast(`🆘 ${grupoNomes} precisa de você!`, { duration: 8000, icon: "🆘" });
+      }
+      sosIdsConhecidosRef.current = idsNovos;
     } catch (e: any) {
       if (!silencioso) toast.error(e.message);
     }
@@ -63,6 +132,43 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turmaId, pollingActive]);
+
+  function ativarSom() {
+    if (somAtivo) {
+      setSomAtivo(false);
+      try { audioCtxRef.current?.close(); } catch {}
+      audioCtxRef.current = null;
+      return;
+    }
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      audioCtxRef.current = new Ctx();
+      setSomAtivo(true);
+      tocarBip(audioCtxRef.current); // bip-teste pra confirmar
+      toast.success("Som de alerta ativado");
+    } catch {
+      toast.error("Navegador bloqueou o som — tente em Chrome/Edge");
+    }
+  }
+
+  async function atualizarSos(id: string, novoStatus: "ATTENDED" | "RESOLVED") {
+    try {
+      const res = await fetch(`/api/curso/sos/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Erro");
+        return;
+      }
+      toast.success(novoStatus === "ATTENDED" ? "Marcado como atendendo" : "Chamado encerrado");
+      fetchState(true);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
 
   async function dispararIncidente(orgao: "PM" | "CM") {
     const cenarioNome = orgao === "PM" ? "Pendrive do Posto" : "Vazamento WhatsApp Tribuna";
@@ -88,18 +194,62 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const gruposPM = grupos.filter((g) => g.orgao === "PM");
   const gruposCM = grupos.filter((g) => g.orgao === "CM");
 
+  // Total de SOS ativos da turma
+  const totalSosPending = useMemo(
+    () => grupos.reduce((acc, g) => acc + g.sos.filter((s) => s.status === "PENDING").length, 0),
+    [grupos],
+  );
+  const totalSosAttended = useMemo(
+    () => grupos.reduce((acc, g) => acc + g.sos.filter((s) => s.status === "ATTENDED").length, 0),
+    [grupos],
+  );
+
   return (
     <div>
-      {/* Header: seletor de turma + status do polling */}
+      {/* Header: seletor de turma + sino SOS + som + polling + resumo */}
       <div className="flex flex-col sm:flex-row gap-2 items-center mb-4 p-3 bg-white border rounded-lg">
         <label className="text-xs text-gray-500">Turma:</label>
         <Select value={turmaId} onChange={(e) => setTurmaId(e.target.value)} className="max-w-xs">
           {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome} · {t.cidade}</option>)}
         </Select>
         <div className="flex-1" />
+
+        {/* Sino de SOS */}
+        <button
+          type="button"
+          onClick={() => setSosOpen(true)}
+          className={`relative flex items-center gap-1 px-2.5 py-1.5 rounded text-sm font-medium border transition-colors ${
+            totalSosPending > 0
+              ? "bg-red-600 text-white border-red-700 animate-pulse"
+              : totalSosAttended > 0
+              ? "bg-amber-100 text-amber-800 border-amber-300"
+              : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+          }`}
+          title="Central de chamados SOS"
+        >
+          <Bell className="h-4 w-4" />
+          {totalSosPending + totalSosAttended > 0 ? (
+            <span className="text-[11px] font-bold">{totalSosPending + totalSosAttended}</span>
+          ) : (
+            <span className="text-[11px]">SOS</span>
+          )}
+        </button>
+
+        {/* Som on/off */}
+        <Button size="sm" variant="outline" onClick={ativarSom}
+          title={somAtivo ? "Desativar som de alerta" : "Ativar bip quando um grupo chamar (Chrome/Edge bloqueia até 1ª interação)"}>
+          {somAtivo ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+          {somAtivo ? "Som ON" : "Ativar som"}
+        </Button>
+
+        {/* Resumo da turma */}
+        <Button size="sm" variant="outline" onClick={() => setResumoOpen(true)}>
+          <BarChart3 className="h-3.5 w-3.5" /> Resumo
+        </Button>
+
         <div className="text-xs text-gray-500 flex items-center gap-2">
           <span className={`inline-block h-2 w-2 rounded-full ${pollingActive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
-          {pollingActive ? "Ao vivo · atualiza a cada 3s" : "Polling pausado"}
+          {pollingActive ? "Ao vivo · 3s" : "Pausado"}
         </div>
         <Button size="sm" variant="outline" onClick={() => setPollingActive((v) => !v)}>
           {pollingActive ? <><Pause className="h-3.5 w-3.5" /> Pausar</> : <><Play className="h-3.5 w-3.5" /> Retomar</>}
@@ -128,8 +278,8 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
               <Zap className="h-4 w-4" /> 🚨 Disparar Incidente PM
             </Button>
           </header>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {gruposPM.map((g) => <GrupoCard key={g.grupoId} grupo={g} />)}
+          <div className="space-y-3">
+            {gruposPM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} />)}
           </div>
         </section>
       )}
@@ -149,8 +299,8 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
               <Zap className="h-4 w-4" /> 🚨 Disparar Incidente CM
             </Button>
           </header>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {gruposCM.map((g) => <GrupoCard key={g.grupoId} grupo={g} />)}
+          <div className="space-y-3">
+            {gruposCM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} />)}
           </div>
         </section>
       )}
@@ -160,22 +310,41 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
           Esta turma ainda não tem grupos.
         </div>
       )}
+
+      {/* Central de chamados SOS — drawer */}
+      <CentralSos
+        open={sosOpen}
+        onClose={() => setSosOpen(false)}
+        grupos={grupos.map((g) => ({ grupoId: g.grupoId, numero: g.numero, orgao: g.orgao, sos: g.sos }))}
+        onAtender={atualizarSos}
+      />
+
+      {/* Resumo da turma — modal */}
+      <ResumoTurmaDialog
+        open={resumoOpen}
+        onClose={() => setResumoOpen(false)}
+        grupos={grupos}
+      />
     </div>
   );
 }
 
-function GrupoCard({ grupo }: { grupo: Grupo }) {
+function GrupoTimelineCard({
+  grupo,
+  onAtenderSos,
+}: {
+  grupo: Grupo;
+  onAtenderSos: (id: string, status: "ATTENDED" | "RESOLVED") => void;
+}) {
   const isPM = grupo.orgao === "PM";
-  const k = grupo.kpis;
-  const orgaoCor = isPM ? "border-emerald-300" : "border-blue-300";
-  const orgaoFundo = isPM ? "bg-emerald-50" : "bg-blue-50";
+  const orgaoCor = isPM ? "border-emerald-300 bg-emerald-50/30" : "border-blue-300 bg-blue-50/30";
 
   // Cor do score
   const scoreCor =
-    grupo.score >= 80 ? "bg-emerald-100 text-emerald-700" :
-    grupo.score >= 60 ? "bg-blue-100 text-blue-700" :
-    grupo.score >= 40 ? "bg-amber-100 text-amber-700" :
-    grupo.score >= 20 ? "bg-orange-100 text-orange-700" : "bg-gray-100 text-gray-700";
+    grupo.score >= 80 ? "bg-emerald-100 text-emerald-800" :
+    grupo.score >= 60 ? "bg-blue-100 text-blue-800" :
+    grupo.score >= 40 ? "bg-amber-100 text-amber-800" :
+    grupo.score >= 20 ? "bg-orange-100 text-orange-800" : "bg-gray-100 text-gray-700";
 
   // Última atividade
   const ultimaSec = grupo.ultimaAtividade
@@ -191,95 +360,85 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
     window.open(`/api/curso/certificado?grupoId=${grupo.grupoId}`, "_blank");
   }
 
-  // Detecta "Pronto pra etapa DPO" — M1 completa (≥2 aprovados) + M2 com algum
-  // progresso (submetido ou aprovado) + M3 ainda não começou.
-  // Sinaliza que é hora do facilitador convidar o grupo a se reunir com o DPO.
-  const prontoParaEtapaDPO =
-    k.inventario.aprovados >= 2 &&
-    (k.riscos.aprovados >= 1 || k.riscos.submetidos >= 1) &&
-    k.gap.respondidos === 0 && // ainda não começou M3
-    !k.aviso.status;
+  const sosPending = grupo.sos.find((s) => s.status === "PENDING");
+  const sosAttended = grupo.sos.find((s) => s.status === "ATTENDED");
+  const sosAtivo = sosPending || sosAttended;
+  const sosMin = sosAtivo
+    ? Math.max(0, Math.floor((Date.now() - new Date(sosAtivo.createdAt).getTime()) / 60000))
+    : 0;
 
-  // Conteúdo interno do card (KPIs + score + botões) — sem o alerta de transição
-  const cardConteudo = (
-    <div className={`border-2 ${orgaoCor} ${orgaoFundo} rounded-lg p-3 bg-white ${prontoParaEtapaDPO ? "rounded-r-none border-r-0" : ""}`}>
-      <header className="flex items-center justify-between mb-2">
-        <h4 className="font-semibold text-sm">G{grupo.numero} · {grupo.orgao}</h4>
-        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded`}>
-          <span className={`h-2 w-2 rounded-full ${statusAtividade.cor}`} />
-          {statusAtividade.txt}
-        </span>
+  // Borda pulsa vermelho quando há PENDING; âmbar quando ATTENDED
+  const bordaSos = sosPending
+    ? "border-red-500 ring-2 ring-red-300 animate-pulse"
+    : sosAttended
+    ? "border-amber-400 ring-2 ring-amber-200"
+    : "";
+
+  return (
+    <div className={`border-2 ${orgaoCor} ${bordaSos} rounded-lg p-3 bg-white transition-all`}>
+      {/* Linha superior: identificação + score + atividade + ações */}
+      <header className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold text-base">G{grupo.numero} · {grupo.orgao}</h4>
+          <span className={`${scoreCor} text-xs font-bold px-2 py-0.5 rounded`}>
+            {grupo.score}/100
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] text-gray-600">
+            <span className={`h-2 w-2 rounded-full ${statusAtividade.cor}`} />
+            {statusAtividade.txt}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Faixa de SOS — só aparece se houver chamado */}
+          {sosPending && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-600 text-white text-xs font-semibold animate-pulse">
+              <LifeBuoy className="h-3.5 w-3.5" />
+              <span>🆘 Pediu sua presença · há {sosMin}min</span>
+              <button
+                onClick={() => onAtenderSos(sosPending.id, "ATTENDED")}
+                className="ml-1 bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded text-[11px]"
+                title="Eu vou agora"
+              >
+                <Check className="h-3 w-3 inline" /> Atendendo
+              </button>
+              <button
+                onClick={() => onAtenderSos(sosPending.id, "RESOLVED")}
+                className="bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded text-[11px]"
+                title="Já resolvi sem ir"
+              >
+                <X className="h-3 w-3 inline" /> Encerrar
+              </button>
+            </div>
+          )}
+          {sosAttended && !sosPending && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-amber-100 text-amber-900 text-xs font-medium border border-amber-300">
+              <LifeBuoy className="h-3.5 w-3.5" />
+              <span>A caminho · {sosMin}min</span>
+              <button
+                onClick={() => onAtenderSos(sosAttended.id, "RESOLVED")}
+                className="ml-1 bg-amber-200 hover:bg-amber-300 px-1.5 py-0.5 rounded text-[11px]"
+              >
+                <Check className="h-3 w-3 inline" /> Resolvido
+              </button>
+            </div>
+          )}
+
+          <Button size="sm" variant="outline" onClick={downloadCertificado}>
+            <Award className="h-3.5 w-3.5" /> Certificado
+          </Button>
+          {grupo.kpis.aviso.publicSlug && (
+            <Button size="sm" variant="ghost" asChild>
+              <a href={`/p/${grupo.kpis.aviso.publicSlug}`} target="_blank" rel="noreferrer">
+                <ChevronRight className="h-3.5 w-3.5" />
+              </a>
+            </Button>
+          )}
+        </div>
       </header>
 
-      {/* Score em destaque */}
-      <div className={`${scoreCor} rounded p-2 mb-2 text-center`}>
-        <div className="text-[10px] uppercase tracking-wide opacity-75">Maturidade PGP</div>
-        <div className="text-2xl font-bold">{grupo.score}/100</div>
-      </div>
-
-      {/* KPIs em grid 2x4 */}
-      <div className="grid grid-cols-2 gap-1.5 text-[11px] mb-2">
-        <Kpi label="M1 · Inv" value={`${k.inventario.aprovados}/${k.inventario.total}`} hint={k.inventario.devolvidos > 0 ? `${k.inventario.devolvidos} dev` : null} />
-        <Kpi label="M2 · Riscos" value={k.riscos.total.toString()} />
-        <Kpi label="M3 · GAP" value={`${k.gap.respondidos}/10`} hint={k.gap.respondidos > 0 ? `${k.gap.score}%` : null} />
-        <Kpi label="M4a · RIPD" value={`${k.ripds.aprovados}/${k.ripds.total}`} />
-        <Kpi label="M4a · Terc" value={k.terceiros.total > 0 ? `${k.terceiros.comClausula}/${k.terceiros.total}` : "—"} />
-        <Kpi label="M4a · DSR" value={k.dsr.total.toString()} />
-        <Kpi
-          label="M4b · Aviso"
-          value={
-            k.aviso.status === "PUBLICADO" ? "✓" :
-            k.aviso.status === "RASCUNHO" ? "↻" : "—"
-          }
-          hint={k.aviso.publicSlug}
-        />
-        <Kpi label="M5 · Inc" value={k.incidentes.total > 0 ? `${k.incidentes.comunicadosAnpd}/${k.incidentes.total}` : "—"} />
-      </div>
-
-      <div className="flex gap-1">
-        <Button size="sm" variant="outline" className="flex-1" onClick={downloadCertificado}>
-          <Award className="h-3.5 w-3.5" /> Certificado
-        </Button>
-        {k.aviso.publicSlug && (
-          <Button size="sm" variant="ghost" asChild>
-            <a href={`/p/${k.aviso.publicSlug}`} target="_blank" rel="noreferrer">
-              <ChevronRight className="h-3.5 w-3.5" />
-            </a>
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-
-  // Modo normal — só o card
-  if (!prontoParaEtapaDPO) return cardConteudo;
-
-  // Modo "Pronto pra etapa DPO" — card ocupa 2 colunas no grid, painel gigante à direita
-  return (
-    <div className="sm:col-span-2 flex">
-      <div className="flex-1 min-w-0">{cardConteudo}</div>
-      <div className="flex-1 bg-amber-400 border-2 border-l-0 border-amber-500 rounded-r-lg p-4 flex flex-col items-center justify-center text-amber-950 animate-pulse-strong shadow-lg">
-        <div className="text-2xl sm:text-3xl mb-2">⚡🎯⚡</div>
-        <div className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2">
-          G{grupo.numero} · {grupo.orgao}<br/>PRONTO!
-        </div>
-        <div className="text-base sm:text-lg font-bold text-center leading-tight mb-2">
-          REÚNAM<br/>O GRUPO<br/>COM O DPO
-        </div>
-        <div className="text-[11px] sm:text-xs text-center opacity-80 leading-snug">
-          M1 + M2 fechadas · próximas missões<br/>(GAP, RIPD, Aviso, Incidentes) são<br/>DPO-led
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, hint }: { label: string; value: string; hint?: string | null }) {
-  return (
-    <div className="bg-white border rounded p-1.5">
-      <div className="text-[9px] uppercase text-gray-500">{label}</div>
-      <div className="text-sm font-semibold text-gray-900">{value}</div>
-      {hint && <div className="text-[9px] text-gray-400 truncate">{hint}</div>}
+      {/* Timeline horizontal */}
+      <TimelineGrupo bolinhas={grupo.timeline} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
 } from "lucide-react";
 import { Brand } from "./brand";
+import { SosBotao } from "./sos-botao";
 import { cn } from "@/lib/utils";
 import type { MissoesProgresso } from "@/lib/missoes-progresso";
 
@@ -183,6 +184,8 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t p-2">
+          {/* SOS — só pra participantes (admin não tem grupo) */}
+          {!isAdmin && session?.user?.companyId && <SosBotao />}
           {session?.user && (
             <div className="px-3 py-2 text-xs text-gray-600">
               <div className="font-medium truncate">{session.user.name}</div>
