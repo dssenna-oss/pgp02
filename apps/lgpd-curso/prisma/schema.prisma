@@ -93,8 +93,30 @@ model CursoGrupo {
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt DateTime   @default(now())
 
+  assistanceRequests AssistanceRequest[]
+
   @@unique([turmaId, numero])
   @@map("curso_grupos")
+}
+
+// SOS — pedido de presença do facilitador feito por um participante.
+// Visualizado em tempo real no Painel do Facilitador (polling 3s).
+//   PENDING  → grupo acabou de chamar
+//   ATTENDED → facilitador clicou "Atendendo" (já tá indo)
+//   RESOLVED → facilitador encerrou
+model AssistanceRequest {
+  id            String     @id @default(cuid())
+  grupoId       String
+  grupo         CursoGrupo @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  requestedById String? // user que clicou (informativo)
+  requestedByName String? // congelado pra histórico mesmo se reset da turma
+  status        String     @default("PENDING") // PENDING | ATTENDED | RESOLVED
+  createdAt     DateTime   @default(now())
+  attendedAt    DateTime?
+  resolvedAt    DateTime?
+
+  @@index([grupoId, status])
+  @@map("assistance_requests")
 }
 
 // -----------------------------------------------------------------------------

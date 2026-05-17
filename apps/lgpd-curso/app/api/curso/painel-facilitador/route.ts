@@ -1,10 +1,11 @@
 // GET /api/curso/painel-facilitador?turmaId=X
-// Retorna estado ao vivo dos grupos da turma (KPIs + score).
+// Retorna estado ao vivo dos grupos da turma (KPIs + score + timeline + SOS).
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
+import { montarTimeline } from "@/lib/timeline";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -31,6 +32,23 @@ export async function GET(req: NextRequest) {
   });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
+  const grupoIds = turma.grupos.map((g) => g.id);
+
+  // SOS ativos (PENDING + ATTENDED) — todos da turma em 1 query
+  const sosAtivosRaw = grupoIds.length
+    ? await prisma.assistanceRequest.findMany({
+        where: { grupoId: { in: grupoIds }, status: { in: ["PENDING", "ATTENDED"] } },
+        orderBy: { createdAt: "asc" },
+      }).catch(() => [] as any[]) // se tabela ainda não migrou, não quebra
+    : [];
+
+  const sosPorGrupo = new Map<string, typeof sosAtivosRaw>();
+  for (const s of sosAtivosRaw) {
+    const arr = sosPorGrupo.get(s.grupoId) || [];
+    arr.push(s);
+    sosPorGrupo.set(s.grupoId, arr);
+  }
+
   const result = [];
   for (const grupo of turma.grupos) {
     const cid = grupo.companyId;
@@ -47,29 +65,35 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       prisma.dataInventory.findMany({
         where: { companyId: cid },
-        select: { status: true, updatedAt: true },
+        select: { status: true, createdAt: true, updatedAt: true },
       }),
-      prisma.processRisk.findMany({ where: { companyId: cid }, select: { status: true } }),
+      prisma.processRisk.findMany({
+        where: { companyId: cid },
+        select: { status: true, createdAt: true, updatedAt: true },
+      }),
       prisma.gapAnswer.findMany({
         where: { companyId: cid },
-        select: { resposta: true },
+        select: { resposta: true, createdAt: true, updatedAt: true },
       }),
       prisma.ripd.findMany({
         where: { companyId: cid },
-        select: { status: true, updatedAt: true },
+        select: { status: true, createdAt: true, updatedAt: true },
       }),
       prisma.operator.findMany({
         where: { companyId: cid },
         include: { contracts: { select: { clausulasLgpd: true } } },
       }),
-      prisma.dsrRequest.count({ where: { companyId: cid } }),
+      prisma.dsrRequest.findMany({
+        where: { companyId: cid },
+        select: { createdAt: true, updatedAt: true },
+      }),
       prisma.policy.findFirst({
         where: { companyId: cid, slug: "aviso-privacidade" },
-        select: { status: true, publicSlug: true, updatedAt: true },
+        select: { status: true, publicSlug: true, createdAt: true, updatedAt: true },
       }),
       prisma.incident.findMany({
         where: { companyId: cid },
-        select: { comunicadoAnpd: true, comunicadoTitular: true, updatedAt: true, status: true },
+        select: { comunicadoAnpd: true, comunicadoTitular: true, createdAt: true, updatedAt: true, status: true },
       }),
     ]);
 
@@ -105,7 +129,7 @@ export async function GET(req: NextRequest) {
         total: operadores.length,
         comClausula: operadores.filter((o) => o.contracts?.[0]?.clausulasLgpd).length,
       },
-      dsr: { total: dsr },
+      dsr: { total: dsr.length },
       aviso: {
         status: (aviso?.status as any) || null,
         publicSlug: aviso?.publicSlug || null,
@@ -127,6 +151,27 @@ export async function GET(req: NextRequest) {
       ? new Date(Math.max(...ultimasAtividades.map((d) => d.getTime())))
       : null;
 
+    // Timeline das 7 missões + tempos
+    const timeline = montarTimeline({
+      inventarios: invList,
+      riscos,
+      gapAnswers: gap,
+      ripds,
+      operadores: operadores.map((o) => ({ createdAt: o.createdAt, updatedAt: o.updatedAt })),
+      dsrs: dsr,
+      aviso: aviso ? { status: aviso.status, createdAt: aviso.createdAt, updatedAt: aviso.updatedAt } : null,
+      incidentes,
+    });
+
+    // SOS deste grupo (pendentes/atendidos)
+    const sos = (sosPorGrupo.get(grupo.id) || []).map((s) => ({
+      id: s.id,
+      status: s.status,
+      requestedByName: s.requestedByName,
+      createdAt: s.createdAt.toISOString(),
+      attendedAt: s.attendedAt ? s.attendedAt.toISOString() : null,
+    }));
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
@@ -135,6 +180,8 @@ export async function GET(req: NextRequest) {
       kpis,
       score: calcularMaturidade(kpis),
       ultimaAtividade,
+      timeline,
+      sos,
     });
   }
 
