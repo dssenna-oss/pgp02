@@ -21,7 +21,7 @@ export default async function FacilitadorPage() {
       <PageHeader
         missao="Admin · Ao vivo"
         titulo="Painel do Facilitador"
-        descricao="Acompanhe o ritmo dos grupos em tempo real, dispare o incidente surpresa na Missão 5 e gere os certificados no debrief. Atualiza automaticamente a cada 3 segundos."
+        descricao="Acompanhe o ritmo dos grupos em tempo real, dispare o incidente surpresa na Missão 5 e gere os certificados na Reflexão Final. Atualiza automaticamente a cada 3 segundos."
       />
       {turmas.length === 0 ? (
         <div className="border border-dashed rounded-lg p-8 text-center text-sm text-gray-500">
