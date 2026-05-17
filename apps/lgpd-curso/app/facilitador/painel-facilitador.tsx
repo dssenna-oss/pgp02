@@ -200,8 +200,9 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
     k.gap.respondidos === 0 && // ainda não começou M3
     !k.aviso.status;
 
-  return (
-    <div className={`border-2 ${orgaoCor} ${orgaoFundo} rounded-lg p-3 bg-white`}>
+  // Conteúdo interno do card (KPIs + score + botões) — sem o alerta de transição
+  const cardConteudo = (
+    <div className={`border-2 ${orgaoCor} ${orgaoFundo} rounded-lg p-3 bg-white ${prontoParaEtapaDPO ? "rounded-r-none border-r-0" : ""}`}>
       <header className="flex items-center justify-between mb-2">
         <h4 className="font-semibold text-sm">G{grupo.numero} · {grupo.orgao}</h4>
         <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded`}>
@@ -209,14 +210,6 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
           {statusAtividade.txt}
         </span>
       </header>
-
-      {/* Banner de transição — momento de reunir grupo com o DPO */}
-      {prontoParaEtapaDPO && (
-        <div className="bg-emerald-100 border border-emerald-300 rounded p-2 mb-2 text-[11px] text-emerald-900">
-          <div className="font-semibold mb-0.5">🎯 Pronto pra etapa DPO</div>
-          <div className="leading-snug">M1 e M2 fechadas. Reúna o grupo com o(a) DPO pra conduzirem juntos as próximas missões (GAP, RIPD, Aviso, Incidentes).</div>
-        </div>
-      )}
 
       {/* Score em destaque */}
       <div className={`${scoreCor} rounded p-2 mb-2 text-center`}>
@@ -254,6 +247,28 @@ function GrupoCard({ grupo }: { grupo: Grupo }) {
             </a>
           </Button>
         )}
+      </div>
+    </div>
+  );
+
+  // Modo normal — só o card
+  if (!prontoParaEtapaDPO) return cardConteudo;
+
+  // Modo "Pronto pra etapa DPO" — card ocupa 2 colunas no grid, painel gigante à direita
+  return (
+    <div className="sm:col-span-2 flex">
+      <div className="flex-1 min-w-0">{cardConteudo}</div>
+      <div className="flex-1 bg-amber-400 border-2 border-l-0 border-amber-500 rounded-r-lg p-4 flex flex-col items-center justify-center text-amber-950 animate-pulse-strong shadow-lg">
+        <div className="text-2xl sm:text-3xl mb-2">⚡🎯⚡</div>
+        <div className="text-2xl sm:text-3xl font-extrabold leading-tight text-center mb-2">
+          G{grupo.numero} · {grupo.orgao}<br/>PRONTO!
+        </div>
+        <div className="text-base sm:text-lg font-bold text-center leading-tight mb-2">
+          REÚNAM<br/>O GRUPO<br/>COM O DPO
+        </div>
+        <div className="text-[11px] sm:text-xs text-center opacity-80 leading-snug">
+          M1 + M2 fechadas · próximas missões<br/>(GAP, RIPD, Aviso, Incidentes) são<br/>DPO-led
+        </div>
       </div>
     </div>
   );
