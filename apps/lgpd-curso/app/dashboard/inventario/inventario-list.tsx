@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Plus, Pencil, Trash2, Send, CheckCircle2, RotateCcw, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, CheckCircle2, RotateCcw, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -38,6 +39,7 @@ function statusBadge(status: string) {
 
 export function InventarioList({ items }: { items: Inv[] }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const userId = session?.user?.id;
   const role = session?.user?.role;
   const isDpo = role === "DPO" || role === "ADMIN";
@@ -47,6 +49,43 @@ export function InventarioList({ items }: { items: Inv[] }) {
   const [devolvendo, setDevolvendo] = useState<Inv | null>(null);
   const [motivoDevolucao, setMotivoDevolucao] = useState("");
   const [pending, setPending] = useState(false);
+
+  // Polling a cada 8s pra detectar mudanças feitas pelo outro lado do fluxo
+  // (DPO devolveu pro contribuidor · contribuidor submeteu pro DPO ·
+  //  DPO aprovou). Mostra toast quando o status do MEU processo muda.
+  const previousStatusesRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    // Captura snapshot do que estou vendo agora
+    const atual = new Map(items.map((i) => [i.id, i.status]));
+
+    // Compara com o snapshot anterior pra detectar mudanças
+    const anterior = previousStatusesRef.current;
+    if (anterior.size > 0) {
+      for (const item of items) {
+        const statusAnterior = anterior.get(item.id);
+        if (statusAnterior && statusAnterior !== item.status) {
+          const ehDono = item.createdById === userId;
+          // Avisa só se for relevante pro user (dono ou DPO)
+          if (item.status === "DEVOLVIDO" && ehDono) {
+            toast(`📝 DPO devolveu "${item.nome}" pra ajustes — leia o motivo e edite`, { duration: 7000, icon: "↻" });
+          } else if (item.status === "APROVADO" && ehDono) {
+            toast.success(`✓ DPO aprovou "${item.nome}"`, { duration: 5000 });
+          } else if (item.status === "SUBMETIDO" && isDpo) {
+            toast(`📥 "${item.nome}" foi submetido — aguardando sua revisão`, { duration: 7000, icon: "📥" });
+          }
+        }
+      }
+    }
+    previousStatusesRef.current = atual;
+  }, [items, userId, isDpo]);
+
+  // Polling: refresh silencioso a cada 8s
+  useEffect(() => {
+    const id = setInterval(() => {
+      router.refresh();
+    }, 8000);
+    return () => clearInterval(id);
+  }, [router]);
 
   function abrirNovo() { setEditing(null); setOpen(true); }
   function abrirEdicao(inv: Inv) { setEditing(inv); setOpen(true); }
@@ -78,14 +117,27 @@ export function InventarioList({ items }: { items: Inv[] }) {
 
   return (
     <>
-      {/* "Novo processo" só pra DPO/ADMIN — contribuidores só editam o pré-seed. */}
-      {isDpo && (
-        <div className="flex justify-end mb-3">
+      {/* Header: indicador de "ao vivo" (esquerda) + ações DPO (direita) */}
+      <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          Ao vivo · checa atualizações a cada 8s
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="ml-1 inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
+            title="Verificar agora"
+          >
+            <RefreshCw className="h-3 w-3" />
+          </button>
+        </div>
+        {/* "Novo processo" só pra DPO/ADMIN — contribuidores só editam o pré-seed. */}
+        {isDpo && (
           <Button onClick={abrirNovo}>
             <Plus className="h-4 w-4" /> Novo processo
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {items.length === 0 ? (
         <EmptyState
