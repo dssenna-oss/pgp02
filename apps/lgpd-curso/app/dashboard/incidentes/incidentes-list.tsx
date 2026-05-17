@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { saveIncidente, deletarIncidente, gerarComunicacaoAnpd, gerarCartaTitulares } from "./actions";
 import toast from "react-hot-toast";
-import { handlePhaseSkip } from "@/lib/phase-skip-handler";
+import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Inc = any;
 
@@ -48,7 +48,7 @@ export function IncidentesList({ items, qtdInventariosAprovados }: { items: Inc[
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      await saveIncidente({
+      const r = await saveIncidente({
         id: editing?.id,
         titulo: String(fd.get("titulo") || ""),
         descricao: String(fd.get("descricao") || ""),
@@ -59,15 +59,19 @@ export function IncidentesList({ items, qtdInventariosAprovados }: { items: Inc[
         comunicadoAnpd: fd.get("comunicadoAnpd") === "on",
         comunicadoTitular: fd.get("comunicadoTitular") === "on",
       });
+      if (handlePhaseSkipResult(r)) return;
       toast.success(editing ? "Incidente atualizado" : "Incidente registrado");
       setOpen(false);
-    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover este incidente?")) return;
-    try { await deletarIncidente(id); toast.success("Removido"); }
-    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    try {
+      const r = await deletarIncidente(id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("Removido");
+    } catch (e: any) { toast.error(e.message); }
   }
 
   async function gerarAnpd(id: string) {
@@ -75,14 +79,14 @@ export function IncidentesList({ items, qtdInventariosAprovados }: { items: Inc[
       const texto = await gerarComunicacaoAnpd(id);
       downloadTxt(texto, "comunicacao-anpd.txt");
       toast.success("Texto da Comunicação ANPD baixado");
-    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    } catch (e: any) { toast.error(e.message); }
   }
   async function gerarCarta(id: string) {
     try {
       const texto = await gerarCartaTitulares(id);
       downloadTxt(texto, "carta-titulares.txt");
       toast.success("Carta aos titulares baixada");
-    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    } catch (e: any) { toast.error(e.message); }
   }
 
   return (

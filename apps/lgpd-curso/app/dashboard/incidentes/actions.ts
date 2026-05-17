@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 export async function listIncidentes() {
   const { companyId } = await requireCompany();
@@ -36,7 +36,8 @@ export async function saveIncidente(input: {
   comunicadoAnpd?: boolean;
   comunicadoTitular?: boolean;
 }) {
-  await ensureGapConcluido("FASE_7", input.id ? "Editar Incidente" : "Criar Incidente");
+  const skip = await checkGapConcluido("FASE_7", input.id ? "Editar Incidente" : "Criar Incidente");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   const data = {
     companyId,
@@ -70,7 +71,8 @@ export async function saveIncidente(input: {
 }
 
 export async function deletarIncidente(id: string) {
-  await ensureGapConcluido("FASE_7", "Deletar Incidente");
+  const skip = await checkGapConcluido("FASE_7", "Deletar Incidente");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   await prisma.incident.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/incidentes");

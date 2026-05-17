@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 export async function listOperadores() {
   const { companyId } = await requireCompany();
@@ -24,7 +24,8 @@ export async function saveOperador(input: {
   contratoObjeto?: string;
   clausulasLgpd?: boolean;
 }) {
-  await ensureGapConcluido("FASE_6", input.id ? "Editar Operador" : "Criar Operador");
+  const skip = await checkGapConcluido("FASE_6", input.id ? "Editar Operador" : "Criar Operador");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   const dataOp = {
     companyId,
@@ -70,7 +71,8 @@ export async function saveOperador(input: {
 }
 
 export async function deletarOperador(id: string) {
-  await ensureGapConcluido("FASE_6", "Deletar Operador");
+  const skip = await checkGapConcluido("FASE_6", "Deletar Operador");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   await prisma.operator.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/terceiros");

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
-import { ensureGapConcluido } from "@/lib/phase-guard";
+import { checkGapConcluido } from "@/lib/phase-guard";
 
 export async function listDsr() {
   const { companyId } = await requireCompany();
@@ -22,7 +22,8 @@ export async function saveDsr(input: {
   respostaTexto?: string;
   status?: string;
 }) {
-  await ensureGapConcluido("FASE_6", input.id ? "Editar DSR" : "Criar DSR");
+  const skip = await checkGapConcluido("FASE_6", input.id ? "Editar DSR" : "Criar DSR");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   const data = {
     companyId,
@@ -45,7 +46,8 @@ export async function saveDsr(input: {
 }
 
 export async function deletarDsr(id: string) {
-  await ensureGapConcluido("FASE_6", "Deletar DSR");
+  const skip = await checkGapConcluido("FASE_6", "Deletar DSR");
+  if (skip) return skip;
   const { companyId } = await requireCompany();
   await prisma.dsrRequest.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/dsr");

@@ -18,7 +18,7 @@ import {
 } from "./actions";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
-import { handlePhaseSkip } from "@/lib/phase-skip-handler";
+import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Acao = any;
 
@@ -52,7 +52,7 @@ export function PlanoAcaoList({ items }: { items: Acao[] }) {
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      await savePlanoAcao({
+      const r = await savePlanoAcao({
         id: editing?.id,
         acao: String(fd.get("acao") || ""),
         responsavel: String(fd.get("responsavel") || ""),
@@ -60,28 +60,34 @@ export function PlanoAcaoList({ items }: { items: Acao[] }) {
         status: String(fd.get("status") || "ABERTA"),
         prioridade: String(fd.get("prioridade") || "MEDIA"),
       });
+      if (handlePhaseSkipResult(r)) return;
       toast.success(editing ? "Ação atualizada" : "Ação criada");
       setOpen(false);
-    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover esta ação?")) return;
-    try { await deletarPlanoAcao(id); toast.success("Removida"); }
-    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    try {
+      const r = await deletarPlanoAcao(id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("Removida");
+    } catch (e: any) { toast.error(e.message); }
   }
 
   async function mudarStatus(id: string, novoStatus: string) {
     try {
-      await atualizarStatus(id, novoStatus);
+      const r = await atualizarStatus(id, novoStatus);
+      if (handlePhaseSkipResult(r)) return;
       toast.success("Status atualizado");
-    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    } catch (e: any) { toast.error(e.message); }
   }
 
   async function importar() {
     setImportando(true);
     try {
       const res = await importarDeRiscosEGap();
+      if (handlePhaseSkipResult(res)) return;
       if (res.criados === 0) {
         toast(
           `Nada novo pra importar. ${res.jaExistiam > 0 ? `(${res.jaExistiam} já estavam aqui)` : "Você ainda não tem Riscos ALTO nem GAPs NÃO ADERENTE."}`,
@@ -90,7 +96,7 @@ export function PlanoAcaoList({ items }: { items: Acao[] }) {
       } else {
         toast.success(`${res.criados} nova(s) ação(ões) criada(s) automaticamente!`);
       }
-    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); } finally { setImportando(false); }
+    } catch (e: any) { toast.error(e.message); } finally { setImportando(false); }
   }
 
   return (

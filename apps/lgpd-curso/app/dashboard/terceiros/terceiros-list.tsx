@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { saveOperador, deletarOperador } from "./actions";
 import toast from "react-hot-toast";
-import { handlePhaseSkip } from "@/lib/phase-skip-handler";
+import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Op = any;
 
@@ -29,7 +29,7 @@ export function TerceirosList({ items }: { items: Op[] }) {
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      await saveOperador({
+      const r = await saveOperador({
         id: editing?.id,
         nome: String(fd.get("nome") || ""),
         cnpj: String(fd.get("cnpj") || ""),
@@ -39,15 +39,19 @@ export function TerceirosList({ items }: { items: Op[] }) {
         contratoObjeto: String(fd.get("contratoObjeto") || ""),
         clausulasLgpd: fd.get("clausulasLgpd") === "on",
       });
+      if (handlePhaseSkipResult(r)) return;
       toast.success(editing ? "Operador atualizado" : "Operador registrado");
       setOpen(false);
-    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover este operador?")) return;
-    try { await deletarOperador(id); toast.success("Operador removido"); }
-    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
+    try {
+      const r = await deletarOperador(id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("Operador removido");
+    } catch (e: any) { toast.error(e.message); }
   }
 
   const c = editing?.contracts?.[0];
