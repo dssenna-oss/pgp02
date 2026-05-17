@@ -1,6 +1,8 @@
 // GET/POST /api/curso/migrar-riscos-workflow
-// VERSÃO DIAGNÓSTICA — retorna info do schema sem alterar nada.
-// Quando soubermos o nome real da tabela, volta a versão que aplica.
+// Migração one-shot: adiciona colunas de workflow Contribuidor→DPO em process_risks.
+// (Nome da tabela = "process_risks" — descoberto via diagnostic prévio.)
+// Idempotente — checa se já aplicou antes de rodar.
+// Admin-only por segurança.
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -9,51 +11,61 @@ import { requireAdmin } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const TABELA = "process_risks";
+
+async function aplicar() {
+  // Checa se já existe a coluna feedbackDpo — marcador da migração aplicada
+  const cols = await prisma.$queryRawUnsafe<{ column_name: string }[]>(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = $1`,
+    TABELA
+  );
+  const nomesCol = cols.map((c) => c.column_name);
+  if (nomesCol.includes("feedbackDpo")) {
+    return { status: "ja_aplicada", colunas: nomesCol };
+  }
+
+  // Aplica
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "${TABELA}"
+      ALTER COLUMN "status" SET DEFAULT 'RASCUNHO',
+      ADD COLUMN "feedbackDpo" TEXT,
+      ADD COLUMN "createdById" TEXT,
+      ADD COLUMN "reviewedById" TEXT,
+      ADD COLUMN "submittedAt" TIMESTAMP(3),
+      ADD COLUMN "reviewedAt" TIMESTAMP(3)
+  `);
+  const updated = await prisma.$executeRawUnsafe(`
+    UPDATE "${TABELA}" SET "status" = 'APROVADO' WHERE "status" = 'ATIVO'
+  `);
+
+  // Confirma colunas após aplicar
+  const colsDepois = await prisma.$queryRawUnsafe<{ column_name: string }[]>(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = $1`,
+    TABELA
+  );
+
+  return {
+    status: "aplicada_agora",
+    riscos_legacy_migrados: updated,
+    colunas_apos_migracao: colsDepois.map((c) => c.column_name),
+  };
+}
+
 export async function GET() {
   try {
     await requireAdmin();
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 403 });
   }
-
-  const diagnostico: any = {};
-
   try {
-    // 1. Qual schema atual?
-    const currentSchema = await prisma.$queryRaw<{ current_schema: string }[]>`SELECT current_schema()`;
-    diagnostico.current_schema = currentSchema[0]?.current_schema;
-
-    // 2. Qual search_path?
-    const searchPath = await prisma.$queryRaw<{ search_path: string }[]>`SHOW search_path`;
-    diagnostico.search_path = searchPath[0]?.search_path;
-
-    // 3. Todos os schemas (não-sistema)
-    const schemas = await prisma.$queryRaw<{ schema_name: string }[]>`
-      SELECT schema_name FROM information_schema.schemata
-      WHERE schema_name NOT IN ('pg_catalog','pg_toast','information_schema')
-      ORDER BY schema_name
-    `;
-    diagnostico.schemas = schemas.map((s) => s.schema_name);
-
-    // 4. Todas as tabelas em todos os schemas (não-sistema)
-    const todas = await prisma.$queryRaw<{ table_schema: string; table_name: string }[]>`
-      SELECT table_schema, table_name FROM information_schema.tables
-      WHERE table_schema NOT IN ('pg_catalog','pg_toast','information_schema')
-      ORDER BY table_schema, table_name
-    `;
-    diagnostico.tabelas_total = todas.length;
-    diagnostico.tabelas = todas.map((t) => `${t.table_schema}.${t.table_name}`);
-
-    // 5. Filtrar as que têm 'risk' no nome
-    diagnostico.com_risk_no_nome = diagnostico.tabelas.filter((t: string) => /risk/i.test(t));
-
-    return NextResponse.json({ ok: true, diagnostico });
+    const result = await aplicar();
+    return NextResponse.json({ ok: true, ...result });
   } catch (e: any) {
     console.error("[migrar-riscos-workflow] erro:", e);
     return NextResponse.json({
       ok: false,
       error: e.message,
-      diagnostico_parcial: diagnostico,
+      hint: "Veja logs do Vercel pra detalhes",
     }, { status: 500 });
   }
 }
