@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd } from "./actions";
 import toast from "react-hot-toast";
+import { handlePhaseSkip } from "@/lib/phase-skip-handler";
 
 type Section = { id: string; numero: number; titulo: string; conteudo: string | null };
 type Ripd = {
@@ -61,7 +62,7 @@ export function RipdEditor({
         await createRipd({ titulo, inventoryRef: inv.id });
         toast.success("RIPD criado com as 8 seções ANPD");
         setInventarioId("");
-      } catch (e: any) { toast.error(e.message); }
+      } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
     });
   }
 
@@ -182,11 +183,11 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
   async function submeter() {
     if (preenchidas < 8 && !confirm(`Apenas ${preenchidas} de 8 seções preenchidas. Submeter mesmo assim?`)) return;
     try { await submeterRipd(ripd.id); toast.success("RIPD submetido ao DPO"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
   async function aprovar() {
     try { await aprovarRipd(ripd.id); toast.success("RIPD aprovado"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
   async function confirmarDevolucao() {
     setPendingAction(true);
@@ -194,13 +195,13 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
       await devolverRipd(ripd.id, motivoDevolucao);
       toast.success("RIPD devolvido com motivo");
       setDevolvendo(false); setMotivoDevolucao("");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
     setPendingAction(false);
   }
   async function deletar() {
     if (!confirm("Remover este RIPD e suas 8 seções?")) return;
     try { await deletarRipd(ripd.id); toast.success("RIPD removido"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
 
   return (
@@ -291,7 +292,7 @@ function SecaoEditor({ ripdId, secao, podeEditar }: { ripdId: string; secao: Sec
       try {
         await saveSecao(ripdId, secao.numero, conteudo);
         toast.success(`Seção ${secao.numero} salva`);
-      } catch (e: any) { toast.error(e.message); }
+      } catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
     });
   }
 

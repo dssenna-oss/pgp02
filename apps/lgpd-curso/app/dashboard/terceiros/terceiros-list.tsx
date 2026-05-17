@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { saveOperador, deletarOperador } from "./actions";
 import toast from "react-hot-toast";
+import { handlePhaseSkip } from "@/lib/phase-skip-handler";
 
 type Op = any;
 
@@ -40,13 +41,13 @@ export function TerceirosList({ items }: { items: Op[] }) {
       });
       toast.success(editing ? "Operador atualizado" : "Operador registrado");
       setOpen(false);
-    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
+    } catch (err: any) { if (!handlePhaseSkip(err)) toast.error(err.message); } finally { setLoading(false); }
   }
 
   async function deletar(id: string) {
     if (!confirm("Remover este operador?")) return;
     try { await deletarOperador(id); toast.success("Operador removido"); }
-    catch (e: any) { toast.error(e.message); }
+    catch (e: any) { if (!handlePhaseSkip(e)) toast.error(e.message); }
   }
 
   const c = editing?.contracts?.[0];

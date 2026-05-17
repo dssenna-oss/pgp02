@@ -49,6 +49,22 @@ export async function GET(req: NextRequest) {
     sosPorGrupo.set(s.grupoId, arr);
   }
 
+  // Tentativas de pular fase (PENDING) — DPO clicou em ação de Fase 5/6/7
+  // sem fechar GAP. Facilitador é alertado pra reforçar a sequência.
+  const skipsAtivosRaw = grupoIds.length
+    ? await prisma.phaseSkipAttempt.findMany({
+        where: { grupoId: { in: grupoIds }, status: "PENDING" },
+        orderBy: { createdAt: "asc" },
+      }).catch(() => [] as any[])
+    : [];
+
+  const skipsPorGrupo = new Map<string, typeof skipsAtivosRaw>();
+  for (const s of skipsAtivosRaw) {
+    const arr = skipsPorGrupo.get(s.grupoId) || [];
+    arr.push(s);
+    skipsPorGrupo.set(s.grupoId, arr);
+  }
+
   const result = [];
   for (const grupo of turma.grupos) {
     const cid = grupo.companyId;
@@ -172,6 +188,15 @@ export async function GET(req: NextRequest) {
       attendedAt: s.attendedAt ? s.attendedAt.toISOString() : null,
     }));
 
+    // Tentativas de pular fase ativas
+    const phaseSkips = (skipsPorGrupo.get(grupo.id) || []).map((s) => ({
+      id: s.id,
+      faseTentada: s.faseTentada,
+      acaoTentada: s.acaoTentada,
+      requestedByName: s.requestedByName,
+      createdAt: s.createdAt.toISOString(),
+    }));
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
@@ -182,6 +207,7 @@ export async function GET(req: NextRequest) {
       ultimaAtividade,
       timeline,
       sos,
+      phaseSkips,
     });
   }
 

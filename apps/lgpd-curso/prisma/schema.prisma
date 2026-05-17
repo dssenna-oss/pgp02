@@ -94,9 +94,31 @@ model CursoGrupo {
   createdAt DateTime   @default(now())
 
   assistanceRequests AssistanceRequest[]
+  phaseSkipAttempts  PhaseSkipAttempt[]
 
   @@unique([turmaId, numero])
   @@map("curso_grupos")
+}
+
+// Tentativa de pular fase — DPO clicou num botão de ação das Fases 5/6/7
+// sem ter concluído a Fase 4 (GAP). Pedagógico: faz o facilitador ser
+// alertado pra reafirmar a sequência correta das fases do PGP.
+//   PENDING       → tentativa registrada agora
+//   ACKNOWLEDGED  → facilitador clicou "Reconhecer" (vai conversar com o grupo)
+model PhaseSkipAttempt {
+  id              String     @id @default(cuid())
+  grupoId         String
+  grupo           CursoGrupo @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  requestedById   String?
+  requestedByName String?
+  faseTentada     String // "FASE_5" | "FASE_6" | "FASE_7"
+  acaoTentada     String? // ex: "Criar Plano de Acao", "Salvar RIPD"
+  status          String     @default("PENDING") // PENDING | ACKNOWLEDGED
+  createdAt       DateTime   @default(now())
+  acknowledgedAt  DateTime?
+
+  @@index([grupoId, status])
+  @@map("phase_skip_attempts")
 }
 
 // SOS — pedido de presença do facilitador feito por um participante.

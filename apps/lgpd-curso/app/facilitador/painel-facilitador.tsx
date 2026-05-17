@@ -15,6 +15,13 @@ import { CentralSos, type SosItem } from "./central-sos";
 import { ResumoTurmaDialog } from "./resumo-turma";
 
 type Turma = { id: string; nome: string; cidade: string };
+type PhaseSkipItem = {
+  id: string;
+  faseTentada: string;
+  acaoTentada: string | null;
+  requestedByName: string | null;
+  createdAt: string;
+};
 type Grupo = {
   grupoId: string;
   numero: number;
@@ -34,6 +41,7 @@ type Grupo = {
   };
   timeline: BolinhaMissao[];
   sos: SosItem[];
+  phaseSkips: PhaseSkipItem[];
 };
 
 // Bip sintético via Web Audio (sem arquivo MP3).
@@ -72,6 +80,31 @@ function tocarBip(audioCtx: AudioContext | null) {
   } catch {}
 }
 
+// Alerta pedagógico — 3 tons descendentes (660 → 440 → 220Hz) mais grave que o
+// SOS, sinaliza "atenção, problema de processo, não emergência operacional".
+function tocarAlertaPuloFase(audioCtx: AudioContext | null) {
+  if (!audioCtx) return;
+  const tons = [660, 440, 220];
+  tons.forEach((freq, i) => {
+    setTimeout(() => {
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        osc.type = "square";
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const t = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.15, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.start(t);
+        osc.stop(t + 0.25);
+      } catch {}
+    }, i * 200);
+  });
+}
+
 export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [turmaId, setTurmaId] = useState<string>(turmas[0]?.id || "");
   const [grupos, setGrupos] = useState<Grupo[]>([]);
@@ -85,6 +118,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const lastFetchRef = useRef<Date | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sosIdsConhecidosRef = useRef<Set<string>>(new Set());
+  const skipIdsConhecidosRef = useRef<Set<string>>(new Set());
 
   async function fetchState(silencioso = false) {
     if (!turmaId) return;
@@ -118,6 +152,26 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
         toast(`🆘 ${grupoNomes} precisa de você!`, { duration: 8000, icon: "🆘" });
       }
       sosIdsConhecidosRef.current = idsNovos;
+
+      // Detecta tentativas de pular fase novas — bip diferente + toast vermelho
+      const skipIdsNovos = new Set<string>();
+      for (const g of data.grupos as Grupo[]) {
+        for (const s of g.phaseSkips || []) skipIdsNovos.add(s.id);
+      }
+      const skipEraConhecido = skipIdsConhecidosRef.current;
+      const skipRecemChegados = [...skipIdsNovos].filter((id) => !skipEraConhecido.has(id));
+      if (skipRecemChegados.length > 0 && skipEraConhecido.size > 0) {
+        tocarAlertaPuloFase(audioCtxRef.current);
+        const grupoNomes = (data.grupos as Grupo[])
+          .filter((g) => g.phaseSkips.some((s) => skipRecemChegados.includes(s.id)))
+          .map((g) => `G${g.numero}·${g.orgao}`)
+          .join(", ");
+        toast(
+          `🚨 ${grupoNomes} ESTÁ TENTANDO PULAR DE FASE!`,
+          { duration: 10000, icon: "🚨", style: { background: "#fee2e2", color: "#991b1b", fontWeight: "bold" } },
+        );
+      }
+      skipIdsConhecidosRef.current = skipIdsNovos;
     } catch (e: any) {
       if (!silencioso) toast.error(e.message);
     }
@@ -148,6 +202,21 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
       toast.success("Som de alerta ativado");
     } catch {
       toast.error("Navegador bloqueou o som — tente em Chrome/Edge");
+    }
+  }
+
+  async function reconhecerPuloFase(id: string) {
+    try {
+      const res = await fetch(`/api/curso/phase-skip/${id}`, { method: "PATCH" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Erro");
+        return;
+      }
+      toast.success("Alerta reconhecido");
+      fetchState(true);
+    } catch (e: any) {
+      toast.error(e.message);
     }
   }
 
@@ -279,7 +348,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             </Button>
           </header>
           <div className="space-y-3">
-            {gruposPM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} />)}
+            {gruposPM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
           </div>
         </section>
       )}
@@ -300,7 +369,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             </Button>
           </header>
           <div className="space-y-3">
-            {gruposCM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} />)}
+            {gruposCM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
           </div>
         </section>
       )}
@@ -332,9 +401,11 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
 function GrupoTimelineCard({
   grupo,
   onAtenderSos,
+  onReconhecerSkip,
 }: {
   grupo: Grupo;
   onAtenderSos: (id: string, status: "ATTENDED" | "RESOLVED") => void;
+  onReconhecerSkip: (id: string) => void;
 }) {
   const isPM = grupo.orgao === "PM";
   const orgaoCor = isPM ? "border-emerald-300 bg-emerald-50/30" : "border-blue-300 bg-blue-50/30";
@@ -367,8 +438,13 @@ function GrupoTimelineCard({
     ? Math.max(0, Math.floor((Date.now() - new Date(sosAtivo.createdAt).getTime()) / 60000))
     : 0;
 
-  // Borda pulsa vermelho quando há PENDING; âmbar quando ATTENDED
-  const bordaSos = sosPending
+  const skipPendentes = grupo.phaseSkips || [];
+  const temSkip = skipPendentes.length > 0;
+
+  // Borda: skip de fase é mais grave que SOS — predomina visualmente
+  const bordaSos = temSkip
+    ? "border-red-600 ring-4 ring-red-300 animate-pulse"
+    : sosPending
     ? "border-red-500 ring-2 ring-red-300 animate-pulse"
     : sosAttended
     ? "border-amber-400 ring-2 ring-amber-200"
@@ -390,6 +466,24 @@ function GrupoTimelineCard({
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
+          {/* Faixa de "PULO DE FASE" — só aparece se há tentativa pendente */}
+          {temSkip && skipPendentes.map((skip) => {
+            const min = Math.max(0, Math.floor((Date.now() - new Date(skip.createdAt).getTime()) / 60000));
+            return (
+              <div key={skip.id} className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-700 text-white text-xs font-bold animate-pulse" title={skip.acaoTentada || ""}>
+                <span>🚨 PULANDO FASE!</span>
+                <span className="font-normal opacity-90">{skip.faseTentada.replace("FASE_", "Fase ")} · há {min}min</span>
+                <button
+                  onClick={() => onReconhecerSkip(skip.id)}
+                  className="ml-1 bg-white/20 hover:bg-white/30 px-1.5 py-0.5 rounded text-[11px]"
+                  title="Já reforcei a sequência com o grupo"
+                >
+                  <Check className="h-3 w-3 inline" /> Reconheci
+                </button>
+              </div>
+            );
+          })}
+
           {/* Faixa de SOS — só aparece se houver chamado */}
           {sosPending && (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-600 text-white text-xs font-semibold animate-pulse">
