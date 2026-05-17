@@ -322,7 +322,11 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
               const ehApoioTramitado = stats.tramitadoPara === papel;
               // processoFechado = todos os riscos do processo APROVADOS (e existe ao menos 1)
               const processoFechado = stats.total > 0 && stats.aprovado === stats.total;
-              const podeAdicionar = !processoFechado && (ehDono || isDpoOuAdmin || ehApoioTramitado);
+              // Não adiciona quando há SUBMETIDO esperando DPO (trabalho em lote)
+              // Setor de apoio só edita os tramitados — não cria novos
+              const podeAdicionar = !processoFechado
+                && stats.submetido === 0
+                && (ehDono || isDpoOuAdmin);
               const podeSubmeter = (ehDono || isDpoOuAdmin) && (stats.rascunho > 0 || stats.devolvido > 0) && !stats.tramitadoPara;
               const podeAprovar = isDpoOuAdmin && stats.submetido > 0 && !stats.tramitadoPara;
               const podeDevolverContribuidor = isDpoOuAdmin && stats.submetido > 0 && !stats.tramitadoPara;
@@ -381,7 +385,15 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
                       variant="primary"
                       onClick={() => abrirNovoParaProcesso(inv.id)}
                       disabled={!podeAdicionar}
-                      title={processoFechado ? "Análise fechada — peça ao DPO pra reabrir antes de adicionar novos riscos" : undefined}
+                      title={
+                        processoFechado
+                          ? "Análise fechada — peça ao DPO pra reabrir antes de adicionar novos riscos"
+                          : stats.submetido > 0
+                            ? "Há risco(s) submetido(s) aguardando o DPO — aguarde a decisão antes de adicionar mais"
+                            : ehApoioTramitado && !ehDono && !isDpoOuAdmin
+                              ? "Setor de apoio só edita os riscos tramitados — não cria novos"
+                              : undefined
+                      }
                     >
                       <Plus className="h-3.5 w-3.5" /> Adicionar
                     </Button>

@@ -115,20 +115,37 @@ export async function saveRisco(input: {
     }
   }
 
-  // Regra 2b: vale pra QUALQUER papel (inclusive DPO) — não pode adicionar
-  // risco novo em processo com análise FECHADA (todos riscos APROVADOS).
-  // Pra adicionar, DPO precisa REABRIR a análise antes.
+  // Bloqueios de adição (apply pra criar risco novo, !input.id):
+  //   (a) Processo já FECHADO (todos APROVADOS) — precisa Reabrir antes (regra 2b)
+  //   (b) Há SUBMETIDO esperando DPO — aguarda decisão (trabalho em lote)
+  //   (c) Setor de apoio (papel matches tramitadoPara) NÃO cria novos riscos —
+  //       só edita os tramitados. Quem cria é dono ou DPO.
   if (!input.id && input.inventoryId) {
-    const aprovados = await prisma.processRisk.count({
-      where: { companyId, inventoryId: input.inventoryId, status: "APROVADO" },
-    });
-    const naoAprovados = await prisma.processRisk.count({
-      where: { companyId, inventoryId: input.inventoryId, status: { not: "APROVADO" } },
-    });
+    const [aprovados, naoAprovados, submetidos] = await Promise.all([
+      prisma.processRisk.count({ where: { companyId, inventoryId: input.inventoryId, status: "APROVADO" } }),
+      prisma.processRisk.count({ where: { companyId, inventoryId: input.inventoryId, status: { not: "APROVADO" } } }),
+      prisma.processRisk.count({ where: { companyId, inventoryId: input.inventoryId, status: "SUBMETIDO" } }),
+    ]);
     if (aprovados > 0 && naoAprovados === 0) {
       throw new Error(
         "Processo já tem análise aprovada (todos riscos APROVADOS). Pra adicionar novos riscos, REABRA a análise primeiro (botão 'Reabrir análise' visível pro DPO no card)."
       );
+    }
+    if (submetidos > 0) {
+      throw new Error(
+        "Há risco(s) SUBMETIDO(s) aguardando o DPO neste processo. Aguarde aprovação/devolução antes de adicionar mais — análise vai em lote."
+      );
+    }
+    if (!isDpoOuAdmin) {
+      const inv = await prisma.dataInventory.findFirst({
+        where: { id: input.inventoryId, companyId },
+        select: { createdById: true },
+      });
+      if (inv && inv.createdById !== session.user.id) {
+        throw new Error(
+          "Setor de apoio só edita os riscos tramitados pra você — não cria novos. Quem adiciona riscos é o dono do processo ou o DPO."
+        );
+      }
     }
   }
 
