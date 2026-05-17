@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Plus, Pencil, Trash2, FileText, AlertTriangle, ArrowRight, Eye,
-  Send, CheckCircle2, RotateCcw, AlertCircle, Users, Reply,
+  Send, CheckCircle2, RotateCcw, AlertCircle, Users, Reply, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,10 +73,56 @@ function statusBadge(status: string) {
 
 export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventories: Inventory[] }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const userId = session?.user?.id;
   const role = session?.user?.role;
   const papel = session?.user?.papel;
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
+
+  // Polling a cada 8s + detecta mudanças relevantes (mesma pattern do Inventário)
+  const previousRef = useRef<Map<string, { status: string; tramitadoPara: string | null }>>(new Map());
+  useEffect(() => {
+    const atual = new Map(riscos.map((r) => [r.id, { status: r.status, tramitadoPara: r.tramitadoPara }]));
+    const anterior = previousRef.current;
+    if (anterior.size > 0) {
+      for (const r of riscos) {
+        const prev = anterior.get(r.id);
+        if (!prev) continue;
+        const statusMudou = prev.status !== r.status;
+        const tramitacaoMudou = prev.tramitadoPara !== r.tramitadoPara;
+
+        if (statusMudou) {
+          const ehDono = r.inventory?.createdById === userId;
+          const titulo = r.riscoTitulo.slice(0, 40);
+          if (r.status === "SUBMETIDO" && isDpoOuAdmin) {
+            toast(`📥 Risco "${titulo}" foi submetido — sua revisão`, { duration: 7000, icon: "📥" });
+          } else if (r.status === "APROVADO" && ehDono) {
+            toast.success(`✓ DPO aprovou "${titulo}"`, { duration: 5000 });
+          } else if (r.status === "DEVOLVIDO" && ehDono) {
+            toast(`📝 DPO devolveu "${titulo}" — leia o motivo`, { duration: 7000, icon: "↻" });
+          }
+        }
+        if (tramitacaoMudou) {
+          const titulo = r.riscoTitulo.slice(0, 40);
+          // Recebi tramitação?
+          if (r.tramitadoPara === papel && prev.tramitadoPara !== papel) {
+            toast(`👥 DPO pediu seu apoio em "${titulo}"`, { duration: 8000, icon: "👥" });
+          }
+          // Devolução pro DPO?
+          if (!r.tramitadoPara && prev.tramitadoPara && isDpoOuAdmin) {
+            toast(`↩ Setor ${prev.tramitadoPara} devolveu "${titulo}" pra você`, { duration: 7000, icon: "↩" });
+          }
+        }
+      }
+    }
+    previousRef.current = atual;
+  }, [riscos, userId, papel, isDpoOuAdmin]);
+
+  // Polling silencioso a cada 8s
+  useEffect(() => {
+    const id = setInterval(() => router.refresh(), 8000);
+    return () => clearInterval(id);
+  }, [router]);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -201,6 +248,20 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
 
   return (
     <>
+      {/* Indicador "ao vivo" */}
+      <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+        <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+        Ao vivo · checa atualizações a cada 8s
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="ml-1 inline-flex items-center gap-1 text-gray-500 hover:text-gray-700"
+          title="Verificar agora"
+        >
+          <RefreshCw className="h-3 w-3" />
+        </button>
+      </div>
+
       {inventariosAprovados.length === 0 ? (
         <div className="border-l-4 border-amber-400 bg-amber-50 rounded p-4 mb-4">
           <div className="flex items-start gap-3">
