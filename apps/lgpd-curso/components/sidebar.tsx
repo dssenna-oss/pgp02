@@ -89,7 +89,7 @@ const adminItems: MiniApp[] = [
   { href: "/admin/criar-turma", label: "Criar turma",           icon: Settings },
 ];
 
-const STORAGE_KEY_EXPANDIDAS = "curso-sidebar-fases-expandidas";
+const STORAGE_KEY_EXPANDIDA = "curso-sidebar-fase-expandida";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -99,41 +99,43 @@ export function Sidebar() {
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
   const [mobileOpen, setMobileOpen] = useState(false);
   const [progresso, setProgresso] = useState<MissoesProgresso | null>(null);
-  const [expandidas, setExpandidas] = useState<Set<string>>(new Set());
+  // Modo acordeão: só 1 fase expandida por vez (ou nenhuma).
+  const [faseExpandida, setFaseExpandida] = useState<string | null>(null);
   const [hidratado, setHidratado] = useState(false);
 
   function closeMobile() { setMobileOpen(false); }
 
-  // Carrega estado expandido do localStorage no mount
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_EXPANDIDAS);
-      if (saved) {
-        const arr = JSON.parse(saved);
-        if (Array.isArray(arr)) setExpandidas(new Set(arr));
-      } else {
-        // default: tudo expandido na 1ª visita (ajuda novo participante a ver tudo)
-        setExpandidas(new Set(FASES.map((f) => f.id)));
-      }
-    } catch {
-      setExpandidas(new Set(FASES.map((f) => f.id)));
-    }
-    setHidratado(true);
-  }, []);
-
-  // Persiste sempre que muda (após hidratação)
-  useEffect(() => {
-    if (!hidratado) return;
-    try { localStorage.setItem(STORAGE_KEY_EXPANDIDAS, JSON.stringify([...expandidas])); } catch {}
-  }, [expandidas, hidratado]);
-
-  // Identifica a Fase que contém o item ativo — força expansão dela
+  // Identifica a Fase do item ativo — abre ela automaticamente se a página mudar.
   const faseDoItemAtivo = useMemo(() => {
     for (const f of FASES) {
       if (f.itens.some((i) => i.href === pathname)) return f.id;
     }
     return null;
   }, [pathname]);
+
+  // Carrega fase expandida do localStorage no mount.
+  // Se a página tá num item de fase, prioriza essa (mesmo se localStorage tinha outra).
+  useEffect(() => {
+    let inicial: string | null = null;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_EXPANDIDA);
+      if (saved) inicial = saved;
+    } catch {}
+    if (faseDoItemAtivo) inicial = faseDoItemAtivo;
+    setFaseExpandida(inicial);
+    setHidratado(true);
+    // limpa chave antiga (modo multi-expansão) pra não acumular lixo
+    try { localStorage.removeItem("curso-sidebar-fases-expandidas"); } catch {}
+  }, [faseDoItemAtivo]);
+
+  // Persiste sempre que muda (após hidratação)
+  useEffect(() => {
+    if (!hidratado) return;
+    try {
+      if (faseExpandida) localStorage.setItem(STORAGE_KEY_EXPANDIDA, faseExpandida);
+      else localStorage.removeItem(STORAGE_KEY_EXPANDIDA);
+    } catch {}
+  }, [faseExpandida, hidratado]);
 
   // Polling do progresso a cada 10s — só pra participantes
   useEffect(() => {
@@ -153,12 +155,8 @@ export function Sidebar() {
   }, [isAdmin, session?.user?.id]);
 
   function toggleFase(id: string) {
-    setExpandidas((prev) => {
-      const novo = new Set(prev);
-      if (novo.has(id)) novo.delete(id);
-      else novo.add(id);
-      return novo;
-    });
+    // Acordeão: clicar na fase aberta fecha; clicar em outra abre só ela
+    setFaseExpandida((atual) => (atual === id ? null : id));
   }
 
   return (
@@ -226,7 +224,7 @@ export function Sidebar() {
                 const itensVisiveis = fase.itens.filter((i) => !i.dpoOnly || isDpoOuAdmin);
                 if (itensVisiveis.length === 0) return null;
 
-                const aberta = expandidas.has(fase.id) || faseDoItemAtivo === fase.id;
+                const aberta = faseExpandida === fase.id;
                 const itensFeitos = itensVisiveis.filter(
                   (i) => i.progressoKey && progresso ? progresso[i.progressoKey] : false,
                 ).length;
