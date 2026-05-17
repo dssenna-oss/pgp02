@@ -299,6 +299,30 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
         </button>
       </div>
 
+      {/* DIAGNÓSTICO TEMPORÁRIO — remover depois que confirmar banner */}
+      {!isDpoOuAdmin && (
+        <div className="text-[10px] font-mono bg-yellow-100 border border-yellow-400 p-2 mb-3 rounded">
+          🔧 DEBUG: userId={String(userId).slice(0, 8)}... ·
+          meusInv={meusInventarios.length} ·
+          completos={String(meusTodosCompletos)} ·
+          inventariosAprovados={inventariosAprovados.length} ·
+          riscos={riscos.length}
+          {meusInventarios.length > 0 && (
+            <div className="mt-1">
+              {meusInventarios.map((inv) => {
+                const s = statsPorInv.get(inv.id);
+                return (
+                  <div key={inv.id}>
+                    inv.id={inv.id.slice(0, 8)}... | inv.createdById={String(inv.createdById).slice(0, 8)}... |
+                    stats={s ? `r:${s.rascunho} s:${s.submetido} a:${s.aprovado} d:${s.devolvido} t:${s.total}` : "NO STATS"}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Banner de transição — Contribuidor finalizou sua parte (tudo submetido/aprovado) */}
       {meusTodosCompletos && (
         <div className="border-l-4 border-emerald-500 bg-emerald-50 rounded p-4 mb-4">
