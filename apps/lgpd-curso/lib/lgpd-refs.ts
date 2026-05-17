@@ -196,3 +196,161 @@ export function sugestoesDoProcesso(nomeProcesso: string | null | undefined): Su
   }
   return null;
 }
+
+// ============================================================================
+// HELP — Campos de RISCO (Missão 2)
+// Baseado em: Res. ANPD nº 2/2022 · ISO 27005 (gestão de risco) · ISO 27001/27701
+// (controles de segurança e privacidade) · NIST CSF · OWASP Risk Rating
+// ============================================================================
+
+Object.assign(HELP_POR_CAMPO, {
+  riscoDescricao: {
+    titulo: "Como descrever um risco",
+    artigo: "Res. ANPD nº 2/2022 · ISO/IEC 27005",
+    oQueDiz:
+      "Risco = combinação de uma AMEAÇA explorando uma VULNERABILIDADE causando IMPACTO. Descrever 'o que pode dar errado' de forma concreta, partindo do cidadão.",
+    perguntaChave:
+      "Qual evento ruim PODE acontecer? Quem é afetado? O que vaza/quebra/se perde?",
+    pegadinha:
+      "Risco NÃO é a medida de controle ('falta de criptografia'). Risco É o evento ('vazamento de prontuários por mídia sem criptografia'). Vai pela frase 'se isso falhar, então...'",
+    exemplos: [
+      "Bom: 'Vazamento de prontuários por pendrive sem criptografia perdido em ônibus'",
+      "Bom: 'Acesso indevido a histórico médico por servidor de outro setor via login compartilhado'",
+      "Ruim: 'Falta de MFA' (isso é controle, não risco) — formato certo: 'Sequestro de conta admin por ausência de MFA permite vazamento massivo'",
+    ],
+  } as CampoHelp,
+
+  riscoCategoria: {
+    titulo: "Categoria do risco — tríade CID + LGPD",
+    artigo: "ISO/IEC 27001 (CID) · LGPD Art. 6º (princípios) · LGPD Art. 18 (direitos)",
+    oQueDiz:
+      "Confidencialidade = vazar dado · Integridade = adulterar dado · Disponibilidade = perder acesso. LGPD adiciona Base Legal (tratamento ilegítimo) e Direitos do Titular (impedir acesso/correção/eliminação).",
+    perguntaChave:
+      "O que esse risco fere PRINCIPALMENTE: sigilo, exatidão, acesso, base legal ou direitos do cidadão?",
+    pegadinha:
+      "Um mesmo risco pode atingir mais de uma categoria (ex: ransomware = Integridade + Disponibilidade). Escolha a PRINCIPAL — o curso usa categoria única pra simplificar.",
+    exemplos: [
+      "Vazamento de dados = Confidencialidade",
+      "Ransomware criptografando prontuários = Disponibilidade (acesso) + Integridade (modificação)",
+      "Coleta excessiva sem finalidade clara = Base Legal",
+      "Atendimento de pedido de eliminação ignorado = Direitos do Titular",
+    ],
+  } as CampoHelp,
+
+  riscoProbabilidade: {
+    titulo: "Como medir Probabilidade",
+    artigo: "ISO/IEC 27005 · NIST SP 800-30 · Res. ANPD nº 2/2022",
+    oQueDiz:
+      "Probabilidade = frequência esperada do evento ruim acontecer no próximo ano. Considere: (a) histórico no setor · (b) facilidade técnica de explorar · (c) motivação de atacantes · (d) controles atuais.",
+    perguntaChave:
+      "Em 12 meses, quantas vezes esse risco pode se materializar? BAIXA = improvável (<1x) · MÉDIA = possível (1-3x) · ALTA = esperado (4+x ou já aconteceu).",
+    pegadinha:
+      "Não confunda 'nunca aconteceu aqui' com Baixa. Setor público é alvo crescente (Lei 14.129/2021 obriga digitalização). Se outros municípios já sofreram = Alta probabilidade local também.",
+    exemplos: [
+      "Phishing em servidor sem treinamento anual: ALTA (campanhas semanais no Brasil)",
+      "Pendrive perdido com prontuário: MÉDIA (acontece sem política BYOD)",
+      "Invasão por APT estatal estrangeira: BAIXA (alvo improvável pra município pequeno)",
+    ],
+  } as CampoHelp,
+
+  riscoImpacto: {
+    titulo: "Como medir Impacto",
+    artigo: "LGPD Art. 38 (RIPD) · Res. ANPD nº 15/2024 (incidentes graves) · ISO 27005",
+    oQueDiz:
+      "Impacto = quanto dano se materializar. Avalie sobre o CIDADÃO (não a instituição): danos físicos, financeiros, morais, discriminação, vigilância indevida.",
+    perguntaChave:
+      "Se vazar/quebrar/falhar: cidadão sofre desconforto (BAIXO), tem direito violado / problema concreto (MÉDIO), ou tem dano grave / irreversível (ALTO)?",
+    pegadinha:
+      "Volume + sensibilidade = multiplicador. Vazar 100 emails = baixo. Vazar 2.300 prontuários com diagnósticos = alto. Vazar dado de menor de idade = ALTO sempre (Art. 14 LGPD).",
+    exemplos: [
+      "Vazamento de e-mail de contato (sem mais nada): BAIXO",
+      "Vazamento de CPF + endereço de servidor: MÉDIO (golpes direcionados, doxxing)",
+      "Vazamento de prontuário de paciente HIV+: ALTO (discriminação, demissão, suicídio em casos extremos)",
+      "Vazamento de denúncia anônima de assédio com identificação do denunciante: ALTO (retaliação)",
+    ],
+  } as CampoHelp,
+
+  riscoMitigacao: {
+    titulo: "Como planejar a mitigação",
+    artigo: "ISO/IEC 27001 (controles SI) · ISO/IEC 27701 (controles privacidade) · NIST CSF · OWASP",
+    oQueDiz:
+      "Mitigação = ações concretas pra reduzir Probabilidade OU Impacto. Combine controles TÉCNICOS (criptografia, MFA, segregação) com ADMINISTRATIVOS (política, treinamento, contrato).",
+    perguntaChave:
+      "Pra reduzir esse risco: o que faz baixar a chance de acontecer + o que faz baixar o dano se acontecer? Quem é responsável? Em quanto tempo?",
+    pegadinha:
+      "Mitigação eficaz é VERIFICÁVEL. 'Treinar a equipe' é fraco — 'Treinamento anual obrigatório com lista de presença + teste prático no fim' é forte. Sempre tenha um responsável e um prazo.",
+    exemplos: [
+      "Pra vazamento por pendrive: Política BYOD escrita + MFA no Saúde+Municipal + treinamento sobre mídias removíveis + bloqueio de USB no AD",
+      "Pra acesso indevido por servidor de outro setor: Perfis de acesso por setor + logs de acesso a prontuário + auditoria mensal de acessos + termo de sigilo",
+      "Pra phishing: Treinamento anual + simulação trimestral + filtro anti-phishing no e-mail + DMARC/SPF",
+    ],
+  } as CampoHelp,
+});
+
+// ============================================================================
+// Sugestões de RISCO TÍPICO por processo — alimenta botão "✨ Sugerir" no form
+// ============================================================================
+
+export type SugestaoRiscoTipico = {
+  riscoTitulo: string;
+  descricao: string;
+  categoria: "CONFIDENCIALIDADE" | "INTEGRIDADE" | "DISPONIBILIDADE" | "BASE_LEGAL" | "DIREITOS_TITULAR";
+  probabilidade: "BAIXA" | "MEDIA" | "ALTA";
+  impacto: "BAIXO" | "MEDIO" | "ALTO";
+  mitigationPlan: string;
+};
+
+const RISCOS_TIPICOS_POR_PROCESSO: Record<string, SugestaoRiscoTipico> = {
+  "posto de saúde": {
+    riscoTitulo: "Vazamento de prontuários por mídia removível sem criptografia",
+    descricao:
+      "Servidor leva backup ou consulta exames em pendrive não criptografado. Pendrive é perdido em ônibus municipal ou roubado da bolsa. Inclui histórico médico, alergias, medicamentos de pacientes (dados sensíveis Art. 5º II LGPD).",
+    categoria: "CONFIDENCIALIDADE",
+    probabilidade: "MEDIA",
+    impacto: "ALTO",
+    mitigationPlan:
+      "Política BYOD escrita proibindo mídia removível pessoal. MFA obrigatório no Saúde+Municipal. Treinamento anual sobre mídias removíveis com simulação. Bloqueio de USB no AD pra estações administrativas (libera só pra TI/manutenção). Backup só pela TI com criptografia AES-256. Termo de sigilo assinado com cláusula específica de mídia.",
+  },
+
+  "estagiári": {
+    riscoTitulo: "Vazamento do banco de currículos de candidatos com CPF e comprovante de residência",
+    descricao:
+      "Banco de currículos do processo seletivo de estagiários (320 inscritos/semestre) é exposto por configuração errada de pasta compartilhada, acesso indevido de servidor ou phishing direcionado ao RH. Inclui dados cadastrais completos + foto + comprovantes opcionais (renda, PCD).",
+    categoria: "CONFIDENCIALIDADE",
+    probabilidade: "BAIXA",
+    impacto: "MEDIO",
+    mitigationPlan:
+      "Acesso restrito ao grupo RH no AD. Anonimização do currículo após 1 ano (retira CPF, RG, endereço, mantém formação pra estatística). Backup criptografado. Logs de acesso à pasta. Treinamento sobre phishing pra equipe RH. Política de retenção formal (5 anos pro contrato, 1 ano pra currículo de não-selecionado).",
+  },
+
+  "tribuna": {
+    riscoTitulo: "Exposição involuntária do tema da fala dos inscritos em transmissão pública",
+    descricao:
+      "Cadastro de inscritos da Tribuna Livre inclui 'tema da fala' que pode revelar opinião política, religiosa ou crítica institucional (dado sensível Art. 5º II). Lista é compartilhada por e-mail com 15 vereadores 24h antes — risco de vazamento informal. Gravação no YouTube fica permanente.",
+    categoria: "CONFIDENCIALIDADE",
+    probabilidade: "ALTA",
+    impacto: "MEDIO",
+    mitigationPlan:
+      "Aviso prévio claro no formulário sobre transmissão pública e gravação permanente. Substituir planilha Excel por sistema com controle de acesso (SharePoint ou similar). Política formal vedando reencaminhamento da lista pelos vereadores. Anonimização de inscritos que pedirem após a sessão (remove nome do cadastro mas mantém vídeo público — bem informado).",
+  },
+
+  "ouvidoria": {
+    riscoTitulo: "Identificação indevida de denunciante anônimo em casos de assédio",
+    descricao:
+      "Manifestações anônimas de assédio podem conter dados que permitam identificar o denunciante (relato com detalhes, anexos com metadados, IP coletado). Servidor da equipe da Ouvidoria ou outro encaminhado pode revelar (intencional ou não). Resultado: retaliação ao denunciante.",
+    categoria: "CONFIDENCIALIDADE",
+    probabilidade: "MEDIA",
+    impacto: "ALTO",
+    mitigationPlan:
+      "Não coletar IP do navegador no formulário anônimo. Pseudonimizar denúncias antes de encaminhar (remover metadados de anexos, sumarizar relato). Termo de sigilo específico pra equipe Ouvidoria + sanção por descumprimento. Login com 2FA pra equipe. Logs de acesso a cada denúncia (quem viu quando). Treinamento anual sobre Lei 13.460/2017 (Código de Defesa do Usuário do Serviço Público).",
+  },
+};
+
+export function riscoTipicoDoProcesso(nomeProcesso: string | null | undefined): SugestaoRiscoTipico | null {
+  if (!nomeProcesso) return null;
+  const lower = nomeProcesso.toLowerCase();
+  for (const [chave, sug] of Object.entries(RISCOS_TIPICOS_POR_PROCESSO)) {
+    if (lower.includes(chave)) return sug;
+  }
+  return null;
+}
