@@ -15,12 +15,14 @@ export async function getAviso() {
 
 export async function getPrerequisitos() {
   const { companyId } = await requireCompany();
-  const [ripds, operadores, dsr] = await Promise.all([
+  const [inventariosAprovados, ripds, operadores, dsr] = await Promise.all([
+    prisma.dataInventory.count({ where: { companyId, status: "APROVADO" } }),
     prisma.ripd.findMany({ where: { companyId }, select: { id: true, titulo: true, status: true } }),
     prisma.operator.findMany({ where: { companyId }, select: { id: true, nome: true, contracts: { select: { clausulasLgpd: true } } } }),
     prisma.dsrRequest.findMany({ where: { companyId }, select: { id: true } }),
   ]);
   return {
+    inventariosAprovados,
     ripds: ripds.length,
     ripdsAprovados: ripds.filter((r) => r.status === "APROVADO").length,
     operadores: operadores.length,
@@ -48,6 +50,20 @@ export async function saveAviso(conteudoMd: string) {
 
 export async function publicarAviso() {
   const { companyId } = await requireCompany();
+
+  // Pré-requisito legal — Art. 9 LGPD lista informações obrigatórias no Aviso
+  // (finalidade, forma e duração do tratamento, identificação do controlador,
+  //  uso compartilhado, responsabilidades, direitos do titular). Sem Inventário
+  //  aprovado não existe a matéria-prima dessas informações.
+  const inventariosAprovados = await prisma.dataInventory.count({
+    where: { companyId, status: "APROVADO" },
+  });
+  if (inventariosAprovados === 0) {
+    throw new Error(
+      "Pré-requisito legal: aprove ao menos 1 processo no Inventário antes de publicar o Aviso. O Art. 9 LGPD exige descrição clara das finalidades, formas de tratamento e duração — informações que vêm do Inventário."
+    );
+  }
+
   const policy = await prisma.policy.findUnique({
     where: { companyId_slug: { companyId, slug: SLUG } },
   });
