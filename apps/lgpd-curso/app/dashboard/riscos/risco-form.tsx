@@ -24,17 +24,20 @@ function parseLevel(severityLevel: string | null | undefined) {
 export function RiscoForm({
   risco,
   inventories,
+  inventarioPreSelecionado,
   open,
   onOpenChange,
 }: {
   risco: Risco | null;
   inventories: Inv[];
+  inventarioPreSelecionado?: string | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
   const isEdit = !!risco;
   const initial = parseLevel(risco?.severityLevel);
   const [loading, setLoading] = useState(false);
+  const inventoryIdDefault = risco?.inventoryId || inventarioPreSelecionado || "";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -73,7 +76,7 @@ export function RiscoForm({
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <Label>Processo relacionado (opcional)</Label>
-            <Select name="inventoryId" defaultValue={risco?.inventoryId || ""}>
+            <Select name="inventoryId" defaultValue={inventoryIdDefault} key={inventoryIdDefault /* re-monta select quando muda pré-seleção */}>
               <option value="">— sem vínculo —</option>
               {inventories.map((i) => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </Select>
