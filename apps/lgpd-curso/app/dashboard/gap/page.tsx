@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { GapControl } from "./gap-control";
+import { GapContextoBanner } from "./gap-contexto-banner";
 import { listAnswers } from "./actions";
 import { GAP_PACOTE } from "@/lib/gap-pacote";
 
@@ -25,8 +26,10 @@ export default async function GapPage() {
       <PageHeader
         missao="Missão 3 · GAP"
         titulo="GAP Analysis — 10 controles"
-        descricao="Medir maturidade real vale mais que parecer maduro. Responda cada controle com honestidade — esta é fotografia do TCEES hoje, não onde queremos chegar."
+        descricao="Medir maturidade real vale mais que parecer maduro. Responda cada controle com honestidade — esta é fotografia da casa hoje, não onde queremos chegar."
       />
+
+      <GapContextoBanner />
 
       <div className="grid grid-cols-4 gap-3 mb-6">
         <div className="border rounded-lg p-3 bg-white">
