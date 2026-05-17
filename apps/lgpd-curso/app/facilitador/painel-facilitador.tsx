@@ -18,7 +18,7 @@ type Grupo = {
   ultimaAtividade: string | null;
   kpis: {
     inventario: { total: number; aprovados: number; submetidos: number; devolvidos: number };
-    riscos: { total: number };
+    riscos: { total: number; aprovados: number; submetidos: number };
     gap: { respondidos: number; score: number };
     ripds: { total: number; aprovados: number };
     terceiros: { total: number; comClausula: number };
