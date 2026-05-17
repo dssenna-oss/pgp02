@@ -62,19 +62,21 @@ export type PapelDef = {
 };
 
 export const PAPEIS_PM: PapelDef[] = [
-  { papel: "DPO",          emailPrefix: "dpo",          nomeAmigavel: "DPO / Encarregado(a)",                role: "DPO",    responsabilidade: "Conduz M0, aprova os 2 processos, publica o Aviso, gera Comunicação ANPD" },
-  { papel: "SAUDE",        emailPrefix: "saude",        nomeAmigavel: "Sec. de Saúde",                       role: "MEMBER", responsabilidade: "Dono(a) do Processo 1 — Atendimento no Posto. Conhece rotina." },
-  { papel: "RH",           emailPrefix: "rh",           nomeAmigavel: "RH / Gestão de Pessoas",              role: "MEMBER", responsabilidade: "Dono(a) do Processo 2 — Estagiários. Conhece documentos e edital." },
-  { papel: "TI",           emailPrefix: "ti",           nomeAmigavel: "TI / Tecnologia",                     role: "MEMBER", responsabilidade: "Apoia: armazenamento, backup, controle de acesso, logs. Avalia Segurança no GAP." },
-  { papel: "COMUNICACAO",  emailPrefix: "comunicacao",  nomeAmigavel: "Comunicação / Procuradoria",          role: "MEMBER", responsabilidade: "Apoia DPO no Aviso (clareza pro cidadão) e na Comunicação ANPD." },
+  { papel: "DPO",            emailPrefix: "dpo",            nomeAmigavel: "DPO / Encarregado(a)",          role: "DPO",    responsabilidade: "Conduz M0, aprova os 2 processos, publica o Aviso, gera Comunicação ANPD" },
+  { papel: "SAUDE",          emailPrefix: "saude",          nomeAmigavel: "Sec. de Saúde",                 role: "MEMBER", responsabilidade: "Dono(a) do Processo 1 — Atendimento no Posto. Conhece rotina." },
+  { papel: "RH",             emailPrefix: "rh",             nomeAmigavel: "RH / Gestão de Pessoas",        role: "MEMBER", responsabilidade: "Dono(a) do Processo 2 — Estagiários. Conhece documentos e edital." },
+  { papel: "TI",             emailPrefix: "ti",             nomeAmigavel: "TI / Tecnologia",               role: "MEMBER", responsabilidade: "Apoia DPO em segurança (acesso, backup, logs)." },
+  { papel: "COMUNICACAO",    emailPrefix: "comunicacao",    nomeAmigavel: "Comunicação / Procuradoria",    role: "MEMBER", responsabilidade: "Apoia DPO no Aviso (clareza pro cidadão) e na Comunicação ANPD." },
+  { papel: "ADMINISTRATIVO", emailPrefix: "administrativo", nomeAmigavel: "Administrativo / Contratos",    role: "MEMBER", responsabilidade: "Apoia DPO em Gestão de Terceiros (contratos, DPA, cláusulas LGPD)." },
 ];
 
 export const PAPEIS_CM: PapelDef[] = [
-  { papel: "DPO",           emailPrefix: "dpo",          nomeAmigavel: "DPO / Encarregado(a)",                role: "DPO",    responsabilidade: "Idem PM" },
-  { papel: "CERIMONIAL",    emailPrefix: "cerimonial",   nomeAmigavel: "Cerimonial / Plenário",               role: "MEMBER", responsabilidade: "Dono(a) do Processo 1 — Tribuna Livre" },
-  { papel: "OUVIDORIA",     emailPrefix: "ouvidoria",    nomeAmigavel: "Ouvidoria",                           role: "MEMBER", responsabilidade: "Dono(a) do Processo 2 — Ouvidoria Municipal" },
-  { papel: "TI",            emailPrefix: "ti",           nomeAmigavel: "TI / Tecnologia",                     role: "MEMBER", responsabilidade: "Idem PM" },
-  { papel: "PROCURADORIA",  emailPrefix: "procuradoria", nomeAmigavel: "Procuradoria / Jurídico",             role: "MEMBER", responsabilidade: "Apoia DPO em redação formal do Aviso + Comunicação ANPD" },
+  { papel: "DPO",            emailPrefix: "dpo",            nomeAmigavel: "DPO / Encarregado(a)",          role: "DPO",    responsabilidade: "Idem PM" },
+  { papel: "CERIMONIAL",     emailPrefix: "cerimonial",     nomeAmigavel: "Cerimonial / Plenário",         role: "MEMBER", responsabilidade: "Dono(a) do Processo 1 — Tribuna Livre" },
+  { papel: "OUVIDORIA",      emailPrefix: "ouvidoria",      nomeAmigavel: "Ouvidoria",                     role: "MEMBER", responsabilidade: "Dono(a) do Processo 2 — Ouvidoria Municipal" },
+  { papel: "TI",             emailPrefix: "ti",             nomeAmigavel: "TI / Tecnologia",               role: "MEMBER", responsabilidade: "Idem PM" },
+  { papel: "PROCURADORIA",   emailPrefix: "procuradoria",   nomeAmigavel: "Procuradoria / Jurídico",       role: "MEMBER", responsabilidade: "Apoia DPO em redação formal do Aviso + Comunicação ANPD" },
+  { papel: "ADMINISTRATIVO", emailPrefix: "administrativo", nomeAmigavel: "Administrativo / Contratos",    role: "MEMBER", responsabilidade: "Apoia DPO em Gestão de Terceiros (contratos, DPA, cláusulas LGPD)." },
 ];
 
 export function papeisPorOrgao(orgao: "PM" | "CM"): PapelDef[] {

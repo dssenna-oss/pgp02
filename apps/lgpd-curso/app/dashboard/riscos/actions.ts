@@ -273,7 +273,7 @@ export async function aprovarRiscosDoProcesso(inventoryId: string) {
 // antes de aprovar. Setor de apoio recebe acesso temporário ao processo.
 // ============================================================================
 
-const PAPEIS_DE_APOIO_VALIDOS = ["TI", "PROCURADORIA", "COMUNICACAO"];
+const PAPEIS_DE_APOIO_VALIDOS = ["TI", "PROCURADORIA", "COMUNICACAO", "ADMINISTRATIVO"];
 
 // DPO tramita todos riscos SUBMETIDOS do processo pra um setor de apoio
 export async function tramitarRiscosParaApoio(inventoryId: string, papelDestino: string, nota: string) {
