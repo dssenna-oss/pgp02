@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Plus, Pencil, Trash2, FileText, AlertTriangle, ArrowRight, Eye,
-  Send, CheckCircle2, RotateCcw, AlertCircle, Users, Reply, RefreshCw,
+  Send, CheckCircle2, RotateCcw, AlertCircle, Users, Reply, RefreshCw, Unlock, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import {
   devolverRiscosDoProcesso,
   tramitarRiscosParaApoio,
   devolverRiscosAoDPO,
+  reabrirAnaliseDoProcesso,
 } from "./actions";
 import toast from "react-hot-toast";
 
@@ -132,16 +133,29 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
   const [tramitandoInvId, setTramitandoInvId] = useState<string | null>(null);
   const [papelDestino, setPapelDestino] = useState<string>("TI");
   const [notaTramitacao, setNotaTramitacao] = useState("");
+  const [reabrindoInvId, setReabrindoInvId] = useState<string | null>(null);
+  const [motivoReabertura, setMotivoReabertura] = useState("");
   const [pendingAction, setPendingAction] = useState(false);
 
   const inventariosAprovados = inventories.filter((i) => i.status === "APROVADO");
 
-  function podeMexer(r: Risco): boolean {
+  // Pode EDITAR este risco?
+  function podeEditar(r: Risco): boolean {
+    // DPO/admin pode editar qualquer risco em qualquer estado (regra 2a)
     if (isDpoOuAdmin) return true;
     if (!r.inventory) return false;
     const ehDono = r.inventory.createdById === userId;
     const ehApoioTramitado = r.tramitadoPara === papel;
+    // Contribuidor não mexe em risco APROVADO ou SUBMETIDO (regra 1)
+    if (r.status === "APROVADO") return false;
+    if (ehDono && !ehApoioTramitado && r.status === "SUBMETIDO") return false;
     return ehDono || ehApoioTramitado;
+  }
+  // Pode DELETAR este risco?
+  function podeDeletar(r: Risco): boolean {
+    if (!podeEditar(r)) return false;
+    if (r.status === "APROVADO") return false; // nem DPO deleta APROVADO (só Reabrir + ajustar)
+    return true;
   }
 
   function abrirNovoParaProcesso(inventoryId: string) {
@@ -212,6 +226,17 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
     try {
       const r = await devolverRiscosAoDPO(inventoryId);
       toast.success(`${r.count} risco(s) devolvido(s) ao DPO`);
+    } catch (e: any) { toast.error(e.message); }
+    setPendingAction(false);
+  }
+  async function confirmarReabertura() {
+    if (!reabrindoInvId) return;
+    setPendingAction(true);
+    try {
+      const r = await reabrirAnaliseDoProcesso(reabrindoInvId, motivoReabertura);
+      toast.success(`${r.count} risco(s) reabertos pra ajuste/expansão`);
+      setReabrindoInvId(null);
+      setMotivoReabertura("");
     } catch (e: any) { toast.error(e.message); }
     setPendingAction(false);
   }
@@ -294,20 +319,26 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
               const stats = statsPorInv.get(inv.id) || { rascunho: 0, submetido: 0, aprovado: 0, devolvido: 0, total: 0, tramitadoPara: null as string | null, tramitacaoNota: null as string | null, ultimoFeedback: null as string | null };
               const ehDono = inv.createdById === userId;
               const ehApoioTramitado = stats.tramitadoPara === papel;
+              // processoFechado = todos os riscos do processo APROVADOS (e existe ao menos 1)
+              const processoFechado = stats.total > 0 && stats.aprovado === stats.total;
+              const podeAdicionar = !processoFechado && (ehDono || isDpoOuAdmin || ehApoioTramitado);
               const podeSubmeter = (ehDono || isDpoOuAdmin) && (stats.rascunho > 0 || stats.devolvido > 0) && !stats.tramitadoPara;
               const podeAprovar = isDpoOuAdmin && stats.submetido > 0 && !stats.tramitadoPara;
               const podeDevolverContribuidor = isDpoOuAdmin && stats.submetido > 0 && !stats.tramitadoPara;
               const podeTramitar = isDpoOuAdmin && stats.submetido > 0 && !stats.tramitadoPara;
               const podeDevolverAoDPO = ehApoioTramitado || (isDpoOuAdmin && stats.tramitadoPara);
+              const podeReabrir = isDpoOuAdmin && processoFechado;
 
+              const cardBorder = stats.tramitadoPara ? "border-violet-400" : processoFechado ? "border-emerald-400" : "border-gray-200 hover:border-brand-300";
               return (
-                <div key={inv.id} className={`border-2 rounded-lg p-3 bg-white transition-colors ${stats.tramitadoPara ? "border-violet-400" : "border-gray-200 hover:border-brand-300"}`}>
+                <div key={inv.id} className={`border-2 rounded-lg p-3 bg-white transition-colors ${cardBorder}`}>
                   <div className="flex items-start gap-2 mb-2">
                     <FileText className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm leading-snug">{inv.nome}</div>
                       <div className="text-[11px] text-gray-500 mt-0.5">{inv.setor || "—"}</div>
                     </div>
+                    {processoFechado && <Badge variant="success" className="shrink-0 inline-flex items-center gap-0.5"><Lock className="h-3 w-3" />FECHADO</Badge>}
                     {inv.dadosSensiveis && <Badge variant="destructive" className="shrink-0">SENSÍVEIS</Badge>}
                   </div>
 
@@ -344,9 +375,27 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
 
                   {/* Botões */}
                   <div className="flex gap-1 flex-wrap mt-3">
-                    <Button size="sm" variant="primary" onClick={() => abrirNovoParaProcesso(inv.id)} disabled={!ehDono && !isDpoOuAdmin && !ehApoioTramitado}>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => abrirNovoParaProcesso(inv.id)}
+                      disabled={!podeAdicionar}
+                      title={processoFechado ? "Análise fechada — peça ao DPO pra reabrir antes de adicionar novos riscos" : undefined}
+                    >
                       <Plus className="h-3.5 w-3.5" /> Adicionar
                     </Button>
+                    {podeReabrir && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { setReabrindoInvId(inv.id); setMotivoReabertura(""); }}
+                        disabled={pendingAction}
+                        className="border border-amber-300 text-amber-700 hover:bg-amber-50"
+                        title="Reabrir análise pra adicionar novos riscos ou ajustar os existentes"
+                      >
+                        <Unlock className="h-3.5 w-3.5" /> Reabrir análise
+                      </Button>
+                    )}
                     {podeSubmeter && (
                       <Button size="sm" variant="success" onClick={() => submeter(inv.id, inv.nome)} disabled={pendingAction}>
                         <Send className="h-3.5 w-3.5" /> Submeter ao DPO
@@ -436,17 +485,19 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
                   <TD>{severityBadge(r.severityLevel)}</TD>
                   <TD>
                     <div className="flex justify-end gap-1">
-                      {podeMexer(r) && r.status !== "APROVADO" ? (
+                      {podeEditar(r) ? (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => abrirEdicao(r)} title="Editar">
+                          <Button size="sm" variant="ghost" onClick={() => abrirEdicao(r)} title={r.status === "APROVADO" ? "Editar (risco APROVADO — só DPO pode)" : "Editar"}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => deletar(r.id)} title="Remover">
-                            <Trash2 className="h-4 w-4 text-red-600" />
-                          </Button>
+                          {podeDeletar(r) && (
+                            <Button size="sm" variant="ghost" onClick={() => deletar(r.id)} title="Remover">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                            </Button>
+                          )}
                         </>
                       ) : (
-                        <span className="text-[11px] text-gray-400 inline-flex items-center gap-1" title="Risco aprovado ou de outro processo — não pode editar">
+                        <span className="text-[11px] text-gray-400 inline-flex items-center gap-1" title={r.status === "APROVADO" ? "Risco aprovado pelo DPO — peça reabertura ou devolução pra mexer" : "Risco de outro processo ou sem permissão"}>
                           <Eye className="h-3 w-3" /> só visualização
                         </span>
                       )}
@@ -490,6 +541,35 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
             <Button variant="outline" onClick={() => { setDevolvendoInvId(null); setMotivoDevolucao(""); }}>Cancelar</Button>
             <Button variant="destructive" onClick={confirmarDevolucao} disabled={pendingAction || motivoDevolucao.trim().length < 5}>
               {pendingAction ? "Devolvendo..." : "Confirmar devolução"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: reabertura de análise pelo DPO */}
+      <Dialog open={!!reabrindoInvId} onOpenChange={(v) => { if (!v) { setReabrindoInvId(null); setMotivoReabertura(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>🔓 Reabrir análise de "{inventariosAprovados.find((i) => i.id === reabrindoInvId)?.nome}"</DialogTitle>
+            <DialogDescription>
+              Os riscos APROVADOS voltam pra DEVOLVIDO com o motivo abaixo. O Contribuidor responsável recebe a notificação e pode ajustar / adicionar novos riscos. Use só quando realmente precisar ajustar a análise — não como rotina.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <Label>Motivo da reabertura</Label>
+            <Textarea
+              rows={4}
+              value={motivoReabertura}
+              onChange={(e) => setMotivoReabertura(e.target.value)}
+              placeholder="Ex: 'Identificamos novo risco de transferência internacional via YouTube que não estava na análise original. Precisa incluir.'"
+              autoFocus
+            />
+            <p className="text-[11px] text-gray-500 mt-1">Mínimo 10 caracteres</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReabrindoInvId(null); setMotivoReabertura(""); }}>Cancelar</Button>
+            <Button onClick={confirmarReabertura} disabled={pendingAction || motivoReabertura.trim().length < 10} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {pendingAction ? "Reabrindo..." : "Confirmar reabertura"}
             </Button>
           </DialogFooter>
         </DialogContent>

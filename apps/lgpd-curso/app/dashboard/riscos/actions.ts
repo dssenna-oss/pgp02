@@ -86,6 +86,23 @@ export async function saveRisco(input: {
     }
   }
 
+  // Regra 2b: vale pra QUALQUER papel (inclusive DPO) — não pode adicionar
+  // risco novo em processo com análise FECHADA (todos riscos APROVADOS).
+  // Pra adicionar, DPO precisa REABRIR a análise antes.
+  if (!input.id && input.inventoryId) {
+    const aprovados = await prisma.processRisk.count({
+      where: { companyId, inventoryId: input.inventoryId, status: "APROVADO" },
+    });
+    const naoAprovados = await prisma.processRisk.count({
+      where: { companyId, inventoryId: input.inventoryId, status: { not: "APROVADO" } },
+    });
+    if (aprovados > 0 && naoAprovados === 0) {
+      throw new Error(
+        "Processo já tem análise aprovada (todos riscos APROVADOS). Pra adicionar novos riscos, REABRA a análise primeiro (botão 'Reabrir análise' visível pro DPO no card)."
+      );
+    }
+  }
+
   let statusNovo: string | undefined; // pra possível reset em edição
   if (input.id && !isDpoOuAdmin) {
     const existente = await prisma.processRisk.findFirst({
@@ -97,6 +114,14 @@ export async function saveRisco(input: {
     const temTramitacao = existente.tramitadoPara && existente.tramitadoPara === session.user.papel;
     if (!ehDono && !temTramitacao) {
       throw new Error("Você só pode editar riscos dos seus processos ou tramitados pro seu setor.");
+    }
+    // Regra 1: Contribuidor NÃO pode mexer em risco APROVADO (precisa DPO devolver/reabrir)
+    if (existente.status === "APROVADO") {
+      throw new Error("Risco já APROVADO pelo DPO. Pra ajustar, peça pro DPO devolver ou reabrir a análise.");
+    }
+    // Contribuidor também NÃO mexe em SUBMETIDO (já tá com DPO pra avaliação)
+    if (ehDono && !temTramitacao && existente.status === "SUBMETIDO") {
+      throw new Error("Risco já submetido ao DPO — aguarde a revisão. Se for urgente, peça pro DPO devolver.");
     }
     // Se Contribuidor dono edita um risco DEVOLVIDO, volta pra RASCUNHO automaticamente
     // Se setor de apoio edita risco tramitado, mantém status (DPO recebe de volta intacto)
@@ -307,6 +332,40 @@ export async function devolverRiscosAoDPO(inventoryId: string) {
 
   if (updated.count === 0) {
     throw new Error(`Nenhum risco em tramitação ativa pra você no processo "${inv.nome}".`);
+  }
+
+  revalidatePath("/dashboard/riscos");
+  return { count: updated.count };
+}
+
+// DPO reabre análise — reverte todos APROVADOS pra DEVOLVIDO com motivo padrão
+// Usado quando processo já fechado precisa receber novos riscos ou ajustes.
+export async function reabrirAnaliseDoProcesso(inventoryId: string, motivo: string) {
+  const { companyId, session } = await requireCompany();
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO pode reabrir uma análise de riscos aprovada.");
+  }
+  if (!motivo || motivo.trim().length < 10) {
+    throw new Error("Explique brevemente por que está reabrindo (mínimo 10 caracteres). Os Contribuidores vão ver.");
+  }
+
+  const inv = await prisma.dataInventory.findFirst({
+    where: { id: inventoryId, companyId },
+    select: { nome: true },
+  });
+  if (!inv) throw new Error("Processo não encontrado");
+
+  const updated = await prisma.processRisk.updateMany({
+    where: { companyId, inventoryId, status: "APROVADO" },
+    data: {
+      status: "DEVOLVIDO",
+      feedbackDpo: `[REABERTURA] ${motivo.trim()}`,
+      reviewedById: session.user.id,
+      reviewedAt: new Date(),
+    },
+  });
+  if (updated.count === 0) {
+    throw new Error(`Nenhum risco APROVADO pra reabrir em "${inv.nome}".`);
   }
 
   revalidatePath("/dashboard/riscos");
