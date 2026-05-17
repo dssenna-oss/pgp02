@@ -272,6 +272,16 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
   const devolvendoInv = inventariosAprovados.find((i) => i.id === devolvendoInvId);
   const tramitandoInv = inventariosAprovados.find((i) => i.id === tramitandoInvId);
 
+  // Pra Contribuidor: detecta se TODOS os processos dele têm análise FECHADA
+  // (sinal de "parte dele acabou — hora de passar pro DPO conduzir M3-M5")
+  const meusInventarios = isDpoOuAdmin
+    ? []
+    : inventariosAprovados.filter((i) => i.createdById === userId);
+  const meusTodosFechados = meusInventarios.length > 0 && meusInventarios.every((inv) => {
+    const s = statsPorInv.get(inv.id);
+    return s && s.total > 0 && s.aprovado === s.total;
+  });
+
   return (
     <>
       {/* Indicador "ao vivo" */}
@@ -287,6 +297,26 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
           <RefreshCw className="h-3 w-3" />
         </button>
       </div>
+
+      {/* Banner de transição — Contribuidor finalizou sua parte */}
+      {meusTodosFechados && (
+        <div className="border-l-4 border-emerald-500 bg-emerald-50 rounded p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <Users className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <div className="font-semibold text-emerald-900 mb-1 text-sm">
+                Sua análise de riscos foi aprovada pelo DPO! 🎉
+              </div>
+              <p className="text-emerald-900 text-xs leading-relaxed">
+                As próximas etapas (<strong>GAP Analysis, RIPD, Gestão de Terceiros, Aviso de Privacidade, Incidentes</strong>) são conduzidas pelo <strong>DPO do grupo</strong> — você não vê esses mini-apps na sua sidebar de propósito.
+              </p>
+              <p className="text-emerald-900 text-xs leading-relaxed mt-2">
+                <strong>👥 Reúnam-se com o(a) DPO agora.</strong> Seu conhecimento sobre o processo continua sendo importante: o DPO pode pedir sua opinião durante as próximas missões (via tramitação ou na conversa). É hora de assistir e contribuir.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {inventariosAprovados.length === 0 ? (
         <div className="border-l-4 border-amber-400 bg-amber-50 rounded p-4 mb-4">

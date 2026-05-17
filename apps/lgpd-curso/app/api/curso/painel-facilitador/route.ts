@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
         where: { companyId: cid },
         select: { status: true, updatedAt: true },
       }),
-      prisma.processRisk.count({ where: { companyId: cid } }),
+      prisma.processRisk.findMany({ where: { companyId: cid }, select: { status: true } }),
       prisma.gapAnswer.findMany({
         where: { companyId: cid },
         select: { resposta: true },
@@ -86,7 +86,11 @@ export async function GET(req: NextRequest) {
         submetidos: invList.filter((i) => i.status === "SUBMETIDO").length,
         devolvidos: invList.filter((i) => i.status === "DEVOLVIDO").length,
       },
-      riscos: { total: riscos },
+      riscos: {
+        total: riscos.length,
+        aprovados: riscos.filter((r) => r.status === "APROVADO").length,
+        submetidos: riscos.filter((r) => r.status === "SUBMETIDO").length,
+      },
       gap: {
         respondidos: gap.length,
         aderentes: gapAderentes,

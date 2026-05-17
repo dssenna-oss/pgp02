@@ -3,7 +3,7 @@
 
 export type KpisGrupo = {
   inventario: { total: number; aprovados: number; submetidos: number; devolvidos: number };
-  riscos: { total: number };
+  riscos: { total: number; aprovados: number; submetidos: number };
   gap: { respondidos: number; aderentes: number; parciais: number; score: number };
   ripds: { total: number; aprovados: number };
   terceiros: { total: number; comClausula: number };
