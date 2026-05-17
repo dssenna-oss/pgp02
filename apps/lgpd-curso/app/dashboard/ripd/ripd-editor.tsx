@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Plus, Send, CheckCircle2, RotateCcw, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Send, CheckCircle2, RotateCcw, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty";
@@ -29,41 +31,103 @@ function statusBadge(status: string) {
   return <Badge variant="default">RASCUNHO</Badge>;
 }
 
-export function RipdEditor({ ripds }: { ripds: Ripd[] }) {
-  const [novoTitulo, setNovoTitulo] = useState("");
+type InventarioDisp = {
+  id: string;
+  nome: string;
+  setor: string | null;
+  dadosSensiveis: boolean | null;
+};
+
+export function RipdEditor({
+  ripds,
+  inventariosDisponiveis,
+  qtdRiscos,
+}: {
+  ripds: Ripd[];
+  inventariosDisponiveis: InventarioDisp[];
+  qtdRiscos: number;
+}) {
+  const [inventarioId, setInventarioId] = useState<string>("");
   const [pending, startTransition] = useTransition();
 
   function criar() {
-    if (!novoTitulo.trim()) { toast.error("Dê um nome ao RIPD"); return; }
+    const inv = inventariosDisponiveis.find((i) => i.id === inventarioId);
+    if (!inv) { toast.error("Escolha o processo do Inventário"); return; }
+    const titulo = `RIPD do processo "${inv.nome}"`;
     startTransition(async () => {
       try {
-        await createRipd({ titulo: novoTitulo });
+        await createRipd({ titulo, inventoryRef: inv.id });
         toast.success("RIPD criado com as 8 seções ANPD");
-        setNovoTitulo("");
+        setInventarioId("");
       } catch (e: any) { toast.error(e.message); }
     });
   }
 
+  // Pré-requisitos recomendados (NÃO bloqueia — só orienta)
+  const semInventarioAprovado = inventariosDisponiveis.length === 0 && ripds.length === 0;
+  const semRiscos = qtdRiscos === 0;
+
   return (
     <>
+      {/* Banner de pré-requisitos quando algo está faltando */}
+      {(semRiscos || semInventarioAprovado) && (
+        <div className="border-l-4 border-amber-400 bg-amber-50 rounded p-3 mb-4 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold text-amber-900 mb-1">Pré-requisitos recomendados</div>
+              <p className="text-amber-900 text-xs leading-relaxed mb-1">
+                O RIPD fica mais forte quando se baseia em <strong>Inventário aprovado</strong> e <strong>riscos identificados</strong>. Você pode fazer assim mesmo, mas:
+              </p>
+              <ul className="text-xs space-y-0.5 text-amber-900">
+                {semInventarioAprovado && (
+                  <li>• <Link href="/dashboard/inventario" className="underline">Faça o Inventário (Missão 1)</Link> primeiro — RIPD se liga a um processo do inventário.</li>
+                )}
+                {semRiscos && (
+                  <li>• <Link href="/dashboard/riscos" className="underline">Identifique os Riscos (Missão 2)</Link> — eles alimentam a Seção 5 do RIPD (medidas de mitigação).</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border rounded-lg p-4 bg-white mb-6">
         <h3 className="text-sm font-medium mb-2">Novo RIPD</h3>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Input
-            placeholder="Nome do RIPD (ex: 'RIPD do Posto de Saúde')"
-            value={novoTitulo}
-            onChange={(e) => setNovoTitulo(e.target.value)}
-          />
-          <Button onClick={criar} disabled={pending}>
-            <Plus className="h-4 w-4" /> Criar
-          </Button>
-        </div>
+        {inventariosDisponiveis.length === 0 ? (
+          <div className="text-xs text-gray-500 py-2">
+            Nenhum processo do Inventário disponível pra gerar RIPD. {ripds.length > 0
+              ? "Os processos aprovados já têm RIPD."
+              : <>Volte em <Link href="/dashboard/inventario" className="text-brand-600 underline">Inventário</Link> e aprove pelo menos um processo primeiro.</>}
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select
+              value={inventarioId}
+              onChange={(e) => setInventarioId(e.target.value)}
+              className="flex-1"
+            >
+              <option value="">— Escolha o processo do Inventário —</option>
+              {inventariosDisponiveis.map((inv) => (
+                <option key={inv.id} value={inv.id}>
+                  {inv.nome}{inv.dadosSensiveis ? " · ⚠ SENSÍVEIS" : ""}{inv.setor ? ` · ${inv.setor}` : ""}
+                </option>
+              ))}
+            </Select>
+            <Button onClick={criar} disabled={pending || !inventarioId}>
+              <Plus className="h-4 w-4" /> Criar RIPD
+            </Button>
+          </div>
+        )}
+        <p className="text-[11px] text-gray-500 mt-2">
+          O RIPD é exigido pra tratamentos de alto risco (dados sensíveis · menores · larga escala · decisão automatizada · vigilância). Os 4 processos pré-cadastrados da turma têm SENSÍVEIS ou potencial de causar dano — todos merecem RIPD.
+        </p>
       </div>
 
       {ripds.length === 0 ? (
         <EmptyState
           title="Nenhum RIPD criado ainda"
-          description="O RIPD é pré-requisito do Aviso de Privacidade. Crie um pra cada processo crítico (dados sensíveis, larga escala). Depois SUBMETE ao DPO."
+          description="O RIPD é pré-requisito do Aviso de Privacidade. Escolha um processo aprovado do Inventário acima pra começar. Depois SUBMETE ao DPO."
         />
       ) : (
         <div className="space-y-4">

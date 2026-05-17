@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Plus, Pencil, Trash2, Send, CheckCircle2, RotateCcw, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, Send, CheckCircle2, RotateCcw, AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -87,6 +88,10 @@ export function InventarioList({ items }: { items: Inv[] }) {
     return () => clearInterval(id);
   }, [router]);
 
+  // Banner "Próximo passo: M2" quando M1 está completa (todos APROVADOS)
+  // Aparece pro DPO (que conduz M2) e também pros contribuidores (informativo)
+  const todosAprovados = items.length >= 2 && items.every((i) => i.status === "APROVADO");
+
   function abrirNovo() { setEditing(null); setOpen(true); }
   function abrirEdicao(inv: Inv) { setEditing(inv); setOpen(true); }
 
@@ -117,6 +122,29 @@ export function InventarioList({ items }: { items: Inv[] }) {
 
   return (
     <>
+      {/* Banner "M1 ✓ — próximo: M2" quando todos os processos foram aprovados */}
+      {todosAprovados && (
+        <div className="border-l-4 border-emerald-500 bg-emerald-50 rounded p-3 mb-3 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold text-emerald-900 text-sm">Missão 1 completa! 🎉</div>
+              <p className="text-xs text-emerald-900 mt-0.5">
+                Todos os processos do Inventário foram aprovados. {isDpo
+                  ? "Agora o grupo passa pra Missão 2 — você (DPO) conduz a Análise de Riscos junto com a equipe."
+                  : "Aguarde o DPO conduzir a Missão 2 (Análise de Riscos)."}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/riscos"
+            className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-2 rounded shrink-0"
+          >
+            Ir pra Análise de Riscos <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
+
       {/* Header: indicador de "ao vivo" (esquerda) + ações DPO (direita) */}
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
         <div className="flex items-center gap-2 text-xs text-gray-500">
