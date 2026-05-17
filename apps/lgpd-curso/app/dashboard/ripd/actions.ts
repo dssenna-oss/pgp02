@@ -5,6 +5,31 @@ import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { RIPD_SECOES } from "@/lib/ripd-secoes";
 
+// Inventários aprovados que ainda NÃO têm RIPD criado — pra preencher o
+// dropdown de "Novo RIPD" na tela.
+export async function listInventariosAprovadosSemRipd() {
+  const { companyId } = await requireCompany();
+  const [aprovados, ripdsExistentes] = await Promise.all([
+    prisma.dataInventory.findMany({
+      where: { companyId, status: "APROVADO" },
+      select: { id: true, nome: true, setor: true, dadosSensiveis: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.ripd.findMany({
+      where: { companyId, inventoryRef: { not: null } },
+      select: { inventoryRef: true },
+    }),
+  ]);
+  const jaTemRipd = new Set(ripdsExistentes.map((r) => r.inventoryRef));
+  return aprovados.filter((i) => !jaTemRipd.has(i.id));
+}
+
+// Quantos riscos a Company já registrou — pré-requisito recomendado pro RIPD
+export async function contarRiscos() {
+  const { companyId } = await requireCompany();
+  return prisma.processRisk.count({ where: { companyId } });
+}
+
 export async function listRipds() {
   const { companyId } = await requireCompany();
   const ripds = await prisma.ripd.findMany({
