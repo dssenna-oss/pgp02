@@ -299,30 +299,6 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
         </button>
       </div>
 
-      {/* DIAGNÓSTICO TEMPORÁRIO — remover depois que confirmar banner */}
-      {!isDpoOuAdmin && (
-        <div className="text-[10px] font-mono bg-yellow-100 border border-yellow-400 p-2 mb-3 rounded">
-          🔧 DEBUG: userId={String(userId).slice(0, 8)}... ·
-          meusInv={meusInventarios.length} ·
-          completos={String(meusTodosCompletos)} ·
-          inventariosAprovados={inventariosAprovados.length} ·
-          riscos={riscos.length}
-          {meusInventarios.length > 0 && (
-            <div className="mt-1">
-              {meusInventarios.map((inv) => {
-                const s = statsPorInv.get(inv.id);
-                return (
-                  <div key={inv.id}>
-                    inv.id={inv.id.slice(0, 8)}... | inv.createdById={String(inv.createdById).slice(0, 8)}... |
-                    stats={s ? `r:${s.rascunho} s:${s.submetido} a:${s.aprovado} d:${s.devolvido} t:${s.total}` : "NO STATS"}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Banner de transição — Contribuidor finalizou sua parte (tudo submetido/aprovado) */}
       {meusTodosCompletos && (
         <div className="border-l-4 border-emerald-500 bg-emerald-50 rounded p-4 mb-4">
@@ -330,13 +306,10 @@ export function RiscoList({ riscos, inventories }: { riscos: Risco[]; inventorie
             <Users className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
             <div className="flex-1">
               <div className="font-semibold text-emerald-900 mb-1 text-sm">
-                Sua parte da análise de riscos está pronta! 🎉
+                Sua parte da análise de riscos está pronta!
               </div>
               <p className="text-emerald-900 text-xs leading-relaxed">
-                As próximas etapas (<strong>GAP Analysis, RIPD, Gestão de Terceiros, Aviso de Privacidade, Incidentes</strong>) são conduzidas pelo <strong>DPO do grupo</strong> — você não vê esses mini-apps na sua sidebar de propósito.
-              </p>
-              <p className="text-emerald-900 text-xs leading-relaxed mt-2">
-                <strong>👥 Reúnam-se com o(a) DPO agora.</strong> Seu conhecimento sobre o processo continua sendo importante: o DPO pode pedir sua opinião durante as próximas missões (via tramitação ou na conversa). É hora de assistir e contribuir.
+                As próximas etapas (GAP, RIPD, Terceiros, Aviso, Incidentes) são conduzidas pelo <strong>DPO do grupo</strong>. <strong>Reúna-se com ele(a) agora</strong> — seu conhecimento sobre o processo segue importante e pode ser consultado durante as missões.
               </p>
             </div>
           </div>
