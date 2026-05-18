@@ -22,15 +22,20 @@ export default async function GapPage() {
   ]);
 
   const byId = new Map(answers.map((a) => [a.controleId, a]));
+  const idsPacote = new Set(pacote.map((c) => c.id));
 
   const total = pacote.length;
-  const respondidos = answers.filter((a) => pacote.some((c) => c.id === a.controleId)).length;
-  const aderentes = answers.filter((a) => a.resposta === "ADERENTE" && pacote.some((c) => c.id === a.controleId)).length;
-  const parciais = answers.filter((a) => a.resposta === "PARCIAL" && pacote.some((c) => c.id === a.controleId)).length;
-  const naoAderentes = answers.filter((a) => a.resposta === "NAO_ADERENTE" && pacote.some((c) => c.id === a.controleId)).length;
+  const respondidos = answers.filter((a) => idsPacote.has(a.controleId)).length;
+  const aderentes = answers.filter((a) => a.resposta === "ADERENTE" && idsPacote.has(a.controleId)).length;
+  const parciais = answers.filter((a) => a.resposta === "PARCIAL" && idsPacote.has(a.controleId)).length;
+  const naoAderentes = answers.filter((a) => a.resposta === "NAO_ADERENTE" && idsPacote.has(a.controleId)).length;
+  const apoiosPendentes = answers.filter((a) => a.resposta === "APOIO_PENDENTE" && idsPacote.has(a.controleId)).length;
 
-  const score = total > 0
-    ? Math.round(((aderentes * 100 + parciais * 50) / (total * 100)) * 100)
+  // Score: ignora APOIO_PENDENTE (controle não foi efetivamente avaliado).
+  // Denominador = avaliados pelo DPO (ADERENTE+PARCIAL+NAO_ADERENTE). Se zero, score 0.
+  const avaliados = aderentes + parciais + naoAderentes;
+  const score = avaliados > 0
+    ? Math.round(((aderentes * 100 + parciais * 50) / (avaliados * 100)) * 100)
     : 0;
 
   // Pacote: customizado ou padrão?
@@ -66,7 +71,7 @@ export default async function GapPage() {
           : <>📋 <strong>Pacote padrão</strong> — {total} controles cobrindo as 7 Fases do PGP.</>}
       </div>
 
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         <div className="border rounded-lg p-3 bg-white">
           <div className="text-[11px] text-gray-500 uppercase">Respondidos</div>
           <div className="text-xl font-bold mt-1">{respondidos} / {total}</div>
@@ -83,11 +88,22 @@ export default async function GapPage() {
           <div className="text-[11px] text-red-700 uppercase">Não aderentes</div>
           <div className="text-xl font-bold mt-1 text-red-700">{naoAderentes}</div>
         </div>
+        <div className="border rounded-lg p-3 bg-sky-50">
+          <div className="text-[11px] text-sky-700 uppercase">Apoio pendente</div>
+          <div className="text-xl font-bold mt-1 text-sky-700">{apoiosPendentes}</div>
+        </div>
       </div>
 
       <div className="border rounded-lg p-4 bg-brand-50 mb-6">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-sm font-medium text-brand-900">Score de aderência</div>
+          <div className="text-sm font-medium text-brand-900">
+            Score de aderência
+            {apoiosPendentes > 0 && (
+              <span className="text-[11px] font-normal text-brand-700 ml-2">
+                (calculado sobre {avaliados} avaliações; {apoiosPendentes} em apoio)
+              </span>
+            )}
+          </div>
           <div className="text-2xl font-bold text-brand-700">{score}%</div>
         </div>
         <div className="h-2 bg-white rounded-full overflow-hidden">

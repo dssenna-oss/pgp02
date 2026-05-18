@@ -240,11 +240,15 @@ model GapAnswer {
   id            String   @id @default(cuid())
   companyId     String
   company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  controleId    Int // 1 a 10
+  controleId    Int // ID estável do gap-catalogo (1-30)
   controleTexto String // congelado no momento da resposta
-  area          String // Governança | Bases Legais | Direitos | Segurança | Incidentes
-  resposta      String // ADERENTE | PARCIAL | NAO_ADERENTE
+  area          String // categoria do controle (granular)
+  // ADERENTE | PARCIAL | NAO_ADERENTE | APOIO_PENDENTE
+  // APOIO_PENDENTE = DPO precisa do setor X pra avaliar; conta como respondida
+  // (libera Fases 5/6/7 no guard) mas é ignorada no cálculo do score.
+  resposta      String
   justificativa String?
+  setorApoio    String? // só preenchido quando resposta=APOIO_PENDENTE (TI|JURIDICO|...)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
