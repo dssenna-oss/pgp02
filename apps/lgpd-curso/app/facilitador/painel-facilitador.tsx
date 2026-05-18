@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3,
+  BarChart3, HandHelping,
 } from "lucide-react";
+import { SETORES_APOIO } from "@/lib/setores-apoio";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import toast from "react-hot-toast";
@@ -33,7 +34,12 @@ type Grupo = {
   kpis: {
     inventario: { total: number; aprovados: number; submetidos: number; devolvidos: number };
     riscos: { total: number; aprovados: number; submetidos: number };
-    gap: { respondidos: number; score: number };
+    gap: {
+      respondidos: number;
+      score: number;
+      apoiosPendentes?: number;
+      setoresApoio?: Record<string, number>;
+    };
     ripds: { total: number; aprovados: number };
     terceiros: { total: number; comClausula: number };
     dsr: { total: number };
@@ -558,6 +564,25 @@ function GrupoTimelineCard({
 
       {/* Timeline horizontal */}
       <TimelineGrupo bolinhas={grupo.timeline} />
+
+      {/* Apoios pendentes no GAP — sinaliza ao facilitador onde o grupo travou
+          (multidisciplinaridade real do GAP). Só aparece se houver. */}
+      {(grupo.kpis.gap.apoiosPendentes || 0) > 0 && (
+        <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded bg-sky-50 border border-sky-200 text-xs text-sky-900 flex-wrap">
+          <HandHelping className="h-3.5 w-3.5 shrink-0" />
+          <span className="font-medium">
+            {grupo.kpis.gap.apoiosPendentes} apoio{(grupo.kpis.gap.apoiosPendentes || 0) > 1 ? "s" : ""} pendente{(grupo.kpis.gap.apoiosPendentes || 0) > 1 ? "s" : ""} no GAP:
+          </span>
+          {Object.entries(grupo.kpis.gap.setoresApoio || {}).map(([setorId, qtd]) => {
+            const setor = SETORES_APOIO.find((s) => s.id === setorId);
+            return (
+              <span key={setorId} className="inline-flex items-center gap-1 bg-white border border-sky-200 px-1.5 py-0.5 rounded text-[10px]">
+                {setor?.emoji} {setor?.nome || setorId} ({qtd})
+              </span>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

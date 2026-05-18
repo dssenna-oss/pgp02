@@ -4,7 +4,14 @@
 export type KpisGrupo = {
   inventario: { total: number; aprovados: number; submetidos: number; devolvidos: number };
   riscos: { total: number; aprovados: number; submetidos: number };
-  gap: { respondidos: number; aderentes: number; parciais: number; score: number };
+  gap: {
+    respondidos: number;
+    aderentes: number;
+    parciais: number;
+    apoiosPendentes?: number;
+    score: number;
+    setoresApoio?: Record<string, number>;
+  };
   ripds: { total: number; aprovados: number };
   terceiros: { total: number; comClausula: number };
   dsr: { total: number };

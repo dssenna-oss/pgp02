@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.gapAnswer.findMany({
         where: { companyId: cid },
-        select: { resposta: true, createdAt: true, updatedAt: true },
+        select: { resposta: true, setorApoio: true, createdAt: true, updatedAt: true },
       }),
       prisma.ripd.findMany({
         where: { companyId: cid },
@@ -117,9 +117,22 @@ export async function GET(req: NextRequest) {
 
     const gapAderentes = gap.filter((g) => g.resposta === "ADERENTE").length;
     const gapParciais = gap.filter((g) => g.resposta === "PARCIAL").length;
-    const gapScore = gap.length > 0
-      ? Math.round(((gapAderentes * 100 + gapParciais * 50) / 1000) * 100) // /1000 = (10 * 100)
+    const gapNaoAderentes = gap.filter((g) => g.resposta === "NAO_ADERENTE").length;
+    const gapApoiosPendentes = gap.filter((g) => g.resposta === "APOIO_PENDENTE").length;
+    // Score: ignora APOIO_PENDENTE no denominador (não foi avaliado pelo DPO)
+    const gapAvaliados = gapAderentes + gapParciais + gapNaoAderentes;
+    const gapScore = gapAvaliados > 0
+      ? Math.round(((gapAderentes * 100 + gapParciais * 50) / (gapAvaliados * 100)) * 100)
       : 0;
+
+    // Setores mais solicitados pra apoio — mostra ao facilitador onde estão
+    // as dúvidas técnicas/jurídicas que a turma identificou
+    const setoresApoio: Record<string, number> = {};
+    for (const g of gap) {
+      if (g.resposta === "APOIO_PENDENTE" && g.setorApoio) {
+        setoresApoio[g.setorApoio] = (setoresApoio[g.setorApoio] || 0) + 1;
+      }
+    }
 
     const kpis: KpisGrupo = {
       inventario: {
@@ -137,7 +150,9 @@ export async function GET(req: NextRequest) {
         respondidos: gap.length,
         aderentes: gapAderentes,
         parciais: gapParciais,
+        apoiosPendentes: gapApoiosPendentes,
         score: gapScore,
+        setoresApoio,
       },
       ripds: {
         total: ripds.length,
