@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping,
+  BarChart3, HandHelping, Mail,
 } from "lucide-react";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ type Grupo = {
     ripds: { total: number; aprovados: number };
     terceiros: { total: number; comClausula: number };
     dsr: { total: number };
+    dsrGame?: { score: number; acertos: number; erros: number; conservadores: number; semAcao: number };
     aviso: { status: string | null; publicSlug: string | null };
     incidentes: { total: number; comunicadosAnpd: number };
   };
@@ -120,6 +121,8 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [carregando, setCarregando] = useState(false);
   const [dispatchingPM, setDispatchingPM] = useState(false);
   const [dispatchingCM, setDispatchingCM] = useState(false);
+  const [dispatchingDsrPM, setDispatchingDsrPM] = useState(false);
+  const [dispatchingDsrCM, setDispatchingDsrCM] = useState(false);
   const [pollingActive, setPollingActive] = useState(true);
   const [somAtivo, setSomAtivo] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
@@ -249,6 +252,31 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
     }
   }
 
+  async function dispararDsrSurpresa(orgao: "PM" | "CM") {
+    if (!confirm(`📨 Disparar DSR Surpresa (2 pedidos falsos) em todos os grupos do órgão ${orgao}? Os DPOs vão receber as solicitações como se chegassem por e-mail.`)) return;
+    if (orgao === "PM") setDispatchingDsrPM(true); else setDispatchingDsrCM(true);
+    try {
+      const res = await fetch("/api/curso/disparar-dsr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turmaId, orgao }),
+      });
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Erro"); return; }
+      const novos = data.dsrsCriados.filter((d: any) => !d.jaExistia).length;
+      const reusados = data.dsrsCriados.filter((d: any) => d.jaExistia).length;
+      toast.success(
+        novos > 0
+          ? `DSR Surpresa disparado: ${novos} novos em ${data.totalGrupos} grupo(s) ${orgao}`
+          : `DSRs já tinham sido disparados (${reusados} reaproveitados)`,
+      );
+      fetchState();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+    if (orgao === "PM") setDispatchingDsrPM(false); else setDispatchingDsrCM(false);
+  }
+
   async function dispararIncidente(orgao: "PM" | "CM") {
     const cenarioNome = orgao === "PM" ? "Pendrive do Posto" : "Vazamento WhatsApp Tribuna";
     if (!confirm(`🚨 Disparar Incidente "${cenarioNome}" em todos os grupos do órgão ${orgao}? Eles vão ver o incidente RASCUNHO no app na hora.`)) return;
@@ -370,14 +398,25 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             <h3 className="text-sm font-semibold text-emerald-700">
               🛕 Grupos PM ({gruposPM.length})
             </h3>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => dispararIncidente("PM")}
-              disabled={dispatchingPM}
-            >
-              <Zap className="h-4 w-4" /> 🚨 Disparar Incidente PM
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => dispararDsrSurpresa("PM")}
+                disabled={dispatchingDsrPM}
+                className="border-amber-400 text-amber-800 hover:bg-amber-50"
+              >
+                <Mail className="h-4 w-4" /> 📨 Disparar DSRs PM
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => dispararIncidente("PM")}
+                disabled={dispatchingPM}
+              >
+                <Zap className="h-4 w-4" /> 🚨 Disparar Incidente PM
+              </Button>
+            </div>
           </header>
           <div className="space-y-3">
             {gruposPM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
@@ -391,14 +430,25 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             <h3 className="text-sm font-semibold text-blue-700">
               🏛 Grupos CM ({gruposCM.length})
             </h3>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => dispararIncidente("CM")}
-              disabled={dispatchingCM}
-            >
-              <Zap className="h-4 w-4" /> 🚨 Disparar Incidente CM
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => dispararDsrSurpresa("CM")}
+                disabled={dispatchingDsrCM}
+                className="border-amber-400 text-amber-800 hover:bg-amber-50"
+              >
+                <Mail className="h-4 w-4" /> 📨 Disparar DSRs CM
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => dispararIncidente("CM")}
+                disabled={dispatchingCM}
+              >
+                <Zap className="h-4 w-4" /> 🚨 Disparar Incidente CM
+              </Button>
+            </div>
           </header>
           <div className="space-y-3">
             {gruposCM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
@@ -565,6 +615,45 @@ function GrupoTimelineCard({
 
       {/* Timeline horizontal */}
       <TimelineGrupo bolinhas={grupo.timeline} />
+
+      {/* DSR Surpresa — só aparece se algum DSR foi disparado pelo facilitador */}
+      {grupo.kpis.dsrGame && (grupo.kpis.dsrGame.acertos + grupo.kpis.dsrGame.erros + grupo.kpis.dsrGame.conservadores + grupo.kpis.dsrGame.semAcao) > 0 && (
+        <div className={`mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs flex-wrap ${
+          grupo.kpis.dsrGame.score > 0
+            ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+            : grupo.kpis.dsrGame.score < 0
+            ? "bg-red-50 border-red-200 text-red-900"
+            : "bg-gray-50 border-gray-200 text-gray-700"
+        }`}>
+          <Mail className="h-3.5 w-3.5 shrink-0" />
+          <span className="font-semibold">🎮 DSR Surpresa:</span>
+          <span className={`font-bold px-1.5 py-0.5 rounded ${
+            grupo.kpis.dsrGame.score > 0 ? "bg-emerald-200" : grupo.kpis.dsrGame.score < 0 ? "bg-red-200" : "bg-gray-200"
+          }`}>
+            {grupo.kpis.dsrGame.score > 0 ? "+" : ""}{grupo.kpis.dsrGame.score}
+          </span>
+          {grupo.kpis.dsrGame.acertos > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
+              ✓ Pediu identidade ({grupo.kpis.dsrGame.acertos})
+            </span>
+          )}
+          {grupo.kpis.dsrGame.erros > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-red-200 px-1.5 py-0.5 rounded text-[10px]">
+              ✗ Vazou dados ({grupo.kpis.dsrGame.erros})
+            </span>
+          )}
+          {grupo.kpis.dsrGame.conservadores > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+              ⛔ Negou direto ({grupo.kpis.dsrGame.conservadores})
+            </span>
+          )}
+          {grupo.kpis.dsrGame.semAcao > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-gray-200 px-1.5 py-0.5 rounded text-[10px] text-gray-500">
+              ⏳ Sem ação ({grupo.kpis.dsrGame.semAcao})
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Apoios pendentes no GAP — sinaliza onde o grupo travou pedindo ajuda. */}
       {(grupo.kpis.gap.apoiosPendentes || 0) > 0 && (

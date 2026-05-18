@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
 import { montarTimeline } from "@/lib/timeline";
+import { resumoPontuacao } from "@/lib/dsr-game";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.dsrRequest.findMany({
         where: { companyId: cid },
-        select: { createdAt: true, updatedAt: true },
+        select: { createdAt: true, updatedAt: true, disparoFacilitador: true, gameAction: true },
       }),
       prisma.policy.findFirst({
         where: { companyId: cid, slug: "aviso-privacidade" },
@@ -165,6 +166,7 @@ export async function GET(req: NextRequest) {
         comClausula: operadores.filter((o) => o.contracts?.[0]?.clausulasLgpd).length,
       },
       dsr: { total: dsr.length },
+      dsrGame: resumoPontuacao(dsr),
       aviso: {
         status: (aviso?.status as any) || null,
         publicSlug: aviso?.publicSlug || null,
