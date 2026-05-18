@@ -1,19 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Mail, ShieldCheck, Send, Ban } from "lucide-react";
+import { Pencil, Mail, ShieldCheck, Send, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
 import {
-  saveDsr,
-  deletarDsr,
   pedirConfirmacaoIdentidade,
   responderDsrDireto,
   negarDsrPorFaltaId,
@@ -35,44 +31,30 @@ const TIPOS = [
 ];
 
 export function DsrList({ items }: { items: Dsr[] }) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Dsr | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Se há pedidos surpresa aguardando ação do DPO, esconde o "+ Nova
-  // solicitação". Foco pedagógico: atender o que chegou pelo canal antes
-  // de cadastrar simulações manuais. Volta a aparecer assim que todos
-  // forem atendidos (ou se não há disparos).
-  const surpresaPendentes = items.filter(
-    (d: any) => d.disparoFacilitador && !d.gameAction
-  ).length;
-  const mostrarBotaoNova = surpresaPendentes === 0;
-
-  // Modal especial dos DSRs disparados (surpresa)
+  // Modal de ação — único caminho do DPO: escolher Pedir confirmação /
+  // Responder / Negar pra cada pedido que chegou pelo canal.
   const [acaoOpen, setAcaoOpen] = useState(false);
   const [acaoDsr, setAcaoDsr] = useState<Dsr | null>(null);
   const [acaoTipo, setAcaoTipo] = useState<"PEDIR_CONFIRMACAO" | "RESPONDER" | "NEGAR" | null>(null);
   const [acaoTexto, setAcaoTexto] = useState("");
 
-  function abrirNovo() { setEditing(null); setOpen(true); }
-  function abrirEdicao(d: Dsr) {
-    if (d.disparoFacilitador) {
-      // DSR de jogo — abre modal de 3 botões
-      setAcaoDsr(d);
-      setAcaoTipo(null);
-      setAcaoTexto("");
-      setAcaoOpen(true);
-    } else {
-      setEditing(d);
-      setOpen(true);
-    }
+  const surpresaPendentes = items.filter(
+    (d: any) => d.disparoFacilitador && !d.gameAction
+  ).length;
+
+  function abrirAcao(d: Dsr) {
+    setAcaoDsr(d);
+    setAcaoTipo(null);
+    setAcaoTexto("");
+    setAcaoOpen(true);
   }
 
   function escolherAcao(tipo: "PEDIR_CONFIRMACAO" | "RESPONDER" | "NEGAR") {
     setAcaoTipo(tipo);
     if (!acaoDsr) return;
     if (tipo === "PEDIR_CONFIRMACAO") {
-      // Pré-popula o template do Art. 19 LGPD
       const cenario: CenarioDsr = {
         orgao: "PM",
         titularNome: acaoDsr.titularNome,
@@ -126,35 +108,6 @@ export function DsrList({ items }: { items: Dsr[] }) {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    try {
-      const r = await saveDsr({
-        id: editing?.id,
-        titularNome: String(fd.get("titularNome") || ""),
-        titularContato: String(fd.get("titularContato") || ""),
-        tipoSolicitacao: String(fd.get("tipoSolicitacao") || "ACESSO"),
-        descricao: String(fd.get("descricao") || ""),
-        respostaTexto: String(fd.get("respostaTexto") || ""),
-        status: String(fd.get("status") || "ABERTA"),
-      });
-      if (handlePhaseSkipResult(r)) return;
-      toast.success(editing ? "Solicitação atualizada" : "Solicitação registrada");
-      setOpen(false);
-    } catch (err: any) { toast.error(err.message); } finally { setLoading(false); }
-  }
-
-  async function deletar(id: string) {
-    if (!confirm("Remover esta solicitação?")) return;
-    try {
-      const r = await deletarDsr(id);
-      if (handlePhaseSkipResult(r)) return;
-      toast.success("Removida");
-    } catch (e: any) { toast.error(e.message); }
-  }
-
   return (
     <>
       {surpresaPendentes > 0 && (
@@ -162,25 +115,15 @@ export function DsrList({ items }: { items: Dsr[] }) {
           <Mail className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
             <strong>{surpresaPendentes} pedido{surpresaPendentes > 1 ? "s" : ""} aguardando sua ação.</strong>{" "}
-            Atenda os que chegaram pelo canal antes de cadastrar novas solicitações manuais.
-            Clique no lápis ✏️ de cada linha pra escolher a resposta.
+            Clique no lápis ✏️ de cada linha pra escolher a resposta (Pedir confirmação · Responder · Negar).
           </div>
-        </div>
-      )}
-
-      {mostrarBotaoNova && (
-        <div className="flex justify-end mb-3">
-          <Button onClick={abrirNovo}>
-            <Plus className="h-4 w-4" /> Nova solicitação
-          </Button>
         </div>
       )}
 
       {items.length === 0 ? (
         <EmptyState
-          title="Canal vazio"
-          description="O canal do titular precisa existir antes de o Aviso de Privacidade ser publicado. Registre aqui solicitações simuladas (acesso, correção, exclusão) pra estruturar o fluxo."
-          action={<Button onClick={abrirNovo}><Plus className="h-4 w-4" /> Simular primeira solicitação</Button>}
+          title="Aguardando pedidos do canal"
+          description="Este é o canal pelo qual o titular exerce os direitos do art. 18 da LGPD (acesso, correção, exclusão, portabilidade…). Quando um pedido chegar, aparecerá aqui automaticamente."
         />
       ) : (
         <div className="border rounded-lg bg-white overflow-hidden">
@@ -220,14 +163,9 @@ export function DsrList({ items }: { items: Dsr[] }) {
                   <TD className="text-xs">{new Date(d.createdAt).toLocaleDateString("pt-BR")}</TD>
                   <TD>
                     <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => abrirEdicao(d)}>
+                      <Button size="sm" variant="ghost" onClick={() => abrirAcao(d)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {!d.disparoFacilitador && (
-                        <Button size="sm" variant="ghost" onClick={() => deletar(d.id)}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      )}
                     </div>
                   </TD>
                 </TR>
@@ -236,45 +174,6 @@ export function DsrList({ items }: { items: Dsr[] }) {
           </Table>
         </div>
       )}
-
-      {/* Modal padrão — DSRs cadastrados manualmente */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar solicitação" : "Nova solicitação do titular"}</DialogTitle>
-            <DialogDescription>
-              Prazo de resposta: 15 dias úteis (art. 19, II, LGPD).
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><Label>Nome do titular</Label><Input name="titularNome" required defaultValue={editing?.titularNome || ""} /></div>
-              <div><Label>Contato</Label><Input name="titularContato" required defaultValue={editing?.titularContato || ""} placeholder="e-mail ou telefone" /></div>
-              <div className="col-span-2">
-                <Label>Tipo de solicitação</Label>
-                <Select name="tipoSolicitacao" required defaultValue={editing?.tipoSolicitacao || "ACESSO"}>
-                  {TIPOS.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
-                </Select>
-              </div>
-              <div className="col-span-2"><Label>Descrição</Label><Textarea name="descricao" rows={2} defaultValue={editing?.descricao || ""} /></div>
-              <div className="col-span-2"><Label>Resposta dada ao titular</Label><Textarea name="respostaTexto" rows={3} defaultValue={editing?.respostaTexto || ""} placeholder="Texto da resposta (preencher quando responder)" /></div>
-              <div className="col-span-2">
-                <Label>Status</Label>
-                <Select name="status" defaultValue={editing?.status || "ABERTA"}>
-                  <option value="ABERTA">Aberta</option>
-                  <option value="EM_ANALISE">Em análise</option>
-                  <option value="RESPONDIDA">Respondida</option>
-                  <option value="NEGADA">Negada (com justificativa)</option>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={loading}>{loading ? "Salvando..." : (editing ? "Atualizar" : "Criar")}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Modal DSR Surpresa — 3 botões grandes */}
       <Dialog open={acaoOpen} onOpenChange={setAcaoOpen}>
