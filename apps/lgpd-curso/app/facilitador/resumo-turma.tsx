@@ -6,9 +6,10 @@
 //   - Highlights pedagógicos pra usar no debrief
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Award, Trophy, Clock, LifeBuoy, Mail } from "lucide-react";
+import { Award, Trophy, Clock, LifeBuoy, Mail, Bug } from "lucide-react";
 import type { BolinhaMissao } from "./timeline-grupo";
 import type { SosItem } from "./central-sos";
+import { CATALOGO_ERROS_PLANTADOS, detectarErroPorPalavraChave, type ErroPlantadoId } from "@/lib/aviso-erros-plantados";
 
 type Grupo = {
   grupoId: string;
@@ -29,6 +30,8 @@ type Grupo = {
     };
   };
   dsrGameOutros?: Array<{ titularNome: string; pedido: string; resposta: string }>;
+  avisoErrosPlantados?: string[];
+  avisoErrosReportados?: Array<{ userName: string; descricao: string; criadoEm: string }>;
 };
 
 function formatMin(seg: number): string {
@@ -166,6 +169,118 @@ export function ResumoTurmaDialog({
               (geralmente o GAP ou o Aviso). O número de SOS mostra os pontos de maior dúvida da turma —
               vale revisar esses conceitos no fechamento.
             </div>
+
+            {/* Aviso · Caça aos Erros — Missão 4b */}
+            {(() => {
+              const gruposComAtividade = ranking.filter(
+                (g) => (g.avisoErrosPlantados?.length || 0) > 0 || (g.avisoErrosReportados?.length || 0) > 0,
+              );
+              if (gruposComAtividade.length === 0) return null;
+              return (
+                <div className="bg-orange-50 border border-orange-200 rounded p-3 text-xs text-orange-900 space-y-3">
+                  <div className="font-semibold flex items-center gap-1">
+                    <Bug className="h-4 w-4" />
+                    📜 Aviso · Caça aos Erros (Missão 4b) — leia em voz alta no debrief:
+                  </div>
+                  {gruposComAtividade.map((g) => {
+                    const plantados = g.avisoErrosPlantados || [];
+                    const reports = g.avisoErrosReportados || [];
+                    // Match heurístico: report → erro plantado
+                    const matchesReport = reports.map((r) => ({
+                      ...r,
+                      matchId: detectarErroPorPalavraChave(r.descricao),
+                    }));
+                    const idsDetectados = new Set(matchesReport.map((m) => m.matchId).filter(Boolean) as ErroPlantadoId[]);
+                    const idsPassados = plantados.filter((p) => !idsDetectados.has(p as ErroPlantadoId));
+                    return (
+                      <div key={g.grupoId} className="bg-white border border-orange-200 rounded p-3 space-y-2">
+                        <div className="font-semibold text-orange-900">
+                          G{g.numero}·{g.orgao} · {plantados.length} erros plantados · {reports.length} reports do grupo · {idsDetectados.size} match prováveis
+                        </div>
+
+                        {/* Erros DETECTADOS pelo grupo (match com palavra-chave) */}
+                        {[...idsDetectados].length > 0 && (
+                          <div>
+                            <div className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider mb-1">
+                              ✓ Provavelmente detectados (palavra-chave bateu)
+                            </div>
+                            <ul className="space-y-1">
+                              {[...idsDetectados].map((id) => {
+                                const def = CATALOGO_ERROS_PLANTADOS.find((c) => c.id === id);
+                                return (
+                                  <li key={id} className="text-emerald-800 text-[11px]">
+                                    • <strong>{def?.rotulo}</strong> <span className="text-emerald-600">— {def?.secao}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Erros que PASSARAM BATIDO */}
+                        {idsPassados.length > 0 && (
+                          <div>
+                            <div className="text-[11px] font-semibold text-red-700 uppercase tracking-wider mb-1">
+                              ✗ Passaram batido (não detectados)
+                            </div>
+                            <ul className="space-y-1">
+                              {idsPassados.map((id) => {
+                                const def = CATALOGO_ERROS_PLANTADOS.find((c) => c.id === id);
+                                return (
+                                  <li key={id} className="text-red-800 text-[11px]">
+                                    • <strong>{def?.rotulo}</strong> <span className="text-red-600">— {def?.secao}</span>
+                                    {def?.dicaDoFacilitador && (
+                                      <span className="block text-red-700 italic ml-3 mt-0.5">
+                                        💡 {def.dicaDoFacilitador}
+                                      </span>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Textos dos reports do grupo */}
+                        {matchesReport.length > 0 && (
+                          <div>
+                            <div className="text-[11px] font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                              📝 Reports do grupo (textos livres)
+                            </div>
+                            <div className="space-y-1.5">
+                              {matchesReport.map((r, i) => {
+                                const matchDef = r.matchId ? CATALOGO_ERROS_PLANTADOS.find((c) => c.id === r.matchId) : null;
+                                return (
+                                  <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                      <span className="text-[10px] text-gray-600 font-medium">{r.userName}</span>
+                                      {matchDef ? (
+                                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-medium">
+                                          ✓ {matchDef.rotulo.split(" — ")[0]}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">
+                                          ? sem match — classifique no debrief
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-gray-800 whitespace-pre-wrap">{r.descricao}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="text-[11px] italic">
+                    O matching usa palavras-chave (consentimento, sensíveis, retenção, juridiquês, transferência, canal/DSR).
+                    Reports &quot;sem match&quot; você classifica oralmente no debrief.
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Respostas livres dos grupos no DSR Surpresa — leitura pro debrief */}
             {(() => {

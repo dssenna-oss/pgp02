@@ -110,6 +110,57 @@ export const CATALOGO_ERROS_PLANTADOS: ErroPlantado[] = [
   },
 ];
 
+// === Heurística de matching: report do grupo → ID do erro plantado ===
+// Usado pelo painel facilitador pra estimar quais erros o grupo detectou.
+// Conservador: só marca match se a descrição contém pelo menos 1 palavra-chave
+// específica do erro. Quem quiser pode marcar match=null e o facilitador
+// classifica oralmente no debrief.
+
+const PALAVRAS_CHAVE_POR_ERRO: Record<ErroPlantadoId, string[]> = {
+  BASE_LEGAL_CONSENTIMENTO: [
+    "consentimento", "consent", "art. 7", "base legal", "política pública",
+    "politica publica", "art. 11", "obrigação legal", "obrigacao legal",
+  ],
+  SENSIVEIS_SILENCIADOS: [
+    "sensível", "sensivel", "sensíveis", "sensiveis", "art. 5", "art. 11",
+    "saúde", "saude", "biométric", "biometric", "religião", "religiao",
+  ],
+  RETENCAO_VAGA: [
+    "retenção", "retencao", "prazo", "art. 16", "tempo necessário",
+    "tempo necessario", "vago", "vaga", "genérico", "generico",
+    "específico", "especifico",
+  ],
+  LINGUAGEM_JURIDIQUES: [
+    "juridiquês", "juridiques", "linguagem", "clara", "outrossim",
+    "consoante", "mutatis", "destarte", "complicad", "difícil entender",
+    "dificil entender", "art. 6", "transparência", "transparencia",
+  ],
+  TRANSFERENCIA_NEGADA_SEM_CHECAR: [
+    "transferência internacional", "transferencia internacional", "art. 33",
+    "cloud", "saas", "servidor", "exterior", "estrangeir", "ouvitech",
+    "fora do brasil", "fora do br",
+  ],
+  CANAL_DSR_GENERICO: [
+    "canal", "dsr", "genérico", "generico", "encarregado", "dpo@",
+    "art. 18", "direitos do titular", "contato", "real",
+  ],
+};
+
+export function detectarErroPorPalavraChave(
+  descricao: string,
+): ErroPlantadoId | null {
+  const norm = descricao.toLowerCase();
+  // Conta matches por erro — retorna o de maior pontuação
+  let melhor: { id: ErroPlantadoId; pontos: number } | null = null;
+  for (const [id, palavras] of Object.entries(PALAVRAS_CHAVE_POR_ERRO) as Array<[ErroPlantadoId, string[]]>) {
+    const matches = palavras.filter((p) => norm.includes(p)).length;
+    if (matches > 0 && (!melhor || matches > melhor.pontos)) {
+      melhor = { id, pontos: matches };
+    }
+  }
+  return melhor?.id || null;
+}
+
 // === Aplicação dos erros no markdown ===
 export type ContextoErros = {
   temProcessoSensivel: boolean;
