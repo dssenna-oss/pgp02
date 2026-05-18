@@ -8,6 +8,7 @@ export type KpisGrupo = {
     respondidos: number;
     aderentes: number;
     parciais: number;
+    acoesPlanejadas?: number;
     apoiosPendentes?: number;
     score: number;
     setoresApoio?: Record<string, number>;

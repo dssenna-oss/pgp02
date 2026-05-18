@@ -118,9 +118,10 @@ export async function GET(req: NextRequest) {
     const gapAderentes = gap.filter((g) => g.resposta === "ADERENTE").length;
     const gapParciais = gap.filter((g) => g.resposta === "PARCIAL").length;
     const gapNaoAderentes = gap.filter((g) => g.resposta === "NAO_ADERENTE").length;
+    const gapAcoesPlanejadas = gap.filter((g) => g.resposta === "ACAO_PLANEJADA").length;
     const gapApoiosPendentes = gap.filter((g) => g.resposta === "APOIO_PENDENTE").length;
-    // Score: ignora APOIO_PENDENTE no denominador (não foi avaliado pelo DPO)
-    const gapAvaliados = gapAderentes + gapParciais + gapNaoAderentes;
+    // Score: ignora APOIO_PENDENTE no denominador. ACAO_PLANEJADA conta com 0pts.
+    const gapAvaliados = gapAderentes + gapParciais + gapNaoAderentes + gapAcoesPlanejadas;
     const gapScore = gapAvaliados > 0
       ? Math.round(((gapAderentes * 100 + gapParciais * 50) / (gapAvaliados * 100)) * 100)
       : 0;
@@ -150,6 +151,7 @@ export async function GET(req: NextRequest) {
         respondidos: gap.length,
         aderentes: gapAderentes,
         parciais: gapParciais,
+        acoesPlanejadas: gapAcoesPlanejadas,
         apoiosPendentes: gapApoiosPendentes,
         score: gapScore,
         setoresApoio,
