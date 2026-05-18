@@ -1,17 +1,27 @@
 // DSR Surpresa (Missão 4a) — cenários disparados pelo facilitador e
 // pontuação pedagógica.
 //
-// Lógica do jogo:
-//   - DPO pede confirmação de identidade ANTES de responder → +10
-//     (correto: o titular precisa ser verificado antes de receber/alterar dados)
-//   - DPO responde sem confirmar → −10 (vazou dados pra um suposto titular não verificado)
-//   - DPO nega por falta de identificação → +5 (correto mas conservador)
-//   - DPO não faz nada → 0
+// O DPO escolhe entre 3 opções neutras (sem nenhuma indicação visual do que é
+// "certo"):
+//   1. Responder agora            → vazou dados sem checar identidade → −10
+//   2. Não responder agora        → procrastinou, "vencimento tá longe" → 0
+//   3. Outros (especificar)       → texto livre. Facilitador lê no debrief.
+//                                   Pontuação 0 — a discussão revela quem teve
+//                                   a sacada de pedir identidade (art. 19 §1º)
+//                                   sem o app entregar a resposta de graça.
+//
+// Valores legados (CONFIRMATION_REQUESTED/DENIED_NO_ID/etc) ficam no enum
+// porque ainda existem em DSRs criados antes do refator de UI.
 //
 // A pontuação NÃO é mostrada pro DPO durante o jogo (suspense pedagógico).
 // Aparece só no Painel do Facilitador e no Resumo Final da Turma.
 
 export type GameAction =
+  // === Valores ativos (UI atual) ===
+  | "RESPONDED"              // 1ª opção: respondeu direto sem confirmar identidade
+  | "POSTPONED"              // 2ª opção: deixou pra depois ("vencimento tá longe")
+  | "OTHER"                  // 3ª opção: texto livre no campo "Outros"
+  // === Valores legados (UI anterior — mantidos por compat) ===
   | "CONFIRMATION_REQUESTED"
   | "RESPONDED_AFTER_CONFIRMATION"
   | "RESPONDED_WITHOUT_CONFIRMATION"
@@ -110,21 +120,27 @@ export function templatePedirConfirmacao(cenario: CenarioDsr): string {
 }
 
 // Pontuação por DSR disparado pelo facilitador.
-//   CONFIRMATION_REQUESTED       → +10 (correto, já pontuou — a resposta depois NÃO altera)
+//   RESPONDED                    → −10 (vazou dados sem confirmar identidade)
+//   POSTPONED                    → 0 (procrastinou — não foi danoso, não resolveu)
+//   OTHER                        → 0 (texto livre; facilitador classifica no debrief)
+//   --- legados ---
+//   CONFIRMATION_REQUESTED       → +10
 //   RESPONDED_AFTER_CONFIRMATION → 0 adicional (já ganhou os +10)
 //   RESPONDED_WITHOUT_CONFIRMATION → −10
 //   DENIED_NO_ID                 → +5
 //   null (não fez nada)          → 0
 export function pontosPorAcao(acao: string | null | undefined): number {
   switch (acao) {
-    case "CONFIRMATION_REQUESTED":
-      return 10;
-    case "RESPONDED_AFTER_CONFIRMATION":
-      return 0;
+    case "RESPONDED":
     case "RESPONDED_WITHOUT_CONFIRMATION":
       return -10;
+    case "CONFIRMATION_REQUESTED":
+      return 10;
     case "DENIED_NO_ID":
       return 5;
+    case "RESPONDED_AFTER_CONFIRMATION":
+    case "POSTPONED":
+    case "OTHER":
     default:
       return 0;
   }
@@ -140,20 +156,53 @@ export function calcularDsrGameScore(
 }
 
 // Resumo amigável da pontuação por grupo.
+//   respondeu     — vazou dados (RESPONDED + legado RESPONDED_WITHOUT_CONFIRMATION)
+//   postergou     — POSTPONED (procrastinou)
+//   outros        — OTHER (escreveu texto livre — facilitador lê no debrief)
+//   pediuId       — legado CONFIRMATION_REQUESTED + RESPONDED_AFTER_CONFIRMATION (UI antiga)
+//   conservadores — legado DENIED_NO_ID (UI antiga)
+//   semAcao       — null
 export function resumoPontuacao(
   dsrs: Array<{ disparoFacilitador?: boolean | null; gameAction?: string | null }>
-): { score: number; acertos: number; erros: number; conservadores: number; semAcao: number } {
+): {
+  score: number;
+  respondeu: number;
+  postergou: number;
+  outros: number;
+  pediuId: number;
+  conservadores: number;
+  semAcao: number;
+} {
   let score = 0;
-  let acertos = 0; // CONFIRMATION_REQUESTED
-  let erros = 0; // RESPONDED_WITHOUT_CONFIRMATION
-  let conservadores = 0; // DENIED_NO_ID
+  let respondeu = 0;
+  let postergou = 0;
+  let outros = 0;
+  let pediuId = 0;
+  let conservadores = 0;
   let semAcao = 0;
   for (const d of dsrs.filter((d) => d.disparoFacilitador)) {
     score += pontosPorAcao(d.gameAction);
-    if (d.gameAction === "CONFIRMATION_REQUESTED" || d.gameAction === "RESPONDED_AFTER_CONFIRMATION") acertos++;
-    else if (d.gameAction === "RESPONDED_WITHOUT_CONFIRMATION") erros++;
-    else if (d.gameAction === "DENIED_NO_ID") conservadores++;
-    else semAcao++;
+    switch (d.gameAction) {
+      case "RESPONDED":
+      case "RESPONDED_WITHOUT_CONFIRMATION":
+        respondeu++;
+        break;
+      case "POSTPONED":
+        postergou++;
+        break;
+      case "OTHER":
+        outros++;
+        break;
+      case "CONFIRMATION_REQUESTED":
+      case "RESPONDED_AFTER_CONFIRMATION":
+        pediuId++;
+        break;
+      case "DENIED_NO_ID":
+        conservadores++;
+        break;
+      default:
+        semAcao++;
+    }
   }
-  return { score, acertos, erros, conservadores, semAcao };
+  return { score, respondeu, postergou, outros, pediuId, conservadores, semAcao };
 }

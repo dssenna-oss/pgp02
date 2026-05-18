@@ -44,13 +44,22 @@ type Grupo = {
     ripds: { total: number; aprovados: number };
     terceiros: { total: number; comClausula: number };
     dsr: { total: number };
-    dsrGame?: { score: number; acertos: number; erros: number; conservadores: number; semAcao: number };
+    dsrGame?: {
+      score: number;
+      respondeu: number;
+      postergou: number;
+      outros: number;
+      pediuId: number;
+      conservadores: number;
+      semAcao: number;
+    };
     aviso: { status: string | null; publicSlug: string | null };
     incidentes: { total: number; comunicadosAnpd: number };
   };
   timeline: BolinhaMissao[];
   sos: SosItem[];
   phaseSkips: PhaseSkipItem[];
+  dsrGameOutros?: Array<{ titularNome: string; pedido: string; resposta: string }>;
 };
 
 // Bip sintético via Web Audio (sem arquivo MP3).
@@ -617,7 +626,7 @@ function GrupoTimelineCard({
       <TimelineGrupo bolinhas={grupo.timeline} />
 
       {/* DSR Surpresa — só aparece se algum DSR foi disparado pelo facilitador */}
-      {grupo.kpis.dsrGame && (grupo.kpis.dsrGame.acertos + grupo.kpis.dsrGame.erros + grupo.kpis.dsrGame.conservadores + grupo.kpis.dsrGame.semAcao) > 0 && (
+      {grupo.kpis.dsrGame && (grupo.kpis.dsrGame.respondeu + grupo.kpis.dsrGame.postergou + grupo.kpis.dsrGame.outros + grupo.kpis.dsrGame.pediuId + grupo.kpis.dsrGame.conservadores + grupo.kpis.dsrGame.semAcao) > 0 && (
         <div className={`mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs flex-wrap ${
           grupo.kpis.dsrGame.score > 0
             ? "bg-emerald-50 border-emerald-200 text-emerald-900"
@@ -632,14 +641,24 @@ function GrupoTimelineCard({
           }`}>
             {grupo.kpis.dsrGame.score > 0 ? "+" : ""}{grupo.kpis.dsrGame.score}
           </span>
-          {grupo.kpis.dsrGame.acertos > 0 && (
-            <span className="inline-flex items-center gap-1 bg-white border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
-              ✓ Pediu identidade ({grupo.kpis.dsrGame.acertos})
+          {grupo.kpis.dsrGame.respondeu > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-red-200 px-1.5 py-0.5 rounded text-[10px]">
+              ✗ Respondeu sem checar ({grupo.kpis.dsrGame.respondeu})
             </span>
           )}
-          {grupo.kpis.dsrGame.erros > 0 && (
-            <span className="inline-flex items-center gap-1 bg-white border border-red-200 px-1.5 py-0.5 rounded text-[10px]">
-              ✗ Vazou dados ({grupo.kpis.dsrGame.erros})
+          {grupo.kpis.dsrGame.postergou > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+              ⏳ Postergou ({grupo.kpis.dsrGame.postergou})
+            </span>
+          )}
+          {grupo.kpis.dsrGame.outros > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-sky-200 px-1.5 py-0.5 rounded text-[10px]">
+              💬 Outros — ler no debrief ({grupo.kpis.dsrGame.outros})
+            </span>
+          )}
+          {grupo.kpis.dsrGame.pediuId > 0 && (
+            <span className="inline-flex items-center gap-1 bg-white border border-emerald-200 px-1.5 py-0.5 rounded text-[10px]">
+              ✓ Pediu identidade ({grupo.kpis.dsrGame.pediuId})
             </span>
           )}
           {grupo.kpis.dsrGame.conservadores > 0 && (
@@ -649,7 +668,7 @@ function GrupoTimelineCard({
           )}
           {grupo.kpis.dsrGame.semAcao > 0 && (
             <span className="inline-flex items-center gap-1 bg-white border border-gray-200 px-1.5 py-0.5 rounded text-[10px] text-gray-500">
-              ⏳ Sem ação ({grupo.kpis.dsrGame.semAcao})
+              ⌛ Sem ação ({grupo.kpis.dsrGame.semAcao})
             </span>
           )}
         </div>
