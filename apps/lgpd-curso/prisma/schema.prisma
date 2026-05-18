@@ -26,8 +26,17 @@ model Company {
   cnpj      String?
   orgao     String? // "PM" ou "CM"
   cidade    String?  @default("Vegas")
-  dpoName   String?
-  dpoEmail  String?
+  // Encarregado (DPO) — identidade cadastrada uma vez, reutilizada no RIPD,
+  // Aviso de Privacidade, Comunicação ANPD, etc. Reduz retrabalho do DPO.
+  dpoName              String?
+  dpoEmail             String?
+  dpoTelefone          String?
+  dpoEndereco          String? // endereço comercial pra constar nos documentos legais
+  // Encarregado Substituto — figura prevista no Art. 41 §1º como prática
+  // recomendada pra continuidade em férias/afastamento.
+  dpoSubstitutoNome     String?
+  dpoSubstitutoEmail    String?
+  dpoSubstitutoTelefone String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

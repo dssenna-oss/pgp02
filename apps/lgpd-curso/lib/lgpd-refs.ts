@@ -115,6 +115,112 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
       "Ouvidoria: HTTPS + 2FA pra equipe + restrição de acesso ao histórico encerrado",
     ],
   },
+
+  // ───────────────────────────────────────────────────────────────────────
+  // RIPD — Relatório de Impacto à Proteção de Dados (8 seções, Art. 38 LGPD)
+  // ───────────────────────────────────────────────────────────────────────
+  ripd_secao_1: {
+    titulo: "Identificação do agente e Encarregado",
+    artigo: "LGPD Art. 41 (Encarregado) + Art. 5º VI/VII (controlador/operador)",
+    oQueDiz:
+      "O RIPD precisa identificar o controlador (órgão que decide sobre o tratamento), o operador (quem trata em nome de) quando houver, e o Encarregado (DPO) com canal direto.",
+    perguntaChave: "Quem é o responsável institucional e quem o titular procura pra exercer direitos?",
+    pegadinha:
+      "Não basta colocar 'TI'. O controlador é o ÓRGÃO (PM/CM/Tribunal). O Encarregado é uma PESSOA designada por ato formal — com nome, e-mail e telefone diretos.",
+    exemplos: [
+      "Controlador: Prefeitura Municipal de Vegas (CNPJ 00.000.000/0001-00)",
+      "Encarregado: Maria Silva, encarregado@vegas.es.gov.br, (27) 3334-7601",
+    ],
+    linkAnpd: { texto: "Guia ANPD — Encarregado (PDF)", url: "https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-do-encarregado-vf-1.pdf" },
+  },
+  ripd_secao_2: {
+    titulo: "Descrição do tratamento",
+    artigo: "LGPD Art. 38 par. único, I + Art. 5º VII (operações)",
+    oQueDiz:
+      "Descrever de forma objetiva: quais dados são tratados, finalidade, quem faz, qual base legal, prazo de retenção e fluxo. Saí do Inventário do processo.",
+    perguntaChave: "Quem coleta o quê, pra que, por quanto tempo e com que base legal?",
+    pegadinha:
+      "Evite genérico (\"dados pessoais necessários\"). Liste: nome, CPF, RG, endereço, telefone... O nível de detalhe protege o controlador e informa o titular.",
+    exemplos: [
+      "Atendimento no Posto: nome, CPF, prontuário (sensível), endereço, telefone — pra dispensa de medicamentos — Art. 11 b.VII — retenção 20 anos",
+    ],
+  },
+  ripd_secao_3: {
+    titulo: "Necessidade e proporcionalidade",
+    artigo: "LGPD Art. 6º III (necessidade) + Art. 6º I (finalidade)",
+    oQueDiz:
+      "Tratamento só deve usar os dados ESTRITAMENTE necessários pra cumprir a finalidade declarada. Excedeu? Tira do escopo.",
+    perguntaChave: "Cada dado coletado é indispensável pra finalidade? Se removê-lo, o processo deixa de funcionar?",
+    pegadinha:
+      "Coletar 'pode precisar depois' viola o princípio da necessidade. Se não usa hoje, não coleta.",
+    exemplos: [
+      "Inscrição em estágio NÃO precisa de religião nem orientação política — coletar isso é desproporcional.",
+      "Atendimento no SUS PRECISA de prontuário — proporcional pra prestação do serviço.",
+    ],
+  },
+  ripd_secao_4: {
+    titulo: "Análise de riscos aos direitos e liberdades dos titulares",
+    artigo: "LGPD Art. 38 par. único, III + Art. 5º X (eliminação)",
+    oQueDiz:
+      "Listar riscos identificáveis (vazamento, acesso indevido, uso desviado, perda) com avaliação de probabilidade × impacto pra direitos do titular.",
+    perguntaChave: "Se algo der errado, o quanto isso AFETA o titular? Discriminação? Exposição pública? Constrangimento?",
+    pegadinha:
+      "Risco não é só técnico. Vazamento de orientação sexual ou exames médicos pode causar dano social/familiar — entra como impacto ALTO mesmo se a probabilidade for baixa.",
+    exemplos: [
+      "Pendrive sem cripto perdido com prontuários: P=Média × I=Alto = ALTO",
+      "Acesso indevido a histórico médico por outros servidores: P=Alta × I=Alto = ALTO",
+    ],
+  },
+  ripd_secao_5: {
+    titulo: "Medidas e salvaguardas adotadas",
+    artigo: "LGPD Art. 6º VII (segurança) + Art. 46 + Art. 38 par. único, II",
+    oQueDiz:
+      "Documentar medidas TÉCNICAS (cripto, MFA, logs, backup) E ADMINISTRATIVAS (políticas, treinamento, termos de sigilo, papéis) que mitigam os riscos.",
+    perguntaChave: "Pra cada risco mapeado, qual medida específica reduz a probabilidade ou o impacto?",
+    pegadinha:
+      "Lista genérica de boas práticas vira papelada. O RIPD pede medidas EFETIVAS — quem aplica, como mede, em que prazo.",
+    exemplos: [
+      "Risco de acesso indevido → Perfil por setor + Logs de acesso + Auditoria mensal + Termo de sigilo na admissão",
+    ],
+  },
+  ripd_secao_6: {
+    titulo: "Direitos dos titulares — exercício efetivo",
+    artigo: "LGPD Art. 18 (9 direitos) + Art. 19 (prazo 15 dias úteis)",
+    oQueDiz:
+      "Como o titular exerce os 9 direitos do Art. 18 neste processo: qual canal, qual prazo, quem responde, como comprova identidade.",
+    perguntaChave: "O titular sabe como acessar/corrigir/eliminar os dados deste processo específico?",
+    pegadinha:
+      "Não basta 'fale com o DPO'. Tem que descrever o FLUXO operacional: cadastro registra em ticket? Como autentica o titular? Quem responde em até 15 dias?",
+    exemplos: [
+      "Atendimento médico: titular requer pelo e-mail do DPO + apresenta documento; resposta em até 15 dias úteis com cópia do prontuário em PDF assinado.",
+    ],
+  },
+  ripd_secao_7: {
+    titulo: "Compartilhamentos e transferências internacionais",
+    artigo: "LGPD Art. 7º §3º + Art. 33-36 (transferência internacional)",
+    oQueDiz:
+      "Listar compartilhamentos com outros órgãos/empresas e, se houver, transferências pra fora do Brasil — com base legal e salvaguardas específicas (Art. 33).",
+    perguntaChave: "Os dados saem do controlador? Pra quem, com que base, com que segurança?",
+    pegadinha:
+      "Cloud com servidor fora do Brasil = transferência internacional, mesmo que seja só backup. Precisa Art. 33 (decisão de adequação, cláusulas-padrão, etc).",
+    exemplos: [
+      "Compartilhamento com SUS estadual (e-SUS): Art. 26 (uso compartilhado entre entes públicos)",
+      "Backup em provedor cloud na Irlanda: Art. 33 V (cláusulas contratuais específicas) + cripto em trânsito e repouso",
+    ],
+  },
+  ripd_secao_8: {
+    titulo: "Conclusão — risco residual aceitável?",
+    artigo: "LGPD Art. 38 par. único (escopo do RIPD) + Art. 32 (consulta ANPD)",
+    oQueDiz:
+      "Calcular o risco que SOBROU depois de aplicadas as medidas. Decidir: aceita? mitiga mais? consulta a ANPD antes de prosseguir?",
+    perguntaChave: "Com as medidas adotadas, o tratamento ainda gera risco ALTO aos direitos do titular?",
+    pegadinha:
+      "Risco residual ALTO sem mitigação adicional = obrigação de consultar a ANPD (Art. 32). NÃO é opcional. Se o RIPD conclui ALTO e o controlador segue, é prova de dolo se vazar.",
+    exemplos: [
+      "Vigilância em massa com biometria → mesmo com salvaguardas, risco residual ALTO → consulta prévia à ANPD obrigatória",
+      "Atendimento médico com perfil por setor + logs + auditoria → risco residual BAIXO → prosseguir com revisão anual",
+    ],
+  },
 };
 
 // ============================================================================

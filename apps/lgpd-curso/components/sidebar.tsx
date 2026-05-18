@@ -39,6 +39,14 @@ type Fase = {
 
 const FASES: Fase[] = [
   {
+    id: "fase-1",
+    rotulo: "Fase 1 — Governança",
+    cor: "border-l-violet-400",
+    itens: [
+      { href: "/dashboard/encarregado", label: "Encarregado (DPO)", icon: UserCheck, dpoOnly: true },
+    ],
+  },
+  {
     id: "fase-3",
     rotulo: "Fase 3 — Mapeamento & Riscos",
     cor: "border-l-blue-400",
