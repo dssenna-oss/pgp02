@@ -77,3 +77,43 @@ export async function deletarOperador(id: string) {
   await prisma.operator.delete({ where: { id, companyId } });
   revalidatePath("/dashboard/terceiros");
 }
+
+// Salva a seleção de cláusulas do DPO pra incluir no aditamento DOCX.
+// Também permite ajustar manualmente o tipoOperacao e nivelRisco (caso o
+// DPO queira corrigir a sugestão automática do seed).
+export async function salvarSelecaoClausulas(input: {
+  operatorId: string;
+  clausulasSelecionadas: string[];
+  tipoOperacao?: string;
+  nivelRisco?: string;
+}) {
+  const skip = await checkGapConcluido("FASE_6", "Salvar seleção de cláusulas");
+  if (skip) return skip;
+  const { companyId } = await requireCompany();
+
+  // Garante que o operador pertence à company
+  const op = await prisma.operator.findFirst({
+    where: { id: input.operatorId, companyId },
+    select: { id: true },
+  });
+  if (!op) throw new Error("Operador não encontrado.");
+
+  const contract = await prisma.operatorContract.findFirst({
+    where: { operatorId: input.operatorId },
+  });
+  if (!contract) throw new Error("Contrato não encontrado pra este operador.");
+
+  await prisma.operatorContract.update({
+    where: { id: contract.id },
+    data: {
+      clausulasSelecionadas: input.clausulasSelecionadas,
+      tipoOperacao: input.tipoOperacao ?? contract.tipoOperacao,
+      nivelRisco:   input.nivelRisco   ?? contract.nivelRisco,
+      // Se selecionou alguma cláusula, marca clausulasLgpd=true automaticamente
+      clausulasLgpd: input.clausulasSelecionadas.length > 0 ? true : contract.clausulasLgpd,
+    },
+  });
+
+  revalidatePath("/dashboard/terceiros");
+  return { ok: true };
+}
