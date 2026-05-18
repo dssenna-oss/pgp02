@@ -16,6 +16,7 @@ export type KpisGrupo = {
   ripds: { total: number; aprovados: number };
   terceiros: { total: number; comClausula: number };
   dsr: { total: number };
+  dsrGame?: { score: number; acertos: number; erros: number; conservadores: number; semAcao: number };
   aviso: { status: "PUBLICADO" | "RASCUNHO" | null; publicSlug: string | null };
   incidentes: { total: number; comunicadosAnpd: number; comunicadosTitular: number };
 };

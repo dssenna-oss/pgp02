@@ -466,6 +466,10 @@ model DsrRequest {
   status          String    @default("ABERTA") // ABERTA | EM_ANALISE | RESPONDIDA | NEGADA
   respostaTexto   String?   @db.Text
   respondidoEm    DateTime?
+  // DSR Surpresa (Missão 4a) — facilitador dispara pedidos falsos
+  disparoFacilitador Boolean @default(false)
+  // CONFIRMATION_REQUESTED | RESPONDED_AFTER_CONFIRMATION | RESPONDED_WITHOUT_CONFIRMATION | DENIED_NO_ID
+  gameAction      String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

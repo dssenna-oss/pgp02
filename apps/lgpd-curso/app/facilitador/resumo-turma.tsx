@@ -6,7 +6,7 @@
 //   - Highlights pedagógicos pra usar no debrief
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Award, Trophy, Clock, LifeBuoy } from "lucide-react";
+import { Award, Trophy, Clock, LifeBuoy, Mail } from "lucide-react";
 import type { BolinhaMissao } from "./timeline-grupo";
 import type { SosItem } from "./central-sos";
 
@@ -17,6 +17,9 @@ type Grupo = {
   score: number;
   timeline: BolinhaMissao[];
   sos: SosItem[];
+  kpis?: {
+    dsrGame?: { score: number; acertos: number; erros: number; conservadores: number; semAcao: number };
+  };
 };
 
 function formatMin(seg: number): string {
@@ -90,6 +93,7 @@ export function ResumoTurmaDialog({
                     <th className="px-2 py-1.5">Missões fechadas</th>
                     <th className="px-2 py-1.5"><Clock className="h-3.5 w-3.5 inline" /> Missão mais longa</th>
                     <th className="px-2 py-1.5"><LifeBuoy className="h-3.5 w-3.5 inline" /> SOS</th>
+                    <th className="px-2 py-1.5"><Mail className="h-3.5 w-3.5 inline" /> DSR Surpresa</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -129,6 +133,17 @@ export function ResumoTurmaDialog({
                             ? <span className="text-red-700 font-semibold">{sosTotal}</span>
                             : <span className="text-gray-400">0</span>}
                         </td>
+                        <td className="px-2 py-1.5">
+                          {g.kpis?.dsrGame && (g.kpis.dsrGame.acertos + g.kpis.dsrGame.erros + g.kpis.dsrGame.conservadores + g.kpis.dsrGame.semAcao) > 0 ? (
+                            <span className={`font-bold px-1.5 py-0.5 rounded ${
+                              g.kpis.dsrGame.score > 0 ? "bg-emerald-100 text-emerald-700" :
+                              g.kpis.dsrGame.score < 0 ? "bg-red-100 text-red-700" :
+                              "bg-gray-100 text-gray-700"
+                            }`} title={`✓${g.kpis.dsrGame.acertos} ✗${g.kpis.dsrGame.erros} ⛔${g.kpis.dsrGame.conservadores} ⏳${g.kpis.dsrGame.semAcao}`}>
+                              {g.kpis.dsrGame.score > 0 ? "+" : ""}{g.kpis.dsrGame.score}
+                            </span>
+                          ) : <span className="text-gray-400">—</span>}
+                        </td>
                       </tr>
                     );
                   })}
@@ -141,6 +156,13 @@ export function ResumoTurmaDialog({
               Use a coluna &quot;Missão mais longa&quot; pra explorar onde a turma sentiu mais dificuldade
               (geralmente o GAP ou o Aviso). O número de SOS mostra os pontos de maior dúvida da turma —
               vale revisar esses conceitos no fechamento.
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-900">
+              <strong>📨 Sobre a DSR Surpresa:</strong> grupos com placar negativo responderam a pedidos sem
+              verificar a identidade do titular — <em>vazaram dados</em> pra alguém que talvez nem fosse o titular real.
+              Grupos com placar positivo pediram comprovação (art. 19 §1º LGPD) antes de responder.
+              Reforce no fechamento: &quot;Direito do titular não é direito de quem afirma ser titular&quot;.
             </div>
           </div>
         )}
