@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Mail, ShieldCheck, Send, Ban } from "lucide-react";
+import { Pencil, Mail, Send, Hourglass, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -9,12 +9,7 @@ import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  pedirConfirmacaoIdentidade,
-  responderDsrDireto,
-  negarDsrPorFaltaId,
-} from "./actions";
-import { templatePedirConfirmacao, type CenarioDsr } from "@/lib/dsr-game";
+import { registrarAcaoDsr } from "./actions";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -30,14 +25,18 @@ const TIPOS = [
   { v: "OUTRO",         l: "Outro" },
 ];
 
+type AcaoTipo = "RESPONDED" | "POSTPONED" | "OTHER";
+
 export function DsrList({ items }: { items: Dsr[] }) {
   const [loading, setLoading] = useState(false);
 
-  // Modal de ação — único caminho do DPO: escolher Pedir confirmação /
-  // Responder / Negar pra cada pedido que chegou pelo canal.
+  // Modal de ação — único caminho do DPO. 3 opções neutras (sem nenhuma
+  // dica visual do que é "certo"). O texto da 3ª opção (Outros) é o ouro
+  // pedagógico — facilitador lê no debrief pra ver quem teve a sacada de
+  // pedir identidade.
   const [acaoOpen, setAcaoOpen] = useState(false);
   const [acaoDsr, setAcaoDsr] = useState<Dsr | null>(null);
-  const [acaoTipo, setAcaoTipo] = useState<"PEDIR_CONFIRMACAO" | "RESPONDER" | "NEGAR" | null>(null);
+  const [acaoTipo, setAcaoTipo] = useState<AcaoTipo | null>(null);
   const [acaoTexto, setAcaoTexto] = useState("");
 
   const surpresaPendentes = items.filter(
@@ -51,55 +50,38 @@ export function DsrList({ items }: { items: Dsr[] }) {
     setAcaoOpen(true);
   }
 
-  function escolherAcao(tipo: "PEDIR_CONFIRMACAO" | "RESPONDER" | "NEGAR") {
+  function escolherAcao(tipo: AcaoTipo) {
     setAcaoTipo(tipo);
     if (!acaoDsr) return;
-    if (tipo === "PEDIR_CONFIRMACAO") {
-      const cenario: CenarioDsr = {
-        orgao: "PM",
-        titularNome: acaoDsr.titularNome,
-        titularContato: acaoDsr.titularContato,
-        tipoSolicitacao: acaoDsr.tipoSolicitacao,
-        descricao: acaoDsr.descricao || "",
-        pegadinha: "",
-      };
-      setAcaoTexto(templatePedirConfirmacao(cenario));
-    } else if (tipo === "RESPONDER") {
+    if (tipo === "RESPONDED") {
       setAcaoTexto(
-        `Prezado(a) ${acaoDsr.titularNome},\n\nSua solicitação foi atendida. ` +
-        `[Descreva aqui o que foi feito — ex: dados excluídos / endereço atualizado / cópia dos dados anexada]\n\n` +
+        `Prezado(a) ${acaoDsr.titularNome},\n\n` +
+        `[Descreva aqui a resposta enviada — ex: dados excluídos / endereço atualizado / cópia anexada]\n\n` +
         `Atenciosamente,\nEncarregado(a) pela Proteção de Dados`
       );
-    } else if (tipo === "NEGAR") {
-      setAcaoTexto(
-        `Prezado(a) ${acaoDsr.titularNome},\n\nNão foi possível atender sua solicitação ` +
-        `porque não recebemos a comprovação de sua identidade, conforme exige o art. 19, §1º da ` +
-        `LGPD. Para nova tentativa, envie cópia de documento oficial com foto e selfie segurando o ` +
-        `documento.\n\nAtenciosamente,\nEncarregado(a) pela Proteção de Dados`
-      );
+    } else if (tipo === "POSTPONED") {
+      setAcaoTexto(""); // sem template — quem postergou geralmente não escreve nada
+    } else if (tipo === "OTHER") {
+      setAcaoTexto(""); // texto livre — o DPO descreve o que decidiu fazer
     }
   }
 
   async function confirmarAcao() {
     if (!acaoDsr || !acaoTipo) return;
+    // "Outros" exige texto — é o ponto da opção
+    if (acaoTipo === "OTHER" && !acaoTexto.trim()) {
+      toast.error("Descreva o que você decidiu fazer.");
+      return;
+    }
     setLoading(true);
     try {
-      let r: any;
-      if (acaoTipo === "PEDIR_CONFIRMACAO") {
-        r = await pedirConfirmacaoIdentidade({ id: acaoDsr.id, textoMensagem: acaoTexto });
-      } else if (acaoTipo === "RESPONDER") {
-        r = await responderDsrDireto({ id: acaoDsr.id, textoResposta: acaoTexto });
-      } else {
-        r = await negarDsrPorFaltaId({ id: acaoDsr.id, justificativa: acaoTexto });
-      }
+      const r = await registrarAcaoDsr({
+        id: acaoDsr.id,
+        acao: acaoTipo,
+        texto: acaoTexto.trim() || undefined,
+      });
       if (handlePhaseSkipResult(r)) return;
-      toast.success(
-        acaoTipo === "PEDIR_CONFIRMACAO"
-          ? "Pedido de confirmação enviado"
-          : acaoTipo === "RESPONDER"
-          ? "Resposta enviada"
-          : "Solicitação negada"
-      );
+      toast.success("Ação registrada");
       setAcaoOpen(false);
     } catch (e: any) {
       toast.error(e.message);
@@ -115,7 +97,7 @@ export function DsrList({ items }: { items: Dsr[] }) {
           <Mail className="h-4 w-4 mt-0.5 shrink-0" />
           <div>
             <strong>{surpresaPendentes} pedido{surpresaPendentes > 1 ? "s" : ""} aguardando sua ação.</strong>{" "}
-            Clique no lápis ✏️ de cada linha pra escolher a resposta (Pedir confirmação · Responder · Negar).
+            Clique no lápis ✏️ de cada linha pra escolher o que fazer.
           </div>
         </div>
       )}
@@ -175,7 +157,7 @@ export function DsrList({ items }: { items: Dsr[] }) {
         </div>
       )}
 
-      {/* Modal DSR Surpresa — 3 botões grandes */}
+      {/* Modal DSR Surpresa — 3 opções neutras (sem cor que entregue qual é a certa) */}
       <Dialog open={acaoOpen} onOpenChange={setAcaoOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
@@ -197,22 +179,21 @@ export function DsrList({ items }: { items: Dsr[] }) {
           </DialogHeader>
 
           {!acaoTipo && (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="text-sm text-gray-700">
-                <strong>O que você vai fazer?</strong> Escolha com cuidado — a LGPD é exigente
-                sobre quem recebe dados do titular.
+                <strong>O que você vai fazer?</strong>
               </div>
               <button
                 type="button"
-                onClick={() => escolherAcao("PEDIR_CONFIRMACAO")}
-                className="w-full text-left p-4 rounded-lg border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 transition-colors"
+                onClick={() => escolherAcao("RESPONDED")}
+                className="w-full text-left p-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <ShieldCheck className="h-7 w-7 text-blue-700 shrink-0" />
+                  <Send className="h-6 w-6 text-gray-600 shrink-0" />
                   <div>
-                    <div className="font-semibold text-blue-900">Pedir confirmação de identidade</div>
-                    <div className="text-xs text-blue-800 mt-0.5">
-                      Solicito documento + selfie antes de atender (art. 19, §1º LGPD).
+                    <div className="font-semibold text-gray-900">Responder agora</div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      Atendo o pedido (excluo, corrijo, envio os dados solicitados).
                     </div>
                   </div>
                 </div>
@@ -220,15 +201,15 @@ export function DsrList({ items }: { items: Dsr[] }) {
 
               <button
                 type="button"
-                onClick={() => escolherAcao("RESPONDER")}
-                className="w-full text-left p-4 rounded-lg border-2 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                onClick={() => escolherAcao("POSTPONED")}
+                className="w-full text-left p-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Send className="h-7 w-7 text-emerald-700 shrink-0" />
+                  <Hourglass className="h-6 w-6 text-gray-600 shrink-0" />
                   <div>
-                    <div className="font-semibold text-emerald-900">Responder agora</div>
-                    <div className="text-xs text-emerald-800 mt-0.5">
-                      Atendo o pedido (excluo, corrijo, envio dados). Prazo: 15 dias úteis (art. 19, II).
+                    <div className="font-semibold text-gray-900">Não responder agora, o vencimento tá longe</div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      Deixo pra depois — temos 15 dias úteis pra responder (art. 19, II LGPD).
                     </div>
                   </div>
                 </div>
@@ -236,15 +217,15 @@ export function DsrList({ items }: { items: Dsr[] }) {
 
               <button
                 type="button"
-                onClick={() => escolherAcao("NEGAR")}
-                className="w-full text-left p-4 rounded-lg border-2 border-red-300 bg-red-50 hover:bg-red-100 transition-colors"
+                onClick={() => escolherAcao("OTHER")}
+                className="w-full text-left p-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <Ban className="h-7 w-7 text-red-700 shrink-0" />
+                  <MessageSquare className="h-6 w-6 text-gray-600 shrink-0" />
                   <div>
-                    <div className="font-semibold text-red-900">Negar por falta de identificação</div>
-                    <div className="text-xs text-red-800 mt-0.5">
-                      Recuso o pedido formalmente porque não foi possível verificar quem é o solicitante.
+                    <div className="font-semibold text-gray-900">Outros (especificar)</div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      Outra ação — descreva no campo a seguir o que você decidiu fazer.
                     </div>
                   </div>
                 </div>
@@ -252,9 +233,7 @@ export function DsrList({ items }: { items: Dsr[] }) {
 
               {acaoDsr?.gameAction && (
                 <div className="text-xs text-gray-500 italic pt-2 border-t">
-                  Esta solicitação já teve uma ação registrada anteriormente
-                  ({acaoDsr.gameAction === "CONFIRMATION_REQUESTED" ? "Pedido de confirmação enviado" : acaoDsr.gameAction}).
-                  Você pode atualizar a resposta abaixo.
+                  Esta solicitação já teve uma ação registrada anteriormente. Escolher de novo substitui a anterior.
                 </div>
               )}
             </div>
@@ -264,27 +243,32 @@ export function DsrList({ items }: { items: Dsr[] }) {
             <div className="space-y-3">
               <div>
                 <Label>
-                  {acaoTipo === "PEDIR_CONFIRMACAO"
-                    ? "Mensagem de confirmação (editável)"
-                    : acaoTipo === "RESPONDER"
-                    ? "Texto da resposta"
-                    : "Justificativa da negativa"}
+                  {acaoTipo === "RESPONDED"
+                    ? "Texto da resposta enviada ao titular"
+                    : acaoTipo === "POSTPONED"
+                    ? "Observação (opcional)"
+                    : "Descreva o que você decidiu fazer"}
                 </Label>
                 <Textarea
                   value={acaoTexto}
                   onChange={(e) => setAcaoTexto(e.target.value)}
-                  rows={10}
-                  className="font-mono text-xs"
+                  rows={acaoTipo === "OTHER" ? 6 : 8}
+                  className={acaoTipo === "OTHER" ? "" : "font-mono text-xs"}
+                  placeholder={
+                    acaoTipo === "OTHER"
+                      ? "Ex: 'vou ligar para a paciente confirmar antes de atualizar', 'vou pedir cópia do RG por e-mail', 'vou conferir com o pessoal do RH', etc."
+                      : acaoTipo === "POSTPONED"
+                      ? "Pode deixar em branco se preferir."
+                      : undefined
+                  }
                 />
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setAcaoTipo(null)}>
-                  ← Trocar ação
+                  ← Trocar resposta
                 </Button>
-                <Button type="button" onClick={confirmarAcao} disabled={loading || !acaoTexto.trim()}>
-                  {loading ? "Enviando..." :
-                    acaoTipo === "PEDIR_CONFIRMACAO" ? "Enviar pedido de confirmação" :
-                    acaoTipo === "RESPONDER" ? "Enviar resposta" : "Confirmar negativa"}
+                <Button type="button" onClick={confirmarAcao} disabled={loading}>
+                  {loading ? "Registrando..." : "Confirmar resposta"}
                 </Button>
               </DialogFooter>
             </div>

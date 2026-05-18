@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.dsrRequest.findMany({
         where: { companyId: cid },
-        select: { createdAt: true, updatedAt: true, disparoFacilitador: true, gameAction: true },
+        select: { id: true, createdAt: true, updatedAt: true, disparoFacilitador: true, gameAction: true, titularNome: true, descricao: true, respostaTexto: true },
       }),
       prisma.policy.findFirst({
         where: { companyId: cid, slug: "aviso-privacidade" },
@@ -218,12 +218,23 @@ export async function GET(req: NextRequest) {
       createdAt: s.createdAt.toISOString(),
     }));
 
+    // Textos das respostas "Outros" pra leitura no debrief — mantém só
+    // os DSRs disparados onde o DPO escolheu OTHER e escreveu algo.
+    const dsrGameOutros = dsr
+      .filter((d) => d.disparoFacilitador && d.gameAction === "OTHER" && d.respostaTexto)
+      .map((d) => ({
+        titularNome: d.titularNome,
+        pedido: d.descricao || "",
+        resposta: d.respostaTexto || "",
+      }));
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
       orgao: grupo.orgao,
       companyName: grupo.company.name,
       kpis,
+      dsrGameOutros,
       score: calcularMaturidade(kpis),
       ultimaAtividade,
       timeline,

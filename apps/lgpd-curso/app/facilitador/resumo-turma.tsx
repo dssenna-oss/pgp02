@@ -18,8 +18,17 @@ type Grupo = {
   timeline: BolinhaMissao[];
   sos: SosItem[];
   kpis?: {
-    dsrGame?: { score: number; acertos: number; erros: number; conservadores: number; semAcao: number };
+    dsrGame?: {
+      score: number;
+      respondeu: number;
+      postergou: number;
+      outros: number;
+      pediuId: number;
+      conservadores: number;
+      semAcao: number;
+    };
   };
+  dsrGameOutros?: Array<{ titularNome: string; pedido: string; resposta: string }>;
 };
 
 function formatMin(seg: number): string {
@@ -134,12 +143,12 @@ export function ResumoTurmaDialog({
                             : <span className="text-gray-400">0</span>}
                         </td>
                         <td className="px-2 py-1.5">
-                          {g.kpis?.dsrGame && (g.kpis.dsrGame.acertos + g.kpis.dsrGame.erros + g.kpis.dsrGame.conservadores + g.kpis.dsrGame.semAcao) > 0 ? (
+                          {g.kpis?.dsrGame && (g.kpis.dsrGame.respondeu + g.kpis.dsrGame.postergou + g.kpis.dsrGame.outros + g.kpis.dsrGame.pediuId + g.kpis.dsrGame.conservadores + g.kpis.dsrGame.semAcao) > 0 ? (
                             <span className={`font-bold px-1.5 py-0.5 rounded ${
                               g.kpis.dsrGame.score > 0 ? "bg-emerald-100 text-emerald-700" :
                               g.kpis.dsrGame.score < 0 ? "bg-red-100 text-red-700" :
                               "bg-gray-100 text-gray-700"
-                            }`} title={`✓${g.kpis.dsrGame.acertos} ✗${g.kpis.dsrGame.erros} ⛔${g.kpis.dsrGame.conservadores} ⏳${g.kpis.dsrGame.semAcao}`}>
+                            }`} title={`✗ Respondeu sem checar: ${g.kpis.dsrGame.respondeu} · ⏳ Postergou: ${g.kpis.dsrGame.postergou} · 💬 Outros: ${g.kpis.dsrGame.outros} · ✓ Pediu identidade: ${g.kpis.dsrGame.pediuId}`}>
                               {g.kpis.dsrGame.score > 0 ? "+" : ""}{g.kpis.dsrGame.score}
                             </span>
                           ) : <span className="text-gray-400">—</span>}
@@ -158,11 +167,38 @@ export function ResumoTurmaDialog({
               vale revisar esses conceitos no fechamento.
             </div>
 
+            {/* Respostas livres dos grupos no DSR Surpresa — leitura pro debrief */}
+            {(() => {
+              const todosOutros = ranking
+                .flatMap((g) => (g.dsrGameOutros || []).map((o) => ({ ...o, grupoLabel: `G${g.numero}·${g.orgao}` })));
+              if (todosOutros.length === 0) return null;
+              return (
+                <div className="bg-sky-50 border border-sky-200 rounded p-3 text-xs text-sky-900 space-y-2">
+                  <div className="font-semibold flex items-center gap-1">
+                    💬 Respostas livres no DSR Surpresa — leia em voz alta no debrief:
+                  </div>
+                  <div className="space-y-2">
+                    {todosOutros.map((o, idx) => (
+                      <div key={idx} className="bg-white border border-sky-200 rounded p-2">
+                        <div className="text-[11px] font-medium text-sky-700 mb-1">
+                          {o.grupoLabel} · pedido de {o.titularNome}
+                        </div>
+                        <div className="text-xs text-gray-800 whitespace-pre-wrap">{o.resposta}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[11px] italic">
+                    Procure grupos que mencionam &quot;identidade&quot;, &quot;documento&quot;, &quot;selfie&quot;, &quot;CPF&quot; ou &quot;confirmação&quot; — tiveram a sacada do art. 19 §1º LGPD.
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-900">
               <strong>📨 Sobre a DSR Surpresa:</strong> grupos com placar negativo responderam a pedidos sem
               verificar a identidade do titular — <em>vazaram dados</em> pra alguém que talvez nem fosse o titular real.
-              Grupos com placar positivo pediram comprovação (art. 19 §1º LGPD) antes de responder.
-              Reforce no fechamento: &quot;Direito do titular não é direito de quem afirma ser titular&quot;.
+              Reforce no fechamento: &quot;Direito do titular não é direito de quem afirma ser titular&quot;
+              (art. 19 §1º LGPD: o controlador deve confirmar a identidade do requerente antes de atender).
             </div>
           </div>
         )}
