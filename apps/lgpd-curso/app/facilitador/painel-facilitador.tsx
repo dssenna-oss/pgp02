@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail,
+  BarChart3, HandHelping, Mail, Bug,
 } from "lucide-react";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
 import { Button } from "@/components/ui/button";
@@ -60,6 +60,8 @@ type Grupo = {
   sos: SosItem[];
   phaseSkips: PhaseSkipItem[];
   dsrGameOutros?: Array<{ titularNome: string; pedido: string; resposta: string }>;
+  avisoErrosPlantados?: string[];
+  avisoErrosReportados?: Array<{ userName: string; descricao: string; criadoEm: string }>;
 };
 
 // Bip sintético via Web Audio (sem arquivo MP3).
@@ -671,6 +673,23 @@ function GrupoTimelineCard({
               ⌛ Sem ação ({grupo.kpis.dsrGame.semAcao})
             </span>
           )}
+        </div>
+      )}
+
+      {/* Aviso — Caça aos Erros (Missão 4b) */}
+      {((grupo.avisoErrosPlantados?.length || 0) > 0 || (grupo.avisoErrosReportados?.length || 0) > 0) && (
+        <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs flex-wrap bg-orange-50 border-orange-200 text-orange-900">
+          <Bug className="h-3.5 w-3.5 shrink-0" />
+          <span className="font-semibold">📜 Aviso · caça aos erros:</span>
+          <span className="inline-flex items-center gap-1 bg-white border border-orange-200 px-1.5 py-0.5 rounded text-[10px]">
+            🪤 Plantados: {grupo.avisoErrosPlantados?.length || 0}
+          </span>
+          <span className={`inline-flex items-center gap-1 bg-white border px-1.5 py-0.5 rounded text-[10px] ${
+            (grupo.avisoErrosReportados?.length || 0) > 0 ? "border-emerald-300 text-emerald-800" : "border-gray-200 text-gray-500"
+          }`}>
+            🔍 Detectados pelo grupo: {grupo.avisoErrosReportados?.length || 0}
+          </span>
+          <span className="text-orange-700 text-[10px] italic">Veja os textos no Resumo da Turma</span>
         </div>
       )}
 

@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.policy.findFirst({
         where: { companyId: cid, slug: "aviso-privacidade" },
-        select: { status: true, publicSlug: true, createdAt: true, updatedAt: true },
+        select: { status: true, publicSlug: true, createdAt: true, updatedAt: true, autoErrosPlantados: true, errosReportados: true },
       }),
       prisma.incident.findMany({
         where: { companyId: cid },
@@ -228,6 +228,15 @@ export async function GET(req: NextRequest) {
         resposta: d.respostaTexto || "",
       }));
 
+    // Erros plantados + reports do grupo no Aviso (Missão 4b — caça aos erros)
+    const avisoErrosPlantados: string[] = (aviso?.autoErrosPlantados as string[]) || [];
+    const avisoErrosReportadosRaw = Array.isArray(aviso?.errosReportados) ? (aviso!.errosReportados as any[]) : [];
+    const avisoErrosReportados = avisoErrosReportadosRaw.map((r: any) => ({
+      userName: String(r?.userName || "Anônimo"),
+      descricao: String(r?.descricao || ""),
+      criadoEm: String(r?.criadoEm || ""),
+    }));
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
@@ -235,6 +244,8 @@ export async function GET(req: NextRequest) {
       companyName: grupo.company.name,
       kpis,
       dsrGameOutros,
+      avisoErrosPlantados,
+      avisoErrosReportados,
       score: calcularMaturidade(kpis),
       ultimaAtividade,
       timeline,
