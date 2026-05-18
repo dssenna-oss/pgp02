@@ -57,7 +57,7 @@ const FASES: Fase[] = [
   },
   {
     id: "fase-5",
-    rotulo: "Fase 5 — Plano de Ação",
+    rotulo: "Fase 5 — Programa de Governança em Privacidade",
     cor: "border-l-emerald-400",
     itens: [
       { href: "/dashboard/plano-acao", label: "Plano de Ação", icon: Target, progressoKey: "plano_acao", dpoOnly: true },
@@ -87,6 +87,7 @@ const FASES: Fase[] = [
 const adminItems: MiniApp[] = [
   { href: "/facilitador",       label: "Painel do Facilitador", icon: LayoutDashboard },
   { href: "/admin/criar-turma", label: "Criar turma",           icon: Settings },
+  { href: "/admin/pacote-gap",  label: "Pacote GAP por turma",  icon: ClipboardCheck },
 ];
 
 const STORAGE_KEY_EXPANDIDA = "curso-sidebar-fase-expandida";

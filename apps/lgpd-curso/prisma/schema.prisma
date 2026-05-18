@@ -75,6 +75,10 @@ model CursoTurma {
   dataPrevista DateTime?
   status       String    @default("ATIVA") // ATIVA | ENCERRADA
   observacao   String?
+  // Pacote customizado de controles GAP — array de IDs do catálogo
+  // (lib/gap-catalogo.ts). Vazio = usa PACOTE_DEFAULT. Permite ao facilitador
+  // adaptar o GAP ao perfil do grupo (técnicos / jurídicos / gestão).
+  gapPacote    Int[]     @default([])
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
