@@ -1,0 +1,69 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { requireCompany, requireSession } from "@/lib/auth-server";
+import { revalidatePath } from "next/cache";
+
+export async function getEncarregado() {
+  const { companyId } = await requireCompany();
+  return prisma.company.findUnique({
+    where: { id: companyId },
+    select: {
+      id: true,
+      name: true,
+      cnpj: true,
+      orgao: true,
+      cidade: true,
+      dpoName: true,
+      dpoEmail: true,
+      dpoTelefone: true,
+      dpoEndereco: true,
+      dpoSubstitutoNome: true,
+      dpoSubstitutoEmail: true,
+      dpoSubstitutoTelefone: true,
+    },
+  });
+}
+
+export async function saveEncarregado(input: {
+  dpoName?: string;
+  dpoEmail?: string;
+  dpoTelefone?: string;
+  dpoEndereco?: string;
+  dpoSubstitutoNome?: string;
+  dpoSubstitutoEmail?: string;
+  dpoSubstitutoTelefone?: string;
+}) {
+  const session = await requireSession();
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO ou facilitador pode editar a identidade do Encarregado");
+  }
+  const { companyId } = await requireCompany();
+
+  const result = await prisma.company.update({
+    where: { id: companyId },
+    data: {
+      dpoName: input.dpoName?.trim() || null,
+      dpoEmail: input.dpoEmail?.trim() || null,
+      dpoTelefone: input.dpoTelefone?.trim() || null,
+      dpoEndereco: input.dpoEndereco?.trim() || null,
+      dpoSubstitutoNome: input.dpoSubstitutoNome?.trim() || null,
+      dpoSubstitutoEmail: input.dpoSubstitutoEmail?.trim() || null,
+      dpoSubstitutoTelefone: input.dpoSubstitutoTelefone?.trim() || null,
+    },
+  });
+  revalidatePath("/dashboard/encarregado");
+  revalidatePath("/dashboard/ripd");
+  revalidatePath("/dashboard/aviso");
+  return result;
+}
+
+/** Retorna verdadeiro se o Encarregado tem os campos mínimos pra ser usado
+ *  em documentos legais (nome + email + telefone). */
+export function encarregadoCompleto(c: {
+  dpoName?: string | null;
+  dpoEmail?: string | null;
+  dpoTelefone?: string | null;
+}): boolean {
+  return !!(c.dpoName?.trim() && c.dpoEmail?.trim() && c.dpoTelefone?.trim());
+}

@@ -5,6 +5,7 @@ import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { RIPD_SECOES } from "@/lib/ripd-secoes";
 import { checkGapConcluido } from "@/lib/phase-guard";
+import { sugerirSecaoRipd, type SecaoSugerivel } from "@/lib/ripd-sugestoes";
 
 // Inventários aprovados que ainda NÃO têm RIPD criado — pra preencher o
 // dropdown de "Novo RIPD" na tela.
@@ -217,6 +218,16 @@ export async function aprovarRipdDireto(id: string) {
     },
   });
   revalidatePath("/dashboard/ripd");
+}
+
+/** Gera sugestão de conteúdo pra uma seção do RIPD a partir dos dados já
+ *  registrados (Inventário, Riscos, Encarregado). Retorna { texto } ou
+ *  PhaseSkipResult — não salva no banco. DPO revisa e edita antes de salvar. */
+export async function sugerirSecao(ripdId: string, numero: SecaoSugerivel) {
+  const skip = await checkGapConcluido("FASE_6", "Sugerir secao do RIPD");
+  if (skip) return skip;
+  const texto = await sugerirSecaoRipd(ripdId, numero);
+  return { texto };
 }
 
 export async function deletarRipd(id: string) {

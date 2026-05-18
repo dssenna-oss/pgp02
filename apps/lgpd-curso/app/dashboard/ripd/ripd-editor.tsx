@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd, aprovarRipdDireto } from "./actions";
+import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd, aprovarRipdDireto, sugerirSecao } from "./actions";
+import { LgpdHelp } from "@/components/lgpd-help";
+import { Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -310,29 +312,65 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
   );
 }
 
+// Quais seções têm sugerirSecao() — bate com lib/ripd-sugestoes.ts
+const SECOES_SUGERIVEIS = new Set([1, 2, 4, 5, 6, 8]);
+
 function SecaoEditor({ ripdId, secao, podeEditar }: { ripdId: string; secao: Section; podeEditar: boolean }) {
   const [conteudo, setConteudo] = useState(secao.conteudo || "");
   const [pending, startTransition] = useTransition();
+  const [sugerindo, setSugerindo] = useState(false);
 
-  function salvar() {
-    if (conteudo === (secao.conteudo || "")) return;
+  function salvar(textoOverride?: string) {
+    const texto = textoOverride !== undefined ? textoOverride : conteudo;
+    if (texto === (secao.conteudo || "")) return;
     startTransition(async () => {
       try {
-        const r = await saveSecao(ripdId, secao.numero, conteudo);
+        const r = await saveSecao(ripdId, secao.numero, texto);
         if (handlePhaseSkipResult(r)) return;
         toast.success(`Seção ${secao.numero} salva`);
       } catch (e: any) { toast.error(e.message); }
     });
   }
 
+  async function sugerir() {
+    if (!SECOES_SUGERIVEIS.has(secao.numero)) return;
+    if (conteudo.trim().length > 0 && !confirm("Substituir o conteúdo atual pela sugestão gerada?")) return;
+    setSugerindo(true);
+    try {
+      const r = await sugerirSecao(ripdId, secao.numero as any);
+      if (handlePhaseSkipResult(r)) return;
+      if (r && typeof r === "object" && "texto" in r) {
+        setConteudo(r.texto);
+        toast.success("Sugestão gerada — revise e ajuste antes de salvar");
+      }
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSugerindo(false); }
+  }
+
+  const podeSugerir = SECOES_SUGERIVEIS.has(secao.numero) && podeEditar;
+
   return (
     <div>
-      <div className="flex items-center gap-2 mb-1.5">
+      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
         <Badge variant="ghost">{secao.numero}</Badge>
         <h4 className="text-sm font-medium">{secao.titulo}</h4>
+        <LgpdHelp campoKey={`ripd_secao_${secao.numero}`} />
+        {podeSugerir && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={sugerir}
+            disabled={sugerindo || pending}
+            className="ml-auto h-7 text-[11px] text-brand-700 hover:bg-brand-50"
+            title="Gera sugestão a partir do Inventário, Riscos e Encarregado já cadastrados"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> {sugerindo ? "Gerando..." : "✨ Sugerir"}
+          </Button>
+        )}
       </div>
-      <Textarea rows={3} value={conteudo} onChange={(e) => setConteudo(e.target.value)} onBlur={salvar}
-        placeholder="Preencha esta seção..." className="text-xs" disabled={pending || !podeEditar} />
+      <Textarea rows={3} value={conteudo} onChange={(e) => setConteudo(e.target.value)} onBlur={() => salvar()}
+        placeholder="Preencha esta seção..." className="text-xs" disabled={pending || sugerindo || !podeEditar} />
     </div>
   );
 }
