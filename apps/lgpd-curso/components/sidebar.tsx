@@ -28,6 +28,9 @@ type MiniApp = {
   icon: React.ComponentType<{ className?: string }>;
   dpoOnly?: boolean;
   progressoKey?: ProgressoKey;
+  // Quando definido, lê esse valor numérico do MissoesProgresso e mostra
+  // um badge vermelho com a contagem (ex: "DSR Surpresa: 2 pedidos novos").
+  alertaCountKey?: keyof MissoesProgresso;
 };
 
 type Fase = {
@@ -77,7 +80,7 @@ const FASES: Fase[] = [
     cor: "border-l-purple-400",
     itens: [
       { href: "/dashboard/ripd",      label: "RIPD",                 missao: "M4a", icon: FileSearch, progressoKey: "m4a_ripd",      dpoOnly: true },
-      { href: "/dashboard/dsr",       label: "Direitos do Titular",  missao: "M4a", icon: UserCheck,  progressoKey: "m4a_dsr",       dpoOnly: true },
+      { href: "/dashboard/dsr",       label: "Direitos do Titular",  missao: "M4a", icon: UserCheck,  progressoKey: "m4a_dsr",       dpoOnly: true, alertaCountKey: "dsrSurpresaPendentes" },
       { href: "/dashboard/terceiros", label: "Gestão de Terceiros",  missao: "M4a", icon: Building2,  progressoKey: "m4a_terceiros", dpoOnly: true },
       { href: "/dashboard/aviso",     label: "Aviso de Privacidade", missao: "M4b", icon: FileText,   progressoKey: "m4b",           dpoOnly: true },
     ],
@@ -238,6 +241,14 @@ export function Sidebar() {
                   (i) => i.progressoKey && progresso ? progresso[i.progressoKey] : false,
                 ).length;
                 const todasFeitas = itensFeitos === itensVisiveis.length && itensVisiveis.length > 0;
+                // Soma alertas pendentes de todos os sub-itens — mostra badge na
+                // própria linha da Fase pra ficar visível mesmo com acordeão fechado.
+                const alertasFase = itensVisiveis.reduce((acc, i) => {
+                  if (i.alertaCountKey && progresso) {
+                    return acc + Number(progresso[i.alertaCountKey] || 0);
+                  }
+                  return acc;
+                }, 0);
 
                 return (
                   <div key={fase.id} className="mt-1">
@@ -253,7 +264,15 @@ export function Sidebar() {
                     >
                       <Flag className="h-4 w-4 shrink-0 text-gray-500" />
                       <span className="flex-1 text-left text-[13px] leading-tight">{fase.rotulo}</span>
-                      {todasFeitas && (
+                      {alertasFase > 0 && (
+                        <span
+                          className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full animate-pulse min-w-[18px] text-center"
+                          title={`${alertasFase} pedido(s) novo(s) nesta fase`}
+                        >
+                          {alertasFase}
+                        </span>
+                      )}
+                      {todasFeitas && alertasFase === 0 && (
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" aria-label="Fase concluída" />
                       )}
                       <span className="text-[10px] text-gray-500 tabular-nums">
@@ -268,6 +287,9 @@ export function Sidebar() {
                           const active = pathname === item.href;
                           const Icon = item.icon;
                           const feito = item.progressoKey && progresso ? progresso[item.progressoKey] : false;
+                          const alertaCount = item.alertaCountKey && progresso
+                            ? Number(progresso[item.alertaCountKey] || 0)
+                            : 0;
                           return (
                             <Link
                               key={item.href}
@@ -282,7 +304,15 @@ export function Sidebar() {
                             >
                               <Icon className="h-4 w-4 shrink-0" />
                               <span className="flex-1 text-[13px]">{item.label}</span>
-                              {feito && (
+                              {alertaCount > 0 && (
+                                <span
+                                  className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full animate-pulse min-w-[18px] text-center"
+                                  title={`${alertaCount} pedido(s) novo(s) chegaram pelo canal`}
+                                >
+                                  {alertaCount}
+                                </span>
+                              )}
+                              {feito && alertaCount === 0 && (
                                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" aria-label="Concluído" />
                               )}
                               {item.missao && (

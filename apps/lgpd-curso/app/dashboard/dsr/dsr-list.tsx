@@ -39,6 +39,15 @@ export function DsrList({ items }: { items: Dsr[] }) {
   const [editing, setEditing] = useState<Dsr | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Se há pedidos surpresa aguardando ação do DPO, esconde o "+ Nova
+  // solicitação". Foco pedagógico: atender o que chegou pelo canal antes
+  // de cadastrar simulações manuais. Volta a aparecer assim que todos
+  // forem atendidos (ou se não há disparos).
+  const surpresaPendentes = items.filter(
+    (d: any) => d.disparoFacilitador && !d.gameAction
+  ).length;
+  const mostrarBotaoNova = surpresaPendentes === 0;
+
   // Modal especial dos DSRs disparados (surpresa)
   const [acaoOpen, setAcaoOpen] = useState(false);
   const [acaoDsr, setAcaoDsr] = useState<Dsr | null>(null);
@@ -148,11 +157,24 @@ export function DsrList({ items }: { items: Dsr[] }) {
 
   return (
     <>
-      <div className="flex justify-end mb-3">
-        <Button onClick={abrirNovo}>
-          <Plus className="h-4 w-4" /> Nova solicitação
-        </Button>
-      </div>
+      {surpresaPendentes > 0 && (
+        <div className="mb-3 p-3 rounded-md bg-amber-50 border border-amber-300 text-sm text-amber-900 flex items-start gap-2">
+          <Mail className="h-4 w-4 mt-0.5 shrink-0" />
+          <div>
+            <strong>{surpresaPendentes} pedido{surpresaPendentes > 1 ? "s" : ""} aguardando sua ação.</strong>{" "}
+            Atenda os que chegaram pelo canal antes de cadastrar novas solicitações manuais.
+            Clique no lápis ✏️ de cada linha pra escolher a resposta.
+          </div>
+        </div>
+      )}
+
+      {mostrarBotaoNova && (
+        <div className="flex justify-end mb-3">
+          <Button onClick={abrirNovo}>
+            <Plus className="h-4 w-4" /> Nova solicitação
+          </Button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <EmptyState
