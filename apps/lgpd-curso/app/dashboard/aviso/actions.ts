@@ -5,6 +5,7 @@ import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { checkGapConcluido } from "@/lib/phase-guard";
 import { detectarPlaceholders, gerarAvisoAutoPreenchido, type DadosParaAviso } from "@/lib/aviso-auto-preencher";
+import { aplicarErrosPlantados } from "@/lib/aviso-erros-plantados";
 
 const SLUG = "aviso-privacidade";
 
@@ -140,7 +141,14 @@ export async function reabrirAviso(): Promise<AvisoResult | { skip: any }> {
 
 // Gera o markdown completo a partir dos dados das missões anteriores.
 // Não persiste — retorna o texto pro client preencher o textarea.
-export async function autoPreencherAviso(): Promise<{ ok: true; md: string } | { ok: false; error: string }> {
+// Por padrão planta erros pedagógicos (modo curso). Pra produção limpa,
+// passar plantarErros=false.
+export async function autoPreencherAviso(
+  opts: { plantarErros?: boolean } = {},
+): Promise<{ ok: true; md: string; errosPlantados: string[] } | { ok: false; error: string }> {
+  // Default ativa erros plantados — é o modo do curso. Quem chama de outro
+  // contexto pode passar plantarErros: false explicitamente.
+  const plantarErros = opts.plantarErros !== false;
   try {
     const { companyId } = await requireCompany();
 
@@ -183,9 +191,57 @@ export async function autoPreencherAviso(): Promise<{ ok: true; md: string } | {
       dsr: { total: dsrCount },
     };
 
-    return { ok: true, md: gerarAvisoAutoPreenchido(dados) };
+    const mdLimpo = gerarAvisoAutoPreenchido(dados);
+
+    if (plantarErros) {
+      const ctx = {
+        temProcessoSensivel: processos.some((p) => p.dadosSensiveis === true),
+        quantidadeOperadores: operadores.length,
+      };
+      const { md, erros } = aplicarErrosPlantados(mdLimpo, ctx);
+      // Persiste a lista de erros plantados pro facilitador conferir depois
+      await prisma.policy.update({
+        where: { companyId_slug: { companyId, slug: SLUG } },
+        data: { autoErrosPlantados: erros },
+      }).catch(() => {
+        // Se a policy ainda não existe, vai ser criada no Save com array vazio
+        // (não bloqueia o auto-preencher).
+      });
+      return { ok: true, md, errosPlantados: erros };
+    }
+
+    return { ok: true, md: mdLimpo, errosPlantados: [] };
   } catch (e: any) {
     console.error("[autoPreencherAviso] erro:", e);
     return { ok: false, error: e?.message || "Erro ao montar o Aviso. Cheque o Encarregado em Fase 1 e os processos APROVADOS no Inventário." };
   }
+}
+
+// Reporta um erro detectado pelo grupo no Aviso. Texto livre — facilitador
+// classifica oralmente no debrief (padrão "Outros" do DSR Surpresa).
+export async function reportarErroAviso(input: {
+  descricao: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!input.descricao || input.descricao.trim().length < 5) {
+    return { ok: false, error: "Descreva o erro detectado (mínimo 5 caracteres)." };
+  }
+  const { companyId, session } = await requireCompany();
+  const policy = await prisma.policy.findUnique({
+    where: { companyId_slug: { companyId, slug: SLUG } },
+  });
+  if (!policy) return { ok: false, error: "Aviso não encontrado." };
+
+  const existentes = Array.isArray(policy.errosReportados) ? policy.errosReportados : [];
+  const novo = {
+    userName: session.user?.name || "Anônimo",
+    userEmail: session.user?.email || null,
+    descricao: input.descricao.trim(),
+    criadoEm: new Date().toISOString(),
+  };
+  await prisma.policy.update({
+    where: { id: policy.id },
+    data: { errosReportados: [...existentes, novo] as any },
+  });
+  revalidatePath("/dashboard/aviso");
+  return { ok: true };
 }

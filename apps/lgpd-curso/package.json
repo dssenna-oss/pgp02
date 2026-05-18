@@ -32,6 +32,7 @@
     "clsx": "2.1.1",
     "docx": "9.6.1",
     "lucide-react": "0.446.0",
+    "marked": "^18.0.3",
     "next": "14.2.28",
     "next-auth": "4.24.11",
     "react": "18.2.0",
@@ -43,18 +44,18 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "2.4.6",
-    "dotenv": "16.5.0",
-    "tsx": "4.20.3",
     "@types/node": "20.6.2",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
+    "dotenv": "16.5.0",
     "eslint": "9.24.0",
     "eslint-config-next": "15.3.0",
     "postcss": "8.4.30",
     "prisma": "6.7.0",
     "tailwindcss": "3.3.3",
     "tailwindcss-animate": "1.0.7",
+    "tsx": "4.20.3",
     "typescript": "5.2.2"
   }
 }

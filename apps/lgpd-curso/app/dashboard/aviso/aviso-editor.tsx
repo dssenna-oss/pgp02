@@ -2,12 +2,14 @@
 
 import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
-import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight, Sparkles, AlertTriangle, Unlock } from "lucide-react";
+import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight, Sparkles, AlertTriangle, Unlock, Eye, EyeOff, Bug } from "lucide-react";
+import { marked } from "marked";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveAviso, publicarAviso, autoPreencherAviso, reabrirAviso } from "./actions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { saveAviso, publicarAviso, autoPreencherAviso, reabrirAviso, reportarErroAviso } from "./actions";
 import { AVISO_SECOES } from "@/lib/aviso-secoes";
 import { detectarPlaceholders } from "@/lib/aviso-auto-preencher";
 import toast from "react-hot-toast";
@@ -34,6 +36,20 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
   const [conteudo, setConteudo] = useState(initial);
   const [pending, startTransition] = useTransition();
   const publicado = aviso?.status === "PUBLICADO";
+
+  // Preview com marked
+  const [previewOpen, setPreviewOpen] = useState(true);
+  const htmlPreview = useMemo(() => {
+    try {
+      return marked.parse(conteudo || "", { async: false }) as string;
+    } catch {
+      return "<p><em>Erro ao renderizar preview</em></p>";
+    }
+  }, [conteudo]);
+
+  // Modal "Sinalizar erro"
+  const [erroModalOpen, setErroModalOpen] = useState(false);
+  const [erroDescricao, setErroDescricao] = useState("");
 
   // Pré-requisito legal HARD — Art. 9 LGPD exige descrição clara do que é
   // tratado. Sem Inventário aprovado, o Aviso não tem matéria-prima.
@@ -103,6 +119,29 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
         }
         toast.success("Aviso reaberto como rascunho — edite e publique de novo");
       } catch (e: any) { toast.error(e?.message || "Erro ao reabrir"); }
+    });
+  }
+
+  function abrirReportarErro() {
+    setErroDescricao("");
+    setErroModalOpen(true);
+  }
+
+  function confirmarReporte() {
+    if (erroDescricao.trim().length < 5) {
+      toast.error("Descreva o erro detectado (mínimo 5 caracteres).");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const r = await reportarErroAviso({ descricao: erroDescricao });
+        if (r.ok === false) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success("Erro reportado! O facilitador verá no debrief.");
+        setErroModalOpen(false);
+      } catch (e: any) { toast.error(e?.message || "Erro ao reportar"); }
     });
   }
 
@@ -176,6 +215,16 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
               title="Substitui os textos [entre colchetes] pelos dados reais do Encarregado, Inventário, Terceiros e DSR"
             >
               <Sparkles className="h-3.5 w-3.5" /> Auto-preencher do PGP
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={abrirReportarErro}
+              disabled={pending}
+              className="border-orange-400 text-orange-700 hover:bg-orange-50"
+              title="Encontrou algo errado no texto do Aviso? Sinalize aqui."
+            >
+              <Bug className="h-3.5 w-3.5" /> 🔍 Sinalizar erro
             </Button>
             {publicado && (
               <Button
@@ -276,9 +325,18 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
         )}
 
         <div className="p-4">
-          <Label>Conteúdo (Markdown)</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label>Conteúdo (Markdown)</Label>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen((v) => !v)}
+              className="text-xs text-gray-600 hover:text-gray-900 inline-flex items-center gap-1"
+            >
+              {previewOpen ? <><EyeOff className="h-3 w-3" /> Esconder preview</> : <><Eye className="h-3 w-3" /> Mostrar preview</>}
+            </button>
+          </div>
           <Textarea
-            rows={28}
+            rows={20}
             value={conteudo}
             onChange={(e) => setConteudo(e.target.value)}
             className="font-mono text-xs"
@@ -297,8 +355,67 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
               </a>
             </div>
           )}
+
+          {/* Preview renderizado — mostra como o cidadão vai ver */}
+          {previewOpen && (
+            <div className="mt-4 border rounded-lg overflow-hidden">
+              <div className="bg-gray-100 px-3 py-2 border-b text-[11px] uppercase font-semibold text-gray-600 flex items-center gap-1.5">
+                <Eye className="h-3 w-3" /> Preview · como o cidadão vê na URL pública
+              </div>
+              <div
+                className="aviso-preview p-5 bg-white"
+                dangerouslySetInnerHTML={{ __html: htmlPreview }}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal Sinalizar erro */}
+      <Dialog open={erroModalOpen} onOpenChange={setErroModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bug className="h-5 w-5 text-orange-600" />
+              Sinalizar erro no Aviso
+            </DialogTitle>
+            <DialogDescription>
+              Encontrou algo errado, vago ou suspeito no texto? Descreva abaixo. O facilitador vai
+              ler no debrief — grupos que apontarem erros corretos ganham pontos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>O que você notou?</Label>
+            <Textarea
+              value={erroDescricao}
+              onChange={(e) => setErroDescricao(e.target.value)}
+              rows={6}
+              placeholder="Ex: 'Seção 4 diz que a base legal é consentimento, mas pra serviço público o correto deveria ser execução de políticas públicas (art. 7º III).'"
+            />
+            <div className="text-[11px] text-gray-500">
+              Seja específico — cite a seção e por que está errado.
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setErroModalOpen(false)}>Cancelar</Button>
+            <Button onClick={confirmarReporte} disabled={pending || erroDescricao.trim().length < 5}>
+              Enviar reporte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <style jsx global>{`
+        .aviso-preview h1 { font-size: 1.75rem; font-weight: 800; margin: 0.5rem 0 1rem; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
+        .aviso-preview h2 { font-size: 1.25rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: #1f2937; }
+        .aviso-preview h3 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; color: #374151; }
+        .aviso-preview p { margin: 0.5rem 0; line-height: 1.6; color: #374151; font-size: 0.875rem; }
+        .aviso-preview ul, .aviso-preview ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        .aviso-preview li { margin: 0.25rem 0; line-height: 1.5; color: #374151; font-size: 0.875rem; }
+        .aviso-preview strong { font-weight: 700; color: #111827; }
+        .aviso-preview em { font-style: italic; color: #4b5563; }
+        .aviso-preview code { background: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.85em; }
+      `}</style>
 
       {/* Cardápio das 12 seções */}
       <div className="border rounded-lg p-4 bg-white">

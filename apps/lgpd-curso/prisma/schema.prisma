@@ -292,6 +292,12 @@ model ActionPlan {
 // MINI-APP 5 — POLÍTICAS (Política do PGP automática + Aviso de Privacidade)
 // -----------------------------------------------------------------------------
 
+// === Aviso de Privacidade — campos pedagógicos extras ===
+// Adicionados via migration `/api/curso/migrar-aviso-erros`:
+//   - errosReportados Json?     (lista de {grupoUserName, descricao, criadoEm})
+//   - autoErrosPlantados String[] (IDs dos erros que o auto-preencher injetou)
+// Mantidos no model Policy abaixo (não houve criação de nova tabela).
+
 model Policy {
   id          String    @id @default(cuid())
   companyId   String
@@ -302,6 +308,15 @@ model Policy {
   status      String    @default("RASCUNHO") // RASCUNHO | PUBLICADO
   publicSlug  String?   @unique
   publishedAt DateTime?
+  // IDs dos erros pedagógicos plantados pelo "auto-preencher" (Missão 4b).
+  // Lista do catálogo em `lib/aviso-erros-plantados.ts`. Facilitador vê os
+  // grupos que detectaram OU passaram batido. Vazio = aviso não foi
+  // auto-preenchido ou foi com plantarErros=false.
+  autoErrosPlantados String[] @default([])
+  // Reportes do grupo: lista de {userName, descricao, criadoEm} em JSON.
+  // Pedagógico: facilitador lê no debrief e classifica oralmente (igual
+  // padrão "Outros" do DSR Surpresa).
+  errosReportados Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
