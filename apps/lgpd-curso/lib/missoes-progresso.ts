@@ -25,6 +25,9 @@ export type MissoesProgresso = {
   m4a_dsr: boolean;
   m4b: boolean;
   m5: boolean;
+  // DSR Surpresa: quantos pedidos disparados pelo facilitador ainda estão
+  // sem ação do DPO (gameAction = null). Banner/badge usa essa contagem.
+  dsrSurpresaPendentes: number;
 };
 
 const EMPTY: MissoesProgresso = {
@@ -32,6 +35,7 @@ const EMPTY: MissoesProgresso = {
   plano_acao: false,
   m4a_ripd: false, m4a_terceiros: false, m4a_dsr: false,
   m4b: false, m5: false,
+  dsrSurpresaPendentes: 0,
 };
 
 export async function getMissoesProgresso(): Promise<MissoesProgresso> {
@@ -39,7 +43,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, qtdOperadores, qtdDsr, aviso, incidentes] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, qtdOperadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
     prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
@@ -47,6 +51,8 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     prisma.ripd.count({ where: { companyId, status: "APROVADO" } }),
     prisma.operator.count({ where: { companyId } }),
     prisma.dsrRequest.count({ where: { companyId } }),
+    // DSR Surpresa pendentes: disparoFacilitador=true + nenhuma ação registrada ainda
+    prisma.dsrRequest.count({ where: { companyId, disparoFacilitador: true, gameAction: null } }),
     prisma.policy.findFirst({
       where: { companyId, slug: "aviso-privacidade" },
       select: { status: true },
@@ -64,5 +70,6 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     m4a_dsr: qtdDsr > 0,
     m4b: aviso?.status === "PUBLICADO",
     m5: incidentes.some((i) => i.status && i.status !== "RASCUNHO"),
+    dsrSurpresaPendentes: qtdDsrSurpresaPendentes,
   };
 }
