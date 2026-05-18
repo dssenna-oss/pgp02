@@ -77,8 +77,8 @@ const FASES: Fase[] = [
     cor: "border-l-purple-400",
     itens: [
       { href: "/dashboard/ripd",      label: "RIPD",                 missao: "M4a", icon: FileSearch, progressoKey: "m4a_ripd",      dpoOnly: true },
-      { href: "/dashboard/terceiros", label: "Gestão de Terceiros",  missao: "M4a", icon: Building2,  progressoKey: "m4a_terceiros", dpoOnly: true },
       { href: "/dashboard/dsr",       label: "Direitos do Titular",  missao: "M4a", icon: UserCheck,  progressoKey: "m4a_dsr",       dpoOnly: true },
+      { href: "/dashboard/terceiros", label: "Gestão de Terceiros",  missao: "M4a", icon: Building2,  progressoKey: "m4a_terceiros", dpoOnly: true },
       { href: "/dashboard/aviso",     label: "Aviso de Privacidade", missao: "M4b", icon: FileText,   progressoKey: "m4b",           dpoOnly: true },
     ],
   },
