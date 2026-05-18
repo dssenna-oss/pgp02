@@ -5,9 +5,12 @@
 // disparados pelo facilitador na Missão 5.
 //
 // Vermelho intenso pra criar pressão visual + ALARME SONORO opcional
-// (Web Audio API — sirene tipo polícia, repetida a cada 30s enquanto
-// houver incidente em aberto). Som requer ativação manual por causa do
-// autoplay block do Chrome/Edge.
+// (Web Audio API — sirene tipo polícia). Comportamento:
+//   1. Toca IMEDIATAMENTE quando chega incidente novo (count sobe)
+//      — efeito surpresa pro DPO reagir. Latência: até 10s (polling).
+//   2. Toca PERIODICAMENTE a cada 30s enquanto houver incidente em aberto
+//      — pressão constante pra forçar o DPO a agir, não procrastinar.
+// Som requer ativação manual por causa do autoplay block do Chrome/Edge.
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
@@ -40,18 +43,22 @@ function tocarSirene(audioCtx: AudioContext | null) {
 }
 
 const STORAGE_SOM = "curso-incident-alarme-ativo";
-const INTERVALO_REPETICAO_MS = 30000; // toca sirene a cada 30s enquanto há incidente
+const INTERVALO_REPETICAO_MS = 30000; // sirene repete a cada 30s enquanto há incidente
 
 export function IncidentAlertBanner() {
   const { data: session } = useSession();
   const [emAberto, setEmAberto] = useState(0);
   const [somAtivo, setSomAtivo] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const ultimoTocadoRef = useRef<number>(0);
+  const emAbertoPrevRef = useRef<number | null>(null);
+  const somAtivoRef = useRef<boolean>(false);
 
   const role = session?.user?.role;
   const isAdmin = role === "ADMIN";
   const isDpo = role === "DPO";
+
+  // Mantém ref sincronizada com o estado (pra usar no callback do polling)
+  useEffect(() => { somAtivoRef.current = somAtivo; }, [somAtivo]);
 
   // Hidrata preferência de som do localStorage
   useEffect(() => {
@@ -60,7 +67,8 @@ export function IncidentAlertBanner() {
     } catch {}
   }, []);
 
-  // Polling de progresso
+  // Polling de progresso — DETECTA SUBIDA do count e dispara sirene
+  // (efeito surpresa quando facilitador acabou de disparar incidente).
   useEffect(() => {
     if (isAdmin || !session?.user?.id) return;
     let cancelled = false;
@@ -69,7 +77,22 @@ export function IncidentAlertBanner() {
         const res = await fetch("/api/missoes-progresso", { cache: "no-store" });
         if (!res.ok) return;
         const data: MissoesProgresso = await res.json();
-        if (!cancelled) setEmAberto(Number(data.incidentesEmAberto || 0));
+        if (cancelled) return;
+        const novo = Number(data.incidentesEmAberto || 0);
+        const anterior = emAbertoPrevRef.current;
+        // Toca sirene se: count SUBIU (chegou incidente novo) E não é o
+        // primeiro load (evita tocar ao recarregar página com incidente
+        // já existente). Som tem que estar ativo + AudioContext criado.
+        if (
+          anterior !== null &&
+          novo > anterior &&
+          somAtivoRef.current &&
+          audioCtxRef.current
+        ) {
+          tocarSirene(audioCtxRef.current);
+        }
+        emAbertoPrevRef.current = novo;
+        setEmAberto(novo);
       } catch {}
     }
     load();
@@ -77,20 +100,13 @@ export function IncidentAlertBanner() {
     return () => { cancelled = true; clearInterval(id); };
   }, [isAdmin, session?.user?.id]);
 
-  // Sirene quando há incidente em aberto E som ativo. Toca uma vez ao
-  // ativar/aparecer + repete a cada 30s pra criar pressão constante.
+  // Sirene periódica — toca a cada 30s ENQUANTO houver incidente em aberto
+  // E som ativo. Pressão constante pra forçar o DPO a agir. Para
+  // automaticamente quando incidente vai pra ENCERRADO ou som desligado.
   useEffect(() => {
     if (!somAtivo || emAberto === 0 || !audioCtxRef.current) return;
-    const agora = Date.now();
-    if (agora - ultimoTocadoRef.current >= INTERVALO_REPETICAO_MS) {
-      tocarSirene(audioCtxRef.current);
-      ultimoTocadoRef.current = agora;
-    }
     const id = setInterval(() => {
-      if (audioCtxRef.current) {
-        tocarSirene(audioCtxRef.current);
-        ultimoTocadoRef.current = Date.now();
-      }
+      if (audioCtxRef.current) tocarSirene(audioCtxRef.current);
     }, INTERVALO_REPETICAO_MS);
     return () => clearInterval(id);
   }, [somAtivo, emAberto]);
@@ -109,8 +125,7 @@ export function IncidentAlertBanner() {
       const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
       audioCtxRef.current = new Ctx();
       setSomAtivo(true);
-      tocarSirene(audioCtxRef.current); // toca uma vez pra confirmar ativação
-      ultimoTocadoRef.current = Date.now();
+      tocarSirene(audioCtxRef.current); // bip-teste pra confirmar ativação
       try { localStorage.setItem(STORAGE_SOM, "1"); } catch {}
     } catch {}
   }
