@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { papeisPorOrgao, processosPorOrgao } from "@/lib/seeds/processos-vegas";
+import { terceirosPorOrgao } from "@/lib/seeds/terceiros-vegas";
 
 // ~10 ops sequenciais no banco por grupo (company + cursoGrupo + 5 users +
 // 2 processos) + bcrypt hash. Com Neon dormindo pode passar de 15s.
@@ -158,6 +159,36 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+
+      // 5. Cria os 2 terceiros pré-cadastrados (Missão 4a parte 2 — Gestão de Terceiros)
+      // com situação contratual rascunhada + tipoOperacao/nivelRisco já definidos.
+      const terceiros = terceirosPorOrgao(spec.orgao);
+      for (const t of terceiros) {
+        const operator = await prisma.operator.create({
+          data: {
+            companyId: company.id,
+            nome: t.nome,
+            cnpj: t.cnpj,
+            servico: t.servico,
+            contato: t.contato,
+            papel: "OPERADOR",
+          },
+        });
+        await prisma.operatorContract.create({
+          data: {
+            operatorId: operator.id,
+            numero: t.contrato.numero,
+            objeto: t.contrato.objeto,
+            clausulasLgpd: t.contrato.clausulasLgpd,
+            vigenciaInicio: t.contrato.vigenciaInicioISO ? new Date(t.contrato.vigenciaInicioISO) : null,
+            vigenciaFim:    t.contrato.vigenciaFimISO    ? new Date(t.contrato.vigenciaFimISO)    : null,
+            observacao: t.contrato.observacao || null,
+            tipoOperacao: t.contrato.tipoOperacao,
+            nivelRisco: t.contrato.nivelRisco,
+            clausulasSelecionadas: [],
+          },
+        });
+      }
     }
   } catch (e: any) {
     console.error(`[criar-turma] falhou no grupo ${numeroGrupo}:`, e);
@@ -166,6 +197,8 @@ export async function POST(req: NextRequest) {
       const grupos = await prisma.cursoGrupo.findMany({ where: { turmaId: turma.id }, select: { companyId: true } });
       const companyIds = grupos.map((g) => g.companyId);
       // Ordem inversa de criação respeitando FKs
+      await prisma.operatorContract.deleteMany({ where: { operator: { companyId: { in: companyIds } } } });
+      await prisma.operator.deleteMany({ where: { companyId: { in: companyIds } } });
       await prisma.dataInventory.deleteMany({ where: { companyId: { in: companyIds } } });
       await prisma.user.deleteMany({ where: { companyId: { in: companyIds } } });
       await prisma.cursoGrupo.deleteMany({ where: { turmaId: turma.id } });

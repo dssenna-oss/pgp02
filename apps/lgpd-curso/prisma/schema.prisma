@@ -445,6 +445,20 @@ model OperatorContract {
   vigenciaFim    DateTime?
   clausulasLgpd  Boolean   @default(false)
   observacao     String?
+  // === Pedagógico ===
+  // Tipo de operação contratual (define o caminho da adequação):
+  //   ADITIVO_NECESSARIO     — contrato antigo sem cláusulas LGPD → aditamento
+  //   CONTRATO_NOVO_CLAUSULAS — contrato novo sendo redigido → cláusulas direto
+  //   RENOVACAO_ADITIVAR     — em renovação → aprovado com aditivo de LGPD
+  //   CONTRATO_NOVO_ALTO_RISCO — novo + alto risco (sensíveis/larga escala) → cláusulas robustas
+  tipoOperacao   String?
+  // Nível de risco do operador (Resolução ANPD nº 2/2022 — critérios gerais
+  // e específicos da régua). Calculado/sugerido no seed; pode ser ajustado
+  // pelo DPO. Valores: BAIXO | MEDIO | ALTO.
+  nivelRisco     String?
+  // IDs das cláusulas selecionadas pelo DPO pra incluir no aditamento DOCX.
+  // Cada ID corresponde a uma entrada no catálogo `lib/clausulas-lgpd.ts`.
+  clausulasSelecionadas String[] @default([])
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
