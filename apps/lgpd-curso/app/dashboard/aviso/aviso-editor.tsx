@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
-import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight } from "lucide-react";
+import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight, Sparkles, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveAviso, publicarAviso } from "./actions";
+import { saveAviso, publicarAviso, autoPreencherAviso } from "./actions";
 import { AVISO_SECOES } from "@/lib/aviso-secoes";
+import { detectarPlaceholders } from "@/lib/aviso-auto-preencher";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -54,6 +55,10 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
       toast.error("Aprove ao menos 1 processo no Inventário antes de publicar");
       return;
     }
+    if (placeholders.length > 0) {
+      toast.error(`Publicação bloqueada: ${placeholders.length} placeholder(s) ainda no texto. Use "Auto-preencher" ou edite manualmente.`);
+      return;
+    }
     if (prereq.ripds === 0 || prereq.operadores === 0 || prereq.dsr === 0) {
       if (!confirm("Pré-requisitos da Missão 4a incompletos. Publicar mesmo assim?")) return;
     }
@@ -65,6 +70,21 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
       } catch (e: any) { toast.error(e.message); }
     });
   }
+
+  function autoPreencher() {
+    const tinhaTexto = conteudo.trim().length > 0 && conteudo !== gerarRascunho();
+    if (tinhaTexto && !confirm("Isso vai substituir o texto atual pelo Aviso montado a partir dos dados do PGP (Encarregado, Inventário, Terceiros, DSR). Continuar?")) return;
+    startTransition(async () => {
+      try {
+        const r = await autoPreencherAviso();
+        setConteudo(r.md);
+        toast.success("Aviso preenchido com dados do PGP — revise antes de salvar/publicar");
+      } catch (e: any) { toast.error(e.message); }
+    });
+  }
+
+  // Detecta placeholders no texto atual (em tempo real)
+  const placeholders = useMemo(() => detectarPlaceholders(conteudo), [conteudo]);
 
   const prereqM4aOk = prereq.ripds > 0 && prereq.operadores > 0 && prereq.dsr > 0;
 
@@ -114,24 +134,79 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
 
       {/* Editor */}
       <div className="border rounded-lg bg-white">
-        <header className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+        <header className="flex items-center justify-between px-4 py-3 border-b bg-gray-50 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">Texto do Aviso de Privacidade</h3>
             <Badge variant={publicado ? "success" : "default"}>{aviso?.status || "RASCUNHO"}</Badge>
+            {placeholders.length > 0 && !publicado && (
+              <Badge variant="destructive" title={placeholders.slice(0, 5).map((p) => `[${p}]`).join("\n")}>
+                <AlertTriangle className="h-3 w-3 mr-1" /> {placeholders.length} placeholder(s)
+              </Badge>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={autoPreencher}
+              disabled={pending || publicado}
+              title="Substitui os textos [entre colchetes] pelos dados reais do Encarregado, Inventário, Terceiros e DSR"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Auto-preencher do PGP
+            </Button>
             <Button size="sm" variant="outline" onClick={salvar} disabled={pending}>Salvar rascunho</Button>
             <Button
               size="sm"
               variant="success"
               onClick={publicar}
-              disabled={pending || publicado || bloqueadoPublicar}
-              title={bloqueadoPublicar ? "Aprove ao menos 1 processo no Inventário antes de publicar" : undefined}
+              disabled={pending || publicado || bloqueadoPublicar || placeholders.length > 0}
+              title={
+                bloqueadoPublicar
+                  ? "Aprove ao menos 1 processo no Inventário antes de publicar"
+                  : placeholders.length > 0
+                  ? `Substitua os ${placeholders.length} placeholder(s) [...] antes de publicar`
+                  : undefined
+              }
             >
-              <Send className="h-3.5 w-3.5" /> {publicado ? "Já publicado" : bloqueadoPublicar ? "🔒 Publicar" : "Publicar"}
+              <Send className="h-3.5 w-3.5" /> {
+                publicado ? "Já publicado"
+                : bloqueadoPublicar ? "🔒 Publicar"
+                : placeholders.length > 0 ? "🔒 Publicar"
+                : "Publicar"
+              }
             </Button>
           </div>
         </header>
+
+        {/* Warning de placeholders */}
+        {placeholders.length > 0 && !publicado && (
+          <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 text-xs">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-700 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <div className="font-semibold text-amber-900 mb-1">
+                  Atenção: este Aviso ainda tem {placeholders.length} placeholder(s) do template
+                </div>
+                <p className="text-amber-900 mb-2">
+                  Publicar com textos entre colchetes vira &quot;compliance fake&quot; — pior que não publicar. Use o botão{" "}
+                  <strong>✨ Auto-preencher do PGP</strong> pra montar o texto a partir dos dados que vocês já produziram, ou
+                  edite manualmente cada trecho.
+                </p>
+                <details className="text-[11px]">
+                  <summary className="cursor-pointer text-amber-700 hover:text-amber-900">
+                    Ver os primeiros {Math.min(5, placeholders.length)} placeholders detectados
+                  </summary>
+                  <ul className="mt-1 ml-4 space-y-0.5">
+                    {placeholders.slice(0, 5).map((p, i) => (
+                      <li key={i} className="font-mono text-amber-900">[{p}]</li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="p-4">
           <Label>Conteúdo (Markdown)</Label>
           <Textarea
