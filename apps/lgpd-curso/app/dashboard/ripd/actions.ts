@@ -184,6 +184,41 @@ export async function devolverRipd(id: string, motivo: string) {
   revalidatePath("/dashboard/ripd");
 }
 
+/**
+ * Quando o próprio DPO eh o dono do RIPD, "submeter pra si mesmo" eh estranho.
+ * Esta action pula direto do RASCUNHO/DEVOLVIDO pra APROVADO sem passar por
+ * SUBMETIDO. Mantém auditoria preenchendo createdById, reviewedById e datas.
+ */
+export async function aprovarRipdDireto(id: string) {
+  const skip = await checkGapConcluido("FASE_6", "Aprovar RIPD direto");
+  if (skip) return skip;
+  const { companyId, session } = await requireCompany();
+
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO pode aprovar diretamente");
+  }
+  const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
+  if (!ripd) throw new Error("RIPD não encontrado");
+  if (ripd.createdById !== session.user.id) {
+    throw new Error("Aprovação direta só pelo próprio criador (use 'Submeter ao DPO' caso contrário)");
+  }
+  if (!["RASCUNHO", "DEVOLVIDO"].includes(ripd.status)) {
+    throw new Error(`RIPD com status ${ripd.status} não pode ser aprovado diretamente`);
+  }
+  const agora = new Date();
+  await prisma.ripd.update({
+    where: { id },
+    data: {
+      status: "APROVADO",
+      reviewedById: session.user.id,
+      reviewedAt: agora,
+      submittedAt: ripd.submittedAt || agora,
+      feedbackDpo: null,
+    },
+  });
+  revalidatePath("/dashboard/ripd");
+}
+
 export async function deletarRipd(id: string) {
   const skip = await checkGapConcluido("FASE_6", "Deletar RIPD");
   if (skip) return skip;
