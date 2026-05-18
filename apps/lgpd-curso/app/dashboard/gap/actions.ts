@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
-import { GAP_PACOTE } from "@/lib/gap-pacote";
+import { getPacoteAtivo } from "@/lib/gap-pacote";
 
 export async function listAnswers() {
   const { companyId } = await requireCompany();
@@ -19,8 +19,9 @@ export async function saveAnswer(input: {
   justificativa?: string;
 }) {
   const { companyId } = await requireCompany();
-  const controle = GAP_PACOTE.find((c) => c.id === input.controleId);
-  if (!controle) throw new Error("Controle inválido");
+  const pacote = await getPacoteAtivo(companyId);
+  const controle = pacote.find((c) => c.id === input.controleId);
+  if (!controle) throw new Error("Controle inválido ou não está no pacote ativo da turma");
 
   const result = await prisma.gapAnswer.upsert({
     where: { companyId_controleId: { companyId, controleId: input.controleId } },

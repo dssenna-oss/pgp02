@@ -15,6 +15,7 @@ import { CentralSos, type SosItem } from "./central-sos";
 import { ResumoTurmaDialog } from "./resumo-turma";
 
 type Turma = { id: string; nome: string; cidade: string };
+type TurmaDetalhe = Turma & { pacoteGapCustomizado?: boolean; pacoteGapTamanho?: number };
 type PhaseSkipItem = {
   id: string;
   faseTentada: string;
@@ -108,6 +109,7 @@ function tocarAlertaPuloFase(audioCtx: AudioContext | null) {
 export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [turmaId, setTurmaId] = useState<string>(turmas[0]?.id || "");
   const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [turmaDetalhe, setTurmaDetalhe] = useState<TurmaDetalhe | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [dispatchingPM, setDispatchingPM] = useState(false);
   const [dispatchingCM, setDispatchingCM] = useState(false);
@@ -131,6 +133,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
         return;
       }
       setGrupos(data.grupos);
+      setTurmaDetalhe(data.turma);
       lastFetchRef.current = new Date();
 
       // Detecta SOS novos (PENDING que não estava na lista anterior) — bip + toast
@@ -330,6 +333,28 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
 
       {/* Cronômetro de missão */}
       <Cronometro />
+
+      {/* Status do Pacote GAP da turma */}
+      {turmaDetalhe && (
+        <div className={`mb-4 text-xs px-3 py-2 rounded border flex items-center justify-between gap-2 ${
+          turmaDetalhe.pacoteGapCustomizado
+            ? "bg-purple-50 border-purple-200 text-purple-900"
+            : "bg-gray-50 border-gray-200 text-gray-700"
+        }`}>
+          <span>
+            📋 <strong>Pacote GAP</strong> da turma:{" "}
+            {turmaDetalhe.pacoteGapCustomizado
+              ? <>Customizado ({turmaDetalhe.pacoteGapTamanho} controles selecionados)</>
+              : <>Padrão (10 controles cobrindo as 7 Fases do PGP)</>}
+          </span>
+          <a
+            href={`/admin/pacote-gap?turmaId=${turmaDetalhe.id}`}
+            className="underline hover:no-underline text-[11px]"
+          >
+            Editar pacote →
+          </a>
+        </div>
+      )}
 
       {/* Grids por órgão */}
       {gruposPM.length > 0 && (

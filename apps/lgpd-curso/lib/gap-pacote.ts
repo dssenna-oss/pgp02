@@ -1,22 +1,42 @@
-// 10 controles do GAP — pacote curado para o curso.
-// Cobrem 5 áreas, 2 controles cada.
+// Pacote ATIVO de controles GAP — 10 controles curados (ou customizados pelo
+// facilitador via /admin/pacote-gap).
+//
+// A partir desta refatoração, o "pacote" vem do catálogo de 30 (gap-catalogo.ts)
+// e respeita a escolha do facilitador armazenada em CursoTurma.gapPacote.
+// Quando vazio, usa PACOTE_DEFAULT_IDS.
 
-export type Controle = {
-  id: number;
-  texto: string;
-  area: "Governança" | "Bases Legais" | "Direitos do Titular" | "Segurança" | "Incidentes";
-  hint?: string;
-};
+import { prisma } from "./prisma";
+import {
+  GAP_CATALOGO,
+  PACOTE_DEFAULT_IDS,
+  getPacotePorIds,
+  type ControleCatalogo,
+} from "./gap-catalogo";
 
-export const GAP_PACOTE: Controle[] = [
-  { id: 1,  area: "Governança",          texto: "Política de Privacidade publicada e divulgada?", hint: "Pode ser interna (corpo funcional) e externa (cidadão)." },
-  { id: 2,  area: "Governança",          texto: "Encarregado designado por ato formal?", hint: "Portaria, ato, decreto — formal, publicado." },
-  { id: 3,  area: "Bases Legais",        texto: "Base legal documentada por processo de tratamento?", hint: "Art. 7º (comuns) e Art. 11 (sensíveis) da LGPD." },
-  { id: 4,  area: "Bases Legais",        texto: "Inventário de tratamentos atualizado nos últimos 12 meses?", hint: "Inclui novos sistemas, fluxos, terceirizações?" },
-  { id: 5,  area: "Direitos do Titular", texto: "Canal pra exercer direitos do titular disponível e divulgado?", hint: "E-mail, formulário, telefone — claro e acessível." },
-  { id: 6,  area: "Direitos do Titular", texto: "Prazo de resposta de 15 dias úteis monitorado?", hint: "Existe registro de solicitações + monitoramento do prazo?" },
-  { id: 7,  area: "Segurança",           texto: "Controle de acesso por usuário/perfil implementado?", hint: "Cada um vê só o que precisa pra função." },
-  { id: 8,  area: "Segurança",           texto: "Política de senhas + MFA para sistemas críticos?", hint: "Senha forte + 2 fatores nos sistemas que tratam dados sensíveis." },
-  { id: 9,  area: "Incidentes",          texto: "Plano de resposta a incidente formalizado e testado?", hint: "Documento + simulado nos últimos 12 meses." },
-  { id: 10, area: "Incidentes",          texto: "Equipe treinada em LGPD nos últimos 12 meses?", hint: "Treinamento formal, com registro de presença." },
-];
+// Compat: alguns lugares ainda importam o tipo "Controle".
+export type Controle = ControleCatalogo;
+
+/**
+ * Pacote ativo pra uma company (grupo). Lê CursoTurma.gapPacote do grupo.
+ * Se vazio (turma não customizou), retorna o pacote default.
+ */
+export async function getPacoteAtivo(companyId: string): Promise<ControleCatalogo[]> {
+  const grupo = await prisma.cursoGrupo.findUnique({
+    where: { companyId },
+    select: { turma: { select: { gapPacote: true } } },
+  });
+  const ids = grupo?.turma?.gapPacote;
+  if (ids && ids.length > 0) return getPacotePorIds(ids);
+  return getPacotePorIds(PACOTE_DEFAULT_IDS);
+}
+
+/**
+ * Compat: pacote default acessível como const sincrono.
+ * Usado por código que não tem companyId em mãos (ex: actions internas que
+ * precisam do nome de um controle pelo ID histórico).
+ * NÃO usar isso pra renderizar o pacote do usuário — use getPacoteAtivo.
+ */
+export const GAP_PACOTE: ControleCatalogo[] = getPacotePorIds(PACOTE_DEFAULT_IDS);
+
+/** Re-export pra evitar atrito em quem busca controle por ID. */
+export { GAP_CATALOGO };

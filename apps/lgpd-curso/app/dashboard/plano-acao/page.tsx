@@ -10,8 +10,8 @@ export default async function PlanoAcaoPage() {
     <div className="max-w-5xl mx-auto">
       <PageHeader
         missao="Fase 5"
-        titulo="Plano de Ação"
-        descricao="O Plano sai NATURALMENTE das fases anteriores. Cada Risco com severidade ALTA e cada GAP NÃO ADERENTE vira uma ação aqui. Use o botão 'Importar' pra trazer tudo automaticamente — depois é só atribuir responsável e prazo."
+        titulo="Programa de Governança em Privacidade (PGP)"
+        descricao="O Plano de Ação é o coração do PGP — sai NATURALMENTE das fases anteriores (Inventário → Riscos → GAP). Cada Risco com severidade ALTA e cada GAP NÃO ADERENTE vira uma ação aqui. Use o botão 'Importar' pra trazer tudo automaticamente — depois é só atribuir responsável e prazo."
       />
       <PlanoAcaoList items={items as any} />
     </div>

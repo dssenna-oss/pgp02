@@ -32,6 +32,8 @@ export async function GET(req: NextRequest) {
   });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
+  const pacoteGapCustomizado = (turma.gapPacote?.length || 0) > 0;
+
   const grupoIds = turma.grupos.map((g) => g.id);
 
   // SOS ativos (PENDING + ATTENDED) — todos da turma em 1 query
@@ -212,7 +214,13 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json({
-    turma: { id: turma.id, nome: turma.nome, cidade: turma.cidade },
+    turma: {
+      id: turma.id,
+      nome: turma.nome,
+      cidade: turma.cidade,
+      pacoteGapCustomizado,
+      pacoteGapTamanho: pacoteGapCustomizado ? turma.gapPacote.length : 10,
+    },
     grupos: result,
     geradoEm: new Date().toISOString(),
   });

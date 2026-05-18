@@ -2,34 +2,69 @@ import { PageHeader } from "@/components/page-header";
 import { GapControl } from "./gap-control";
 import { GapContextoBanner } from "./gap-contexto-banner";
 import { listAnswers } from "./actions";
-import { GAP_PACOTE } from "@/lib/gap-pacote";
+import { getPacoteAtivo } from "@/lib/gap-pacote";
+import { FASES_ORDEM, PACOTE_DEFAULT_IDS, type ControleCatalogo, type FaseGap } from "@/lib/gap-catalogo";
+import { requireCompany } from "@/lib/auth-server";
+import { prisma } from "@/lib/prisma";
+import { Flag } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function GapPage() {
-  const answers = await listAnswers();
+  const { companyId } = await requireCompany();
+  const [answers, pacote, grupoComTurma] = await Promise.all([
+    listAnswers(),
+    getPacoteAtivo(companyId),
+    prisma.cursoGrupo.findUnique({
+      where: { companyId },
+      select: { turma: { select: { gapPacote: true } } },
+    }),
+  ]);
+
   const byId = new Map(answers.map((a) => [a.controleId, a]));
 
-  const total = GAP_PACOTE.length;
-  const respondidos = answers.length;
-  const aderentes = answers.filter((a) => a.resposta === "ADERENTE").length;
-  const parciais = answers.filter((a) => a.resposta === "PARCIAL").length;
-  const naoAderentes = answers.filter((a) => a.resposta === "NAO_ADERENTE").length;
+  const total = pacote.length;
+  const respondidos = answers.filter((a) => pacote.some((c) => c.id === a.controleId)).length;
+  const aderentes = answers.filter((a) => a.resposta === "ADERENTE" && pacote.some((c) => c.id === a.controleId)).length;
+  const parciais = answers.filter((a) => a.resposta === "PARCIAL" && pacote.some((c) => c.id === a.controleId)).length;
+  const naoAderentes = answers.filter((a) => a.resposta === "NAO_ADERENTE" && pacote.some((c) => c.id === a.controleId)).length;
 
-  // Score: ADERENTE = 100%, PARCIAL = 50%, NAO_ADERENTE = 0%
   const score = total > 0
     ? Math.round(((aderentes * 100 + parciais * 50) / (total * 100)) * 100)
     : 0;
+
+  // Pacote: customizado ou padrão?
+  const idsTurma = grupoComTurma?.turma?.gapPacote || [];
+  const customizado = idsTurma.length > 0;
+
+  // Agrupa pacote ativo pelas Fases
+  const porFase = new Map<FaseGap, ControleCatalogo[]>();
+  for (const c of pacote) {
+    const arr = porFase.get(c.fase) || [];
+    arr.push(c);
+    porFase.set(c.fase, arr);
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
       <PageHeader
         missao="Missão 3 · GAP"
-        titulo="GAP Analysis — 10 controles"
+        titulo={`GAP Analysis — ${total} controles`}
         descricao="Medir maturidade real vale mais que parecer maduro. Responda cada controle com honestidade — esta é fotografia da casa hoje, não onde queremos chegar."
       />
 
       <GapContextoBanner />
+
+      {/* Origem do pacote: padrão vs customizado pelo facilitador */}
+      <div className={`mb-4 text-xs px-3 py-2 rounded border ${
+        customizado
+          ? "bg-purple-50 border-purple-200 text-purple-900"
+          : "bg-gray-50 border-gray-200 text-gray-600"
+      }`}>
+        {customizado
+          ? <>📋 <strong>Pacote customizado</strong> pela turma — {total} controles selecionados pelo facilitador entre os 30 do catálogo do curso.</>
+          : <>📋 <strong>Pacote padrão</strong> — {total} controles cobrindo as 7 Fases do PGP.</>}
+      </div>
 
       <div className="grid grid-cols-4 gap-3 mb-6">
         <div className="border rounded-lg p-3 bg-white">
@@ -60,10 +95,28 @@ export default async function GapPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {GAP_PACOTE.map((c) => (
-          <GapControl key={c.id} controle={c} answer={byId.get(c.id) || null} />
-        ))}
+      {/* Controles agrupados pelas Fases do PGP */}
+      <div className="space-y-6">
+        {FASES_ORDEM.map((fase) => {
+          const controles = porFase.get(fase.id);
+          if (!controles || controles.length === 0) return null;
+          return (
+            <section key={fase.id}>
+              <h2 className={`flex items-center gap-2 text-sm font-semibold text-gray-800 border-l-4 ${fase.cor} pl-3 py-1 mb-3 bg-gray-50/60`}>
+                <Flag className="h-4 w-4 text-gray-500" />
+                <span>{fase.emoji} {fase.nome}</span>
+                <span className="text-[11px] font-normal text-gray-500 ml-auto">
+                  {controles.length} controle{controles.length > 1 ? "s" : ""}
+                </span>
+              </h2>
+              <div className="space-y-3">
+                {controles.map((c) => (
+                  <GapControl key={c.id} controle={c} answer={byId.get(c.id) || null} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
       </div>
     </div>
   );
