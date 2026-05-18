@@ -28,6 +28,10 @@ export type MissoesProgresso = {
   // DSR Surpresa: quantos pedidos disparados pelo facilitador ainda estão
   // sem ação do DPO (gameAction = null). Banner/badge usa essa contagem.
   dsrSurpresaPendentes: number;
+  // Incidentes: quantos incidentes estão ABERTOS (status != ENCERRADO).
+  // Inclui os RASCUNHO disparados pelo facilitador. Banner/badge usa essa
+  // contagem pra alertar o DPO em qualquer página do dashboard.
+  incidentesEmAberto: number;
 };
 
 const EMPTY: MissoesProgresso = {
@@ -36,6 +40,7 @@ const EMPTY: MissoesProgresso = {
   m4a_ripd: false, m4a_terceiros: false, m4a_dsr: false,
   m4b: false, m5: false,
   dsrSurpresaPendentes: 0,
+  incidentesEmAberto: 0,
 };
 
 export async function getMissoesProgresso(): Promise<MissoesProgresso> {
@@ -71,5 +76,6 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     m4b: aviso?.status === "PUBLICADO",
     m5: incidentes.some((i) => i.status && i.status !== "RASCUNHO"),
     dsrSurpresaPendentes: qtdDsrSurpresaPendentes,
+    incidentesEmAberto: incidentes.filter((i) => i.status !== "ENCERRADO").length,
   };
 }

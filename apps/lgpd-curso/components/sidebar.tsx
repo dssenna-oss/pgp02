@@ -90,7 +90,7 @@ const FASES: Fase[] = [
     rotulo: "Fase 7 — Monitoramento",
     cor: "border-l-red-400",
     itens: [
-      { href: "/dashboard/incidentes", label: "Incidentes", missao: "M5", icon: AlertTriangle, progressoKey: "m5", dpoOnly: true },
+      { href: "/dashboard/incidentes", label: "Incidentes", missao: "M5", icon: AlertTriangle, progressoKey: "m5", dpoOnly: true, alertaCountKey: "incidentesEmAberto" },
     ],
   },
 ];
