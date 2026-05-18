@@ -12,9 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd, aprovarRipdDireto, sugerirSecao } from "./actions";
+import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd, aprovarRipdDireto, sugerirSecao, reabrirRipd } from "./actions";
 import { LgpdHelp } from "@/components/lgpd-help";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Unlock } from "lucide-react";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -181,6 +181,7 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
   const podeAprovar = isDpo && ripd.status === "SUBMETIDO";
   const podeDevolver = isDpo && ripd.status === "SUBMETIDO";
   const podeRemover = ehDono && ripd.status !== "APROVADO";
+  const podeReabrir = isDpo && ripd.status === "APROVADO";
 
   const preenchidas = ripd.sections.filter((s) => s.conteudo && s.conteudo.trim().length > 0).length;
   const [devolvendo, setDevolvendo] = useState(false);
@@ -188,6 +189,10 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
   const [pendingAction, setPendingAction] = useState(false);
 
   async function submeter() {
+    if (preenchidas === 0) {
+      toast.error("Preencha pelo menos 1 seção antes de submeter");
+      return;
+    }
     if (preenchidas < 8 && !confirm(`Apenas ${preenchidas} de 8 seções preenchidas. Submeter mesmo assim?`)) return;
     try {
       const r = await submeterRipd(ripd.id);
@@ -196,11 +201,23 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
     } catch (e: any) { toast.error(e.message); }
   }
   async function aprovarDireto() {
+    if (preenchidas === 0) {
+      toast.error("Preencha pelo menos 1 seção antes de aprovar");
+      return;
+    }
     if (preenchidas < 8 && !confirm(`Apenas ${preenchidas} de 8 seções preenchidas. Aprovar mesmo assim?`)) return;
     try {
       const r = await aprovarRipdDireto(ripd.id);
       if (handlePhaseSkipResult(r)) return;
       toast.success("RIPD aprovado");
+    } catch (e: any) { toast.error(e.message); }
+  }
+  async function reabrir() {
+    if (!confirm("Reabrir este RIPD aprovado pra correção? Ele voltará pra RASCUNHO.")) return;
+    try {
+      const r = await reabrirRipd(ripd.id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("RIPD reaberto — pode editar e aprovar de novo");
     } catch (e: any) { toast.error(e.message); }
   }
   async function aprovar() {
@@ -261,6 +278,17 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
           {podeDevolver && (
             <Button size="sm" variant="destructive" onClick={() => setDevolvendo(true)}>
               <RotateCcw className="h-3.5 w-3.5" /> Devolver
+            </Button>
+          )}
+          {podeReabrir && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={reabrir}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+              title="Reabrir pra editar/complementar — volta pra RASCUNHO"
+            >
+              <Unlock className="h-3.5 w-3.5" /> Reabrir pra editar
             </Button>
           )}
           {podeRemover && (

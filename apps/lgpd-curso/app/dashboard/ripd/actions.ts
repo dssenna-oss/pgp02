@@ -133,13 +133,20 @@ export async function submeterRipd(id: string) {
   const skip = await checkGapConcluido("FASE_6", "Submeter RIPD");
   if (skip) return skip;
   const { companyId, session } = await requireCompany();
-  const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
+  const ripd = await prisma.ripd.findFirst({
+    where: { id, companyId },
+    include: { sections: { select: { conteudo: true } } },
+  });
   if (!ripd) throw new Error("RIPD não encontrado");
   if (ripd.createdById !== session.user.id && session.user.role !== "ADMIN") {
     throw new Error("Apenas o criador do RIPD pode submetê-lo");
   }
   if (!["RASCUNHO", "DEVOLVIDO"].includes(ripd.status)) {
     throw new Error(`Não é possível submeter um RIPD com status ${ripd.status}`);
+  }
+  const preenchidas = ripd.sections.filter((s) => (s.conteudo || "").trim().length > 0).length;
+  if (preenchidas === 0) {
+    throw new Error("RIPD vazio (0/8 seções) não pode ser submetido. Preencha pelo menos 1 seção.");
   }
   await prisma.ripd.update({
     where: { id },
@@ -189,6 +196,7 @@ export async function devolverRipd(id: string, motivo: string) {
  * Quando o próprio DPO eh o dono do RIPD, "submeter pra si mesmo" eh estranho.
  * Esta action pula direto do RASCUNHO/DEVOLVIDO pra APROVADO sem passar por
  * SUBMETIDO. Mantém auditoria preenchendo createdById, reviewedById e datas.
+ * Bloqueia aprovação com ZERO seções preenchidas (validação server-side).
  */
 export async function aprovarRipdDireto(id: string) {
   const skip = await checkGapConcluido("FASE_6", "Aprovar RIPD direto");
@@ -198,13 +206,20 @@ export async function aprovarRipdDireto(id: string) {
   if (!["DPO", "ADMIN"].includes(session.user.role)) {
     throw new Error("Apenas o DPO pode aprovar diretamente");
   }
-  const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
+  const ripd = await prisma.ripd.findFirst({
+    where: { id, companyId },
+    include: { sections: { select: { conteudo: true } } },
+  });
   if (!ripd) throw new Error("RIPD não encontrado");
   if (ripd.createdById !== session.user.id) {
     throw new Error("Aprovação direta só pelo próprio criador (use 'Submeter ao DPO' caso contrário)");
   }
   if (!["RASCUNHO", "DEVOLVIDO"].includes(ripd.status)) {
     throw new Error(`RIPD com status ${ripd.status} não pode ser aprovado diretamente`);
+  }
+  const preenchidas = ripd.sections.filter((s) => (s.conteudo || "").trim().length > 0).length;
+  if (preenchidas === 0) {
+    throw new Error("RIPD vazio (0/8 seções) não pode ser aprovado. Preencha pelo menos 1 seção.");
   }
   const agora = new Date();
   await prisma.ripd.update({
@@ -215,6 +230,35 @@ export async function aprovarRipdDireto(id: string) {
       reviewedAt: agora,
       submittedAt: ripd.submittedAt || agora,
       feedbackDpo: null,
+    },
+  });
+  revalidatePath("/dashboard/ripd");
+}
+
+/**
+ * Reabre um RIPD aprovado pra correção. Só DPO/admin pode. Muda APROVADO ->
+ * RASCUNHO mantendo histórico de createdById/createdAt mas limpando reviewedAt.
+ */
+export async function reabrirRipd(id: string) {
+  const skip = await checkGapConcluido("FASE_6", "Reabrir RIPD aprovado");
+  if (skip) return skip;
+  const { companyId, session } = await requireCompany();
+
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO pode reabrir um RIPD aprovado");
+  }
+  const ripd = await prisma.ripd.findFirst({ where: { id, companyId } });
+  if (!ripd) throw new Error("RIPD não encontrado");
+  if (ripd.status !== "APROVADO") {
+    throw new Error(`Só RIPD APROVADO pode ser reaberto (atual: ${ripd.status})`);
+  }
+  await prisma.ripd.update({
+    where: { id },
+    data: {
+      status: "RASCUNHO",
+      reviewedAt: null,
+      reviewedById: null,
+      feedbackDpo: "Reaberto pelo DPO pra correção/complemento.",
     },
   });
   revalidatePath("/dashboard/ripd");
