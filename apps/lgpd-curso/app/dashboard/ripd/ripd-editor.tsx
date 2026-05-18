@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd } from "./actions";
+import { createRipd, saveSecao, aprovarRipd, devolverRipd, deletarRipd, submeterRipd, aprovarRipdDireto } from "./actions";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -171,7 +171,11 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
   const ehDono = ripd.createdById === userId;
 
   const podeEditar = (ehDono || isDpo) && ripd.status !== "APROVADO";
-  const podeSubmeter = ehDono && ["RASCUNHO", "DEVOLVIDO"].includes(ripd.status);
+  // Caso especial: o próprio DPO criou o RIPD — não faz sentido "submeter pra si mesmo"
+  // O botão vira "Aprovar (você é o DPO)" e pula direto pro status APROVADO.
+  const dpoEDono = isDpo && ehDono;
+  const podeAprovarDireto = dpoEDono && ["RASCUNHO", "DEVOLVIDO"].includes(ripd.status);
+  const podeSubmeter = ehDono && !dpoEDono && ["RASCUNHO", "DEVOLVIDO"].includes(ripd.status);
   const podeAprovar = isDpo && ripd.status === "SUBMETIDO";
   const podeDevolver = isDpo && ripd.status === "SUBMETIDO";
   const podeRemover = ehDono && ripd.status !== "APROVADO";
@@ -187,6 +191,14 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
       const r = await submeterRipd(ripd.id);
       if (handlePhaseSkipResult(r)) return;
       toast.success("RIPD submetido ao DPO");
+    } catch (e: any) { toast.error(e.message); }
+  }
+  async function aprovarDireto() {
+    if (preenchidas < 8 && !confirm(`Apenas ${preenchidas} de 8 seções preenchidas. Aprovar mesmo assim?`)) return;
+    try {
+      const r = await aprovarRipdDireto(ripd.id);
+      if (handlePhaseSkipResult(r)) return;
+      toast.success("RIPD aprovado");
     } catch (e: any) { toast.error(e.message); }
   }
   async function aprovar() {
@@ -229,6 +241,11 @@ function RipdCard({ ripd }: { ripd: Ripd }) {
           )}
         </div>
         <div className="flex gap-1 flex-wrap">
+          {podeAprovarDireto && (
+            <Button size="sm" variant="success" onClick={aprovarDireto} title="Você é o DPO — pode aprovar diretamente sem precisar submeter">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar (você é o DPO)
+            </Button>
+          )}
           {podeSubmeter && (
             <Button size="sm" variant="primary" onClick={submeter}>
               <Send className="h-3.5 w-3.5" /> Submeter ao DPO
