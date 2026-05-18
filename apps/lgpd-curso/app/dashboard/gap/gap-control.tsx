@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, AlertCircle, XCircle, HandHelping } from "lucide-react";
+import {
+  CheckCircle2, AlertCircle, XCircle, HandHelping,
+  CalendarClock, Download, ListTodo,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { saveAnswer } from "./actions";
+import { saveAnswer, importarResultado, criarAcaoPlanejada } from "./actions";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Controle } from "@/lib/gap-pacote";
@@ -37,6 +40,12 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
   );
   const [pending, startTransition] = useTransition();
 
+  const isApoio = resposta === "APOIO_PENDENTE";
+  const isPlanejada = resposta === "ACAO_PLANEJADA";
+  const setorInfo = isApoio ? getSetorById(setorAtual) : null;
+  const podeImportar = !!controle.importavel;
+  const podeCriarAcao = isPlanejada;
+
   function save(novaResposta: string, novaJust: string, novoSetor: string | null) {
     startTransition(async () => {
       try {
@@ -49,6 +58,8 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
         if (novaResposta === "APOIO_PENDENTE") {
           const setor = getSetorById(novoSetor || "");
           toast.success(`Apoio do setor "${setor?.nome || novoSetor}" solicitado`);
+        } else if (novaResposta === "ACAO_PLANEJADA") {
+          toast.success(`Controle ${controle.id} marcado como ação planejada`);
         } else {
           toast.success(`Controle ${controle.id} salvo`);
         }
@@ -60,7 +71,6 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
 
   function escolher(novaResposta: string) {
     if (novaResposta === "APOIO_PENDENTE") {
-      // Não salva direto — abre Dialog pra escolher setor
       setDialogOpen(true);
       return;
     }
@@ -80,18 +90,47 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
     save("APOIO_PENDENTE", justificativa, setorDialog);
   }
 
-  function salvarJust() {
-    if (resposta) save(resposta, justificativa, resposta === "APOIO_PENDENTE" ? setorAtual : null);
+  function importar() {
+    startTransition(async () => {
+      try {
+        const r = await importarResultado(controle.id);
+        setResposta(r.resposta);
+        setJustificativa(r.justificativa || "");
+        setSetorAtual("");
+        toast.success(`Resultado importado: ${labelResposta(r.resposta)}`);
+      } catch (e: any) {
+        toast.error(e.message || "Erro ao importar");
+      }
+    });
   }
 
-  const isApoio = resposta === "APOIO_PENDENTE";
-  const setorInfo = isApoio ? getSetorById(setorAtual) : null;
+  function criarNoPlano() {
+    startTransition(async () => {
+      try {
+        const r = await criarAcaoPlanejada(controle.id);
+        if (r.criada) toast.success("Ação criada no Plano de Ação (Fase 5)");
+        else toast(`Já existe ação no Plano pra este controle`, { icon: "ℹ️" });
+      } catch (e: any) {
+        toast.error(e.message || "Erro");
+      }
+    });
+  }
+
+  function salvarJust() {
+    if (resposta) save(resposta, justificativa, isApoio ? setorAtual : null);
+  }
+
+  // Cor do contêiner segundo a resposta
+  const containerCor =
+    resposta === "ADERENTE"     ? "border-emerald-300 bg-emerald-50/30" :
+    resposta === "PARCIAL"      ? "border-amber-300 bg-amber-50/30" :
+    resposta === "NAO_ADERENTE" ? "border-red-300 bg-red-50/30" :
+    isPlanejada                 ? "border-slate-300 bg-slate-50/40" :
+    isApoio                     ? "border-sky-300 bg-sky-50/40" :
+    "border-gray-200 bg-white";
 
   return (
-    <div className={cn(
-      "border rounded-lg p-4 bg-white",
-      isApoio && "border-sky-300 bg-sky-50/40",
-    )}>
+    <div className={cn("border rounded-lg p-4", containerCor)}>
       <div className="flex items-start gap-3 mb-3">
         <Badge variant="ghost" className="mt-0.5 flex-shrink-0">#{controle.id}</Badge>
         <div className="flex-1">
@@ -104,11 +143,22 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
                 {setorInfo.emoji} Apoio: {setorInfo.nome}
               </Badge>
             )}
+            {isPlanejada && (
+              <Badge variant="default" className="bg-slate-100 text-slate-700">
+                <CalendarClock className="h-3 w-3" /> Ação planejada
+              </Badge>
+            )}
+            {podeImportar && (
+              <Badge variant="default" className="bg-purple-50 text-purple-700">
+                <Download className="h-3 w-3" /> Importável
+              </Badge>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+      {/* Linha 1: 4 botões de resposta */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
         <Button
           variant={resposta === "ADERENTE" ? "success" : "outline"}
           size="sm"
@@ -135,15 +185,53 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
           <XCircle className="h-3.5 w-3.5" /> Não aderente
         </Button>
         <Button
+          variant={isPlanejada ? "primary" : "outline"}
+          size="sm"
+          className={isPlanejada ? "bg-slate-600 hover:bg-slate-700" : ""}
+          onClick={() => escolher("ACAO_PLANEJADA")}
+          disabled={pending}
+          title="Está no roadmap mas ainda não foi feito — diferencia de NÃO ADERENTE"
+        >
+          <CalendarClock className="h-3.5 w-3.5" /> Ação planejada
+        </Button>
+      </div>
+
+      {/* Linha 2: Solicitar apoio + Importar (se aplicável) + Criar no Plano (se planejada) */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        <Button
           variant={isApoio ? "primary" : "outline"}
           size="sm"
           className={isApoio ? "bg-sky-600 hover:bg-sky-700" : ""}
           onClick={() => escolher("APOIO_PENDENTE")}
           disabled={pending}
-          title="Não consigo avaliar sozinho — preciso do apoio de outro setor"
+          title="Preciso do apoio de outro setor pra avaliar"
         >
           <HandHelping className="h-3.5 w-3.5" /> Solicitar apoio
         </Button>
+        {podeImportar && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={importar}
+            disabled={pending}
+            className="border-purple-300 text-purple-700 hover:bg-purple-50"
+            title="Calcula a aderência automaticamente baseado no que já está no Inventário/Riscos/RIPD/Aviso/Operadores/DSR/Incidentes"
+          >
+            <Download className="h-3.5 w-3.5" /> Importar resultados
+          </Button>
+        )}
+        {podeCriarAcao && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={criarNoPlano}
+            disabled={pending}
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+            title="Cria uma entrada correspondente no Plano de Ação (Fase 5)"
+          >
+            <ListTodo className="h-3.5 w-3.5" /> Criar no Plano de Ação
+          </Button>
+        )}
       </div>
 
       {resposta && (
@@ -156,6 +244,8 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
             placeholder={
               isApoio
                 ? "Detalhe pro setor — o que exatamente precisa ser confirmado?"
+                : isPlanejada
+                ? "Quando pretende implementar? Há alguma dependência?"
                 : "Uma linha justificando a resposta (ex: 'Portaria publicada em 2024, mas não testada.')"
             }
             className="text-xs"
@@ -220,4 +310,14 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
       </Dialog>
     </div>
   );
+}
+
+function labelResposta(r: string): string {
+  return ({
+    ADERENTE: "Aderente",
+    PARCIAL: "Parcial",
+    NAO_ADERENTE: "Não aderente",
+    ACAO_PLANEJADA: "Ação planejada",
+    APOIO_PENDENTE: "Apoio pendente",
+  } as Record<string, string>)[r] || r;
 }

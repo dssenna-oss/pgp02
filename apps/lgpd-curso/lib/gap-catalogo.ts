@@ -25,6 +25,17 @@ export type ControleCatalogo = {
   area: string; // categoria mais granular (mostra como pílula)
   texto: string;
   hint?: string;
+  /** Se preenchido, o controle aceita "Importar resultados" — botão extra no card.
+   *  A chave indica qual engine usar em lib/gap-import.ts. */
+  importavel?:
+    | "INV_ATUALIZADO"
+    | "INV_BASE_LEGAL"
+    | "RISCO_MATRIZ"
+    | "RIPD_APROVADO"
+    | "OPERADOR_CLAUSULAS"
+    | "DSR_CANAL"
+    | "AVISO_PUBLICADO"
+    | "INCIDENTE_REGISTRADO";
 };
 
 export const GAP_CATALOGO: ControleCatalogo[] = [
@@ -64,10 +75,12 @@ export const GAP_CATALOGO: ControleCatalogo[] = [
   // ─── FASE 3 — Mapeamento e Análise de Riscos ───────────────────────────
   { id: 10, fase: "FASE_3", area: "Inventário",
     texto: "Inventário de processos atualizado nos últimos 12 meses",
-    hint: "Inclui novos sistemas, fluxos, terceirizações. Revisão periódica formal." },
+    hint: "Inclui novos sistemas, fluxos, terceirizações. Revisão periódica formal.",
+    importavel: "INV_ATUALIZADO" },
   { id: 11, fase: "FASE_3", area: "Bases Legais",
     texto: "Base legal documentada por processo (Art. 7º ou Art. 11 LGPD)",
-    hint: "Cada processo tem hipótese de tratamento justificada juridicamente. Não basta 'consentimento por padrão'." },
+    hint: "Cada processo tem hipótese de tratamento justificada juridicamente. Não basta 'consentimento por padrão'.",
+    importavel: "INV_BASE_LEGAL" },
   { id: 12, fase: "FASE_3", area: "Tipos de dados",
     texto: "Tipos de dados pessoais mapeados por processo (cadastrais, sensíveis, financeiros, de menores)",
     hint: "Identificação granular permite aplicar cuidados específicos do Art. 11 (sensíveis) e Art. 14 (crianças)." },
@@ -76,7 +89,8 @@ export const GAP_CATALOGO: ControleCatalogo[] = [
     hint: "Diagrama ou tabela mostrando de onde vem, quem trata, com quem compartilha, onde armazena." },
   { id: 14, fase: "FASE_3", area: "Análise de Riscos",
     texto: "Análise de Riscos formalizada com matriz Probabilidade × Impacto",
-    hint: "Riscos identificados, classificados (Baixo/Médio/Alto) e com medidas de mitigação propostas." },
+    hint: "Riscos identificados, classificados (Baixo/Médio/Alto) e com medidas de mitigação propostas.",
+    importavel: "RISCO_MATRIZ" },
 
   // ─── FASE 5 — Programa de Governança em Privacidade ────────────────────
   { id: 15, fase: "FASE_5", area: "PGP institucional",
@@ -92,7 +106,8 @@ export const GAP_CATALOGO: ControleCatalogo[] = [
   // ─── FASE 6 — Execução (instrumentos) ──────────────────────────────────
   { id: 18, fase: "FASE_6", area: "RIPD/DPIA",
     texto: "RIPD elaborado pra processos de alto risco (sensíveis, perfilamento, vigilância)",
-    hint: "Art. 38 LGPD. Detalha tipos de dados, finalidade, riscos e medidas de mitigação por processo crítico." },
+    hint: "Art. 38 LGPD. Detalha tipos de dados, finalidade, riscos e medidas de mitigação por processo crítico.",
+    importavel: "RIPD_APROVADO" },
   { id: 19, fase: "FASE_6", area: "PSI",
     texto: "Política de Segurança da Informação (PSI) aprovada — controle de acesso por perfil + senhas fortes + MFA em sistemas críticos",
     hint: "Documento institucional que define como cada um vê só o que precisa pra função, com autenticação reforçada nos sistemas que tratam dados sensíveis." },
@@ -104,16 +119,19 @@ export const GAP_CATALOGO: ControleCatalogo[] = [
     hint: "Quem acessou o quê e quando. Logs preservados pelo prazo legal e revisados em busca de anomalias." },
   { id: 22, fase: "FASE_6", area: "Gestão de Operadores",
     texto: "Contratos com operadores (terceirizados) contêm cláusulas LGPD obrigatórias (Art. 39)",
-    hint: "Toda relação de tratamento por terceiros (cloud, folha, sistema legado) tem cláusula expressa de proteção de dados." },
+    hint: "Toda relação de tratamento por terceiros (cloud, folha, sistema legado) tem cláusula expressa de proteção de dados.",
+    importavel: "OPERADOR_CLAUSULAS" },
   { id: 23, fase: "FASE_6", area: "Direitos do Titular",
     texto: "Canal pra exercer direitos do titular (DSR) divulgado e funcional",
-    hint: "E-mail dedicado + formulário público + telefone. Divulgado no portal externo e no Aviso de Privacidade." },
+    hint: "E-mail dedicado + formulário público + telefone. Divulgado no portal externo e no Aviso de Privacidade.",
+    importavel: "DSR_CANAL" },
   { id: 24, fase: "FASE_6", area: "Direitos do Titular",
     texto: "Prazo de 15 dias úteis (Art. 19, II LGPD) nas respostas a DSR monitorado",
     hint: "Registro formal das solicitações com data de entrada e prazo de resposta. Indicador de cumprimento por trimestre." },
   { id: 25, fase: "FASE_6", area: "Aviso de Privacidade",
     texto: "Aviso de Privacidade publicado no portal externo (Art. 9 LGPD)",
-    hint: "Acessível ao cidadão. Lista finalidades, formas de tratamento, direitos do titular e canal do DPO." },
+    hint: "Acessível ao cidadão. Lista finalidades, formas de tratamento, direitos do titular e canal do DPO.",
+    importavel: "AVISO_PUBLICADO" },
   { id: 26, fase: "FASE_6", area: "Anonimização",
     texto: "Procedimento de anonimização documentado pra dados que perderam finalidade",
     hint: "Quando os dados não são mais necessários, anonimizar saí do escopo da LGPD." },
@@ -124,7 +142,8 @@ export const GAP_CATALOGO: ControleCatalogo[] = [
   // ─── FASE 7 — Monitoramento e Resposta ─────────────────────────────────
   { id: 28, fase: "FASE_7", area: "Resposta a Incidentes",
     texto: "Plano de resposta a incidente formalizado e testado nos últimos 12 meses",
-    hint: "Documento + simulado anual. Contém papéis, contatos, fluxo de decisão e modelos de comunicação." },
+    hint: "Documento + simulado anual. Contém papéis, contatos, fluxo de decisão e modelos de comunicação.",
+    importavel: "INCIDENTE_REGISTRADO" },
   { id: 29, fase: "FASE_7", area: "Comunicação ANPD",
     texto: "Procedimento de comunicação à ANPD (Art. 48 + Resolução 15/2024) documentado",
     hint: "Modelo de comunicação pronto, lista de informações obrigatórias, fluxo de aprovação interno antes do envio." },

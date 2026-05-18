@@ -29,11 +29,12 @@ export default async function GapPage() {
   const aderentes = answers.filter((a) => a.resposta === "ADERENTE" && idsPacote.has(a.controleId)).length;
   const parciais = answers.filter((a) => a.resposta === "PARCIAL" && idsPacote.has(a.controleId)).length;
   const naoAderentes = answers.filter((a) => a.resposta === "NAO_ADERENTE" && idsPacote.has(a.controleId)).length;
+  const acoesPlanejadas = answers.filter((a) => a.resposta === "ACAO_PLANEJADA" && idsPacote.has(a.controleId)).length;
   const apoiosPendentes = answers.filter((a) => a.resposta === "APOIO_PENDENTE" && idsPacote.has(a.controleId)).length;
 
-  // Score: ignora APOIO_PENDENTE (controle não foi efetivamente avaliado).
-  // Denominador = avaliados pelo DPO (ADERENTE+PARCIAL+NAO_ADERENTE). Se zero, score 0.
-  const avaliados = aderentes + parciais + naoAderentes;
+  // Score: ignora APOIO_PENDENTE (não foi avaliado). ACAO_PLANEJADA conta como
+  // 0 pontos (não premia promessa) mas entra no denominador.
+  const avaliados = aderentes + parciais + naoAderentes + acoesPlanejadas;
   const score = avaliados > 0
     ? Math.round(((aderentes * 100 + parciais * 50) / (avaliados * 100)) * 100)
     : 0;
@@ -71,7 +72,7 @@ export default async function GapPage() {
           : <>📋 <strong>Pacote padrão</strong> — {total} controles cobrindo as 7 Fases do PGP.</>}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <div className="border rounded-lg p-3 bg-white">
           <div className="text-[11px] text-gray-500 uppercase">Respondidos</div>
           <div className="text-xl font-bold mt-1">{respondidos} / {total}</div>
@@ -88,8 +89,12 @@ export default async function GapPage() {
           <div className="text-[11px] text-red-700 uppercase">Não aderentes</div>
           <div className="text-xl font-bold mt-1 text-red-700">{naoAderentes}</div>
         </div>
+        <div className="border rounded-lg p-3 bg-slate-50">
+          <div className="text-[11px] text-slate-700 uppercase">📅 Planejadas</div>
+          <div className="text-xl font-bold mt-1 text-slate-700">{acoesPlanejadas}</div>
+        </div>
         <div className="border rounded-lg p-3 bg-sky-50">
-          <div className="text-[11px] text-sky-700 uppercase">Apoio pendente</div>
+          <div className="text-[11px] text-sky-700 uppercase">🤝 Apoio</div>
           <div className="text-xl font-bold mt-1 text-sky-700">{apoiosPendentes}</div>
         </div>
       </div>
@@ -98,9 +103,12 @@ export default async function GapPage() {
         <div className="flex items-center justify-between mb-2">
           <div className="text-sm font-medium text-brand-900">
             Score de aderência
-            {apoiosPendentes > 0 && (
+            {(apoiosPendentes > 0 || acoesPlanejadas > 0) && (
               <span className="text-[11px] font-normal text-brand-700 ml-2">
-                (calculado sobre {avaliados} avaliações; {apoiosPendentes} em apoio)
+                (sobre {avaliados} avaliações
+                {acoesPlanejadas > 0 && `, ${acoesPlanejadas} planejada${acoesPlanejadas > 1 ? "s" : ""}`}
+                {apoiosPendentes > 0 && `, ${apoiosPendentes} em apoio`}
+                )
               </span>
             )}
           </div>

@@ -37,6 +37,7 @@ type Grupo = {
     gap: {
       respondidos: number;
       score: number;
+      acoesPlanejadas?: number;
       apoiosPendentes?: number;
       setoresApoio?: Record<string, number>;
     };
@@ -565,8 +566,7 @@ function GrupoTimelineCard({
       {/* Timeline horizontal */}
       <TimelineGrupo bolinhas={grupo.timeline} />
 
-      {/* Apoios pendentes no GAP — sinaliza ao facilitador onde o grupo travou
-          (multidisciplinaridade real do GAP). Só aparece se houver. */}
+      {/* Apoios pendentes no GAP — sinaliza onde o grupo travou pedindo ajuda. */}
       {(grupo.kpis.gap.apoiosPendentes || 0) > 0 && (
         <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded bg-sky-50 border border-sky-200 text-xs text-sky-900 flex-wrap">
           <HandHelping className="h-3.5 w-3.5 shrink-0" />
@@ -581,6 +581,16 @@ function GrupoTimelineCard({
               </span>
             );
           })}
+        </div>
+      )}
+
+      {/* Ações planejadas no GAP — sinaliza maturidade de roadmap (não-aderente CONSCIENTE) */}
+      {(grupo.kpis.gap.acoesPlanejadas || 0) > 0 && (
+        <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 rounded bg-slate-50 border border-slate-200 text-xs text-slate-700">
+          📅 <span className="font-medium">
+            {grupo.kpis.gap.acoesPlanejadas} controle{(grupo.kpis.gap.acoesPlanejadas || 0) > 1 ? "s" : ""} marcado{(grupo.kpis.gap.acoesPlanejadas || 0) > 1 ? "s" : ""} como "Ação planejada"
+          </span>
+          <span className="text-slate-500">(sinaliza maturidade de roadmap, não lacuna não-detectada)</span>
         </div>
       )}
     </div>
