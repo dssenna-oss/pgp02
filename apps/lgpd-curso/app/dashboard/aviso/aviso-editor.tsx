@@ -66,8 +66,12 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
       try {
         const r = await publicarAviso();
         if (handlePhaseSkipResult(r)) return;
+        if (r && "ok" in r && r.ok === false) {
+          toast.error(r.error);
+          return;
+        }
         toast.success("Aviso publicado!");
-      } catch (e: any) { toast.error(e.message); }
+      } catch (e: any) { toast.error(e?.message || "Erro ao publicar"); }
     });
   }
 
@@ -77,9 +81,13 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
     startTransition(async () => {
       try {
         const r = await autoPreencherAviso();
+        if (r.ok === false) {
+          toast.error(r.error);
+          return;
+        }
         setConteudo(r.md);
         toast.success("Aviso preenchido com dados do PGP — revise antes de salvar/publicar");
-      } catch (e: any) { toast.error(e.message); }
+      } catch (e: any) { toast.error(e?.message || "Erro ao auto-preencher"); }
     });
   }
 
@@ -89,8 +97,12 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
       try {
         const r = await reabrirAviso();
         if (handlePhaseSkipResult(r)) return;
+        if (r && "ok" in r && r.ok === false) {
+          toast.error(r.error);
+          return;
+        }
         toast.success("Aviso reaberto como rascunho — edite e publique de novo");
-      } catch (e: any) { toast.error(e.message); }
+      } catch (e: any) { toast.error(e?.message || "Erro ao reabrir"); }
     });
   }
 
