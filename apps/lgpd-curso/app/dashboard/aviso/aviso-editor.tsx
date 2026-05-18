@@ -2,12 +2,12 @@
 
 import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
-import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight, Sparkles, AlertTriangle } from "lucide-react";
+import { Send, AlertCircle, CheckCircle2, Lock, ArrowRight, Sparkles, AlertTriangle, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveAviso, publicarAviso, autoPreencherAviso } from "./actions";
+import { saveAviso, publicarAviso, autoPreencherAviso, reabrirAviso } from "./actions";
 import { AVISO_SECOES } from "@/lib/aviso-secoes";
 import { detectarPlaceholders } from "@/lib/aviso-auto-preencher";
 import toast from "react-hot-toast";
@@ -83,6 +83,17 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
     });
   }
 
+  function reabrir() {
+    if (!confirm("Voltar este Aviso pra rascunho? A URL pública vai parar de funcionar até nova publicação.")) return;
+    startTransition(async () => {
+      try {
+        const r = await reabrirAviso();
+        if (handlePhaseSkipResult(r)) return;
+        toast.success("Aviso reaberto como rascunho — edite e publique de novo");
+      } catch (e: any) { toast.error(e.message); }
+    });
+  }
+
   // Detecta placeholders no texto atual (em tempo real)
   const placeholders = useMemo(() => detectarPlaceholders(conteudo), [conteudo]);
 
@@ -138,7 +149,7 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold">Texto do Aviso de Privacidade</h3>
             <Badge variant={publicado ? "success" : "default"}>{aviso?.status || "RASCUNHO"}</Badge>
-            {placeholders.length > 0 && !publicado && (
+            {placeholders.length > 0 && (
               <Badge variant="destructive" title={placeholders.slice(0, 5).map((p) => `[${p}]`).join("\n")}>
                 <AlertTriangle className="h-3 w-3 mr-1" /> {placeholders.length} placeholder(s)
               </Badge>
@@ -149,11 +160,23 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
               size="sm"
               variant="outline"
               onClick={autoPreencher}
-              disabled={pending || publicado}
+              disabled={pending}
               title="Substitui os textos [entre colchetes] pelos dados reais do Encarregado, Inventário, Terceiros e DSR"
             >
               <Sparkles className="h-3.5 w-3.5" /> Auto-preencher do PGP
             </Button>
+            {publicado && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={reabrir}
+                disabled={pending}
+                title="Volta este Aviso pra rascunho. A URL pública deixa de funcionar até nova publicação."
+                className="border-orange-400 text-orange-700 hover:bg-orange-50"
+              >
+                <Unlock className="h-3.5 w-3.5" /> 🔓 Reabrir como rascunho
+              </Button>
+            )}
             <Button size="sm" variant="outline" onClick={salvar} disabled={pending}>Salvar rascunho</Button>
             <Button
               size="sm"
@@ -178,7 +201,40 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
           </div>
         </header>
 
-        {/* Warning de placeholders */}
+        {/* Alerta VERMELHO — aviso publicado com placeholders (compliance fake já no ar!) */}
+        {placeholders.length > 0 && publicado && (
+          <div className="px-4 py-3 bg-red-50 border-b border-red-300 text-xs">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-700 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <div className="font-bold text-red-900 mb-1 text-sm">
+                  🚨 Aviso publicado com {placeholders.length} placeholder(s) — &quot;compliance fake&quot; no ar!
+                </div>
+                <p className="text-red-900 mb-2">
+                  A URL pública está servindo um Aviso com textos-modelo entre colchetes (ex: <em>[Identifique o controlador]</em>).
+                  Qualquer cidadão que abrir vê &quot;compliance fake&quot;. <strong>Aja agora:</strong>
+                </p>
+                <ol className="ml-5 list-decimal space-y-0.5 mb-2 text-red-900">
+                  <li>Clique em <strong>🔓 Reabrir como rascunho</strong> (URL pública para de funcionar)</li>
+                  <li>Clique em <strong>✨ Auto-preencher do PGP</strong> pra montar o texto com dados reais</li>
+                  <li>Revise + clique em <strong>Publicar</strong> de novo</li>
+                </ol>
+                <details className="text-[11px]">
+                  <summary className="cursor-pointer text-red-700 hover:text-red-900">
+                    Ver os {Math.min(5, placeholders.length)} primeiros placeholders detectados
+                  </summary>
+                  <ul className="mt-1 ml-4 space-y-0.5">
+                    {placeholders.slice(0, 5).map((p, i) => (
+                      <li key={i} className="font-mono text-red-900">[{p}]</li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Warning âmbar — rascunho ainda com placeholders (vai bloquear publicar) */}
         {placeholders.length > 0 && !publicado && (
           <div className="px-4 py-3 bg-amber-50 border-b border-amber-200 text-xs">
             <div className="flex items-start gap-2">

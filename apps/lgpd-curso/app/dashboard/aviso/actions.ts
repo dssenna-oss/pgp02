@@ -102,6 +102,32 @@ export async function publicarAviso() {
   return result;
 }
 
+// Reabre um Aviso publicado pra edição — volta status pra RASCUNHO.
+// Útil quando o DPO publicou com placeholders e precisa consertar.
+// A URL pública (publicSlug) deixa de servir o conteúdo até nova publicação.
+export async function reabrirAviso() {
+  const skip = await checkGapConcluido("FASE_6", "Reabrir Aviso de Privacidade");
+  if (skip) return skip;
+  const { companyId } = await requireCompany();
+
+  const policy = await prisma.policy.findUnique({
+    where: { companyId_slug: { companyId, slug: SLUG } },
+  });
+  if (!policy) throw new Error("Aviso não encontrado");
+  if (policy.status !== "PUBLICADO") throw new Error("Aviso não está publicado");
+
+  const result = await prisma.policy.update({
+    where: { id: policy.id },
+    data: {
+      status: "RASCUNHO",
+      // Mantém publicSlug e publishedAt pra histórico, mas o status RASCUNHO
+      // já trava a renderização pública (a rota /p/[slug] checa status).
+    },
+  });
+  revalidatePath("/dashboard/aviso");
+  return result;
+}
+
 // Gera o markdown completo a partir dos dados das missões anteriores.
 // Não persiste — retorna o texto pro client preencher o textarea, dando
 // chance do DPO revisar antes de salvar.
