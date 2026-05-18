@@ -459,6 +459,15 @@ model OperatorContract {
   // IDs das cláusulas selecionadas pelo DPO pra incluir no aditamento DOCX.
   // Cada ID corresponde a uma entrada no catálogo `lib/clausulas-lgpd.ts`.
   clausulasSelecionadas String[] @default([])
+  // === Análise de Risco (Res. ANPD nº 2/2022, art. 4º) ===
+  // IDs dos fatores de risco marcados pelo DPO. Cada ID vem do catálogo
+  // `lib/risco-anpd.ts`. Ex: ["GERAL_LARGA_ESCALA", "ESPECIFICO_SENSIVEIS"].
+  // O nivelRisco final é calculado a partir desses fatores.
+  riscoFatoresMarcados  String[] @default([])
+  // === Due Diligence (questionário de avaliação Cyber+LGPD) ===
+  // Mapa pergunta_id → "S" | "N" | "NA". Catálogo em `lib/due-diligence.ts`.
+  // Score (% de aderência) é calculado sob demanda.
+  dueDiligenceRespostas Json?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

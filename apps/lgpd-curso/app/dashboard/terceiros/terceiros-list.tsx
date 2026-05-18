@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, FileText, Download, AlertTriangle, ShieldCheck, FileSignature, Clock4 } from "lucide-react";
+import { Pencil, Trash2, Settings, AlertTriangle, ShieldCheck, FileSignature, Clock4, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty";
@@ -9,10 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
-import { saveOperador, deletarOperador, salvarSelecaoClausulas } from "./actions";
-import { CATALOGO_CLAUSULAS, clausulasSugeridasPorRisco } from "@/lib/clausulas-lgpd";
+import { saveOperador, deletarOperador } from "./actions";
 import { TIPO_OPERACAO_INFO, NIVEL_RISCO_INFO } from "@/lib/seeds/terceiros-vegas";
+import { calcularDueDiligence, RECOMENDACAO_INFO, type RespostaDD } from "@/lib/due-diligence";
+import { GerenciarOperadorDrawer } from "./gerenciar-operador-drawer";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -23,63 +23,15 @@ export function TerceirosList({ items }: { items: Op[] }) {
   const [editing, setEditing] = useState<Op | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Drawer de gerenciamento de cláusulas
-  const [clausulasOpen, setClausulasOpen] = useState(false);
-  const [clausulasOp, setClausulasOp] = useState<Op | null>(null);
-  const [clausulasSel, setClausulasSel] = useState<string[]>([]);
-  const [tipoOpcao, setTipoOpcao] = useState<string>("");
-  const [nivelRisco, setNivelRisco] = useState<string>("");
+  // Drawer único com 3 abas (Risco / DD / Cláusulas)
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOp, setDrawerOp] = useState<Op | null>(null);
 
   function abrirEdicao(op: Op) { setEditing(op); setEditOpen(true); }
 
-  function abrirClausulas(op: Op) {
-    setClausulasOp(op);
-    const c = op.contracts?.[0];
-    const selecionadasAtuais: string[] = c?.clausulasSelecionadas || [];
-    // Se ainda não tem nada selecionado, sugere baseado no risco
-    const inicial = selecionadasAtuais.length > 0
-      ? selecionadasAtuais
-      : clausulasSugeridasPorRisco(c?.nivelRisco);
-    setClausulasSel(inicial);
-    setTipoOpcao(c?.tipoOperacao || "");
-    setNivelRisco(c?.nivelRisco || "");
-    setClausulasOpen(true);
-  }
-
-  function toggleClausula(id: string) {
-    setClausulasSel((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
-  }
-
-  async function salvarClausulas() {
-    if (!clausulasOp) return;
-    setLoading(true);
-    try {
-      const r = await salvarSelecaoClausulas({
-        operatorId: clausulasOp.id,
-        clausulasSelecionadas: clausulasSel,
-        tipoOperacao: tipoOpcao || undefined,
-        nivelRisco: nivelRisco || undefined,
-      });
-      if (handlePhaseSkipResult(r)) return;
-      toast.success("Cláusulas salvas");
-      setClausulasOpen(false);
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function baixarDocx() {
-    if (!clausulasOp) return;
-    if (clausulasSel.length === 0) {
-      toast.error("Selecione pelo menos uma cláusula.");
-      return;
-    }
-    // Salva primeiro pra garantir que o DOCX reflita a seleção atual
-    salvarClausulas().then(() => {
-      window.open(`/api/curso/terceiros/${clausulasOp.id}/clausulas-docx`, "_blank");
-    });
+  function abrirDrawer(op: Op) {
+    setDrawerOp(op);
+    setDrawerOpen(true);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -128,7 +80,9 @@ export function TerceirosList({ items }: { items: Op[] }) {
             const tipoInfo = ct?.tipoOperacao ? TIPO_OPERACAO_INFO[ct.tipoOperacao] : null;
             const riscoInfo = ct?.nivelRisco ? NIVEL_RISCO_INFO[ct.nivelRisco] : null;
             const qtdSelecionadas: number = (ct?.clausulasSelecionadas?.length) || 0;
-            const totalCatalogo = CATALOGO_CLAUSULAS.length;
+            const fatoresRisco: number = (ct?.riscoFatoresMarcados?.length) || 0;
+            const ddRespostas = (ct?.dueDiligenceRespostas || {}) as Record<string, RespostaDD>;
+            const ddCalc = calcularDueDiligence(ddRespostas);
 
             const bordaPorTipo: Record<string, string> = {
               ADITIVO_NECESSARIO: "border-l-red-500",
@@ -138,7 +92,6 @@ export function TerceirosList({ items }: { items: Op[] }) {
             };
             const borda = ct?.tipoOperacao ? bordaPorTipo[ct.tipoOperacao] : "border-l-gray-300";
 
-            // Classes do badge de tipo — Tailwind precisa enxergar as classes COMPLETAS
             const tipoBadgeClass: Record<string, string> = {
               ADITIVO_NECESSARIO: "bg-red-50 border-red-200 text-red-800",
               CONTRATO_NOVO_CLAUSULAS: "bg-blue-50 border-blue-200 text-blue-800",
@@ -149,6 +102,12 @@ export function TerceirosList({ items }: { items: Op[] }) {
               BAIXO: "bg-green-100 text-green-800 border-green-300",
               MEDIO: "bg-amber-100 text-amber-800 border-amber-300",
               ALTO:  "bg-red-100 text-red-800 border-red-300",
+            };
+            const ddBadgeClass: Record<string, string> = {
+              APROVADO: "bg-emerald-100 text-emerald-800 border-emerald-300",
+              APROVADO_COM_RESSALVAS: "bg-amber-100 text-amber-800 border-amber-300",
+              REPROVADO: "bg-red-100 text-red-800 border-red-300",
+              INCOMPLETO: "bg-gray-100 text-gray-600 border-gray-300",
             };
 
             return (
@@ -210,17 +169,42 @@ export function TerceirosList({ items }: { items: Op[] }) {
                   </div>
                 )}
 
-                {/* Ação de Cláusulas */}
-                <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-xs text-gray-600">
-                    {qtdSelecionadas > 0 ? (
-                      <span>📝 <strong>{qtdSelecionadas}/{totalCatalogo}</strong> cláusulas selecionadas</span>
+                {/* Painel de status: Risco · DD · Cláusulas */}
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="p-2 rounded border bg-white">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">1. Risco ANPD</div>
+                    {fatoresRisco > 0 ? (
+                      <div className="font-medium">{fatoresRisco} fator(es) marcado(s)</div>
                     ) : (
-                      <span className="text-amber-700">⚠️ Nenhuma cláusula selecionada ainda</span>
+                      <div className="text-amber-700">Não avaliado</div>
                     )}
                   </div>
-                  <Button size="sm" variant={qtdSelecionadas > 0 ? "outline" : "primary"} onClick={() => abrirClausulas(op)}>
-                    <FileText className="h-3.5 w-3.5" /> Gerenciar cláusulas
+                  <div className="p-2 rounded border bg-white">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">2. Due Diligence</div>
+                    {ddCalc.respondidas > 0 ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium">{ddCalc.percentual}%</span>
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${ddBadgeClass[ddCalc.recomendacao]}`}>
+                          {RECOMENDACAO_INFO[ddCalc.recomendacao].label}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-amber-700">Não preenchido</div>
+                    )}
+                  </div>
+                  <div className="p-2 rounded border bg-white">
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">3. Cláusulas</div>
+                    {qtdSelecionadas > 0 ? (
+                      <div className="font-medium">{qtdSelecionadas} selecionada(s)</div>
+                    ) : (
+                      <div className="text-amber-700">Não selecionadas</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button size="sm" variant="primary" onClick={() => abrirDrawer(op)}>
+                    <Settings className="h-3.5 w-3.5" /> Gerenciar operador
                   </Button>
                 </div>
               </div>
@@ -229,118 +213,14 @@ export function TerceirosList({ items }: { items: Op[] }) {
         </div>
       )}
 
-      {/* Drawer: gerenciar cláusulas + gerar DOCX */}
-      <Dialog open={clausulasOpen} onOpenChange={setClausulasOpen}>
-        <DialogContent className="sm:max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-purple-700" />
-              Cláusulas LGPD — {clausulasOp?.nome}
-            </DialogTitle>
-            <DialogDescription>
-              Selecione as cláusulas que vão para o documento. Quanto maior o risco, mais cláusulas
-              recomendadas. Você pode ajustar o tipo de operação e o nível de risco abaixo se a
-              avaliação automática não bater com a realidade.
-            </DialogDescription>
-          </DialogHeader>
+      {/* Drawer único com 3 abas */}
+      <GerenciarOperadorDrawer
+        op={drawerOp}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
 
-          <div className="space-y-3 max-h-[65vh] overflow-y-auto">
-            {/* Ajuste rápido de tipo e risco */}
-            <div className="grid grid-cols-2 gap-3 p-3 rounded bg-gray-50 border">
-              <div>
-                <Label className="text-xs">Tipo de operação</Label>
-                <Select value={tipoOpcao} onChange={(e) => setTipoOpcao(e.target.value)}>
-                  <option value="">— não definido —</option>
-                  {Object.entries(TIPO_OPERACAO_INFO).map(([k, v]) => (
-                    <option key={k} value={k}>{v.emoji} {v.label}</option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Nível de risco (Res. ANPD nº 2/2022)</Label>
-                <Select value={nivelRisco} onChange={(e) => {
-                  setNivelRisco(e.target.value);
-                  // Re-sugere cláusulas se nada foi customizado ainda
-                  const c = clausulasOp?.contracts?.[0];
-                  const customizado = (c?.clausulasSelecionadas?.length || 0) > 0;
-                  if (!customizado) setClausulasSel(clausulasSugeridasPorRisco(e.target.value));
-                }}>
-                  <option value="">— não definido —</option>
-                  {Object.entries(NIVEL_RISCO_INFO).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label} — {v.sugestao}</option>
-                  ))}
-                </Select>
-              </div>
-            </div>
-
-            {/* Lista de cláusulas agrupadas por nível */}
-            <div className="space-y-2">
-              {(["essencial", "simples", "robusta"] as const).map((nivel) => {
-                const grupo = CATALOGO_CLAUSULAS.filter((c) => c.nivel === nivel);
-                const labelNivel = nivel === "essencial" ? "Essenciais (sempre incluir)"
-                                : nivel === "simples"  ? "Simples (recomendadas no risco MÉDIO+)"
-                                                       : "Robustas (obrigatórias no risco ALTO)";
-                const corHeader = nivel === "essencial" ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                               : nivel === "simples"   ? "bg-blue-50 text-blue-800 border-blue-200"
-                                                       : "bg-purple-50 text-purple-800 border-purple-200";
-                return (
-                  <div key={nivel}>
-                    <div className={`text-[11px] font-semibold uppercase px-2 py-1 rounded border ${corHeader}`}>
-                      {labelNivel}
-                    </div>
-                    <div className="mt-1 space-y-1">
-                      {grupo.map((cl) => {
-                        const selected = clausulasSel.includes(cl.id);
-                        return (
-                          <label
-                            key={cl.id}
-                            className={`flex items-start gap-2 p-2 rounded border cursor-pointer transition-colors ${
-                              selected ? "bg-blue-50 border-blue-300" : "bg-white border-gray-200 hover:bg-gray-50"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleClausula(cl.id)}
-                              className="h-4 w-4 mt-0.5 shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium flex items-center gap-1.5 flex-wrap">
-                                {cl.titulo}
-                                {cl.transferenciaInternacional && (
-                                  <span className="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded">
-                                    🌐 transferência internacional
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-gray-600 mt-0.5">{cl.resumo}</div>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <DialogFooter className="flex-wrap gap-2">
-            <div className="text-xs text-gray-500 flex-1">
-              {clausulasSel.length} de {CATALOGO_CLAUSULAS.length} cláusulas selecionadas
-            </div>
-            <Button variant="outline" onClick={() => setClausulasOpen(false)}>Cancelar</Button>
-            <Button variant="outline" onClick={salvarClausulas} disabled={loading}>
-              {loading ? "Salvando..." : "Salvar seleção"}
-            </Button>
-            <Button onClick={baixarDocx} disabled={loading || clausulasSel.length === 0}>
-              <Download className="h-4 w-4" /> Salvar + Gerar DOCX
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edição de dados básicos (legado — pra fix manual se preciso) */}
+      {/* Edição de dados básicos (legado) */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
