@@ -58,12 +58,3 @@ export async function saveEncarregado(input: {
   return result;
 }
 
-/** Retorna verdadeiro se o Encarregado tem os campos mínimos pra ser usado
- *  em documentos legais (nome + email + telefone). */
-export function encarregadoCompleto(c: {
-  dpoName?: string | null;
-  dpoEmail?: string | null;
-  dpoTelefone?: string | null;
-}): boolean {
-  return !!(c.dpoName?.trim() && c.dpoEmail?.trim() && c.dpoTelefone?.trim());
-}
