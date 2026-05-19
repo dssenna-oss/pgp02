@@ -82,6 +82,75 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
 
   return (
     <>
+      {/* Card de orientações ao DPO — sempre disponível pra consulta */}
+      <details className="mb-3 border border-blue-200 bg-blue-50 rounded-lg overflow-hidden group">
+        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium text-blue-900 hover:bg-blue-100 flex items-center gap-2 select-none">
+          <span className="text-base">📋</span>
+          <span className="flex-1">Como responder a um incidente — 7 etapas</span>
+          <span className="text-xs text-blue-600 group-open:hidden">Mostrar</span>
+          <span className="text-xs text-blue-600 hidden group-open:inline">Esconder</span>
+        </summary>
+        <div className="px-4 py-3 border-t border-blue-200 bg-white text-xs text-gray-800 space-y-2">
+          <ol className="space-y-2 list-none">
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">1.</span>
+              <div>
+                <strong>Validar severidade.</strong> Baseie-se em: volume de titulares, sensibilidade dos dados,
+                potencial de dano (discriminação, reputação, integridade física). Dados sensíveis sempre puxam pra ALTA/CRÍTICA.
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">2.</span>
+              <div>
+                <strong>Mudar status pra &quot;Em análise&quot;.</strong> Isso é o gatilho pedagógico que <em>libera os botões
+                de download</em> dos documentos. Sem análise, sem comunicação.
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">3.</span>
+              <div>
+                <strong>Confirmar a cronologia.</strong> Preencher <em>Ocorrido em</em> e <em>Detectado em</em>.
+                A diferença entre os 2 mede a maturidade da detecção (quanto menor, melhor).
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">4.</span>
+              <div>
+                <strong>Clicar &quot;Atualizar&quot;.</strong> Salva. Modal fecha. Volta pra lista.
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">5.</span>
+              <div>
+                <strong>Baixar os 2 documentos.</strong> Aparecem 2 ícones na linha:
+                <span className="inline-block mx-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px]">📄 Comunicação ANPD</span>
+                (Art. 48 LGPD + Res. CD/ANPD nº 15/2024) e
+                <span className="inline-block mx-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px]">📄 Carta Titulares</span>
+                (em linguagem clara). Preencher os campos <code className="bg-gray-100 px-1">[a preencher]</code> em conjunto com Procuradoria + TI.
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">6.</span>
+              <div>
+                <strong>Marcar os checkboxes.</strong> Voltar a editar e marcar
+                ☑ <em>Comunicado à ANPD</em> e ☑ <em>Comunicado aos titulares</em> conforme os DOCX foram enviados.
+              </div>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold text-blue-700 shrink-0">7.</span>
+              <div>
+                <strong>Encerrar.</strong> Status: <em>Encerrado</em>. O banner vermelho some, sirene para,
+                e a missão M5 ganha tick verde na sidebar.
+              </div>
+            </li>
+          </ol>
+          <div className="mt-2 pt-2 border-t border-gray-200 text-[11px] text-gray-600 italic">
+            ⏱ Tempo esperado pelo roteiro: ~25 minutos. Prazo legal pra comunicar à ANPD:
+            até 3 dias úteis (Res. CD/ANPD nº 15/2024).
+          </div>
+        </div>
+      </details>
+
       {items.length === 0 ? (
         <EmptyState
           title="Nenhum incidente registrado"
@@ -157,6 +226,21 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
               Velocidade + qualidade ganham. A LGPD exige comunicação "em prazo razoável" (Res. CD/ANPD nº 15/2024).
             </DialogDescription>
           </DialogHeader>
+
+          {/* Faixa contextual com a sequência de etapas */}
+          <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded text-[11px] text-blue-900 -mt-2">
+            <div className="font-semibold mb-1">📋 Sequência sugerida:</div>
+            <ol className="list-decimal list-inside space-y-0.5 ml-1">
+              <li>Validar <strong>Severidade</strong></li>
+              <li>Mudar <strong>Status</strong> pra &quot;Em análise&quot; (libera DOCX)</li>
+              <li>Confirmar <strong>Cronologia</strong></li>
+              <li>Clicar <strong>Atualizar</strong></li>
+              <li>Voltar à lista, baixar <strong>Comunicação ANPD</strong> + <strong>Carta Titulares</strong></li>
+              <li>Marcar <strong>checkboxes</strong> de comunicação após envio</li>
+              <li>Mudar <strong>Status</strong> pra &quot;Encerrado&quot;</li>
+            </ol>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="col-span-2">
