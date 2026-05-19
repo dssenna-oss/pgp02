@@ -19,11 +19,13 @@ type Fase = {
   titulo: string;       // "Capacitação", "DPO + Comitê"...
 };
 
+// Nomenclatura alinhada com app principal lgpd-pgp.vercel.app
+// (lib/maturidade-pgp.ts:418-592) — single source of truth pra nomes de Fases.
 const FASES: Fase[] = [
-  { id: "preliminar", rotulo: "Preliminar", titulo: "Capacitação" },
-  { id: "f1",         rotulo: "Fase 1",     titulo: "DPO + Comitê" },
-  { id: "f2",         rotulo: "Fase 2",     titulo: "Escopo" },
-  { id: "f3",         rotulo: "Fase 3",     titulo: "Mapeamento & Riscos" },
+  { id: "preliminar", rotulo: "Preliminar", titulo: "Sensibilização e engajamento" },
+  { id: "f1",         rotulo: "Fase 1",     titulo: "Formação das equipes" },
+  { id: "f2",         rotulo: "Fase 2",     titulo: "Diagnóstico inicial" },
+  { id: "f3",         rotulo: "Fase 3",     titulo: "Mapeamento e Análise de Riscos" },
   { id: "f4",         rotulo: "Fase 4",     titulo: "GAP Analysis" },
   { id: "f5",         rotulo: "Fase 5",     titulo: "Plano de Ação" },
   { id: "f6",         rotulo: "Fase 6",     titulo: "Execução" },
@@ -32,7 +34,7 @@ const FASES: Fase[] = [
 
 const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: React.ReactNode }> = {
   preliminar: {
-    titulo: "Fase Preliminar — Capacitação e Sensibilização",
+    titulo: "Fase Preliminar — Sensibilização e Engajamento",
     corpo: (
       <>
         <p><strong>O que aconteceu antes da turma chegar:</strong> a Prefeitura/Câmara contratou consultoria LGPD e ministrou 4 horas de aula teórica pros servidores envolvidos no tratamento de dados — você é resultado disso.</p>
@@ -43,7 +45,7 @@ const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: R
     ),
   },
   f1: {
-    titulo: "Fase 1 — Designação do DPO + Comitê + Política Institucional",
+    titulo: "Fase 1 — Formação das Equipes (DPO + Comitê + Política)",
     corpo: (
       <>
         <p><strong>O que aconteceu antes da turma chegar:</strong></p>
@@ -58,7 +60,7 @@ const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: R
     ),
   },
   f2: {
-    titulo: "Fase 2 — Escopo e Levantamento Preliminar",
+    titulo: "Fase 2 — Diagnóstico Inicial (Escopo + Levantamento Preliminar)",
     corpo: (
       <>
         <p><strong>O que aconteceu antes da turma chegar:</strong></p>
