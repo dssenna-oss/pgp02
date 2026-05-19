@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.policy.findFirst({
         where: { companyId: cid, slug: "aviso-privacidade" },
-        select: { status: true, publicSlug: true, createdAt: true, updatedAt: true, autoErrosPlantados: true, errosReportados: true },
+        select: { status: true, publicSlug: true, createdAt: true, updatedAt: true, autoErrosPlantados: true, errosReportados: true, conteudoMd: true },
       }),
       prisma.incident.findMany({
         where: { companyId: cid },
@@ -170,6 +170,7 @@ export async function GET(req: NextRequest) {
       aviso: {
         status: (aviso?.status as any) || null,
         publicSlug: aviso?.publicSlug || null,
+        conteudoChars: aviso?.conteudoMd?.length || 0,
       },
       incidentes: {
         total: incidentes.length,
