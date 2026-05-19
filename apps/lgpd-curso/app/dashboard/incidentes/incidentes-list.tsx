@@ -120,13 +120,24 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                     </div>
                   </TD>
                   <TD>
-                    <div className="flex justify-end gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => gerarAnpd(i.id)} title="Comunicação ANPD">
-                        <FileDown className="h-4 w-4 text-brand-600" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => gerarCarta(i.id)} title="Carta titulares">
-                        <FileDown className="h-4 w-4 text-emerald-600" />
-                      </Button>
+                    <div className="flex justify-end gap-1 items-center">
+                      {/* Documentos só ficam disponíveis após análise (status != RASCUNHO).
+                          Baixar Comunicação ANPD/Carta Titulares sem análise é compliance fake — o
+                          texto vai com campos não preenchidos e severidade não revisada. */}
+                      {i.status === "RASCUNHO" ? (
+                        <span className="text-[10px] text-gray-500 italic mr-1" title="Analise o incidente (mude status pra EM_ANÁLISE) antes de gerar os documentos">
+                          🔒 Documentos liberam após análise
+                        </span>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => gerarAnpd(i.id)} title="Comunicação ANPD">
+                            <FileDown className="h-4 w-4 text-brand-600" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => gerarCarta(i.id)} title="Carta titulares">
+                            <FileDown className="h-4 w-4 text-emerald-600" />
+                          </Button>
+                        </>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => abrirEdicao(i)}><Pencil className="h-4 w-4" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => deletar(i.id)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
                     </div>
