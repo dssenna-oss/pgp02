@@ -14,6 +14,7 @@ import { AVISO_SECOES } from "@/lib/aviso-secoes";
 import { detectarPlaceholders } from "@/lib/aviso-auto-preencher";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
+import { LgpdHelp } from "@/components/lgpd-help";
 
 type Aviso = {
   id: string;
@@ -426,6 +427,7 @@ export function AvisoEditor({ aviso, prereq }: { aviso: Aviso; prereq: Prereq })
               <div className="flex items-center gap-1">
                 <Badge variant="ghost">{s.numero}</Badge>
                 <strong>{s.titulo}</strong>
+                <LgpdHelp campoKey={`aviso_secao_${s.numero}`} />
                 {s.alimentadoPor && (
                   <Badge variant="primary" className="ml-auto">{s.alimentadoPor}</Badge>
                 )}

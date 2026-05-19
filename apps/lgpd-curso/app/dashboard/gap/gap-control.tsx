@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import type { Controle } from "@/lib/gap-pacote";
 import { SETORES_APOIO, sugerirSetor, getSetorById } from "@/lib/setores-apoio";
+import { LgpdHelp } from "@/components/lgpd-help";
 
 type Answer = {
   controleId: number;
@@ -132,7 +133,10 @@ export function GapControl({ controle, answer }: { controle: Controle; answer: A
   return (
     <div className={cn("border rounded-lg p-4", containerCor)}>
       <div className="flex items-start gap-3 mb-3">
-        <Badge variant="ghost" className="mt-0.5 flex-shrink-0">#{controle.id}</Badge>
+        <div className="flex items-center gap-1 mt-0.5 flex-shrink-0">
+          <Badge variant="ghost">#{controle.id}</Badge>
+          <LgpdHelp campoKey="gap_classificacao" />
+        </div>
         <div className="flex-1">
           <div className="text-sm font-medium">{controle.texto}</div>
           {controle.hint && <div className="text-xs text-gray-500 mt-1">{controle.hint}</div>}

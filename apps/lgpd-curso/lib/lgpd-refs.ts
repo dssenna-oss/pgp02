@@ -221,6 +221,239 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
       "Atendimento médico com perfil por setor + logs + auditoria → risco residual BAIXO → prosseguir com revisão anual",
     ],
   },
+
+  // ============================================================================
+  // GAP Analysis — uma chave geral que explica a régua de classificação
+  // ============================================================================
+  gap_classificacao: {
+    titulo: "Como classificar um controle do GAP",
+    artigo: "Boas práticas — Res. CD/ANPD nº 2/2022 + ISO 27701",
+    oQueDiz:
+      "GAP Analysis mede a aderência REAL da organização a cada controle de proteção de dados. Não estamos medindo onde a organização QUER chegar — só onde ela está HOJE.",
+    perguntaChave:
+      "Pra cada controle: o controle existe e funciona? SIM completo → ADERENTE. SIM parcial → PARCIAL. NÃO existe → NÃO ADERENTE. NÃO mas vamos implementar → AÇÃO PLANEJADA. Não sei avaliar sozinho → SOLICITAR APOIO.",
+    pegadinha:
+      "Quem tenta inflar o score (\"ah, esse aqui é Aderente vai\") está se enganando. GAP enviesado vira Plano de Ação que ignora as fraquezas reais — e a ANPD descobre depois.",
+    exemplos: [
+      "Política de Privacidade publicada na intranet, mas nunca testada? → PARCIAL (existe mas não maduro)",
+      "MFA em sistemas críticos? Nenhum sistema tem? → NÃO ADERENTE",
+      "Não tem MFA, mas vamos contratar Microsoft 365 com MFA até dezembro? → AÇÃO PLANEJADA",
+      "Eu, DPO, não sei se TI fez segregação de rede pelo Firewall → SOLICITAR APOIO de TI",
+    ],
+    linkAnpd: {
+      texto: "Guia ANPD — Segurança da Informação para Agentes de Tratamento (PDF)",
+      url: "https://www.gov.br/anpd/pt-br/documentos-e-publicacoes/guia-anpd-seguranca-informacao.pdf",
+    },
+  },
+
+  // ============================================================================
+  // Terceiros (Gestão de Operadores) — 3 abas do drawer
+  // ============================================================================
+  terceiro_avaliacao_risco: {
+    titulo: "Por que avaliar o risco do terceiro?",
+    artigo: "LGPD Art. 39 + Res. CD/ANPD nº 2/2022 Art. 4º",
+    oQueDiz:
+      "Operador trata dados em nome do controlador. Quem responde por incidente do operador é o CONTROLADOR (você). A LGPD obriga avaliação prévia da capacidade do operador de cumprir a lei.",
+    perguntaChave:
+      "Marque os fatores aplicáveis ao serviço deste operador. O nível (BAIXO/MÉDIO/ALTO) calcula automaticamente e sugere as cláusulas contratuais mínimas.",
+    pegadinha:
+      "Dado SENSÍVEL com terceiro = risco ALTO automático, mesmo com 1 só pessoa atendida. Volume alto + dado comum também sobe pra ALTO. Nunca rode adequação só com cláusulas padrão sem avaliar o risco — fica vago e o operador não se sente responsável.",
+    exemplos: [
+      "Lab. Municipal que recebe prontuário pra exame: dado sensível + saúde → ALTO",
+      "Empresa de envio de SMS de aviso de consulta: dado comum + volume médio → MÉDIO",
+      "Gráfica que imprime carnê de IPTU: dado comum + alto volume → MÉDIO/ALTO conforme exposição",
+    ],
+  },
+  terceiro_due_diligence: {
+    titulo: "O que avaliar antes de contratar",
+    artigo: "Boas práticas — Res. CD/ANPD nº 2/2022 Art. 4º",
+    oQueDiz:
+      "Due Diligence = checklist técnico/jurídico ANTES de assinar contrato. Quanto maior o risco do serviço (aba 1), mais rigoroso deve ser o questionário. Resultado: APROVADO / APROVADO COM RESSALVAS / REPROVADO / INCOMPLETO.",
+    perguntaChave:
+      "O operador tem estrutura mínima de segurança (criptografia, controle de acesso, treinamento) e cláusulas contratuais aderentes à LGPD?",
+    pegadinha:
+      "DD aprovado não isenta o controlador de responsabilidade. Ainda é responsabilidade SOLIDÁRIA (Art. 42). Mas DD bem feito = defesa em caso de incidente: \"olha, fizemos diligência, o operador descumpriu o que prometeu\".",
+    exemplos: [
+      "Operador sem certificação ISO 27001 + dado sensível → tipicamente APROVADO COM RESSALVAS (exigir treinamento adicional)",
+      "Operador estrangeiro sem representante no Brasil → REPROVADO (transferência internacional precisa de regime adicional Art. 33)",
+      "Operador novo (start-up < 2 anos) com infra terceirizada → exige cláusulas extra-fortes de auditoria",
+    ],
+  },
+  terceiro_clausulas: {
+    titulo: "Cláusulas LGPD obrigatórias no contrato",
+    artigo: "LGPD Art. 39 + DPA (Data Processing Agreement)",
+    oQueDiz:
+      "Todo contrato com operador precisa ter cláusulas explícitas sobre LGPD. Sem isso, em incidente, o operador escapa e o controlador paga sozinho. As cláusulas sugeridas variam conforme o risco.",
+    perguntaChave:
+      "Selecione as cláusulas aplicáveis. Mínimo absoluto: confidencialidade + comunicação de incidente + retorno/destruição dos dados ao fim do contrato.",
+    pegadinha:
+      "Cláusula \"o operador se compromete a cumprir a LGPD\" SOZINHA é cláusula de papel. Precisa especificar prazos (incidente em quanto tempo? destruição em quanto tempo após fim?), formato (relatório anual? auditoria?), penalidades.",
+    exemplos: [
+      "Operador de saúde: + cláusula de criptografia obrigatória + comunicação de incidente em 24h + auditoria semestral",
+      "Operador genérico baixo risco: pacote padrão (confidencialidade + incidente + retorno) basta",
+      "Operador estrangeiro: + cláusula de transferência internacional conforme Art. 33",
+    ],
+  },
+
+  // ============================================================================
+  // DSR (Direitos do Titular) — header da lista
+  // ============================================================================
+  dsr_direitos: {
+    titulo: "Os 9 direitos do titular (Art. 18)",
+    artigo: "LGPD Art. 18 + Res. CD/ANPD nº 18/2024",
+    oQueDiz:
+      "Todo cidadão tem direito a CONFIRMAÇÃO, ACESSO, CORREÇÃO, ANONIMIZAÇÃO/ELIMINAÇÃO, PORTABILIDADE, ELIMINAÇÃO POR CONSENTIMENTO, INFORMAÇÃO SOBRE COMPARTILHAMENTOS, INFORMAÇÃO SOBRE NÃO-CONSENTIMENTO, REVOGAÇÃO DO CONSENTIMENTO. A organização tem que ter CANAL FUNCIONAL pra receber esses pedidos.",
+    perguntaChave:
+      "Quem é o titular? O pedido tem fundamento legal (algum dos 9 direitos)? Você tem dados dele? Atenda ou justifique a recusa.",
+    pegadinha:
+      "Sem CONFIRMAR IDENTIDADE do solicitante, atender o pedido é VAZAMENTO. Pedir RG/CPF antes de responder é OBRIGAÇÃO, não burocracia — protege o titular de impostores.",
+    exemplos: [
+      "Pedido por e-mail \"quero saber tudo sobre minha filha menor\" → pede comprovação de filiação + CPF da criança antes",
+      "Pedido \"exclui meu dado AGORA\" → checar se há base legal que obriga a guardar (ex: prontuário 20 anos)",
+      "Pedido \"portar pro plano da concorrência\" → portabilidade é Art. 18 V, mas formato depende do que a outra organização aceita",
+    ],
+    linkAnpd: {
+      texto: "Res. ANPD nº 18/2024 — Comunicação no exercício de direitos",
+      url: "https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-aprova-resolucao-da-comunicacao-no-exercicio-de-direitos",
+    },
+  },
+  dsr_prazo: {
+    titulo: "Quanto tempo tenho pra responder?",
+    artigo: "LGPD Art. 19 + Res. CD/ANPD nº 18/2024",
+    oQueDiz:
+      "O Art. 19 II dá 15 dias úteis pra resposta a partir do recebimento do pedido. Prorrogação justificada vai até 2 prazos adicionais de 15 dias (total 45 dias).",
+    perguntaChave:
+      "Quando o pedido chegou? Marque a data. Você tem 15 dias úteis pra responder OU negar OU pedir mais tempo (com justificativa).",
+    pegadinha:
+      "Silêncio = descumprimento. Mesmo que o pedido seja absurdo (\"quero todos os meus dados\" sem ele ter dado nenhum), responda formalmente: \"não localizamos cadastro seu nesta organização\". Sem resposta = denuncia pra ANPD.",
+    exemplos: [
+      "Pedido em 01/06 → responder até 22/06 (15 dias úteis)",
+      "Pedido complexo (\"todos os meus dados em todos os sistemas\") → pode prorrogar 15+15 com justificativa formal",
+      "Pedido fora do escopo (\"quero meu dado do Bolsa Família\") → resposta de competência: \"esse dado é federal, encaminhe pro Ministério X\"",
+    ],
+  },
+
+  // ============================================================================
+  // Aviso de Privacidade — 12 seções (template ANPD)
+  // ============================================================================
+  aviso_secao_1: {
+    titulo: "Seção 1 — Quem somos",
+    artigo: "LGPD Art. 9º I",
+    oQueDiz: "Identificação completa do controlador: razão social/órgão, CNPJ, endereço da sede, contato institucional.",
+    perguntaChave: "Quem é o controlador? (Em órgãos públicos: nome do órgão + CNPJ + secretaria/departamento responsável)",
+    pegadinha: "Não basta colocar o nome do órgão. CNPJ é o RG da pessoa jurídica — sem ele, o aviso fica vago. Em órgãos públicos, cite a unidade autônoma (Secretaria X, Câmara Y) com endereço onde o titular pode ir pessoalmente.",
+  },
+  aviso_secao_2: {
+    titulo: "Seção 2 — Encarregado (DPO)",
+    artigo: "LGPD Art. 41",
+    oQueDiz: "Nome completo do Encarregado titular E do substituto, e-mail dedicado a DSR + telefone direto. Não basta \"falar com nosso jurídico\".",
+    perguntaChave: "Quem é o Encarregado nomeado por portaria? Tem substituto? Qual o e-mail/telefone dedicado?",
+    pegadinha: "E-mail \"encarregado@prefeitura.xx\" que cai numa caixa coletiva = DPO inexistente. Tem que ser caixa direta do DPO, com expectativa de resposta. Sem isso, Art. 41 §2º considera descumprido.",
+  },
+  aviso_secao_3: {
+    titulo: "Seção 3 — Quais dados tratamos",
+    artigo: "LGPD Art. 9º I",
+    oQueDiz: "Lista de CATEGORIAS de dados tratados por finalidade. Não precisa ser exaustivo, mas precisa ser representativo. Esta seção é alimentada pelo RIPD dos processos críticos.",
+    perguntaChave: "Cite as principais categorias do Inventário: cadastrais, contato, dados sensíveis, dados de menores, biometria, localização, etc.",
+    pegadinha: "Listar só \"dados pessoais\" é não dizer nada. ANPD considera não-conforme. Cite categorias específicas (\"endereço\", \"telefone\", \"dados de saúde\", \"foto\") agrupadas por finalidade.",
+  },
+  aviso_secao_4: {
+    titulo: "Seção 4 — Base legal",
+    artigo: "LGPD Art. 7º (comuns) + Art. 11 (sensíveis) + Art. 23 (Adm. Pública)",
+    oQueDiz: "Pra cada FINALIDADE, declare a base legal específica. Não basta dizer \"interesse legítimo\" sem fundamentar — Art. 10 exige teste de balanceamento.",
+    perguntaChave: "Pra cada finalidade do Inventário: qual artigo da LGPD justifica? (Adm. Pública usa muito Art. 7º III e Art. 11 b.II)",
+    pegadinha: "Adm. Pública quase NUNCA usa consentimento. Cidadão diante do Estado não tem liberdade real de recusa. Usar consentimento como base = base errada e vulnerável.",
+  },
+  aviso_secao_5: {
+    titulo: "Seção 5 — Por quanto tempo guardamos",
+    artigo: "LGPD Art. 15 e 16",
+    oQueDiz: "Prazo de retenção por finalidade. Ao fim, eliminar ou anonimizar. Se há retenção obrigatória legal (ex: prontuário 20 anos, CF/88 art. 5º LXIV), cite a norma.",
+    perguntaChave: "Qual o prazo pra CADA finalidade? Qual a base legal da retenção (norma específica)?",
+    pegadinha: "\"Pelo tempo necessário\" sem prazo = retenção ilegal. ANPD exige prazo. Conservar dados além do prazo SEM nova base legal = infração.",
+  },
+  aviso_secao_6: {
+    titulo: "Seção 6 — Como protegemos",
+    artigo: "LGPD Art. 46 + Art. 6º VII (segurança)",
+    oQueDiz: "Medidas técnicas e administrativas. Não revele segredos (não diga \"usamos AES-256 com chave X\"), mas mostre que existe controle: criptografia, controle de acesso, logs, treinamento, backup, plano de resposta a incidente.",
+    perguntaChave: "Quais medidas existem? (Não invente — declare só o que existe; senão é descumprimento documentado)",
+    pegadinha: "Declarar medida que não existe é PROVA contra você em incidente. \"Temos criptografia em repouso\" → ANPD pede e descobre que era senha em planilha Excel → multa agravada.",
+  },
+  aviso_secao_7: {
+    titulo: "Seção 7 — Com quem compartilhamos",
+    artigo: "LGPD Art. 9º I e Art. 39",
+    oQueDiz: "Lista dos OPERADORES (terceirizados que tratam dados em seu nome) e dos CONTROLADORES PARCEIROS (outros órgãos com quem você compartilha). Alimentada pelo Gestão de Terceiros.",
+    perguntaChave: "Quais terceiros recebem seus dados? Cada um precisa de cláusula LGPD no contrato + estar nesta seção.",
+    pegadinha: "Listar empresa de TI que mantém o servidor sem contrato com cláusula LGPD = vazamento documentado. ANPD verifica.",
+  },
+  aviso_secao_8: {
+    titulo: "Seção 8 — Transferência internacional",
+    artigo: "LGPD Art. 33 a 36 + Res. CD/ANPD nº 19/2024",
+    oQueDiz: "Se você usa serviços de nuvem (Google, AWS, Microsoft) com servidores fora do Brasil OU compartilha dados com órgão estrangeiro, isso é TRANSFERÊNCIA INTERNACIONAL. Precisa de base legal específica do Art. 33.",
+    perguntaChave: "Há transferência pra fora do Brasil? Sob qual hipótese do Art. 33 (cooperação, adequação, contratual)?",
+    pegadinha: "Usar Gmail institucional = transferência internacional pros EUA. Microsoft 365 = idem. Maioria das organizações usa sem perceber. Resolução 19/2024 endureceu — não basta dizer \"a empresa garante\".",
+  },
+  aviso_secao_9: {
+    titulo: "Seção 9 — Cookies e rastreamento",
+    artigo: "LGPD Art. 7º + Decisão CD/ANPD sobre Cookies",
+    oQueDiz: "Se o portal usa cookies (analytics, marketing, preferências), declare. Banner de cookies + Política de Cookies dedicada se houver cookies não-essenciais.",
+    perguntaChave: "O site usa quais cookies? Tem banner de consentimento? Cita aqui e linka pra Política de Cookies?",
+    pegadinha: "Cookies essenciais (sessão, segurança) NÃO precisam de consentimento. Mas Google Analytics, Facebook Pixel, cookies de marketing PRECISAM. Coletar sem opt-in = infração.",
+  },
+  aviso_secao_10: {
+    titulo: "Seção 10 — Decisões automatizadas",
+    artigo: "LGPD Art. 20",
+    oQueDiz: "Se você toma decisão automatizada que afeta o titular (concessão de benefício, classificação de risco, ranking), o titular tem direito a revisão. Declare quais decisões e como contestar.",
+    perguntaChave: "Há algum sistema que decide sozinho sobre o cidadão? Como ele pode contestar?",
+    pegadinha: "Tecnologias \"de pontuação\" ou \"de risco\" usadas em adm. pública entram aqui. Sem essa seção, decisão automatizada vira nula por descumprimento do Art. 20.",
+  },
+  aviso_secao_11: {
+    titulo: "Seção 11 — Como exercer seus direitos",
+    artigo: "LGPD Art. 18 + Res. CD/ANPD nº 18/2024",
+    oQueDiz: "Canal funcional pra o titular exercer os 9 direitos do Art. 18. E-mail dedicado, formulário web, ou telefone. Prazo de resposta declarado (15 dias úteis).",
+    perguntaChave: "Qual o canal? Funciona de verdade? Quem responde? Alimentada por DSR.",
+    pegadinha: "Canal de DSR \"caixa-postal@orgao\" sem rotina de leitura = não-conformidade. ANPD audita: enviar pedido teste e medir o tempo de resposta.",
+  },
+  aviso_secao_12: {
+    titulo: "Seção 12 — Atualizações deste Aviso",
+    artigo: "LGPD Art. 9º + boas práticas",
+    oQueDiz: "Data da última revisão. Onde o titular acompanha histórico de mudanças. Compromisso de revisão periódica (anual recomendado).",
+    perguntaChave: "Quando este aviso foi revisado pela última vez? Quem revisou? Onde está o histórico?",
+    pegadinha: "Aviso sem data de atualização = aviso \"esquecido\". Mudou base legal? Mudou operador? Mudou retenção? O aviso tem que refletir.",
+  },
+
+  // ============================================================================
+  // Incidentes — campos do form
+  // ============================================================================
+  incidente_severidade: {
+    titulo: "Como classificar a severidade",
+    artigo: "Res. CD/ANPD nº 15/2024",
+    oQueDiz: "Severidade combina TIPO DE DADO afetado × VOLUME × REVERSIBILIDADE × EXPOSIÇÃO. Define se há \"risco relevante\" — gatilho da comunicação obrigatória à ANPD.",
+    perguntaChave: "Há dado sensível? Há menores? Volume grande? Dado exposto pública/irreversivelmente? SIM em 2+ → CRÍTICA. SIM em 1 → ALTA. Nenhum mas houve incidente → MÉDIA. Quase-incidente contido → BAIXA.",
+    pegadinha: "Subestimar severidade pra evitar comunicação = ocultação. Se o incidente vazar e a ANPD descobrir que você minimizou, multa agravada. Conservadoramente, classifique \"pra cima\" — se for menor, ANPD reclassifica sem punir.",
+    exemplos: [
+      "Pendrive com 2.300 prontuários médicos perdido = ALTA (sensível + alto volume + irreversibilidade)",
+      "E-mail enviado com cópia em CCO em vez de CCB pra 1.000 cidadãos = ALTA (exposição pública)",
+      "Tentativa de invasão bloqueada pelo firewall = BAIXA (contido, sem dados afetados)",
+    ],
+  },
+  incidente_72h_anpd: {
+    titulo: "Comunicação à ANPD em 72h",
+    artigo: "LGPD Art. 48 + Res. CD/ANPD nº 15/2024",
+    oQueDiz: "Se o incidente puder causar \"risco ou dano relevante\" aos titulares, comunique à ANPD em até 3 DIAS ÚTEIS (Res. 15/2024) a partir da CIÊNCIA pelo controlador. Comunique também aos titulares afetados.",
+    perguntaChave: "O incidente foi detectado quando? 72 horas úteis a partir da detecção. Há risco aos titulares? Use o Formulário Inline da Comunicação ANPD.",
+    pegadinha: "O prazo conta da DETECÇÃO, não da OCORRÊNCIA. Se aconteceu há 6 meses mas vocês acabaram de descobrir, o relógio começa AGORA. Mas omissão é agravante — então documente a descoberta.",
+    linkAnpd: {
+      texto: "Res. ANPD nº 15/2024 — Comunicação de Incidentes",
+      url: "https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-publica-resolucao-comunicacao-incidentes",
+    },
+  },
+  incidente_comunicado_titular: {
+    titulo: "Comunicação aos titulares afetados",
+    artigo: "LGPD Art. 48 §1º",
+    oQueDiz: "Quando o incidente causar risco aos titulares, eles têm que ser comunicados PESSOAL E DIRETAMENTE (não basta nota no site). E-mail, SMS, carta. Conteúdo: o que aconteceu, dados afetados, medidas tomadas, contato pra dúvidas.",
+    perguntaChave: "Quem foi afetado? Como você vai contatar? Use o Formulário Inline da Carta aos Titulares pra montar o texto.",
+    pegadinha: "Comunicação aos titulares NÃO é só transparência — é obrigação legal. Sem ela, o titular não consegue tomar medidas (trocar senha, monitorar conta, etc.) e a responsabilidade do controlador cresce.",
+  },
 };
 
 // ============================================================================
