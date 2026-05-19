@@ -63,6 +63,10 @@ function quote(text) {
     spacing: { before: 120, after: 120, line: 300 },
   });
 }
+// Helper: push multiple quote paragraphs into a children[] array.
+function quote_lines(arr, lines) {
+  lines.forEach((l) => arr.push(quote(l)));
+}
 function cellPlain(text, width, opts = {}) {
   return new TableCell({
     borders,
@@ -166,25 +170,129 @@ children.push(tbl([1500, 2500, 5026],
   ["Horário", "Atividade", "O que acontece"],
   [
     ["08:30-09:00", "Recepção + café",                       "Distribuir crachás. Mostrar tela inicial do app no projetor."],
-    ["09:00-09:15", "Boas-vindas + apresentação",            "Quem somos · objetivo do dia · regras da casa (errar é o objetivo, perguntas a qualquer momento)."],
-    ["09:15-10:15", "M1 — Por que LGPD",                     "Slides M1 (slides 1-12). Foco: contexto histórico + direito fundamental art. 5º LXXIX."],
+    ["09:00-09:10", "Boas-vindas + M0 (3 slides)",           "Apresentação · objetivo do dia · M0 'Onde estamos?' (slides M0.1-M0.3 — projeta o MapaPgp do app pra mostrar onde a turma se encaixa no PGP)."],
+    ["09:10-10:15", "Bloco 1 — Conteúdos Didáticos",         "Slides M1 (1-12). Falas detalhadas na Seção 3.1. Equivale ao item '📚 Conteúdos Didáticos' da sidebar do app."],
     ["10:15-10:30", "Pausa",                                  "—"],
-    ["10:30-11:30", "M2 — Direitos do Titular",              "Slides M2 (13-24). Casos práticos + perguntas."],
-    ["11:30-12:30", "M3 — Estrutura do PGP",                 "Slides M3 (25-38). Apresenta as 9 fases + organograma do PGP."],
+    ["10:30-11:30", "Bloco 1 (cont.) — Direitos do Titular", "Slides M2 (13-24). Casos práticos + perguntas. Ainda parte do '📚 Conteúdos Didáticos'."],
+    ["11:30-12:30", "Bloco 2 — Entendendo o PGP",            "Slides M3 (25-37). Falas detalhadas na Seção 3.2. Equivale ao item '📚 Entendendo o PGP' da sidebar."],
     ["12:30-13:30", "Almoço",                                 "—"],
-    ["13:30-14:00", "M4 — Incidentes + RIPD",                "Slides M4 (39-50). Foco em art. 48 + Res. ANPD 15/2024."],
-    ["14:00-14:15", "Briefing do jogo",                       "Explicar Vegas + grupos PM/CM + papéis. Distribuir cartões de login."],
-    ["14:15-14:25", "Configurar dispositivos",                "Cada participante faz login + visita as 8 telas da sidebar (~3 min)."],
-    ["14:25-17:25", "AULA PRÁTICA — 6 missões",               "Detalhamento na Seção 3 deste roteiro."],
+    ["13:30-14:00", "Bloco 3 — Fase Preliminar",             "Slides M4 (38-51) + apresentação livre. Falas na Seção 3.3. Equivale a '🚩 Fase Preliminar' da sidebar."],
+    ["14:00-14:15", "Bloco 4 — Fase 2 (Diagnóstico)",         "Apresentação livre (~15min). Falas na Seção 3.4. Equivale a '🚩 Fase 2' da sidebar."],
+    ["14:15-14:25", "Briefing do jogo + login",               "Explicar Vegas + grupos PM/CM + papéis. Distribuir cartões de login. Cada participante visita as 8 telas da sidebar."],
+    ["14:25-17:25", "AULA PRÁTICA — 6 missões",               "Detalhamento na Seção 4 deste roteiro."],
     ["17:25-17:55", "Reflexão Final + premiação",             "Comparação dos grupos · pegadinhas reveladas · entrega de certificados."],
     ["17:55-18:00", "Encerramento",                           "Foto da turma com selo 'LGPD-Friendly'."],
   ]
 ));
 
 // ============================================================
-// 3. AULA PRÁTICA — 6 MISSÕES (3h)
+// 3. APRESENTAÇÃO INICIAL — falas dos blocos teóricos (~5h)
 // ============================================================
-children.push(H1("3. Aula prática — roteiro das 6 missões", true));
+children.push(H1("3. Apresentação inicial — falas roteirizadas", true));
+
+children.push(p([
+  R("Antes do jogo começar, "), B("~5h de apresentação teórica"),
+  R(" cobrem os 4 itens de leitura da sidebar do app: Conteúdos Didáticos, Entendendo o PGP, Fase Preliminar e Fase 2. "),
+  R("O facilitador projeta os slides M0-M4 (deck Slides_M1-M4_Vegas.pptx + Slides_M0_Contextualizacao.pptx mesclados) e acompanha com as falas abaixo. "),
+  R("Cada bloco abaixo lista: objetivo, falas de microfone (cole-e-leia ou improvise em cima), perguntas-chave pra turma e tempo sugerido.")
+]));
+
+// 3.0 — Bloco M0 (abertura, ~10min)
+children.push(H2("3.0  Bloco 0 — Abertura + Slides M0 'Onde estamos?'  ·  ~10 min"));
+children.push(p([R("Objetivo: ancorar a turma. Eles precisam SABER que estão entrando na "), B("Fase 3"), R(" do PGP, e que as 3 anteriores já foram cumpridas em Vegas.")]));
+children.push(p([B("Fala 1 — boas-vindas (depois de 'bom dia' protocolar):")]));
+children.push(quote("\"Hoje vocês vão viver, em 3 horas, o que numa adequação real demora 6 a 12 meses. Vão errar. Vão descobrir armadilhas. Vão sair daqui sabendo onde apertar quando voltarem pras suas Casas. Errar é o objetivo do jogo — não o pecado.\""));
+children.push(p([B("Fala 2 — antes de projetar o slide M0.2 (linha do tempo):")]));
+children.push(quote("\"Adequar à LGPD é um caminho de 8 etapas. Antes do curso começar, em Vegas (nosso município fictício), as 3 primeiras etapas já aconteceram: alguém capacitou os servidores, alguém nomeou o DPO e formou o Comitê, alguém mapeou os setores. VOCÊS são o resultado disso. Hoje, vocês continuam o trabalho — a partir da Fase 3, onde os processos viram inventário, riscos viram matriz, e o trabalho fica visível.\""));
+children.push(p([B("Apoio no app: "), R("abre na tela inicial /dashboard projetada. Mostra o "), B("MapaPgp"), R(" com a Fase 3 pulsando 'você está aqui' e clica nos cards Preliminar/Fase 1/Fase 2 pra abrir os modais explicativos.")]));
+children.push(p([B("Pergunta socrática pra turma: "), I("\"Quem aqui já participou de algum treinamento de LGPD antes? Quem nunca ouviu falar?\"")]));
+
+// 3.1 — Bloco 1 (Conteúdos Didáticos, ~2h com pausa)
+children.push(H2("3.1  Bloco 1 — Conteúdos Didáticos  ·  ~2h (com pausa)"));
+children.push(p([R("Objetivo: alinhar vocabulário. No fim do bloco, a turma toda deve usar os MESMOS termos. Cobre o item "), B("'📚 Conteúdos Didáticos'"), R(" da sidebar.")]));
+children.push(p([B("Slides de apoio: "), R("Slides_M1-M4_Vegas.pptx → slides 1-24 (M1 Por que LGPD + M2 Direitos do Titular).")]));
+children.push(p([B("Fala-chave 1 — abertura M1 (slide 'Por que LGPD?'):")]));
+quote_lines(children, [
+  "\"LGPD não nasceu pra burocratizar. Nasceu porque um vazamento causa dano REAL — pessoas perdem emprego, são chantageadas, sofrem golpe. O Art. 5º LXXIX da Constituição diz: proteção dos dados pessoais é DIREITO FUNDAMENTAL. Não é capricho da ANPD.\"",
+]);
+children.push(p([B("Fala-chave 2 — antes do slide de bases legais:")]));
+quote_lines(children, [
+  "\"Existem 10 bases legais no Art. 7º e 7 no Art. 11. Vocês NÃO precisam decorar todas. Precisam reconhecer que toda vez que sua organização trata dado pessoal, alguma dessas hipóteses TEM que se encaixar. Sem isso = tratamento ilegal.\"",
+]);
+children.push(p([B("Fala-chave 3 — abrindo o M2 (Direitos do Titular):")]));
+quote_lines(children, [
+  "\"O cidadão tem 9 direitos no Art. 18. Os 3 mais cobrados na prática são: confirmação (existe meu dado?), acesso (me mostra qual) e eliminação (apaga isso). Se sua Casa não tem canal pra atender esses 3, está fora da lei agora mesmo.\"",
+]);
+children.push(p([B("Perguntas pra turma (escolher 2-3): ")]));
+[
+  "\"Quem aqui já recebeu uma reclamação de cidadão pedindo dados que a Casa tinha sobre ele? Como foi tratado?\"",
+  "\"Pra quem é jurídico/procuradoria: vocês conseguem identificar a base legal de algum processo que rodam sem pensar muito?\"",
+  "\"Vocês acham que um vazamento de 500 prontuários médicos é mais grave que vazamento de 50.000 emails de marketing? Por quê?\"",
+].forEach((t) => children.push(p([I(t)])));
+children.push(p([B("Nota: "), I("após o slide 12 (fim do M1), pausa de 15min. Depois retoma com M2.")]));
+
+// 3.2 — Bloco 2 (Entendendo o PGP, ~1h)
+children.push(H2("3.2  Bloco 2 — Entendendo o PGP  ·  ~1h"));
+children.push(p([R("Objetivo: explicar PGP como PROGRAMA contínuo (não projeto). Apresentar as 8 etapas. Cobre o item "), B("'📚 Entendendo o PGP'"), R(" da sidebar.")]));
+children.push(p([B("Slides de apoio: "), R("Slides_M1-M4_Vegas.pptx → slides 25-37 (M3 'O PGP em 9 fases').")]));
+children.push(p([B("Fala-chave 1 — abertura:")]));
+quote_lines(children, [
+  "\"Programa de Governança em Privacidade. Note: PROGRAMA. Não projeto. Não tem início, meio e fim — tem ciclos. Cada ano você revisa o que ficou pra trás, refaz o que mudou, melhora o que descobriu. É como manter um prédio: nunca acaba.\"",
+]);
+children.push(p([B("Fala-chave 2 — antes do diagrama das 8 etapas:")]));
+quote_lines(children, [
+  "\"As 8 etapas seguem uma ORDEM DEPENDENTE: você não consegue fazer GAP sem ter Inventário, não consegue Plano de Ação sem ter GAP, não consegue Aviso de Privacidade real sem ter RIPD. Quem pula etapa entrega ETAPA VAZIA.\"",
+]);
+children.push(p([B("Fala-chave 3 — ressaltando o 'aqui estamos':")]));
+quote_lines(children, [
+  "\"Vegas chegou na Fase 3. Vocês vão jogar a Fase 3 (Mapeamento + Riscos), Fase 4 (GAP), Fase 5 (Plano de Ação), Fase 6 (Execução: RIPD/Aviso/Terceiros/DSR) e Fase 7 (Monitoramento de Incidentes). Em ~3h. Spoiler: vão errar. Mas vão errar com método.\"",
+]);
+children.push(p([B("Perguntas pra turma: ")]));
+[
+  "\"Pra quem é DPO ou já trabalhou com adequação: em qual fase a sua organização real está hoje? Justifica.\"",
+  "\"Qual fase parece mais difícil pra vocês implementarem na realidade? Por quê?\"",
+].forEach((t) => children.push(p([I(t)])));
+
+// 3.3 — Bloco 3 (Fase Preliminar, ~30min)
+children.push(H2("3.3  Bloco 3 — Fase Preliminar  ·  ~30 min"));
+children.push(p([R("Objetivo: explicar por que NÃO se vai direto pro Inventário. Capacitação é alicerce. Cobre o item "), B("'🚩 Fase Preliminar'"), R(" da sidebar.")]));
+children.push(p([B("Slides de apoio: "), R("Slides_M1-M4_Vegas.pptx → slides 38-51 (M4 'Como o jogo cobre as 9 fases' + complementos).")]));
+children.push(p([B("Fala-chave 1:")]));
+quote_lines(children, [
+  "\"A Fase Preliminar é onde 80% das adequações fracassam. Não por falta de software. Por falta de SENSIBILIZAÇÃO. Servidor que não entende o que é dado pessoal vai preencher Inventário no escuro. Vai botar 'sim' onde deveria botar 'não'. Vai esquecer o sensível porque acha que é normal.\"",
+]);
+children.push(p([B("Fala-chave 2 — sobre o trabalho de vocês:")]));
+quote_lines(children, [
+  "\"VOCÊS são o resultado da Fase Preliminar de Vegas. Hoje vocês entenderam dado pessoal, base legal, direito do titular. Esse 'entender' não é luxo — é PRÉ-REQUISITO pro que vem agora. Sem isso, Inventário vira teatro.\"",
+]);
+children.push(p([B("Fala-chave 3 — leve confronto pedagógico:")]));
+quote_lines(children, [
+  "\"Quando voltarem pras suas Casas, vocês vão precisar fazer o que foi feito com vocês hoje — capacitar SEUS colegas. Não dá pra adequar sozinho. Quem tenta vira o 'cara da LGPD' chato do setor. Quem capacita, vira o organizador da resistência.\"",
+]);
+children.push(p([B("Pergunta pra turma: ")]));
+children.push(p([I("\"Pensem agora em 1 colega do seu setor que VOCÊS vão capacitar na semana seguinte. Anota o nome no caderno. Depois é cobrança.\"")]));
+
+// 3.4 — Bloco 4 (Fase 2, ~15min)
+children.push(H2("3.4  Bloco 4 — Fase 2: Diagnóstico Inicial  ·  ~15 min"));
+children.push(p([R("Objetivo: explicar que ANTES do Inventário, faz-se o levantamento macro. Cobre o item "), B("'🚩 Fase 2 — Diagnóstico Inicial'"), R(" da sidebar.")]));
+children.push(p([B("Slides de apoio: "), R("livre — explicar com o quadro/projetor ou direto no app (página /dashboard/fase-2 do curso).")]));
+children.push(p([B("Fala-chave 1:")]));
+quote_lines(children, [
+  "\"Antes de detalhar processo a processo, faz-se o RAIO-X da organização. Quais setores tratam dados? Quais sistemas? Quais terceiros recebem essas bases? Não é Inventário — é fotografia do ponto de partida. Pra você saber o tamanho do problema antes de começar.\"",
+]);
+children.push(p([B("Fala-chave 2 — conectando com o jogo:")]));
+quote_lines(children, [
+  "\"Os 2 processos pré-cadastrados que vocês vão detalhar hoje — Posto de Saúde + Estagiários no caso da PM, Tribuna Livre + Ouvidoria no caso da CM — NÃO caíram do céu. Vieram desse levantamento da Fase 2 que aconteceu em Vegas antes de vocês chegarem. Foi escolha consciente: começamos pelos processos mais sensíveis.\"",
+]);
+children.push(p([B("Fala-chave 3 — transição pro jogo (encerramento do bloco):")]));
+quote_lines(children, [
+  "\"Pronto. Vocês têm o vocabulário (Bloco 1), entendem o programa (Bloco 2), reconhecem o alicerce (Bloco 3) e sabem de onde vieram os processos (Bloco 4). Agora é a hora de ENSAIAR a Fase 3 na prática. 5 missões, 3 horas, cronômetro. Bora jogar.\"",
+]);
+
+// ============================================================
+// 4. AULA PRÁTICA — 6 MISSÕES (3h)
+// ============================================================
+children.push(H1("4. Aula prática — roteiro das 6 missões", true));
 
 children.push(p([
   R("Tempo total: "), B("~3 horas"), R(" cronometradas + check-ins de 3 min entre missões + 15 min de Reflexão Final.")
@@ -259,9 +367,9 @@ for (const m of MISSOES) {
 }
 
 // ============================================================
-// 4. PEGADINHAS PLANTADAS
+// 5. PEGADINHAS PLANTADAS
 // ============================================================
-children.push(H1("4. Pegadinhas plantadas — quando revelar", true));
+children.push(H1("5. Pegadinhas plantadas — quando revelar", true));
 
 children.push(p("As 4 pegadinhas ficam escondidas no Briefing dos processos. Grupos que flagam ganham bônus na premiação 🕵️ Olho Clínico. Revelar somente na Reflexão Final — após a Missão 5."));
 
@@ -294,9 +402,9 @@ children.push(p([
 children.push(p([B("Por que é pegadinha: "), R("interesse legítimo aqui NÃO passa no teste de balanceamento (Art. 10 LGPD) — o titular não esperaria razoavelmente receber esse email só por ter reclamado de algo. Mistura de finalidades.")]));
 
 // ============================================================
-// 5. REFLEXÃO FINAL
+// 6. REFLEXÃO FINAL
 // ============================================================
-children.push(H1("5. Reflexão Final (15 min)", true));
+children.push(H1("6. Reflexão Final (15 min)", true));
 
 children.push(H2("Estrutura sugerida"));
 [
@@ -317,9 +425,9 @@ children.push(H2("Categorias de premiação"));
 ].forEach((t) => children.push(bullet(t)));
 
 // ============================================================
-// 6. PLANOS B
+// 7. PLANOS B
 // ============================================================
-children.push(H1("6. Planos B (situações de risco)", true));
+children.push(H1("7. Planos B (situações de risco)", true));
 
 children.push(tbl([3000, 6026],
   ["Situação", "Como agir"],
@@ -342,9 +450,9 @@ children.push(tbl([3000, 6026],
 ));
 
 // ============================================================
-// 7. PÓS-AULA
+// 8. PÓS-AULA
 // ============================================================
-children.push(H1("7. Pós-aula (mesmo dia + D+7)", true));
+children.push(H1("8. Pós-aula (mesmo dia + D+7)", true));
 
 children.push(H2("No mesmo dia (após o encerramento)"));
 [
