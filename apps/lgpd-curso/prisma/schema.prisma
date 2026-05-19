@@ -82,9 +82,18 @@ model User {
 model CursoTurma {
   id           String    @id @default(cuid())
   nome         String    @unique // ex: "Outubro-2026"
+  // Slug sluggificado do nome — entra no email dos participantes:
+  // `{papel}.g{N}.{slug}@curso.lgpd`. Garante ISOLAMENTO TOTAL entre turmas:
+  // não há como ação numa turma afetar outra, mesmo via SQL direto.
+  // Default empty pra retro-compat — backfill via /api/curso/migrar-slug-turmas.
+  slug         String    @default("")
   cidade       String    @default("Vegas") // padrão Vegas, editável
   dataPrevista DateTime?
   status       String    @default("ATIVA") // ATIVA | ENCERRADA
+  // Marca visual: a turma marcada com "proximoCurso" tem ícone 🎯 no admin.
+  // Não bloqueia nada — apenas ajuda o facilitador identificar de relance
+  // qual turma vai ser rodada a seguir. Apenas 1 turma pode ter true por vez.
+  proximoCurso Boolean   @default(false)
   observacao   String?
   // Pacote customizado de controles GAP — array de IDs do catálogo
   // (lib/gap-catalogo.ts). Vazio = usa PACOTE_DEFAULT. Permite ao facilitador
