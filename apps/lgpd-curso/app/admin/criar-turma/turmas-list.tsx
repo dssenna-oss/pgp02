@@ -77,9 +77,16 @@ export function TurmasList({ turmas }: { turmas: Turma[] }) {
                   <Button
                     size="sm" variant="ghost"
                     onClick={() => window.open(`/api/curso/cartoes-login.pdf?turmaId=${t.id}`, "_blank")}
-                    title="Cartões de login"
+                    title="Cartões de login (PDF A4)"
                   >
                     <Printer className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm" variant="ghost"
+                    onClick={() => window.open(`/api/curso/crachas.pdf?turmaId=${t.id}`, "_blank")}
+                    title="Crachás físicos (PDF A4 paisagem · com 10 Observadores)"
+                  >
+                    <Printer className="h-4 w-4 text-purple-600" />
                   </Button>
                   <Button
                     size="sm" variant="ghost"

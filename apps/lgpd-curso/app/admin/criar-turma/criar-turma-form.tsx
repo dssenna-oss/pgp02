@@ -83,6 +83,12 @@ export function CriarTurmaForm() {
     window.open(url, "_blank");
   }
 
+  function baixarCrachas() {
+    if (!resultado) return;
+    const url = `/api/curso/crachas.pdf?turmaId=${resultado.turma.id}`;
+    window.open(url, "_blank");
+  }
+
   return (
     <div className="border rounded-lg bg-white p-5 space-y-4">
       {/* Identificação */}
@@ -183,6 +189,9 @@ export function CriarTurmaForm() {
           <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="primary" onClick={baixarCartoes}>
               <Printer className="h-4 w-4" /> Baixar cartões de login (PDF)
+            </Button>
+            <Button size="sm" variant="primary" onClick={baixarCrachas}>
+              <Printer className="h-4 w-4" /> Baixar crachás (PDF · A4 paisagem)
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href="/facilitador">
