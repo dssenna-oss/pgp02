@@ -4,12 +4,85 @@
 //   - Grupo mais maduro (maior score)
 //   - Tabela por grupo: maturidade, tempo total ativo, missão mais demorada, qtd SOS
 //   - Highlights pedagógicos pra usar no debrief
+//
+// Celebração: quando TODOS os grupos terminaram as 7 missões (timeline 100%
+// DONE), dispara confete dos 2 cantos + palmas sintetizadas via Web Audio
+// — momento "UAU" do encerramento.
 
+import { useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Award, Trophy, Clock, LifeBuoy, Mail, Bug } from "lucide-react";
+import confetti from "canvas-confetti";
 import type { BolinhaMissao } from "./timeline-grupo";
 import type { SosItem } from "./central-sos";
 import { CATALOGO_ERROS_PLANTADOS, detectarErroPorPalavraChave, type ErroPlantadoId } from "@/lib/aviso-erros-plantados";
+
+// === Palmas sintetizadas via Web Audio API ===
+// Cada "palma" = burst curto de ruído branco com envelope rápido + filtro
+// passa-banda (centro ~2kHz onde nossa percepção de palma é mais forte).
+// Sequência de N palmas com pequena variação aleatória pra parecer multidão.
+function tocarPalmas(audioCtx: AudioContext, qtdPalmas = 12) {
+  const sampleRate = audioCtx.sampleRate;
+  for (let i = 0; i < qtdPalmas; i++) {
+    const atrasoMs = i * 90 + Math.random() * 30; // ~90ms entre palmas, com jitter
+    setTimeout(() => {
+      try {
+        // Buffer de ruído branco de 80ms
+        const duration = 0.08;
+        const buf = audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
+        const dados = buf.getChannelData(0);
+        for (let j = 0; j < dados.length; j++) dados[j] = Math.random() * 2 - 1;
+
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+
+        // Filtro passa-banda centrado em ~2kHz (frequência típica de palma)
+        const filtro = audioCtx.createBiquadFilter();
+        filtro.type = "bandpass";
+        filtro.frequency.value = 1500 + Math.random() * 1500;
+        filtro.Q.value = 0.8;
+
+        // Envelope: ataque imediato, decay exponencial rápido (~50ms)
+        const gain = audioCtx.createGain();
+        const volume = 0.10 + Math.random() * 0.08;
+        const now = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(volume, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        src.connect(filtro);
+        filtro.connect(gain);
+        gain.connect(audioCtx.destination);
+        src.start(now);
+        src.stop(now + duration);
+      } catch {}
+    }, atrasoMs);
+  }
+}
+
+// Confete dos 2 cantos (esquerdo + direito) por ~3 segundos
+function dispararConfete() {
+  const duracaoMs = 3000;
+  const fim = Date.now() + duracaoMs;
+  const cores = ["#fbbf24", "#34d399", "#60a5fa", "#a78bfa", "#f87171", "#facc15"];
+  (function frame() {
+    confetti({
+      particleCount: 4,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.7 },
+      colors: cores,
+    });
+    confetti({
+      particleCount: 4,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.7 },
+      colors: cores,
+    });
+    if (Date.now() < fim) requestAnimationFrame(frame);
+  })();
+}
 
 type Grupo = {
   grupoId: string;
@@ -59,6 +132,43 @@ export function ResumoTurmaDialog({
 }) {
   const ranking = [...grupos].sort((a, b) => b.score - a.score);
   const campeao = ranking[0];
+
+  // Celebração: dispara UMA VEZ por abertura quando TODOS os grupos
+  // têm a timeline 100% DONE. Não repete em re-render.
+  const jaCelebrouRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      // reset quando fecha — próxima abertura pode comemorar de novo
+      // só se atender a condição
+      jaCelebrouRef.current = false;
+      return;
+    }
+    if (jaCelebrouRef.current) return;
+    if (grupos.length === 0) return;
+
+    // Condição: TODOS os grupos têm todas as missões DONE
+    const todosCompletos = grupos.every(
+      (g) => g.timeline.length > 0 && g.timeline.every((b) => b.status === "DONE"),
+    );
+    if (!todosCompletos) return;
+
+    jaCelebrouRef.current = true;
+
+    // Confete já vai imediatamente (canvas-confetti não precisa de gesto)
+    dispararConfete();
+
+    // Palmas precisam de AudioContext — Chrome bloqueia se nunca houve gesto.
+    // Mas como o user CLICOU em "Resumo" pra abrir o dialog, esse próprio
+    // clique já é gesto válido — AudioContext novo aqui funciona.
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ctx = new Ctx();
+      // pequeno delay pra confete começar a aparecer antes do som chegar
+      setTimeout(() => tocarPalmas(ctx, 14), 200);
+      // fecha o ctx após 3s pra liberar recursos
+      setTimeout(() => { try { ctx.close(); } catch {} }, 3500);
+    } catch {}
+  }, [open, grupos]);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
