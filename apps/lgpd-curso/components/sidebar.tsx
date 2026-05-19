@@ -43,7 +43,7 @@ type Fase = {
 const FASES: Fase[] = [
   {
     id: "fase-1",
-    rotulo: "Fase 1 — Governança",
+    rotulo: "Fase 1 — Formação das equipes",
     cor: "border-l-violet-400",
     itens: [
       { href: "/dashboard/encarregado", label: "Encarregado (DPO)", icon: UserCheck, dpoOnly: true },
@@ -68,7 +68,7 @@ const FASES: Fase[] = [
   },
   {
     id: "fase-5",
-    rotulo: "Fase 5 — Programa de Governança em Privacidade",
+    rotulo: "Fase 5 — Plano de Ação",
     cor: "border-l-emerald-400",
     itens: [
       { href: "/dashboard/plano-acao", label: "Plano de Ação", icon: Target, progressoKey: "plano_acao", dpoOnly: true },
