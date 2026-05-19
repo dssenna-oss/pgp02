@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { papeisPorOrgao, processosPorOrgao } from "@/lib/seeds/processos-vegas";
 import { terceirosPorOrgao } from "@/lib/seeds/terceiros-vegas";
+import { slugifyTurma } from "@/lib/slugify";
 
 // ~10 ops sequenciais no banco por grupo (company + cursoGrupo + 5 users +
 // 2 processos) + bcrypt hash. Com Neon dormindo pode passar de 15s.
@@ -41,16 +42,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Turma "${nome}" já existe. Use outro nome ou resete-a primeiro.` }, { status: 409 });
   }
 
-  // Verifica se já existem users dos grupos que vamos criar (vestígio de tentativa anterior
-  // que falhou no meio do caminho). Os emails seguem padrão `papel.gN@curso.lgpd` e são
-  // únicos no banco — não dá pra criar uma turma "Ensaio-Solo-2" se a "Ensaio-Solo"
-  // anterior já deixou dpo.g1@curso.lgpd cadastrado. Detecta cedo e dá mensagem clara.
+  // Gera slug a partir do nome — entra nos emails dos participantes pra
+  // garantir ISOLAMENTO entre turmas. Ex: "Colatina-Out-2026" → "colatina-out-2026".
+  // Emails: `dpo.g1.colatina-out-2026@curso.lgpd`. Nunca colidem entre turmas.
+  const slug = slugifyTurma(nome);
+  if (!slug) {
+    return NextResponse.json({ error: "Nome da turma sem caracteres válidos pra slug" }, { status: 400 });
+  }
+  // Verifica se slug já está em uso por outra turma
+  const slugColisao = await prisma.cursoTurma.findFirst({ where: { slug } });
+  if (slugColisao) {
+    return NextResponse.json({ error: `Já existe uma turma com slug "${slug}". Escolha outro nome.` }, { status: 409 });
+  }
+
+  // Verifica se já existem users dos grupos que vamos criar (vestígio de tentativa
+  // anterior que falhou no meio). Com slug, colisão só acontece se a tentativa
+  // anterior usou o MESMO nome de turma. Detecta cedo e dá mensagem clara.
   const totalGrupos = qtdPM + qtdCM;
   const emailsQueSerao: string[] = [];
   for (let n = 1; n <= totalGrupos; n++) {
     const orgaoTipo = n <= qtdPM ? "PM" : "CM";
     for (const p of papeisPorOrgao(orgaoTipo)) {
-      emailsQueSerao.push(`${p.emailPrefix}.g${n}@curso.lgpd`);
+      emailsQueSerao.push(`${p.emailPrefix}.g${n}.${slug}@curso.lgpd`);
     }
   }
   const colisoes = await prisma.user.findMany({
@@ -59,7 +72,7 @@ export async function POST(req: NextRequest) {
   });
   if (colisoes.length > 0) {
     return NextResponse.json({
-      error: `Já existem ${colisoes.length} usuários com emails do padrão usado (ex: ${colisoes[0].email}). Provavelmente sobrou de tentativa anterior. Resete TODAS as turmas existentes em /admin/criar-turma antes de tentar de novo.`,
+      error: `Já existem ${colisoes.length} usuários do slug "${slug}" (ex: ${colisoes[0].email}). Provavelmente sobrou de tentativa anterior com mesmo nome. Resete a turma "${nome}" se ela existir.`,
     }, { status: 409 });
   }
 
@@ -69,7 +82,7 @@ export async function POST(req: NextRequest) {
   let turma: { id: string; nome: string; cidade: string };
   try {
     turma = await prisma.cursoTurma.create({
-      data: { nome, cidade, status: "ATIVA" },
+      data: { nome, slug, cidade, status: "ATIVA" },
       select: { id: true, nome: true, cidade: true },
     });
   } catch (e: any) {
@@ -122,7 +135,7 @@ export async function POST(req: NextRequest) {
       const usersCriados: Record<string, string> = {}; // papel -> userId
 
       for (const p of papeisDef) {
-        const email = `${p.emailPrefix}.g${numeroGrupo}@curso.lgpd`;
+        const email = `${p.emailPrefix}.g${numeroGrupo}.${slug}@curso.lgpd`;
         const u = await prisma.user.create({
           data: {
             email,
