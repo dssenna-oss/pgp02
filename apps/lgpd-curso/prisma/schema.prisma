@@ -356,6 +356,18 @@ model Incident {
   detectadoEm       DateTime?
   comunicadoAnpd    Boolean   @default(false)
   comunicadoTitular Boolean   @default(false)
+  // === Formulários estruturados (Missão 5) ===
+  // Resposta a incidente é processo rápido — DPO usa celular em campo.
+  // Em vez de download de DOCX/TXT, formulário inline com opções pré-mapeadas
+  // (checkboxes) que aceleram o preenchimento. Pedagógico: a equipe precisa
+  // estar PREPARADA com antecedência — opções já no app reforçam o "pense no
+  // PRI antes do incidente acontecer".
+  // Estrutura: { naturezaDados: string[], titularesNumero: string,
+  //   titularesCategorias: string[], medidasTecnicas: string[],
+  //   riscos: string[], medidasMitigacao: string[], motivoAtraso: string }
+  formularioAnpd       Json?
+  // Estrutura: { dadosAfetados: string[], oQueFizemos: string[] }
+  formularioTitulares  Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

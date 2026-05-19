@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, FileDown, Clock } from "lucide-react";
+import { Pencil, Trash2, Clock, Mail, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -11,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { saveIncidente, deletarIncidente, gerarComunicacaoAnpd, gerarCartaTitulares } from "./actions";
+import { saveIncidente, deletarIncidente } from "./actions";
+import { FormularioAnpdModal } from "./formulario-anpd-modal";
+import { FormularioTitularesModal } from "./formulario-titulares-modal";
+import {
+  completudeAnpd, completudeTitulares,
+  type FormularioAnpd, type FormularioTitulares,
+} from "@/lib/incidente-formulario";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -32,7 +38,15 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
   const [editing, setEditing] = useState<Inc | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Modais dos formulários (Comunicação ANPD + Carta Titulares)
+  const [anpdOpen, setAnpdOpen] = useState(false);
+  const [anpdAlvo, setAnpdAlvo] = useState<Inc | null>(null);
+  const [titularesOpen, setTitularesOpen] = useState(false);
+  const [titularesAlvo, setTitularesAlvo] = useState<Inc | null>(null);
+
   function abrirEdicao(i: Inc) { setEditing(i); setOpen(true); }
+  function abrirAnpd(i: Inc) { setAnpdAlvo(i); setAnpdOpen(true); }
+  function abrirTitulares(i: Inc) { setTitularesAlvo(i); setTitularesOpen(true); }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,20 +79,9 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
     } catch (e: any) { toast.error(e.message); }
   }
 
-  async function gerarAnpd(id: string) {
-    try {
-      const texto = await gerarComunicacaoAnpd(id);
-      downloadTxt(texto, "comunicacao-anpd.txt");
-      toast.success("Texto da Comunicação ANPD baixado");
-    } catch (e: any) { toast.error(e.message); }
-  }
-  async function gerarCarta(id: string) {
-    try {
-      const texto = await gerarCartaTitulares(id);
-      downloadTxt(texto, "carta-titulares.txt");
-      toast.success("Carta aos titulares baixada");
-    } catch (e: any) { toast.error(e.message); }
-  }
+  // Funções de download removidas — agora o DPO preenche e edita inline
+  // via FormularioAnpdModal + FormularioTitularesModal. Texto final fica
+  // disponível em "Salvar + Ver texto final" dentro de cada modal.
 
   return (
     <>
@@ -189,22 +192,57 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                     </div>
                   </TD>
                   <TD>
-                    <div className="flex justify-end gap-1 items-center">
-                      {/* Documentos só ficam disponíveis após análise (status != RASCUNHO).
-                          Baixar Comunicação ANPD/Carta Titulares sem análise é compliance fake — o
-                          texto vai com campos não preenchidos e severidade não revisada. */}
+                    <div className="flex justify-end gap-1 items-center flex-wrap">
+                      {/* Formulários só liberam após análise (status != RASCUNHO).
+                          Sem análise prévia, abrir o form é compliance fake. */}
                       {i.status === "RASCUNHO" ? (
-                        <span className="text-[10px] text-gray-500 italic mr-1" title="Analise o incidente (mude status pra EM_ANÁLISE) antes de gerar os documentos">
-                          🔒 Documentos liberam após análise
+                        <span className="text-[10px] text-gray-500 italic mr-1" title="Mude status pra EM_ANÁLISE antes de comunicar ANPD/Titulares">
+                          🔒 Comunicações liberam após análise
                         </span>
                       ) : (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => gerarAnpd(i.id)} title="Comunicação ANPD">
-                            <FileDown className="h-4 w-4 text-brand-600" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => gerarCarta(i.id)} title="Carta titulares">
-                            <FileDown className="h-4 w-4 text-emerald-600" />
-                          </Button>
+                          {(() => {
+                            const cAnpd = completudeAnpd(i.formularioAnpd as FormularioAnpd | null);
+                            const cTit = completudeTitulares(i.formularioTitulares as FormularioTitulares | null);
+                            return (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => abrirAnpd(i)}
+                                  title="Comunicação ANPD"
+                                  className="text-[11px]"
+                                >
+                                  <Mail className="h-3.5 w-3.5 text-brand-600" />
+                                  <span className="hidden sm:inline ml-1">ANPD</span>
+                                  <span className={`ml-1 text-[9px] px-1 rounded ${
+                                    cAnpd.preenchidos === cAnpd.total ? "bg-emerald-100 text-emerald-700"
+                                    : cAnpd.preenchidos > 0 ? "bg-amber-100 text-amber-700"
+                                    : "bg-gray-100 text-gray-500"
+                                  }`}>
+                                    {cAnpd.preenchidos}/{cAnpd.total}
+                                  </span>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => abrirTitulares(i)}
+                                  title="Carta aos Titulares"
+                                  className="text-[11px]"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span className="hidden sm:inline ml-1">Titulares</span>
+                                  <span className={`ml-1 text-[9px] px-1 rounded ${
+                                    cTit.preenchidos === cTit.total ? "bg-emerald-100 text-emerald-700"
+                                    : cTit.preenchidos > 0 ? "bg-amber-100 text-amber-700"
+                                    : "bg-gray-100 text-gray-500"
+                                  }`}>
+                                    {cTit.preenchidos}/{cTit.total}
+                                  </span>
+                                </Button>
+                              </>
+                            );
+                          })()}
                         </>
                       )}
                       <Button size="sm" variant="ghost" onClick={() => abrirEdicao(i)}><Pencil className="h-4 w-4" /></Button>
@@ -302,16 +340,26 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modais dos formulários inline (Comunicação ANPD + Carta Titulares) */}
+      {anpdAlvo && (
+        <FormularioAnpdModal
+          incidenteId={anpdAlvo.id}
+          incidenteTitulo={anpdAlvo.titulo}
+          initial={anpdAlvo.formularioAnpd as FormularioAnpd | null}
+          open={anpdOpen}
+          onClose={() => setAnpdOpen(false)}
+        />
+      )}
+      {titularesAlvo && (
+        <FormularioTitularesModal
+          incidenteId={titularesAlvo.id}
+          incidenteTitulo={titularesAlvo.titulo}
+          initial={titularesAlvo.formularioTitulares as FormularioTitulares | null}
+          open={titularesOpen}
+          onClose={() => setTitularesOpen(false)}
+        />
+      )}
     </>
   );
-}
-
-function downloadTxt(content: string, filename: string) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
 }
