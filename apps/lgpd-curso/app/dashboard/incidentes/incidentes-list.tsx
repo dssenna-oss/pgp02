@@ -18,6 +18,7 @@ import {
   completudeAnpd, completudeTitulares,
   type FormularioAnpd, type FormularioTitulares,
 } from "@/lib/incidente-formulario";
+import { EquipeAcionarChips } from "./equipe-acionar-chips";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
@@ -177,6 +178,12 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                   <TD>
                     <div className="font-medium">{i.titulo}</div>
                     {i.descricao && <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{i.descricao}</div>}
+                    {/* Chips de contato da equipe — só aparecem em incidente ativo */}
+                    {i.status !== "ENCERRADO" && (
+                      <div className="mt-1.5">
+                        <EquipeAcionarChips compacto />
+                      </div>
+                    )}
                   </TD>
                   <TD>{sevBadge(i.severidade)}</TD>
                   <TD className="text-xs">

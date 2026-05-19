@@ -51,6 +51,8 @@ model Company {
   operators   Operator[]
   dsrRequests DsrRequest[]
   cursoGrupo  CursoGrupo?
+  priMembros  PriMembroEquipe[]
+  priRaci     PriRaci[]
 
   @@map("companies")
 }
@@ -398,6 +400,44 @@ model IncidentOperatorLink {
 
   @@unique([incidentId, operatorId])
   @@map("incident_operator_links")
+}
+
+// === Plano de Resposta a Incidentes (PRI) — Missão 5 preparação ===
+// Lição central: equipe TEM que estar preparada COM ANTECEDÊNCIA. PRI é o
+// manual de bombeiro — define QUEM faz O QUÊ ANTES do incidente acontecer.
+
+// Membro da Equipe de Tratamento de Incidentes (ETIR/CSIRT)
+model PriMembroEquipe {
+  id          String  @id @default(cuid())
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  nome        String
+  papel       String  // DPO | TI | JURIDICO | COMUNICACAO | ALTA_GESTAO | DONO_PROCESSO
+  contato24h  String? // telefone celular, idealmente WhatsApp
+  email       String?
+  cobertura   String? // ex: "primário", "backup quando férias do DPO"
+  observacao  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+  @@map("pri_membros_equipe")
+}
+
+// Matriz RACI por etapa NIST. Define qual papel é R/A/C/I em cada etapa.
+// Pode ter VÁRIOS responsáveis/consultados/informados pra mesma etapa.
+model PriRaci {
+  id         String  @id @default(cuid())
+  companyId  String
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  etapaNist  String  // DETECTAR | CONTER | ERRADICAR | RECUPERAR | LICOES
+  papel      String  // mesmo enum do PriMembroEquipe
+  tipo       String  // R (responsável) | A (aprovador) | C (consultado) | I (informado)
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, etapaNist, papel, tipo])
+  @@index([companyId])
+  @@map("pri_raci")
 }
 
 // -----------------------------------------------------------------------------
