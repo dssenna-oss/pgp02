@@ -4,6 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { checkGapConcluido } from "@/lib/phase-guard";
+import {
+  gerarTextoAnpd, gerarTextoTitulares,
+  type FormularioAnpd, type FormularioTitulares,
+} from "@/lib/incidente-formulario";
 
 export async function listIncidentes() {
   const { companyId } = await requireCompany();
@@ -79,7 +83,106 @@ export async function deletarIncidente(id: string) {
 }
 
 // ------------------------------------------------------------
-// Geradores de DOCX — Comunicação ANPD + Carta aos Titulares
+// Formulários inline (Missão 5) — alternativa pedagógica ao download
+// ------------------------------------------------------------
+
+// Salva o formulário da Comunicação ANPD (item 4-9 da Res. nº 15/2024).
+// Mantém checkboxes pré-mapeados pra acelerar preenchimento mobile-friendly.
+export async function salvarFormularioAnpd(
+  id: string,
+  formulario: FormularioAnpd,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const skip = await checkGapConcluido("FASE_7", "Salvar Comunicação ANPD");
+  if (skip) return skip as any;
+  const { companyId } = await requireCompany();
+  const existente = await prisma.incident.findFirst({
+    where: { id, companyId },
+    select: { id: true },
+  });
+  if (!existente) return { ok: false, error: "Incidente não encontrado." };
+  await prisma.incident.update({
+    where: { id },
+    data: { formularioAnpd: formulario as any },
+  });
+  revalidatePath("/dashboard/incidentes");
+  return { ok: true };
+}
+
+export async function salvarFormularioTitulares(
+  id: string,
+  formulario: FormularioTitulares,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const skip = await checkGapConcluido("FASE_7", "Salvar Carta Titulares");
+  if (skip) return skip as any;
+  const { companyId } = await requireCompany();
+  const existente = await prisma.incident.findFirst({
+    where: { id, companyId },
+    select: { id: true },
+  });
+  if (!existente) return { ok: false, error: "Incidente não encontrado." };
+  await prisma.incident.update({
+    where: { id },
+    data: { formularioTitulares: formulario as any },
+  });
+  revalidatePath("/dashboard/incidentes");
+  return { ok: true };
+}
+
+// Retorna o texto formatado da Comunicação ANPD baseado nas respostas
+// estruturadas + dados do Encarregado (company.dpo*). Pra exibir como
+// preview no modal ou copiar pra clipboard.
+export async function gerarTextoAnpdParaPreview(id: string): Promise<string> {
+  const { companyId } = await requireCompany();
+  const [inc, company] = await Promise.all([
+    prisma.incident.findFirst({ where: { id, companyId } }),
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { name: true, cnpj: true, dpoName: true, dpoEmail: true, dpoTelefone: true },
+    }),
+  ]);
+  if (!inc || !company) return "[Erro: incidente ou empresa não encontrada]";
+  return gerarTextoAnpd(
+    {
+      titulo: inc.titulo,
+      descricao: inc.descricao,
+      severidade: inc.severidade,
+      ocorridoEm: inc.ocorridoEm,
+      detectadoEm: inc.detectadoEm,
+    },
+    inc.formularioAnpd as FormularioAnpd | null,
+    {
+      name: company.name,
+      cnpj: company.cnpj,
+      dpoName: company.dpoName,
+      dpoEmail: company.dpoEmail,
+    },
+  );
+}
+
+export async function gerarTextoTitularesParaPreview(id: string): Promise<string> {
+  const { companyId } = await requireCompany();
+  const [inc, company] = await Promise.all([
+    prisma.incident.findFirst({ where: { id, companyId } }),
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { name: true, dpoName: true, dpoEmail: true, dpoTelefone: true },
+    }),
+  ]);
+  if (!inc || !company) return "[Erro: incidente ou empresa não encontrada]";
+  return gerarTextoTitulares(
+    { titulo: inc.titulo, descricao: inc.descricao, ocorridoEm: inc.ocorridoEm },
+    inc.formularioTitulares as FormularioTitulares | null,
+    {
+      name: company.name,
+      dpoName: company.dpoName,
+      dpoEmail: company.dpoEmail,
+      dpoTelefone: company.dpoTelefone,
+    },
+  );
+}
+
+// ------------------------------------------------------------
+// LEGADO — Download de texto plano. Mantidos por compat mas não usados na UI.
 // ------------------------------------------------------------
 
 export async function gerarComunicacaoAnpd(id: string) {
