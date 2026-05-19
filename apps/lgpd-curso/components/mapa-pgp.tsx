@@ -1,14 +1,17 @@
 "use client";
 
 // MapaPgp — visão "onde você está no Programa de Governança em Privacidade".
-// Mostra as 9 fases do PGP em um grid horizontal compacto. Preliminar/Fase 1/Fase 2
-// vêm marcadas como "feito antes da turma chegar" e abrem modal explicativo.
-// Fase atual (definida pelo prop `faseAtual`, default 3) aparece destacada com pulse.
+// Mostra as 8 etapas do PGP (Preliminar + Fases 1..7) em grid compacto.
+// Preliminar/Fase 1/Fase 2 vêm marcadas como "feito antes da turma chegar" e
+// abrem modal explicativo. Fase atual (definida pelo prop `faseAtual`) aparece
+// destacada com pulse. Quando `faseAtual="concluido"`, todas as fases 3..7
+// viram "feito" verde-suave e nenhuma pulsa.
 
 import { useState } from "react";
 import { X } from "lucide-react";
 
-type FaseId = "preliminar" | "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8";
+export type FaseId = "preliminar" | "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7";
+export type FaseAtual = Exclude<FaseId, "preliminar"> | "concluido";
 
 type Fase = {
   id: FaseId;
@@ -20,12 +23,11 @@ const FASES: Fase[] = [
   { id: "preliminar", rotulo: "Preliminar", titulo: "Capacitação" },
   { id: "f1",         rotulo: "Fase 1",     titulo: "DPO + Comitê" },
   { id: "f2",         rotulo: "Fase 2",     titulo: "Escopo" },
-  { id: "f3",         rotulo: "Fase 3",     titulo: "Inventário + Riscos" },
-  { id: "f4",         rotulo: "Fase 4",     titulo: "GAP" },
+  { id: "f3",         rotulo: "Fase 3",     titulo: "Mapeamento & Riscos" },
+  { id: "f4",         rotulo: "Fase 4",     titulo: "GAP Analysis" },
   { id: "f5",         rotulo: "Fase 5",     titulo: "Plano de Ação" },
-  { id: "f6",         rotulo: "Fase 6",     titulo: "RIPD + Aviso" },
-  { id: "f7",         rotulo: "Fase 7",     titulo: "Incidentes" },
-  { id: "f8",         rotulo: "Fase 8",     titulo: "Monitorar" },
+  { id: "f6",         rotulo: "Fase 6",     titulo: "Execução" },
+  { id: "f7",         rotulo: "Fase 7",     titulo: "Monitoramento" },
 ];
 
 const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: React.ReactNode }> = {
@@ -72,10 +74,12 @@ const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: R
   },
 };
 
-export function MapaPgp({ faseAtual = "f3" as Exclude<FaseId, "preliminar">}: { faseAtual?: Exclude<FaseId, "preliminar"> }) {
+export function MapaPgp({ faseAtual = "f3" as FaseAtual }: { faseAtual?: FaseAtual }) {
   const [modal, setModal] = useState<"preliminar" | "f1" | "f2" | null>(null);
 
-  const idxAtual = FASES.findIndex((f) => f.id === faseAtual);
+  // "concluido" = grupo fechou tudo: nenhuma fase pulsa, todas as 3..7 viram "feito".
+  const tudoFeito = faseAtual === "concluido";
+  const idxAtual = tudoFeito ? FASES.length : FASES.findIndex((f) => f.id === faseAtual);
 
   return (
     <div>
@@ -83,13 +87,14 @@ export function MapaPgp({ faseAtual = "f3" as Exclude<FaseId, "preliminar">}: { 
         Onde você está no Programa de Governança em Privacidade
       </h2>
 
-      {/* Grid 9 colunas em desktop, scroll horizontal em mobile */}
-      <div className="grid grid-cols-3 sm:grid-cols-9 gap-2">
+      {/* Grid 8 colunas em desktop, 2 fileiras de 4 em mobile */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
         {FASES.map((fase, idx) => {
           const isPassado = idx < idxAtual;
-          const isAtual = idx === idxAtual;
-          const isFuturo = idx > idxAtual;
-          const clicavel = isPassado && (fase.id === "preliminar" || fase.id === "f1" || fase.id === "f2");
+          const isAtual = !tudoFeito && idx === idxAtual;
+          const isPreContexto = fase.id === "preliminar" || fase.id === "f1" || fase.id === "f2";
+          const clicavel = isPassado && isPreContexto;
+          const isFaseDoCursoFeita = isPassado && !isPreContexto;
 
           if (isAtual) {
             return (
@@ -120,6 +125,22 @@ export function MapaPgp({ faseAtual = "f3" as Exclude<FaseId, "preliminar">}: { 
                   ✓ feito
                 </div>
               </button>
+            );
+          }
+
+          if (isFaseDoCursoFeita) {
+            // Fase do curso (3-7) que o grupo já fechou — verde suave, sem clique.
+            return (
+              <div
+                key={fase.id}
+                className="text-left border border-emerald-200 bg-emerald-50/60 rounded-md p-3"
+              >
+                <div className="text-[10px] font-bold text-emerald-700 mb-1">{fase.rotulo}</div>
+                <div className="text-xs font-medium text-emerald-900 leading-tight">{fase.titulo}</div>
+                <div className="mt-2 inline-flex items-center text-[10px] text-emerald-700 font-semibold">
+                  ✓ feito
+                </div>
+              </div>
             );
           }
 
