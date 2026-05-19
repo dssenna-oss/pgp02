@@ -22,6 +22,7 @@ import { FATORES_RISCO_ANPD, explicarRisco } from "@/lib/risco-anpd";
 import { PERGUNTAS_DD, BLOCOS_DD, calcularDueDiligence, RECOMENDACAO_INFO, type RespostaDD } from "@/lib/due-diligence";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
+import { LgpdHelp } from "@/components/lgpd-help";
 
 type Op = any;
 type Aba = "RISCO" | "DD" | "CLAUSULAS";
@@ -164,11 +165,11 @@ export function GerenciarOperadorDrawer({
         </DialogHeader>
 
         {/* Abas */}
-        <div className="flex border-b -mx-6 px-6 flex-wrap">
+        <div className="flex border-b -mx-6 px-6 flex-wrap items-center">
           {([
-            { id: "RISCO", label: "1. Análise de Risco", icon: ShieldAlert },
-            { id: "DD", label: "2. Due Diligence", icon: FileSearch },
-            { id: "CLAUSULAS", label: "3. Cláusulas Contratuais", icon: FileText },
+            { id: "RISCO", label: "1. Análise de Risco", icon: ShieldAlert, campoKey: "terceiro_avaliacao_risco" },
+            { id: "DD", label: "2. Due Diligence", icon: FileSearch, campoKey: "terceiro_due_diligence" },
+            { id: "CLAUSULAS", label: "3. Cláusulas Contratuais", icon: FileText, campoKey: "terceiro_clausulas" },
           ] as const).map((a) => (
             <button
               key={a.id}
@@ -184,6 +185,13 @@ export function GerenciarOperadorDrawer({
               {a.label}
             </button>
           ))}
+          <div className="ml-auto pr-1">
+            <LgpdHelp campoKey={
+              aba === "RISCO" ? "terceiro_avaliacao_risco" :
+              aba === "DD" ? "terceiro_due_diligence" :
+              "terceiro_clausulas"
+            } />
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto py-3">

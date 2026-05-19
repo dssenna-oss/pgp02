@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { registrarAcaoDsr } from "./actions";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
+import { LgpdHelp } from "@/components/lgpd-help";
 
 type Dsr = any;
 
@@ -92,6 +93,15 @@ export function DsrList({ items }: { items: Dsr[] }) {
 
   return (
     <>
+      <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-md bg-slate-50 border border-slate-200 text-xs text-slate-700">
+        <span className="font-medium">📚 Ajuda LGPD:</span>
+        <LgpdHelp campoKey="dsr_direitos" />
+        <span>os 9 direitos do Art. 18</span>
+        <span className="text-slate-300">·</span>
+        <LgpdHelp campoKey="dsr_prazo" />
+        <span>prazo de resposta (15 dias úteis)</span>
+      </div>
+
       {surpresaPendentes > 0 && (
         <div className="mb-3 p-3 rounded-md bg-amber-50 border border-amber-300 text-sm text-amber-900 flex items-start gap-2">
           <Mail className="h-4 w-4 mt-0.5 shrink-0" />

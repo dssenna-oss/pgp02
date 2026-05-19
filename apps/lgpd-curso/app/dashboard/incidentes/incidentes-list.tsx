@@ -21,6 +21,7 @@ import {
 import { EquipeAcionarChips } from "./equipe-acionar-chips";
 import toast from "react-hot-toast";
 import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
+import { LgpdHelp } from "@/components/lgpd-help";
 
 type Inc = any;
 
@@ -297,7 +298,10 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                 <Textarea name="descricao" rows={3} defaultValue={editing?.descricao || ""} placeholder="O que aconteceu, dados afetados, suspeita inicial..." />
               </div>
               <div>
-                <Label>Severidade</Label>
+                <div className="flex items-center gap-1">
+                  <Label>Severidade</Label>
+                  <LgpdHelp campoKey="incidente_severidade" />
+                </div>
                 <Select name="severidade" required defaultValue={editing?.severidade || "MEDIA"}>
                   <option value="BAIXA">Baixa</option>
                   <option value="MEDIA">Média</option>
@@ -329,14 +333,16 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                   defaultValue={editing?.detectadoEm ? new Date(editing.detectadoEm).toISOString().slice(0, 16) : ""}
                 />
               </div>
-              <div className="col-span-2 flex items-center gap-4">
+              <div className="col-span-2 flex items-center gap-4 flex-wrap">
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="comunicadoAnpd" defaultChecked={editing?.comunicadoAnpd ?? false} className="h-4 w-4" />
                   Comunicado à ANPD
+                  <LgpdHelp campoKey="incidente_72h_anpd" />
                 </label>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="comunicadoTitular" defaultChecked={editing?.comunicadoTitular ?? false} className="h-4 w-4" />
                   Comunicado aos titulares
+                  <LgpdHelp campoKey="incidente_comunicado_titular" />
                 </label>
               </div>
             </div>
