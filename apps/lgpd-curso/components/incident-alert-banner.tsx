@@ -48,8 +48,13 @@ function tocarSirene(audioCtx: AudioContext | null) {
   });
 }
 
-// Storage: guardamos "0" se DPO desligou explicitamente. Vazio/missing = LIGADO.
-const STORAGE_SOM = "curso-incident-alarme-ativo";
+// Storage: guardamos "OFF" se o DPO desligou explicitamente. Vazio/missing = LIGADO.
+// Versão 2: chave nova pra invalidar valores antigos da versão anterior (onde
+// "1"/"0" tinha semântica invertida — antes o ALARME ERA OFF por padrão, "0" no
+// localStorage SEMPRE significava OFF nos 2 casos, mas estava "salvo" pra DPOs
+// que clicaram em "Desligar" e ficavam presos em OFF mesmo querendo ON agora).
+const STORAGE_SOM = "curso-incident-alarme-v2";
+const STORAGE_SOM_LEGADO = "curso-incident-alarme-ativo";
 const INTERVALO_REPETICAO_MS = 30000;
 
 export function IncidentAlertBanner() {
@@ -69,9 +74,13 @@ export function IncidentAlertBanner() {
   useEffect(() => { somAtivoRef.current = somAtivo; }, [somAtivo]);
 
   // Hidrata preferência — DESLIGA apenas se o user explicitamente desligou
+  // nessa versão do banner (chave v2). Limpa chave legada pra evitar herdar
+  // estado da versão anterior.
   useEffect(() => {
     try {
-      if (localStorage.getItem(STORAGE_SOM) === "0") setSomAtivo(false);
+      // Cleanup da chave antiga (semântica do componente mudou nessa versão)
+      localStorage.removeItem(STORAGE_SOM_LEGADO);
+      if (localStorage.getItem(STORAGE_SOM) === "OFF") setSomAtivo(false);
     } catch {}
   }, []);
 
@@ -168,7 +177,7 @@ export function IncidentAlertBanner() {
       setSomAtivo(false);
       try { audioCtxRef.current?.close(); } catch {}
       audioCtxRef.current = null;
-      try { localStorage.setItem(STORAGE_SOM, "0"); } catch {}
+      try { localStorage.setItem(STORAGE_SOM, "OFF"); } catch {}
       return;
     }
     // Religando — tenta criar AudioContext na hora (clique é gesto válido)
