@@ -2,27 +2,54 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
   Database, ShieldAlert, ClipboardCheck, FileSearch,
-  Building2, UserCheck, FileText, AlertTriangle
+  Building2, UserCheck, FileText, AlertTriangle, Target, PartyPopper,
 } from "lucide-react";
 import Link from "next/link";
+import { getMissoesProgresso, type MissoesProgresso } from "@/lib/missoes-progresso";
+import { MapaPgp } from "@/components/mapa-pgp";
 
 export const dynamic = "force-dynamic";
 
-const journeyCards = [
-  { href: "/dashboard/inventario", icon: Database,        title: "Inventário de Dados",     missao: "Missão 1",  desc: "Liste os dados pessoais tratados nos 2 processos do grupo." },
-  { href: "/dashboard/riscos",     icon: ShieldAlert,     title: "Análise de Riscos",       missao: "Missão 2",  desc: "Identifique e classifique riscos na matriz 3×3 P×I." },
-  { href: "/dashboard/gap",        icon: ClipboardCheck,  title: "GAP Analysis",            missao: "Missão 3",  desc: "Responda os 10 controles selecionados do pacote." },
-  { href: "/dashboard/ripd",       icon: FileSearch,      title: "RIPD",                    missao: "Missão 4a", desc: "Relatório de Impacto à Proteção de Dados — pré-requisito do Aviso." },
-  { href: "/dashboard/terceiros",  icon: Building2,       title: "Gestão de Terceiros",     missao: "Missão 4a", desc: "Liste operadores e contratos vigentes." },
-  { href: "/dashboard/dsr",        icon: UserCheck,       title: "Direitos do Titular",     missao: "Missão 4a", desc: "Estruture o canal de exercício de direitos." },
-  { href: "/dashboard/aviso",      icon: FileText,        title: "Aviso de Privacidade",    missao: "Missão 4b", desc: "Síntese pública — alimentada pelos 3 pré-requisitos." },
-  { href: "/dashboard/incidentes", icon: AlertTriangle,   title: "Incidentes",              missao: "Missão 5",  desc: "Resposta a incidentes + Comunicação ANPD." },
+type MissaoOrdem = {
+  key: keyof MissoesProgresso;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  emoji: string;
+  rotulo: string;       // "Missão 1"
+  titulo: string;       // "Inventário de Dados"
+  desc: string;
+  dpoOnly?: boolean;
+};
+
+const MISSOES_ORDEM: MissaoOrdem[] = [
+  { key: "m1",            href: "/dashboard/inventario",  icon: Database,       emoji: "📦", rotulo: "Missão 1",  titulo: "Inventário de Dados",     desc: "Liste os dados pessoais tratados nos 2 processos do grupo." },
+  { key: "m2",            href: "/dashboard/riscos",      icon: ShieldAlert,    emoji: "⚠️", rotulo: "Missão 2",  titulo: "Análise de Riscos",       desc: "Identifique e classifique riscos na matriz 3×3 P×I." },
+  { key: "m3",            href: "/dashboard/gap",         icon: ClipboardCheck, emoji: "📋", rotulo: "Missão 3",  titulo: "GAP Analysis",            desc: "Responda os 10 controles selecionados do pacote.",                       dpoOnly: true },
+  { key: "plano_acao",    href: "/dashboard/plano-acao",  icon: Target,         emoji: "🎯", rotulo: "Plano de Ação", titulo: "Plano de Ação",       desc: "Consolide o que veio de Riscos e GAP em ações com responsável e prazo.", dpoOnly: true },
+  { key: "m4a_ripd",      href: "/dashboard/ripd",        icon: FileSearch,     emoji: "🔍", rotulo: "Missão 4a", titulo: "RIPD",                    desc: "Relatório de Impacto à Proteção de Dados — pré-requisito do Aviso.",     dpoOnly: true },
+  { key: "m4a_terceiros", href: "/dashboard/terceiros",   icon: Building2,      emoji: "🏢", rotulo: "Missão 4a", titulo: "Gestão de Terceiros",     desc: "Liste operadores e contratos vigentes.",                                 dpoOnly: true },
+  { key: "m4a_dsr",       href: "/dashboard/dsr",         icon: UserCheck,      emoji: "👤", rotulo: "Missão 4a", titulo: "Direitos do Titular",     desc: "Estruture o canal de exercício de direitos.",                            dpoOnly: true },
+  { key: "m4b",           href: "/dashboard/aviso",       icon: FileText,       emoji: "📄", rotulo: "Missão 4b", titulo: "Aviso de Privacidade",    desc: "Síntese pública — alimentada pelos 3 pré-requisitos da Missão 4a.",      dpoOnly: true },
+  { key: "m5",            href: "/dashboard/incidentes",  icon: AlertTriangle,  emoji: "🚨", rotulo: "Missão 5",  titulo: "Incidentes",              desc: "Resposta a incidentes + Comunicação ANPD.",                              dpoOnly: true },
 ];
+
+function getProximaMissao(progresso: MissoesProgresso, isDpoOuAdmin: boolean): MissaoOrdem | null {
+  for (const m of MISSOES_ORDEM) {
+    if (m.dpoOnly && !isDpoOuAdmin) continue;
+    if (!progresso[m.key]) return m;
+  }
+  return null;
+}
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const userName = session?.user?.name ?? "Participante";
   const companyName = session?.user?.company?.name ?? "—";
+  const role = session?.user?.role;
+  const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
+
+  const progresso = await getMissoesProgresso();
+  const proxima = getProximaMissao(progresso, isDpoOuAdmin);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -33,36 +60,45 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {journeyCards.map((c) => {
-          const Icon = c.icon;
-          return (
-            <Link
-              key={c.href}
-              href={c.href}
-              className="group block border rounded-lg p-4 hover:border-brand-500 hover:shadow-sm transition-all bg-white"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <Icon className="h-6 w-6 text-brand-600" />
-                <span className="text-[10px] font-medium bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                  {c.missao}
-                </span>
-              </div>
-              <h3 className="font-medium text-sm group-hover:text-brand-700 transition-colors">
-                {c.title}
-              </h3>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">{c.desc}</p>
-            </Link>
-          );
-        })}
+      <section className="mb-6">
+        <MapaPgp faseAtual="f3" />
       </section>
 
-      <section className="mt-10 p-4 bg-training-50 border border-training-400 rounded-lg">
+      {proxima ? (
+        <Link
+          href={proxima.href}
+          className="block bg-emerald-600 hover:bg-emerald-700 transition-colors text-white rounded-lg p-5 mt-2 shadow-md"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] font-bold uppercase tracking-wider opacity-90">Sua missão atual</div>
+              <div className="text-lg sm:text-xl font-bold mt-1 truncate">
+                {proxima.emoji} {proxima.rotulo} — {proxima.titulo}
+              </div>
+              <div className="text-sm opacity-90 mt-1 line-clamp-2">{proxima.desc}</div>
+            </div>
+            <div className="text-3xl shrink-0">→</div>
+          </div>
+        </Link>
+      ) : (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-5 mt-2 shadow-sm">
+          <div className="flex items-center gap-3">
+            <PartyPopper className="h-7 w-7 text-amber-700 shrink-0" />
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800">Parabéns!</div>
+              <div className="text-lg font-bold text-amber-900 mt-0.5">Seu grupo fechou todas as missões</div>
+              <div className="text-sm text-amber-800 mt-0.5">Aguarde o facilitador conduzir o debrief final.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="mt-8 p-4 bg-training-50 border border-training-400 rounded-lg">
         <h2 className="text-sm font-semibold text-training-900 mb-1">
           Como funciona o curso
         </h2>
         <p className="text-xs text-training-900 leading-relaxed">
-          Você e seu grupo vão percorrer 5 missões cronometradas, na ordem da sidebar.
+          Você e seu grupo vão percorrer as missões cronometradas, na ordem da sidebar.
           Cada missão termina com check-in coletivo do facilitador. Não tente pular a Missão 4a (RIPD + Terceiros + DSR) — ela alimenta a Missão 4b (Aviso de Privacidade).
           Errar é parte do aprendizado. Pergunte aos observadores do seu grupo se ficar em dúvida — eles têm o mural do grupo na mesa.
         </p>
