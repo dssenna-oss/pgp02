@@ -25,7 +25,7 @@ export type KpisGrupo = {
     conservadores: number;
     semAcao: number;
   };
-  aviso: { status: "PUBLICADO" | "RASCUNHO" | null; publicSlug: string | null };
+  aviso: { status: "PUBLICADO" | "RASCUNHO" | null; publicSlug: string | null; conteudoChars: number };
   incidentes: { total: number; comunicadosAnpd: number; comunicadosTitular: number };
 };
 

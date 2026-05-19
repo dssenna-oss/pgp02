@@ -53,7 +53,7 @@ type Grupo = {
       conservadores: number;
       semAcao: number;
     };
-    aviso: { status: string | null; publicSlug: string | null };
+    aviso: { status: string | null; publicSlug: string | null; conteudoChars: number };
     incidentes: { total: number; comunicadosAnpd: number };
   };
   timeline: BolinhaMissao[];
