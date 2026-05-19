@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getMissoesProgresso, type MissoesProgresso } from "@/lib/missoes-progresso";
-import { MapaPgp } from "@/components/mapa-pgp";
+import { MapaPgp, type FaseAtual } from "@/components/mapa-pgp";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +41,19 @@ function getProximaMissao(progresso: MissoesProgresso, isDpoOuAdmin: boolean): M
   return null;
 }
 
+// Mapa: Fase do PGP → quais missões precisam estar feitas pra fase ter sido cumprida.
+// Fases 1 e 2 são contexto pré-curso (entram no Mapa como "feito antes").
+// Fase 3 = Mapeamento (m1 + m2); Fase 4 = GAP (m3); Fase 5 = Plano (plano_acao);
+// Fase 6 = Execução (m4a_* + m4b); Fase 7 = Monitoramento (m5).
+function getFaseAtual(progresso: MissoesProgresso, isDpoOuAdmin: boolean): FaseAtual {
+  if (!progresso.m1 || !progresso.m2) return "f3";
+  if (isDpoOuAdmin && !progresso.m3) return "f4";
+  if (isDpoOuAdmin && !progresso.plano_acao) return "f5";
+  if (isDpoOuAdmin && (!progresso.m4a_ripd || !progresso.m4a_terceiros || !progresso.m4a_dsr || !progresso.m4b)) return "f6";
+  if (isDpoOuAdmin && !progresso.m5) return "f7";
+  return "concluido";
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   const userName = session?.user?.name ?? "Participante";
@@ -50,6 +63,7 @@ export default async function DashboardPage() {
 
   const progresso = await getMissoesProgresso();
   const proxima = getProximaMissao(progresso, isDpoOuAdmin);
+  const faseAtual = getFaseAtual(progresso, isDpoOuAdmin);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -61,7 +75,7 @@ export default async function DashboardPage() {
       </header>
 
       <section className="mb-6">
-        <MapaPgp faseAtual="f3" />
+        <MapaPgp faseAtual={faseAtual} />
       </section>
 
       {proxima ? (
