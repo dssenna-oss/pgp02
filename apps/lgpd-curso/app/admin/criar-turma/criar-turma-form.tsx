@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, FileDown, Printer, Trash2 } from "lucide-react";
+import { Plus, Minus, FileDown, Printer, Trash2, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,6 +86,12 @@ export function CriarTurmaForm() {
   function baixarCrachas() {
     if (!resultado) return;
     const url = `/api/curso/crachas.pdf?turmaId=${resultado.turma.id}`;
+    window.open(url, "_blank");
+  }
+
+  function verListaLogins() {
+    if (!resultado) return;
+    const url = `/api/curso/lista-logins?turmaId=${resultado.turma.id}`;
     window.open(url, "_blank");
   }
 
@@ -198,6 +204,9 @@ export function CriarTurmaForm() {
           <div className="flex gap-2 flex-wrap">
             <Button size="sm" variant="primary" onClick={baixarCrachas}>
               <Printer className="h-4 w-4" /> Baixar crachás (PDF · A4 paisagem)
+            </Button>
+            <Button size="sm" variant="outline" onClick={verListaLogins}>
+              <KeyRound className="h-4 w-4" /> Ver lista de logins
             </Button>
             <Button size="sm" variant="outline" asChild>
               <a href="/facilitador">
