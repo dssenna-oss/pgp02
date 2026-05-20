@@ -263,50 +263,70 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
     }
   }
 
-  async function dispararDsrSurpresa(orgao: "PM" | "CM") {
-    if (!confirm(`📨 Disparar DSR Surpresa (2 pedidos falsos) em todos os grupos do órgão ${orgao}? Os DPOs vão receber as solicitações como se chegassem por e-mail.`)) return;
-    if (orgao === "PM") setDispatchingDsrPM(true); else setDispatchingDsrCM(true);
+  // Quando grupoAlvo é passado, dispara só naquele grupo. Sem, dispara em
+  // todos os grupos do órgão.
+  async function dispararDsrSurpresa(
+    orgao: "PM" | "CM",
+    grupoAlvo?: { id: string; numero: number },
+  ) {
+    const escopo = grupoAlvo ? `no Grupo ${grupoAlvo.numero} (${orgao})` : `em TODOS os grupos do órgão ${orgao}`;
+    if (!confirm(`📨 Disparar DSR Surpresa (2 pedidos falsos) ${escopo}? Os DPOs vão receber as solicitações como se chegassem por e-mail.`)) return;
+    if (!grupoAlvo) {
+      if (orgao === "PM") setDispatchingDsrPM(true); else setDispatchingDsrCM(true);
+    }
     try {
       const res = await fetch("/api/curso/disparar-dsr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ turmaId, orgao }),
+        body: JSON.stringify({ turmaId, orgao, ...(grupoAlvo ? { grupoId: grupoAlvo.id } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || "Erro"); return; }
       const novos = data.dsrsCriados.filter((d: any) => !d.jaExistia).length;
       const reusados = data.dsrsCriados.filter((d: any) => d.jaExistia).length;
+      const alvoTxt = grupoAlvo ? `G${grupoAlvo.numero}` : `${data.totalGrupos} grupo(s) ${orgao}`;
       toast.success(
         novos > 0
-          ? `DSR Surpresa disparado: ${novos} novos em ${data.totalGrupos} grupo(s) ${orgao}`
-          : `DSRs já tinham sido disparados (${reusados} reaproveitados)`,
+          ? `DSR Surpresa disparado em ${alvoTxt}: ${novos} novos`
+          : `DSRs já tinham sido disparados em ${alvoTxt} (${reusados} reaproveitados)`,
       );
       fetchState();
     } catch (e: any) {
       toast.error(e.message);
     }
-    if (orgao === "PM") setDispatchingDsrPM(false); else setDispatchingDsrCM(false);
+    if (!grupoAlvo) {
+      if (orgao === "PM") setDispatchingDsrPM(false); else setDispatchingDsrCM(false);
+    }
   }
 
-  async function dispararIncidente(orgao: "PM" | "CM") {
+  async function dispararIncidente(
+    orgao: "PM" | "CM",
+    grupoAlvo?: { id: string; numero: number },
+  ) {
     const cenarioNome = orgao === "PM" ? "Pendrive do Posto" : "Vazamento WhatsApp Tribuna";
-    if (!confirm(`🚨 Disparar Incidente "${cenarioNome}" em todos os grupos do órgão ${orgao}? Eles vão ver o incidente RASCUNHO no app na hora.`)) return;
+    const escopo = grupoAlvo ? `no Grupo ${grupoAlvo.numero} (${orgao})` : `em TODOS os grupos do órgão ${orgao}`;
+    if (!confirm(`🚨 Disparar Incidente "${cenarioNome}" ${escopo}? O grupo vai ver o incidente RASCUNHO no app na hora.`)) return;
 
-    if (orgao === "PM") setDispatchingPM(true); else setDispatchingCM(true);
+    if (!grupoAlvo) {
+      if (orgao === "PM") setDispatchingPM(true); else setDispatchingCM(true);
+    }
     try {
       const res = await fetch("/api/curso/disparar-incidente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ turmaId, orgao }),
+        body: JSON.stringify({ turmaId, orgao, ...(grupoAlvo ? { grupoId: grupoAlvo.id } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || "Erro"); return; }
-      toast.success(`Incidente disparado em ${data.incidentesCriados.length} grupo(s) ${orgao}`);
+      const alvoTxt = grupoAlvo ? `G${grupoAlvo.numero}` : `${data.incidentesCriados.length} grupo(s) ${orgao}`;
+      toast.success(`Incidente disparado em ${alvoTxt}`);
       fetchState();
     } catch (e: any) {
       toast.error(e.message);
     }
-    if (orgao === "PM") setDispatchingPM(false); else setDispatchingCM(false);
+    if (!grupoAlvo) {
+      if (orgao === "PM") setDispatchingPM(false); else setDispatchingCM(false);
+    }
   }
 
   const gruposPM = grupos.filter((g) => g.orgao === "PM");
@@ -430,7 +450,16 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             </div>
           </header>
           <div className="space-y-3">
-            {gruposPM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
+            {gruposPM.map((g) => (
+              <GrupoTimelineCard
+                key={g.grupoId}
+                grupo={g}
+                onAtenderSos={atualizarSos}
+                onReconhecerSkip={reconhecerPuloFase}
+                onDispararDsr={() => dispararDsrSurpresa("PM", { id: g.grupoId, numero: g.numero })}
+                onDispararIncidente={() => dispararIncidente("PM", { id: g.grupoId, numero: g.numero })}
+              />
+            ))}
           </div>
         </section>
       )}
@@ -462,7 +491,16 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
             </div>
           </header>
           <div className="space-y-3">
-            {gruposCM.map((g) => <GrupoTimelineCard key={g.grupoId} grupo={g} onAtenderSos={atualizarSos} onReconhecerSkip={reconhecerPuloFase} />)}
+            {gruposCM.map((g) => (
+              <GrupoTimelineCard
+                key={g.grupoId}
+                grupo={g}
+                onAtenderSos={atualizarSos}
+                onReconhecerSkip={reconhecerPuloFase}
+                onDispararDsr={() => dispararDsrSurpresa("CM", { id: g.grupoId, numero: g.numero })}
+                onDispararIncidente={() => dispararIncidente("CM", { id: g.grupoId, numero: g.numero })}
+              />
+            ))}
           </div>
         </section>
       )}
@@ -495,10 +533,14 @@ function GrupoTimelineCard({
   grupo,
   onAtenderSos,
   onReconhecerSkip,
+  onDispararDsr,
+  onDispararIncidente,
 }: {
   grupo: Grupo;
   onAtenderSos: (id: string, status: "ATTENDED" | "RESOLVED") => void;
   onReconhecerSkip: (id: string) => void;
+  onDispararDsr: () => void;
+  onDispararIncidente: () => void;
 }) {
   const isPM = grupo.orgao === "PM";
   const orgaoCor = isPM ? "border-emerald-300 bg-emerald-50/30" : "border-blue-300 bg-blue-50/30";
@@ -610,6 +652,29 @@ function GrupoTimelineCard({
               </button>
             </div>
           )}
+
+          {/* Mini-botões de disparo INDIVIDUAL pra este grupo. Use quando os
+              grupos andam em ritmos diferentes -- dispara só no que está pronto.
+              Os botões de disparo em massa por órgão continuam no header da
+              seção (PM/CM). */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onDispararDsr}
+            className="border-amber-300 text-amber-800 hover:bg-amber-50 text-[11px]"
+            title="Disparar DSR Surpresa SÓ neste grupo (use quando ele já fechou M4a)"
+          >
+            <Mail className="h-3.5 w-3.5" /> DSR
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onDispararIncidente}
+            className="border-red-300 text-red-700 hover:bg-red-50 text-[11px]"
+            title="Disparar Incidente SÓ neste grupo (use quando ele publicou o Aviso M4b)"
+          >
+            <Zap className="h-3.5 w-3.5" /> Incidente
+          </Button>
 
           <Button size="sm" variant="outline" onClick={downloadCertificado}>
             <Award className="h-3.5 w-3.5" /> Certificado

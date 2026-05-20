@@ -1,6 +1,7 @@
-// POST /api/curso/disparar-incidente { turmaId, orgao: "PM" | "CM" }
-// Cria automaticamente um Incident.RASCUNHO em TODOS os grupos do órgão
-// com cenário dramático pré-preenchido. Usado pelo facilitador na Missão 5.
+// POST /api/curso/disparar-incidente { turmaId, orgao: "PM" | "CM", grupoId?: string }
+// Cria automaticamente um Incident.RASCUNHO no grupo (ou em TODOS os grupos
+// do órgão, se grupoId não for passado). Cenário dramático pré-preenchido.
+// Usado pelo facilitador na Missão 5.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -39,18 +40,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 403 });
   }
 
-  const { turmaId, orgao } = await req.json();
+  const { turmaId, orgao, grupoId } = await req.json();
   if (!turmaId) return NextResponse.json({ error: "turmaId obrigatório" }, { status: 400 });
   if (!["PM", "CM"].includes(orgao)) return NextResponse.json({ error: "orgao deve ser PM ou CM" }, { status: 400 });
 
   const cenario = CENARIOS[orgao as "PM" | "CM"];
 
+  // Se grupoId fornecido, filtra só esse grupo. Caso contrário, todos do órgão.
   const grupos = await prisma.cursoGrupo.findMany({
-    where: { turmaId, orgao },
+    where: { turmaId, orgao, ...(grupoId ? { id: grupoId } : {}) },
     select: { companyId: true, numero: true },
   });
   if (grupos.length === 0) {
-    return NextResponse.json({ error: `Nenhum grupo ${orgao} na turma` }, { status: 404 });
+    return NextResponse.json({
+      error: grupoId
+        ? `Grupo ${grupoId} não encontrado na turma`
+        : `Nenhum grupo ${orgao} na turma`,
+    }, { status: 404 });
   }
 
   const agora = new Date();
