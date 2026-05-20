@@ -1,6 +1,8 @@
-// POST /api/curso/disparar-dsr { turmaId, orgao: "PM" | "CM" }
-// Cria automaticamente 2 DsrRequest com disparoFacilitador=true em TODOS os
-// grupos do órgão. Cada grupo recebe os 2 cenários do seu órgão.
+// POST /api/curso/disparar-dsr { turmaId, orgao: "PM" | "CM", grupoId?: string }
+// Cria automaticamente 2 DsrRequest com disparoFacilitador=true.
+// Se grupoId for fornecido, dispara só naquele grupo.
+// Sem grupoId, dispara em TODOS os grupos do órgão.
+// Cada grupo recebe os 2 cenários do seu órgão.
 // Idempotente por (grupo, titularNome+tipoSolicitacao): não duplica se
 // o facilitador clicar 2x.
 
@@ -18,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: e.message }, { status: 403 });
   }
 
-  const { turmaId, orgao } = await req.json();
+  const { turmaId, orgao, grupoId } = await req.json();
   if (!turmaId) return NextResponse.json({ error: "turmaId obrigatório" }, { status: 400 });
   if (!["PM", "CM"].includes(orgao)) return NextResponse.json({ error: "orgao deve ser PM ou CM" }, { status: 400 });
 
@@ -27,12 +29,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Sem cenários cadastrados pro órgão ${orgao}` }, { status: 500 });
   }
 
+  // Se grupoId fornecido, filtra só esse grupo. Caso contrário, todos do órgão.
   const grupos = await prisma.cursoGrupo.findMany({
-    where: { turmaId, orgao },
+    where: { turmaId, orgao, ...(grupoId ? { id: grupoId } : {}) },
     select: { companyId: true, numero: true },
   });
   if (grupos.length === 0) {
-    return NextResponse.json({ error: `Nenhum grupo ${orgao} na turma` }, { status: 404 });
+    return NextResponse.json({
+      error: grupoId
+        ? `Grupo ${grupoId} não encontrado na turma`
+        : `Nenhum grupo ${orgao} na turma`,
+    }, { status: 404 });
   }
 
   const criados: Array<{ grupo: number; cenario: string; dsrId: string; jaExistia: boolean }> = [];
