@@ -138,7 +138,7 @@ export function CriarTurmaForm() {
           onChange={(e) => setSenhaPadrao(e.target.value)}
           placeholder="Curso2026!"
         />
-        <p className="text-[11px] text-gray-500 mt-1">Mesma senha pra todos os logins do curso. Será impressa nos cartões.</p>
+        <p className="text-[11px] text-gray-500 mt-1">Mesma senha pra todos os logins do curso. Será informada pelo Facilitador.</p>
       </div>
 
       {/* Preview dos logins */}
