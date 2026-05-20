@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -29,6 +29,10 @@ type MiniApp = {
   missao?: string;
   icon: React.ComponentType<{ className?: string }>;
   dpoOnly?: boolean;
+  // Quando true + dpoOnly: o Contribuidor VÊ o item na sidebar (com badge 👁),
+  // entra em Modo Observador na tela (read-only). Sem isso, dpoOnly esconde
+  // totalmente. Usado nas Fases 4-7 — Encarregado (Fase 1) NÃO é observável.
+  observavel?: boolean;
   progressoKey?: ProgressoKey;
   alertaCountKey?: keyof MissoesProgresso;
 };
@@ -88,7 +92,7 @@ const MENU: MenuItem[] = [
     rotulo: "Fase 4 — GAP Analysis",
     cor: "border-l-amber-400",
     itens: [
-      { href: "/dashboard/gap", label: "GAP Analysis", missao: "M3", icon: ClipboardCheck, progressoKey: "m3", dpoOnly: true },
+      { href: "/dashboard/gap", label: "GAP Analysis", missao: "M3", icon: ClipboardCheck, progressoKey: "m3", dpoOnly: true, observavel: true },
     ],
   },
   {
@@ -97,7 +101,7 @@ const MENU: MenuItem[] = [
     rotulo: "Fase 5 — Plano de Ação",
     cor: "border-l-emerald-400",
     itens: [
-      { href: "/dashboard/plano-acao", label: "Plano de Ação", icon: Target, progressoKey: "plano_acao", dpoOnly: true },
+      { href: "/dashboard/plano-acao", label: "Plano de Ação", icon: Target, progressoKey: "plano_acao", dpoOnly: true, observavel: true },
     ],
   },
   {
@@ -106,10 +110,10 @@ const MENU: MenuItem[] = [
     rotulo: "Fase 6 — Execução",
     cor: "border-l-purple-400",
     itens: [
-      { href: "/dashboard/ripd",      label: "RIPD",                 missao: "M4a", icon: FileSearch, progressoKey: "m4a_ripd",      dpoOnly: true },
-      { href: "/dashboard/dsr",       label: "Direitos do Titular",  missao: "M4a", icon: UserCheck,  progressoKey: "m4a_dsr",       dpoOnly: true, alertaCountKey: "dsrSurpresaPendentes" },
-      { href: "/dashboard/terceiros", label: "Gestão de Terceiros",  missao: "M4a", icon: Building2,  progressoKey: "m4a_terceiros", dpoOnly: true },
-      { href: "/dashboard/aviso",     label: "Aviso de Privacidade", missao: "M4b", icon: FileText,   progressoKey: "m4b",           dpoOnly: true },
+      { href: "/dashboard/ripd",      label: "RIPD",                 missao: "M4a", icon: FileSearch, progressoKey: "m4a_ripd",      dpoOnly: true, observavel: true },
+      { href: "/dashboard/dsr",       label: "Direitos do Titular",  missao: "M4a", icon: UserCheck,  progressoKey: "m4a_dsr",       dpoOnly: true, observavel: true, alertaCountKey: "dsrSurpresaPendentes" },
+      { href: "/dashboard/terceiros", label: "Gestão de Terceiros",  missao: "M4a", icon: Building2,  progressoKey: "m4a_terceiros", dpoOnly: true, observavel: true },
+      { href: "/dashboard/aviso",     label: "Aviso de Privacidade", missao: "M4b", icon: FileText,   progressoKey: "m4b",           dpoOnly: true, observavel: true },
     ],
   },
   {
@@ -118,7 +122,7 @@ const MENU: MenuItem[] = [
     rotulo: "Fase 7 — Monitoramento",
     cor: "border-l-red-400",
     itens: [
-      { href: "/dashboard/incidentes", label: "Incidentes", missao: "M5", icon: AlertTriangle, progressoKey: "m5", dpoOnly: true, alertaCountKey: "incidentesEmAberto" },
+      { href: "/dashboard/incidentes", label: "Incidentes", missao: "M5", icon: AlertTriangle, progressoKey: "m5", dpoOnly: true, observavel: true, alertaCountKey: "incidentesEmAberto" },
     ],
   },
 ];
@@ -274,7 +278,14 @@ export function Sidebar() {
                 }
 
                 // kind === "fase"
-                const itensVisiveis = item.itens.filter((i) => !i.dpoOnly || isDpoOuAdmin);
+                // Contribuidor: vê itens abertos + itens dpoOnly marcados como
+                // `observavel` (Fases 4-7, em Modo Observador read-only).
+                // Itens dpoOnly não-observáveis (ex: Encarregado) ficam escondidos.
+                const itensVisiveis = item.itens.filter((i) => {
+                  if (!i.dpoOnly) return true;
+                  if (isDpoOuAdmin) return true;
+                  return i.observavel === true;
+                });
                 if (itensVisiveis.length === 0) return null;
 
                 const aberta = faseExpandida === item.id;
@@ -343,6 +354,13 @@ export function Sidebar() {
                             >
                               <Icon className="h-4 w-4 shrink-0" />
                               <span className="flex-1 text-[13px]">{mini.label}</span>
+                              {/* Badge 👁 — Contribuidor vê este item em Modo Observador (read-only) */}
+                              {mini.dpoOnly && mini.observavel && !isDpoOuAdmin && (
+                                <Eye
+                                  className="h-3.5 w-3.5 shrink-0 text-amber-500"
+                                  aria-label="Modo Observador — só leitura"
+                                />
+                              )}
                               {alertaCount > 0 && (
                                 <span
                                   className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full animate-pulse min-w-[18px] text-center"
