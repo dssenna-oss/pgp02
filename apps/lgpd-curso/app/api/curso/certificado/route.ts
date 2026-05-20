@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
           ripds: { select: { status: true } },
           operators: { include: { contracts: { select: { clausulasLgpd: true } } } },
           dsrRequests: { select: { id: true } },
-          policies: { where: { slug: "aviso-privacidade" }, select: { status: true, publicSlug: true } },
+          policies: { where: { slug: "aviso-privacidade" }, select: { status: true, publicSlug: true, conteudoMd: true } },
           incidents: { select: { comunicadoAnpd: true, comunicadoTitular: true } },
         },
       },
@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
     aviso: {
       status: (c.policies[0]?.status as any) || null,
       publicSlug: c.policies[0]?.publicSlug || null,
+      conteudoChars: c.policies[0]?.conteudoMd?.length || 0,
     },
     incidentes: {
       total: c.incidents.length,
