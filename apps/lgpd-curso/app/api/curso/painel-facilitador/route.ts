@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.operator.findMany({
         where: { companyId: cid },
-        include: { contracts: { select: { clausulasLgpd: true } } },
+        include: { contracts: { select: { clausulasLgpd: true, createdAt: true, updatedAt: true } } },
       }),
       prisma.dsrRequest.findMany({
         where: { companyId: cid },
@@ -195,7 +195,14 @@ export async function GET(req: NextRequest) {
       riscos,
       gapAnswers: gap,
       ripds,
-      operadores: operadores.map((o) => ({ createdAt: o.createdAt, updatedAt: o.updatedAt })),
+      // Passa o updatedAt do contract (que sobe quando user mexe no drawer:
+      // avaliação de risco, due diligence, cláusulas). updatedAt do Operator
+      // raramente muda. Sem isso, edições no contract não aparecem como "tocado"
+      // na regra `foiTocado` da timeline.
+      operadores: operadores.map((o) => ({
+        createdAt: o.createdAt,
+        updatedAt: o.contracts?.[0]?.updatedAt ?? o.updatedAt,
+      })),
       dsrs: dsr,
       aviso: aviso ? { status: aviso.status, createdAt: aviso.createdAt, updatedAt: aviso.updatedAt } : null,
       incidentes,

@@ -42,6 +42,16 @@ function bounds(items: Entrada[]) {
   return { inicio, ultima };
 }
 
+// Distingue entidades CRIADAS pela API de seed (criar-turma cria 2 processos +
+// 2 operadores em RASCUNHO num único POST -- updatedAt fica praticamente igual
+// ao createdAt) das entidades TOCADAS pelo participante (qualquer salvar/edição
+// faz updatedAt subir bem além de createdAt).
+//
+// Margem de 2s cobre o tempo do POST de seed inteiro com folga.
+function foiTocado(e: Entrada): boolean {
+  return e.updatedAt.getTime() - e.createdAt.getTime() > 2000;
+}
+
 export type TimelineInput = {
   inventarios: { status: string; createdAt: Date; updatedAt: Date }[];
   riscos: { status: string; createdAt: Date; updatedAt: Date }[];
@@ -56,16 +66,23 @@ export type TimelineInput = {
 export function montarTimeline(input: TimelineInput): BolinhaMissao[] {
   const aprov = (i: { status: string }) => i.status === "APROVADO";
 
-  // M1 — Inventário
+  // M1 — Inventário.
+  // DOING só se algum processo foi TOCADO (RASCUNHO + edição) OU saiu de
+  // RASCUNHO (SUBMETIDO/APROVADO/DEVOLVIDO). Sem isso, os 2 processos
+  // pré-cadastrados da seed apareciam como "iniciado há 33min" antes da
+  // turma começar.
   const invAprovados = input.inventarios.filter(aprov).length;
-  const m1Bounds = bounds(input.inventarios);
+  const inventariosTocados = input.inventarios.filter(
+    (i) => i.status !== "RASCUNHO" || foiTocado(i)
+  );
+  const m1Bounds = bounds(inventariosTocados);
   const m1: BolinhaMissao = {
     id: "m1",
     label: "M1",
     nomeCurto: "Inventário",
     status:
       invAprovados >= 2 ? "DONE" :
-      input.inventarios.length > 0 ? "DOING" : "IDLE",
+      inventariosTocados.length > 0 ? "DOING" : "IDLE",
     contador: `${invAprovados}/${Math.max(2, input.inventarios.length)}`,
     duracaoEsperadaSeg: DURACOES_ESPERADAS_SEG.m1,
     inicioEm: m1Bounds.inicio?.toISOString(),
@@ -103,16 +120,21 @@ export function montarTimeline(input: TimelineInput): BolinhaMissao[] {
     ultimaAtividadeEm: m3Bounds.ultima?.toISOString(),
   };
 
-  // M4a — RIPD + Terceiros + DSR (mostra como 1 bolinha consolidada)
+  // M4a — RIPD + Terceiros + DSR (mostra como 1 bolinha consolidada).
+  // DONE quando os 3 estão preenchidos: RIPD aprovado + algum operador
+  // TOCADO (não só os 2 pré-cadastrados intactos) + alguma DSR criada.
+  // DOING quando qualquer um foi tocado (RIPD/DSR são sempre criados pelo
+  // user, mas operadores precisam de filtro `foiTocado`).
   const ripdAprovados = input.ripds.filter(aprov).length;
+  const operadoresTocados = input.operadores.filter(foiTocado);
   const m4aDone =
     ripdAprovados > 0 &&
-    input.operadores.length > 0 &&
+    operadoresTocados.length > 0 &&
     input.dsrs.length > 0;
   const m4aTouched =
-    input.ripds.length > 0 || input.operadores.length > 0 || input.dsrs.length > 0;
-  const m4aBounds = bounds([...input.ripds, ...input.operadores, ...input.dsrs]);
-  const m4aTotal = (ripdAprovados > 0 ? 1 : 0) + (input.operadores.length > 0 ? 1 : 0) + (input.dsrs.length > 0 ? 1 : 0);
+    input.ripds.length > 0 || operadoresTocados.length > 0 || input.dsrs.length > 0;
+  const m4aBounds = bounds([...input.ripds, ...operadoresTocados, ...input.dsrs]);
+  const m4aTotal = (ripdAprovados > 0 ? 1 : 0) + (operadoresTocados.length > 0 ? 1 : 0) + (input.dsrs.length > 0 ? 1 : 0);
   const m4a: BolinhaMissao = {
     id: "m4a",
     label: "M4a",
