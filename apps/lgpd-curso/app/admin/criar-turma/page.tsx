@@ -22,7 +22,7 @@ export default async function Page() {
       <PageHeader
         missao="Admin"
         titulo="Criar Turma"
-        descricao="Cria turma + grupos PM/CM + 5 logins por grupo + 2 processos pré-cadastrados em Vegas. Cada grupo é uma Company isolada."
+        descricao="Cria turma + grupos PM/CM + 6 logins por grupo + 2 processos pré-cadastrados. Cada grupo é uma Company isolada; o slug da turma isola os logins de outras turmas."
       />
       <CriarTurmaForm />
       <div className="mt-10">
