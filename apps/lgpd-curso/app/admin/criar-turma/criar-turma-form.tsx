@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { slugifyTurma } from "@/lib/slugify";
 import toast from "react-hot-toast";
+
+// 6 papéis por grupo: DPO + 2 donos de processo + TI + Comunicação/Procuradoria
+// + Administrativo (ver lib/seeds/processos-vegas.ts).
+const PAPEIS_POR_GRUPO = 6;
 
 type Login = { grupo: number; orgao: string; papel: string; nome: string; email: string };
 type Resultado = { turma: any; logins: Login[]; senhaPadrao: string } | null;
@@ -26,7 +31,8 @@ export function CriarTurmaForm() {
   const [resultado, setResultado] = useState<Resultado>(null);
   const [pending, startTransition] = useTransition();
 
-  const totalLogins = (qtdPM + qtdCM) * 5;
+  const totalLogins = (qtdPM + qtdCM) * PAPEIS_POR_GRUPO;
+  const slugPreview = slugifyTurma(nome) || "nome-da-turma";
 
   async function limparOrfaos() {
     if (!confirm("Isto vai deletar TODOS os usuários órfãos do curso (papel.gN@curso.lgpd sem grupo vinculado). Não afeta o login do facilitador. Continuar?")) return;
@@ -142,17 +148,26 @@ export function CriarTurmaForm() {
       </div>
 
       {/* Preview dos logins */}
-      {qtdPM + qtdCM > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold mb-3">4. Preview dos primeiros logins gerados</h3>
-          <div className="bg-gray-900 text-emerald-300 p-3 rounded font-mono text-[11px] overflow-x-auto">
-            {gerarPreview(qtdPM, qtdCM).map((l, i) => (
-              <div key={i}>{l}</div>
-            ))}
-            {qtdPM + qtdCM > 1 && <div className="text-gray-500 mt-1">  ...e mais {totalLogins - 5} logins</div>}
+      {qtdPM + qtdCM > 0 && (() => {
+        const preview = gerarPreview(slugPreview, qtdPM, qtdCM);
+        return (
+          <div>
+            <h3 className="text-sm font-semibold mb-3">4. Preview dos primeiros logins gerados</h3>
+            <div className="bg-gray-900 text-emerald-300 p-3 rounded font-mono text-[11px] overflow-x-auto">
+              {preview.map((l, i) => (
+                <div key={i}>{l}</div>
+              ))}
+              {totalLogins > preview.length && (
+                <div className="text-gray-500 mt-1">  ...e mais {totalLogins - preview.length} logins</div>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              O slug <code className="bg-gray-100 px-1 rounded">{slugPreview}</code> vem do nome da turma e
+              isola estes logins de qualquer outra turma.
+            </p>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Ação */}
       <div className="flex justify-between gap-2 pt-2 border-t items-center flex-wrap">
@@ -222,24 +237,23 @@ function ContadorGrupo({
         </div>
       </div>
       <p className="text-xs">{descricao}</p>
-      <p className="text-[10px] mt-1 opacity-70">{value * 5} logins · {value * 2} processos</p>
+      <p className="text-[10px] mt-1 opacity-70">{value * PAPEIS_POR_GRUPO} logins · {value * 2} processos</p>
     </div>
   );
 }
 
-function gerarPreview(qtdPM: number, qtdCM: number): string[] {
+function gerarPreview(slug: string, qtdPM: number, qtdCM: number): string[] {
   const lines: string[] = [];
-  let g = 0;
   if (qtdPM > 0) {
-    g = 1;
-    lines.push(`  dpo.g${g}@curso.lgpd            (DPO · Grupo ${g} · PM)`);
-    lines.push(`  saude.g${g}@curso.lgpd          (Saúde · Grupo ${g} · PM)`);
-    lines.push(`  rh.g${g}@curso.lgpd             (RH · Grupo ${g} · PM)`);
+    const g = 1;
+    lines.push(`  dpo.g${g}.${slug}@curso.lgpd      (DPO · Grupo ${g} · PM)`);
+    lines.push(`  saude.g${g}.${slug}@curso.lgpd    (Saúde · Grupo ${g} · PM)`);
+    lines.push(`  rh.g${g}.${slug}@curso.lgpd       (RH · Grupo ${g} · PM)`);
   }
   if (qtdCM > 0) {
     const gc = qtdPM + 1;
-    lines.push(`  dpo.g${gc}@curso.lgpd            (DPO · Grupo ${gc} · CM)`);
-    lines.push(`  cerimonial.g${gc}@curso.lgpd     (Cerimonial · Grupo ${gc} · CM)`);
+    lines.push(`  dpo.g${gc}.${slug}@curso.lgpd      (DPO · Grupo ${gc} · CM)`);
+    lines.push(`  cerimonial.g${gc}.${slug}@curso.lgpd  (Cerimonial · Grupo ${gc} · CM)`);
   }
   return lines;
 }
