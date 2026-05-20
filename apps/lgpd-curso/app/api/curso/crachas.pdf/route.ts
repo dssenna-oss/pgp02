@@ -190,6 +190,25 @@ export async function GET(req: NextRequest) {
   }
   .header-pagina h1 { font-size: 11pt; margin: 0; font-weight: 700; }
   .header-pagina .sub { font-size: 8pt; color: #666; margin-top: 1mm; }
+  .aviso-impressao {
+    margin-top: 3mm;
+    padding: 3mm 4mm;
+    background: #FEF3C7;
+    border-left: 3px solid #F59E0B;
+    border-radius: 2mm;
+    font-size: 9pt;
+    color: #78350F;
+    line-height: 1.5;
+  }
+  .aviso-impressao ul { margin: 1mm 0 2mm 5mm; padding: 0; }
+  .aviso-impressao li { margin: 0.5mm 0; }
+  .aviso-impressao code { background: #FDE68A; padding: 0 1mm; border-radius: 1mm; font-size: 8pt; }
+  .aviso-qr {
+    margin-top: 3mm;
+    padding-top: 2mm;
+    border-top: 1px dotted #F59E0B;
+    font-size: 8.5pt;
+  }
 
   .grid {
     display: grid;
@@ -357,8 +376,21 @@ export async function GET(req: NextRequest) {
   <div class="header-pagina">
     <h1>Crachás · Turma "${turma.nome}"</h1>
     <div class="sub">
-      ${turma.cidade} · ${turma.grupos.length} grupos · ${crachas.length} crachás (${crachas.filter(c => c.tipo === "PAPEL").length} papéis + ${crachas.filter(c => c.tipo === "OBSERVADOR").length} observadores) ·
-      Use Ctrl+P → "Salvar como PDF" (A4 paisagem) · Recorte na linha pontilhada
+      ${turma.cidade} · ${turma.grupos.length} grupos · ${crachas.length} crachás
+      (${crachas.filter(c => c.tipo === "PAPEL").length} papéis + ${crachas.filter(c => c.tipo === "OBSERVADOR").length} observadores)
+    </div>
+    <div class="aviso-impressao">
+      <strong>⚙️ Antes de imprimir — abra o diálogo (Ctrl+P) e confira 3 coisas:</strong>
+      <ul>
+        <li><strong>Layout:</strong> Paisagem (Landscape)</li>
+        <li><strong>Margens:</strong> Mínimas (ou Padrão)</li>
+        <li><strong>Gráficos de fundo</strong> ✓ marcado (preserva as cores dos crachás)</li>
+      </ul>
+      <div>Resultado: 3 crachás por folha A4. Recorte na linha pontilhada vertical entre eles.</div>
+      <div class="aviso-qr">
+        💡 <strong>Como o QR Code funciona:</strong> ao escanear com a câmera do celular, o participante abre o app
+        com o email do papel já preenchido. Só precisa digitar a senha <code>Curso2026!</code> e entrar.
+      </div>
     </div>
   </div>
   <div class="grid">${cards}</div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -11,6 +11,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [veioDoQr, setVeioDoQr] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+
+  // QR Code do crachá codifica `/login#email=<email-do-papel>`.
+  // Lemos o hash no mount e pré-preenchemos o campo email, agilizando o login
+  // no curso presencial (~36 participantes em paralelo). Senha continua manual.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash.slice(1); // remove "#"
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const emailFromQr = params.get("email");
+    if (emailFromQr) {
+      setEmail(decodeURIComponent(emailFromQr));
+      setVeioDoQr(true);
+      // foca direto no campo senha (skip email)
+      setTimeout(() => passwordRef.current?.focus(), 100);
+      // limpa o hash da URL pra não vazar email se compartilhar a aba
+      try { history.replaceState(null, "", window.location.pathname); } catch {}
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,8 +59,15 @@ export default function LoginPage() {
         </div>
         <h1 className="text-lg font-semibold text-center mb-1">Entrar</h1>
         <p className="text-xs text-gray-500 text-center mb-5">
-          Use o login impresso no seu cartão de papel.
+          {veioDoQr
+            ? "Email preenchido pelo QR do seu crachá — só digite a senha."
+            : "Escaneie o QR Code do crachá ou digite manualmente."}
         </p>
+        {veioDoQr && (
+          <div className="mb-3 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-900">
+            ✓ Identificado pelo QR Code. Digite a senha pra entrar.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
@@ -57,6 +85,7 @@ export default function LoginPage() {
           <div>
             <label className="text-xs font-medium text-gray-700">Senha</label>
             <input
+              ref={passwordRef}
               type="password"
               required
               autoComplete="current-password"
