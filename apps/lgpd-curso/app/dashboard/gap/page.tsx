@@ -7,11 +7,15 @@ import { FASES_ORDEM, PACOTE_DEFAULT_IDS, type ControleCatalogo, type FaseGap } 
 import { requireCompany } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { Flag } from "lucide-react";
+import { podeEditarFaseAvancada } from "@/lib/curso-permissoes";
+import { ModoObservadorBanner } from "@/components/modo-observador-banner";
+import { FaseReadOnlyWrapper } from "@/components/fase-readonly-wrapper";
 
 export const dynamic = "force-dynamic";
 
 export default async function GapPage() {
-  const { companyId } = await requireCompany();
+  const { companyId, session } = await requireCompany();
+  const podeEditar = podeEditarFaseAvancada(session.user.role);
   const [answers, pacote, grupoComTurma] = await Promise.all([
     listAnswers(),
     getPacoteAtivo(companyId),
@@ -59,6 +63,9 @@ export default async function GapPage() {
         descricao="Medir maturidade real vale mais que parecer maduro. Responda cada controle com honestidade — esta é fotografia da casa hoje, não onde queremos chegar."
       />
 
+      {!podeEditar && <ModoObservadorBanner />}
+
+      <FaseReadOnlyWrapper podeEditar={podeEditar}>
       <GapContextoBanner />
 
       {/* Origem do pacote: padrão vs customizado pelo facilitador */}
@@ -142,6 +149,7 @@ export default async function GapPage() {
           );
         })}
       </div>
+      </FaseReadOnlyWrapper>
     </div>
   );
 }
