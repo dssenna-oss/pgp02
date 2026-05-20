@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Printer, Users, Target } from "lucide-react";
+import { Trash2, Printer, Users, Target, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -123,6 +123,13 @@ export function TurmasList({ turmas }: { turmas: Turma[] }) {
                     title={t.proximoCurso ? "Remover marca 🎯" : "Marcar como 🎯 próximo curso"}
                   >
                     <Target className={`h-4 w-4 ${t.proximoCurso ? "text-amber-600 fill-amber-200" : "text-gray-400"}`} />
+                  </Button>
+                  <Button
+                    size="sm" variant="ghost"
+                    onClick={() => window.open(`/api/curso/lista-logins?turmaId=${t.id}`, "_blank")}
+                    title="Lista de logins reais desta turma (folha de consulta do facilitador)"
+                  >
+                    <KeyRound className="h-4 w-4 text-emerald-600" />
                   </Button>
                   <Button
                     size="sm" variant="ghost"
