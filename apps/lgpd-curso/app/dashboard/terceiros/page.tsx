@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { TerceirosList } from "./terceiros-list";
 import { listOperadores } from "./actions";
 import { getSession } from "@/lib/auth-server";
@@ -19,6 +20,7 @@ export default async function TerceirosPage() {
         titulo="Gestão de Terceiros (Operadores)"
         descricao="Pré-requisito do Aviso de Privacidade. Liste os operadores contratados e marque quais já têm cláusulas LGPD (Art. 39) nos contratos."
       />
+      <BaseLegalCard faseKey="terceiros" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         <TerceirosList items={operadores as any} />

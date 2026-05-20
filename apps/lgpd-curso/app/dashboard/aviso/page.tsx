@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { AvisoEditor } from "./aviso-editor";
 import { getAviso, getPrerequisitos } from "./actions";
 import { getSession } from "@/lib/auth-server";
@@ -19,6 +20,7 @@ export default async function AvisoPage() {
         titulo="Aviso de Privacidade"
         descricao="Síntese pública institucional. Alimentado pelas 3 fichas da Missão 4a: RIPD (seção 3), Terceiros (seção 7) e DSR (seção 11). Transparência só vale se o que está prometido EXISTE."
       />
+      <BaseLegalCard faseKey="aviso" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         <AvisoEditor aviso={aviso as any} prereq={prereq} />

@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { PlanoAcaoList } from "./plano-acao-list";
 import { listPlanoAcao } from "./actions";
 import { getSession } from "@/lib/auth-server";
@@ -19,6 +20,7 @@ export default async function PlanoAcaoPage() {
         titulo="Programa de Governança em Privacidade (PGP)"
         descricao="O Plano de Ação é o coração do PGP — sai NATURALMENTE das fases anteriores (Inventário → Riscos → GAP). Cada Risco com severidade ALTA e cada GAP NÃO ADERENTE vira uma ação aqui. Use o botão 'Importar' pra trazer tudo automaticamente — depois é só atribuir responsável e prazo."
       />
+      <BaseLegalCard faseKey="fase-5" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         <PlanoAcaoList items={items as any} />

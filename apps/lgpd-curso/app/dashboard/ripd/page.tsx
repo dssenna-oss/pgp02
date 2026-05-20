@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { RipdEditor } from "./ripd-editor";
 import { listRipds, listInventariosAprovadosSemRipd, contarRiscos, contarInventariosAprovados } from "./actions";
 import { getSession } from "@/lib/auth-server";
@@ -25,6 +26,7 @@ export default async function RipdPage() {
         titulo="Relatório de Impacto à Proteção de Dados"
         descricao="O RIPD é exigido pela LGPD (arts. 32 e 38) para tratamentos de alto risco. Pré-requisito do Aviso de Privacidade — sem ele, o Aviso vira promessa vazia."
       />
+      <BaseLegalCard faseKey="ripd" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         <RipdEditor

@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { DsrList } from "./dsr-list";
 import { listDsr } from "./actions";
 import { getSession } from "@/lib/auth-server";
@@ -19,6 +20,7 @@ export default async function DsrPage() {
         titulo="Direitos do Titular"
         descricao="Pré-requisito do Aviso de Privacidade. Estrutura do canal pelo qual o titular exerce os direitos do art. 18 da LGPD. Sem canal funcional, o Aviso vira letra morta."
       />
+      <BaseLegalCard faseKey="dsr" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         <DsrList items={items as any} />

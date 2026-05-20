@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export default function Fase2Page() {
   return (
     <ApresentacaoFacilitadorPage
+      faseKey="escopo"
       titulo="🚩 Fase 2 — Diagnóstico Inicial"
       subtitulo="Escopo + levantamento preliminar"
       duracaoMin={20}

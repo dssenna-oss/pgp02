@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Mic2, ArrowLeft } from "lucide-react";
+import { BaseLegalCard } from "@/components/base-legal-card";
 
 // Componente reutilizável pras páginas de leitura — conteúdo apresentado
 // pelo facilitador no início da aula. Não é mini-app interativo: é só uma
@@ -11,11 +12,13 @@ export function ApresentacaoFacilitadorPage({
   subtitulo,
   topicos,
   duracaoMin,
+  faseKey,
 }: {
   titulo: string;
   subtitulo: string;
   topicos: { titulo: string; descricao: string }[];
   duracaoMin: number;
+  faseKey?: string;
 }) {
   return (
     <div className="max-w-3xl mx-auto">
@@ -44,6 +47,8 @@ export function ApresentacaoFacilitadorPage({
           Você não precisa fazer nada aqui agora — o facilitador vai conduzir essa parte com a turma inteira nos primeiros <strong>~{duracaoMin} minutos</strong> antes de os jogos começarem. Use esta página depois pra revisar.
         </p>
       </section>
+
+      {faseKey && <BaseLegalCard faseKey={faseKey} />}
 
       <section>
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">

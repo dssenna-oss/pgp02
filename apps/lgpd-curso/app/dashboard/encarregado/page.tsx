@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { getEncarregado } from "./actions";
 import { EncarregadoForm } from "./encarregado-form";
 
@@ -13,6 +14,7 @@ export default async function EncarregadoPage() {
         titulo="Identidade do Encarregado (DPO)"
         descricao="Cadastre uma única vez os dados do Encarregado (Art. 41 LGPD) e do Substituto. Esses dados serão reutilizados automaticamente no RIPD, Aviso de Privacidade, Comunicação ANPD e qualquer outro documento legal — você não precisa redigitar a cada vez."
       />
+      <BaseLegalCard faseKey="encarregado" />
       <EncarregadoForm company={company} />
     </div>
   );

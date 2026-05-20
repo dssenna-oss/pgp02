@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export default function EntendendoPgpPage() {
   return (
     <ApresentacaoFacilitadorPage
+      faseKey="fundacao"
       titulo="📚 Entendendo o PGP"
       subtitulo="Conceitos e fundamentos do Programa de Governança em Privacidade"
       duracaoMin={45}
