@@ -102,7 +102,7 @@ function renderCracha(c: CrachaData): string {
         <img src="${qrUrl(c.loginUrl || "")}" alt="QR" class="qr-img" />
         <div class="qr-label">📷 escaneie pra abrir o app</div>
         <div class="qr-login">${c.login}</div>
-        <div class="qr-senha">senha: Curso2026!</div>
+        <div class="qr-senha">senha: informada pelo facilitador</div>
       </div>
       <div class="nome-bloco">
         <div class="nome-label">NOME</div>
@@ -389,7 +389,8 @@ export async function GET(req: NextRequest) {
       <div>Resultado: 3 crachás por folha A4. Recorte na linha pontilhada vertical entre eles.</div>
       <div class="aviso-qr">
         💡 <strong>Como o QR Code funciona:</strong> ao escanear com a câmera do celular, o participante abre o app
-        com o email do papel já preenchido. Só precisa digitar a senha <code>Curso2026!</code> e entrar.
+        com o email do papel já preenchido. A senha é <strong>informada por você (facilitador)</strong> no
+        momento certo da aula — não está impressa no crachá de propósito.
       </div>
     </div>
   </div>
