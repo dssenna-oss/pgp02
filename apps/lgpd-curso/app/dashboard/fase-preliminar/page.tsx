@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 export default function FasePreliminarPage() {
   return (
     <ApresentacaoFacilitadorPage
+      faseKey="fundacao"
       titulo="🚩 Fase Preliminar"
       subtitulo="Sensibilização e Engajamento"
       duracaoMin={30}

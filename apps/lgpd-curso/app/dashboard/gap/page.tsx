@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { GapControl } from "./gap-control";
 import { GapContextoBanner } from "./gap-contexto-banner";
 import { listAnswers } from "./actions";
@@ -62,6 +63,8 @@ export default async function GapPage() {
         titulo={`GAP Analysis — ${total} controles`}
         descricao="Medir maturidade real vale mais que parecer maduro. Responda cada controle com honestidade — esta é fotografia da casa hoje, não onde queremos chegar."
       />
+
+      <BaseLegalCard faseKey="gap" />
 
       {!podeEditar && <ModoObservadorBanner />}
 

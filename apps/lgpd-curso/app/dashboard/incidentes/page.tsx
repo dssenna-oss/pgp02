@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { IncidentesList } from "./incidentes-list";
 import { PriSecao } from "./pri-secao";
 import { listIncidentes, contarInventariosAprovados } from "./actions";
@@ -25,6 +26,7 @@ export default async function IncidentesPage() {
         titulo="Resposta a Incidentes"
         descricao="O incidente vai acontecer — pergunta é se vocês estarão prontos. Registre, classifique a severidade, comunique ANPD e titulares no prazo da Res. CD/ANPD nº 15/2024."
       />
+      <BaseLegalCard faseKey="incidentes" />
       {!podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         {/* PRI — Plano de Resposta a Incidentes (preparação ANTES) */}

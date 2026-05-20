@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { BaseLegalCard } from "@/components/base-legal-card";
 import { InventarioList } from "./inventario-list";
 import { listInventarioWithUsers } from "./actions";
 
@@ -14,6 +15,7 @@ export default async function InventarioPage() {
         titulo="Inventário de Dados Pessoais"
         descricao="Cada Contribuidor preenche o processo que conhece (Saúde → Posto · RH → Estagiários). Depois SUBMETE ao DPO, que aprova ou devolve com motivo. Esta é a dinâmica real fora do curso."
       />
+      <BaseLegalCard faseKey="inventario" />
       <InventarioList items={items as any} />
     </div>
   );
