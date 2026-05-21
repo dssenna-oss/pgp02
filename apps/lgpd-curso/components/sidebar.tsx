@@ -296,7 +296,29 @@ export function Sidebar() {
                   if (isDpoOuAdmin) return true;
                   return i.observavel === true;
                 });
-                if (itensVisiveis.length === 0) return null;
+                // Fase sem nenhum item acessível a este papel — ex.: o
+                // Contribuidor na Fase 1, cujo único item (cadastro do DPO)
+                // é dpoOnly. Em vez de sumir com a fase inteira, mostra um
+                // rótulo inativo pra manter visível a sequência completa.
+                if (itensVisiveis.length === 0) {
+                  return (
+                    <div
+                      key={item.id}
+                      className={cn(
+                        "mt-1 flex items-center gap-2 px-3 py-2 rounded-md text-sm min-h-[40px] border-l-4",
+                        item.cor,
+                        "text-gray-500",
+                      )}
+                      title="Etapa conduzida pelo DPO do grupo"
+                    >
+                      <Flag className="h-4 w-4 shrink-0 text-gray-400" />
+                      <span className="flex-1 text-left text-[13px] leading-tight">{item.rotulo}</span>
+                      <span className="text-[9px] uppercase tracking-wide bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
+                        DPO
+                      </span>
+                    </div>
+                  );
+                }
 
                 const aberta = faseExpandida === item.id;
                 const itensFeitos = itensVisiveis.filter(
