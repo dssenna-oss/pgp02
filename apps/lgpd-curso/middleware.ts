@@ -1,4 +1,4 @@
-// Middleware de autenticação — bloqueia rotas autenticadas + /admin e /facilitador
+// Middleware de autenticação — bloqueia rotas autenticadas + /admin, /facilitador e /telao
 
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
@@ -34,8 +34,8 @@ export default withAuth(
       }
     }
 
-    // /admin e /facilitador exigem role ADMIN
-    if ((pathname.startsWith("/admin") || pathname.startsWith("/facilitador")) && role !== "ADMIN") {
+    // /admin, /facilitador e /telao exigem role ADMIN
+    if ((pathname.startsWith("/admin") || pathname.startsWith("/facilitador") || pathname.startsWith("/telao")) && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
@@ -54,5 +54,6 @@ export const config = {
     "/dashboard/:path*",
     "/admin/:path*",
     "/facilitador/:path*",
+    "/telao",
   ],
 };
