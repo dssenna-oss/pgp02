@@ -300,7 +300,7 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
   // ============================================================================
   dsr_direitos: {
     titulo: "Os 9 direitos do titular (Art. 18)",
-    artigo: "LGPD Art. 18 + Res. CD/ANPD nº 18/2024",
+    artigo: "LGPD Art. 18 (direitos do titular)",
     oQueDiz:
       "Todo cidadão tem direito a CONFIRMAÇÃO, ACESSO, CORREÇÃO, ANONIMIZAÇÃO/ELIMINAÇÃO, PORTABILIDADE, ELIMINAÇÃO POR CONSENTIMENTO, INFORMAÇÃO SOBRE COMPARTILHAMENTOS, INFORMAÇÃO SOBRE NÃO-CONSENTIMENTO, REVOGAÇÃO DO CONSENTIMENTO. A organização tem que ter CANAL FUNCIONAL pra receber esses pedidos.",
     perguntaChave:
@@ -313,13 +313,13 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
       "Pedido \"portar pro plano da concorrência\" → portabilidade é Art. 18 V, mas formato depende do que a outra organização aceita",
     ],
     linkAnpd: {
-      texto: "Res. ANPD nº 18/2024 — Comunicação no exercício de direitos",
-      url: "https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-aprova-resolucao-da-comunicacao-no-exercicio-de-direitos",
+      texto: "ANPD — Direito dos Titulares",
+      url: "https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados-1/direito-dos-titulares",
     },
   },
   dsr_prazo: {
     titulo: "Quanto tempo tenho pra responder?",
-    artigo: "LGPD Art. 19 + Res. CD/ANPD nº 18/2024",
+    artigo: "LGPD Art. 19 (prazo de resposta)",
     oQueDiz:
       "O Art. 19 II dá 15 dias úteis pra resposta a partir do recebimento do pedido. Prorrogação justificada vai até 2 prazos adicionais de 15 dias (total 45 dias).",
     perguntaChave:
@@ -408,7 +408,7 @@ export const HELP_POR_CAMPO: Record<string, CampoHelp> = {
   },
   aviso_secao_11: {
     titulo: "Seção 11 — Como exercer seus direitos",
-    artigo: "LGPD Art. 18 + Res. CD/ANPD nº 18/2024",
+    artigo: "LGPD Art. 18 (direitos do titular)",
     oQueDiz: "Canal funcional pra o titular exercer os 9 direitos do Art. 18. E-mail dedicado, formulário web, ou telefone. Prazo de resposta declarado (15 dias úteis).",
     perguntaChave: "Qual o canal? Funciona de verdade? Quem responde? Alimentada por DSR.",
     pegadinha: "Canal de DSR \"caixa-postal@orgao\" sem rotina de leitura = não-conformidade. ANPD audita: enviar pedido teste e medir o tempo de resposta.",
