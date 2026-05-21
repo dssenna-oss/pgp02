@@ -15,6 +15,15 @@ const DPO_ONLY_DASHBOARD_PATHS = [
   "/dashboard/incidentes",
 ];
 
+// Páginas estáticas de fase (slides apresentados pelo facilitador) — não
+// dependem de companyId, então o ADMIN pode acessá-las pra projetar.
+// Exceção ao redirecionamento de admin que sai de /dashboard.
+const ADMIN_DASHBOARD_PERMITIDO = [
+  "/dashboard/fase-preliminar",
+  "/dashboard/fase-1",
+  "/dashboard/fase-2",
+];
+
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
@@ -23,7 +32,11 @@ export default withAuth(
 
     // Admin não pertence a grupo — clicar em mini-app de participante
     // estouraria 500 ("companyId ausente"). Redireciona pro painel.
-    if (pathname.startsWith("/dashboard") && role === "ADMIN") {
+    if (
+      pathname.startsWith("/dashboard") &&
+      role === "ADMIN" &&
+      !ADMIN_DASHBOARD_PERMITIDO.includes(pathname)
+    ) {
       return NextResponse.redirect(new URL("/facilitador", req.url));
     }
 
