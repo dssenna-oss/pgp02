@@ -14,12 +14,13 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
 import { SenhaTurmasWidget } from "./senha-turmas-widget";
 import { cn } from "@/lib/utils";
+import { GUIAS } from "@/lib/guias-apoio";
 import type { MissoesProgresso } from "@/lib/missoes-progresso";
 
 type ProgressoKey = keyof MissoesProgresso;
@@ -422,6 +423,36 @@ export function Sidebar() {
                   </Link>
                 );
               })}
+
+              {/* Guias de apoio — telas de projeção pra ajudar os grupos nas
+                  missões sem ir de mesa em mesa. */}
+              <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
+                <Projector className="h-3 w-3" /> Guias de apoio
+              </div>
+              {GUIAS.map((g) => {
+                const href = `/facilitador/guias/${g.slug}`;
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={g.slug}
+                    href={href}
+                    onClick={closeMobile}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
+                      active
+                        ? "bg-brand-50 text-brand-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-100",
+                    )}
+                  >
+                    <BookOpen className="h-4 w-4 shrink-0 text-gray-500" />
+                    <span className="flex-1 text-[13px] leading-tight">{g.titulo}</span>
+                    <span className="text-[9px] bg-gray-200 text-gray-600 px-1 py-0.5 rounded shrink-0">
+                      {g.missao.replace("Missão ", "M")}
+                    </span>
+                  </Link>
+                );
+              })}
+
               <SenhaTurmasWidget />
             </div>
           )}
