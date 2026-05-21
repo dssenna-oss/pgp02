@@ -89,6 +89,64 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
   // via FormularioAnpdModal + FormularioTitularesModal. Texto final fica
   // disponível em "Salvar + Ver texto final" dentro de cada modal.
 
+  // Botões de ação de um incidente. `mostrarLabel` mostra o texto ao lado do
+  // ícone — usado no cartão mobile, onde há espaço; na tabela desktop só ícone.
+  function renderAcoes(i: Inc, mostrarLabel: boolean) {
+    const labelCls = mostrarLabel ? "ml-1" : "hidden sm:inline ml-1";
+    return (
+      <>
+        {/* Formulários só liberam após análise (status != RASCUNHO).
+            Sem análise prévia, abrir o form é compliance fake. */}
+        {i.status === "RASCUNHO" ? (
+          <span className="text-[10px] text-gray-500 italic mr-1" title="Mude status pra EM_ANÁLISE antes de comunicar ANPD/Titulares">
+            🔒 Comunicações liberam após análise
+          </span>
+        ) : (() => {
+          const cAnpd = completudeAnpd(i.formularioAnpd as FormularioAnpd | null);
+          const cTit = completudeTitulares(i.formularioTitulares as FormularioTitulares | null);
+          return (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => abrirAnpd(i)} title="Comunicação ANPD" className="text-[11px]">
+                <Mail className="h-3.5 w-3.5 text-brand-600" />
+                <span className={labelCls}>ANPD</span>
+                <span className={`ml-1 text-[9px] px-1 rounded ${
+                  cAnpd.preenchidos === cAnpd.total ? "bg-emerald-100 text-emerald-700"
+                  : cAnpd.preenchidos > 0 ? "bg-amber-100 text-amber-700"
+                  : "bg-gray-100 text-gray-500"
+                }`}>
+                  {cAnpd.preenchidos}/{cAnpd.total}
+                </span>
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => abrirTitulares(i)} title="Carta aos Titulares" className="text-[11px]">
+                <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                <span className={labelCls}>Titulares</span>
+                <span className={`ml-1 text-[9px] px-1 rounded ${
+                  cTit.preenchidos === cTit.total ? "bg-emerald-100 text-emerald-700"
+                  : cTit.preenchidos > 0 ? "bg-amber-100 text-amber-700"
+                  : "bg-gray-100 text-gray-500"
+                }`}>
+                  {cTit.preenchidos}/{cTit.total}
+                </span>
+              </Button>
+            </>
+          );
+        })()}
+        <Button size="sm" variant="ghost" onClick={() => abrirClassificar(i)} title="Classificar severidade" className="text-[11px]">
+          <Scale className="h-4 w-4 text-brand-600" />
+          {mostrarLabel && <span className="ml-1">Severidade</span>}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => abrirEdicao(i)} title="Editar" className="text-[11px]">
+          <Pencil className="h-4 w-4" />
+          {mostrarLabel && <span className="ml-1">Editar</span>}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => deletar(i.id)} title="Excluir" className="text-[11px]">
+          <Trash2 className="h-4 w-4 text-red-600" />
+          {mostrarLabel && <span className="ml-1">Excluir</span>}
+        </Button>
+      </>
+    );
+  }
+
   return (
     <>
       {/* Card de orientações ao DPO — sempre disponível pra consulta */}
@@ -166,7 +224,48 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
           description="Quando um incidente ocorrer (e não tenha dúvida que vai, só não sabemos quando!), lembrar que o prazo de comunicação à ANPD é muito curto (notificação em até 3 dias úteis). A notificação é obrigatória sempre que o incidente puder acarretar risco ou dano relevante aos titulares, como nos casos de discriminação ou danos à reputação."
         />
       ) : (
-        <div className="border rounded-lg bg-white overflow-hidden">
+        <>
+          {/* Mobile: cartões empilhados. A tabela larga estoura no celular e
+              esconde a coluna de ações — crítico num curso 100% mobile. */}
+          <div className="space-y-3 sm:hidden">
+            {items.map((i: any) => (
+              <div key={i.id} className="border rounded-lg bg-white p-3">
+                <div className="font-medium">{i.titulo}</div>
+                {i.descricao && (
+                  <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{i.descricao}</div>
+                )}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2 text-xs">
+                  <span className="flex items-center gap-1">
+                    {sevBadge(i.severidade)}
+                    {i.severidadeFatores && (
+                      <span className="text-[10px] text-gray-400" title="Classificada objetivamente">⚖</span>
+                    )}
+                  </span>
+                  <span className="text-gray-500">
+                    {i.ocorridoEm
+                      ? new Date(i.ocorridoEm).toLocaleString("pt-BR")
+                      : <span className="text-gray-400 inline-flex items-center gap-1"><Clock className="h-3 w-3" /> sem data</span>}
+                  </span>
+                  <span className="flex gap-1">
+                    {i.comunicadoAnpd && <Badge variant="success">ANPD</Badge>}
+                    {i.comunicadoTitular && <Badge variant="success">Titular</Badge>}
+                    {!i.comunicadoAnpd && !i.comunicadoTitular && <Badge variant="warning">pendente</Badge>}
+                  </span>
+                </div>
+                {i.status !== "ENCERRADO" && (
+                  <div className="mt-2">
+                    <EquipeAcionarChips compacto />
+                  </div>
+                )}
+                <div className="mt-3 pt-2.5 border-t flex flex-wrap items-center gap-1.5">
+                  {renderAcoes(i, true)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: tabela */}
+          <div className="border rounded-lg bg-white overflow-hidden hidden sm:block">
           <Table>
             <THead>
               <TR>
@@ -210,68 +309,15 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                   </TD>
                   <TD>
                     <div className="flex justify-end gap-1 items-center flex-wrap">
-                      {/* Formulários só liberam após análise (status != RASCUNHO).
-                          Sem análise prévia, abrir o form é compliance fake. */}
-                      {i.status === "RASCUNHO" ? (
-                        <span className="text-[10px] text-gray-500 italic mr-1" title="Mude status pra EM_ANÁLISE antes de comunicar ANPD/Titulares">
-                          🔒 Comunicações liberam após análise
-                        </span>
-                      ) : (
-                        <>
-                          {(() => {
-                            const cAnpd = completudeAnpd(i.formularioAnpd as FormularioAnpd | null);
-                            const cTit = completudeTitulares(i.formularioTitulares as FormularioTitulares | null);
-                            return (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => abrirAnpd(i)}
-                                  title="Comunicação ANPD"
-                                  className="text-[11px]"
-                                >
-                                  <Mail className="h-3.5 w-3.5 text-brand-600" />
-                                  <span className="hidden sm:inline ml-1">ANPD</span>
-                                  <span className={`ml-1 text-[9px] px-1 rounded ${
-                                    cAnpd.preenchidos === cAnpd.total ? "bg-emerald-100 text-emerald-700"
-                                    : cAnpd.preenchidos > 0 ? "bg-amber-100 text-amber-700"
-                                    : "bg-gray-100 text-gray-500"
-                                  }`}>
-                                    {cAnpd.preenchidos}/{cAnpd.total}
-                                  </span>
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => abrirTitulares(i)}
-                                  title="Carta aos Titulares"
-                                  className="text-[11px]"
-                                >
-                                  <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span className="hidden sm:inline ml-1">Titulares</span>
-                                  <span className={`ml-1 text-[9px] px-1 rounded ${
-                                    cTit.preenchidos === cTit.total ? "bg-emerald-100 text-emerald-700"
-                                    : cTit.preenchidos > 0 ? "bg-amber-100 text-amber-700"
-                                    : "bg-gray-100 text-gray-500"
-                                  }`}>
-                                    {cTit.preenchidos}/{cTit.total}
-                                  </span>
-                                </Button>
-                              </>
-                            );
-                          })()}
-                        </>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => abrirClassificar(i)} title="Classificar severidade"><Scale className="h-4 w-4 text-brand-600" /></Button>
-                      <Button size="sm" variant="ghost" onClick={() => abrirEdicao(i)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="sm" variant="ghost" onClick={() => deletar(i.id)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
+                      {renderAcoes(i, false)}
                     </div>
                   </TD>
                 </TR>
               ))}
             </TBody>
           </Table>
-        </div>
+          </div>
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
