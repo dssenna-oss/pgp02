@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Settings, AlertTriangle, ShieldCheck, FileSignature, Clock4, FileSearch } from "lucide-react";
+import { Pencil, Trash2, Settings, AlertTriangle, ShieldCheck, FileSignature, Clock4, FileSearch, Users, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty";
@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { saveOperador, deletarOperador } from "./actions";
+import { saveOperador, deletarOperador, tramitarOperador, encerrarTramitacaoOperador } from "./actions";
+import { PAPEIS_APOIO, labelPapelApoio } from "@/lib/papeis-apoio";
 import { TIPO_OPERACAO_INFO, NIVEL_RISCO_INFO } from "@/lib/seeds/terceiros-vegas";
 import { calcularDueDiligence, RECOMENDACAO_INFO, type RespostaDD } from "@/lib/due-diligence";
 import { GerenciarOperadorDrawer } from "./gerenciar-operador-drawer";
@@ -18,7 +19,7 @@ import { handlePhaseSkipResult } from "@/lib/phase-skip-handler";
 
 type Op = any;
 
-export function TerceirosList({ items }: { items: Op[] }) {
+export function TerceirosList({ items, role }: { items: Op[]; role: string | null }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Op | null>(null);
   const [loading, setLoading] = useState(false);
@@ -62,6 +63,50 @@ export function TerceirosList({ items }: { items: Op[] }) {
       if (handlePhaseSkipResult(r)) return;
       toast.success("Operador removido");
     } catch (e: any) { toast.error(e.message); }
+  }
+
+  const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
+
+  // Tramitação multi-setor (Comitê LGPD)
+  const [tramitandoOp, setTramitandoOp] = useState<Op | null>(null);
+  const [setorDestino, setSetorDestino] = useState<string>("PROCURADORIA");
+  const [notaTramitacao, setNotaTramitacao] = useState("");
+
+  function abrirTramitacao(op: Op) {
+    setTramitandoOp(op);
+    setSetorDestino("PROCURADORIA");
+    setNotaTramitacao("");
+  }
+
+  async function confirmarTramitacao() {
+    if (!tramitandoOp) return;
+    if (notaTramitacao.trim().length < 10) {
+      toast.error("Escreva uma nota com ao menos 10 caracteres.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await tramitarOperador(tramitandoOp.id, setorDestino, notaTramitacao);
+      toast.success("Pedido de apoio enviado ao Comitê LGPD");
+      setTramitandoOp(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function encerrarTramitacao(id: string) {
+    if (!confirm("Encerrar a tramitação deste terceiro?")) return;
+    setLoading(true);
+    try {
+      await encerrarTramitacaoOperador(id);
+      toast.success("Tramitação encerrada");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const c = editing?.contracts?.[0];
@@ -202,7 +247,44 @@ export function TerceirosList({ items }: { items: Op[] }) {
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-end gap-2">
+                {/* Tramitação multi-setor */}
+                {op.tramitadoPara && !op.tramitacaoParecer && (
+                  <div className="mt-3 text-xs bg-violet-50 border border-violet-200 rounded p-2.5">
+                    <div className="flex items-center gap-1.5 text-violet-800 font-medium">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      Em tramitação — aguardando parecer de {labelPapelApoio(op.tramitadoPara)}
+                    </div>
+                    {op.tramitacaoNota && (
+                      <div className="text-violet-900 italic mt-1">&quot;{op.tramitacaoNota}&quot;</div>
+                    )}
+                  </div>
+                )}
+                {op.tramitadoPara && op.tramitacaoParecer && (
+                  <div className="mt-3 text-xs bg-emerald-50 border border-emerald-200 rounded p-2.5">
+                    <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                      Parecer recebido de {labelPapelApoio(op.tramitadoPara)}
+                    </div>
+                    {op.tramitacaoNota && (
+                      <div className="text-gray-500 mt-1">Pedido: &quot;{op.tramitacaoNota}&quot;</div>
+                    )}
+                    <div className="text-emerald-900 mt-1 leading-relaxed whitespace-pre-wrap">{op.tramitacaoParecer}</div>
+                  </div>
+                )}
+
+                <div className="mt-3 flex items-center justify-end gap-2 flex-wrap">
+                  {isDpoOuAdmin && !op.tramitadoPara && (
+                    <Button size="sm" variant="ghost" onClick={() => abrirTramitacao(op)}
+                      className="border border-violet-300 text-violet-700 hover:bg-violet-50">
+                      <Users className="h-3.5 w-3.5" /> Pedir apoio do Comitê LGPD
+                    </Button>
+                  )}
+                  {isDpoOuAdmin && op.tramitadoPara && (
+                    <Button size="sm" variant="ghost" onClick={() => encerrarTramitacao(op.id)} disabled={loading}
+                      className="border border-gray-300 text-gray-600 hover:bg-gray-50">
+                      Encerrar tramitação
+                    </Button>
+                  )}
                   <Button size="sm" variant="primary" onClick={() => abrirDrawer(op)}>
                     <Settings className="h-3.5 w-3.5" /> Gerenciar operador
                   </Button>
@@ -252,6 +334,56 @@ export function TerceirosList({ items }: { items: Op[] }) {
               <Button type="submit" disabled={loading}>{loading ? "Salvando..." : "Atualizar"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: tramitação multi-setor */}
+      <Dialog open={!!tramitandoOp} onOpenChange={(v) => { if (!v) setTramitandoOp(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>👥 Pedir apoio do Comitê LGPD</DialogTitle>
+            <DialogDescription>
+              Encaminhe &quot;{tramitandoOp?.nome}&quot; pra um setor de apoio dar um parecer. O setor
+              responde com uma opinião — quem ajusta o cadastro do terceiro continua sendo você.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Setor de apoio</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {PAPEIS_APOIO.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setSetorDestino(p.id)}
+                    className={`text-left text-sm border rounded px-2.5 py-2 transition-colors ${
+                      setorDestino === p.id
+                        ? "border-violet-500 bg-violet-50 text-violet-900 font-medium"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {p.emoji} {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>O que você precisa do setor?</Label>
+              <Textarea
+                rows={3}
+                value={notaTramitacao}
+                onChange={(e) => setNotaTramitacao(e.target.value)}
+                placeholder="Ex: revisar se as cláusulas LGPD do contrato cobrem a transferência internacional…"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">Mínimo 10 caracteres.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTramitandoOp(null)}>Cancelar</Button>
+            <Button onClick={confirmarTramitacao} disabled={loading || notaTramitacao.trim().length < 10}>
+              {loading ? "Enviando…" : "Enviar pedido"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
