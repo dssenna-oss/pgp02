@@ -7,7 +7,9 @@
 //   M3 (GAP)         — todos os 10 controles respondidos
 //   Plano de Ação    — pelo menos 1 ação registrada (origem RISCO/GAP/MANUAL)
 //   M4a (RIPD)       — pelo menos 1 RIPD APROVADO
-//   M4a (Terceiros)  — pelo menos 1 operador cadastrado
+//   M4a (Terceiros)  — todos os operadores com cláusulas selecionadas
+//                      (o curso vem com 2 operadores pré-cadastrados — igual M1,
+//                      "existir" não conta; precisa o grupo ter trabalhado neles)
 //   M4a (DSR)        — pelo menos 1 solicitação registrada
 //   M4b (Aviso)      — Aviso com status PUBLICADO
 //   M5 (Incidentes)  — pelo menos 1 incidente movido de RASCUNHO
@@ -48,13 +50,16 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, qtdOperadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, operadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
     prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
     prisma.actionPlan.count({ where: { companyId } }),
     prisma.ripd.count({ where: { companyId, status: "APROVADO" } }),
-    prisma.operator.count({ where: { companyId } }),
+    prisma.operator.findMany({
+      where: { companyId },
+      select: { contracts: { select: { clausulasSelecionadas: true } } },
+    }),
     prisma.dsrRequest.count({ where: { companyId } }),
     // DSR Surpresa pendentes: disparoFacilitador=true + nenhuma ação registrada ainda
     prisma.dsrRequest.count({ where: { companyId, disparoFacilitador: true, gameAction: null } }),
@@ -71,7 +76,12 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     m3: qtdGap >= 10,
     plano_acao: qtdAcoes > 0,
     m4a_ripd: qtdRipdsAprovados > 0,
-    m4a_terceiros: qtdOperadores > 0,
+    // "Existir operador" não conta — o curso semeia 2 pré-cadastrados.
+    // Done = todos os operadores têm cláusulas LGPD selecionadas (o entregável
+    // da missão; clausulasSelecionadas nasce vazio no seed).
+    m4a_terceiros:
+      operadores.length > 0 &&
+      operadores.every((o) => (o.contracts?.[0]?.clausulasSelecionadas?.length ?? 0) > 0),
     m4a_dsr: qtdDsr > 0,
     m4b: aviso?.status === "PUBLICADO",
     m5: incidentes.some((i) => i.status && i.status !== "RASCUNHO"),
