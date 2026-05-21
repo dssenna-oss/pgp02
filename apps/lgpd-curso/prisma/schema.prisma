@@ -383,6 +383,10 @@ model Incident {
   formularioAnpd       Json?
   // Estrutura: { dadosAfetados: string[], oQueFizemos: string[] }
   formularioTitulares  Json?
+  // Fatores objetivos da classificação de severidade (Frente 2 — PRI).
+  // { houveAcesso, sensivel, vulneravel, volume, exposicao } — calcula a
+  // severidade via lib/incidente-severidade.ts. Auto-migração.
+  severidadeFatores    Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

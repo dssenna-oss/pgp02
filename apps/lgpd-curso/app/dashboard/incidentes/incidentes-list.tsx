@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, Clock, Mail, MessageSquare } from "lucide-react";
+import { Pencil, Trash2, Clock, Mail, MessageSquare, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/select";
 import { saveIncidente, deletarIncidente } from "./actions";
 import { FormularioAnpdModal } from "./formulario-anpd-modal";
 import { FormularioTitularesModal } from "./formulario-titulares-modal";
+import { ClassificarSeveridadeModal } from "./classificar-severidade-modal";
 import {
   completudeAnpd, completudeTitulares,
   type FormularioAnpd, type FormularioTitulares,
@@ -45,10 +46,13 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
   const [anpdAlvo, setAnpdAlvo] = useState<Inc | null>(null);
   const [titularesOpen, setTitularesOpen] = useState(false);
   const [titularesAlvo, setTitularesAlvo] = useState<Inc | null>(null);
+  const [classificarOpen, setClassificarOpen] = useState(false);
+  const [classificarAlvo, setClassificarAlvo] = useState<Inc | null>(null);
 
   function abrirEdicao(i: Inc) { setEditing(i); setOpen(true); }
   function abrirAnpd(i: Inc) { setAnpdAlvo(i); setAnpdOpen(true); }
   function abrirTitulares(i: Inc) { setTitularesAlvo(i); setTitularesOpen(true); }
+  function abrirClassificar(i: Inc) { setClassificarAlvo(i); setClassificarOpen(true); }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -186,7 +190,12 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                       </div>
                     )}
                   </TD>
-                  <TD>{sevBadge(i.severidade)}</TD>
+                  <TD>
+                    {sevBadge(i.severidade)}
+                    {i.severidadeFatores && (
+                      <span className="ml-1 text-[10px] text-gray-400" title="Classificada objetivamente">⚖</span>
+                    )}
+                  </TD>
                   <TD className="text-xs">
                     {i.ocorridoEm
                       ? new Date(i.ocorridoEm).toLocaleString("pt-BR")
@@ -253,6 +262,7 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
                           })()}
                         </>
                       )}
+                      <Button size="sm" variant="ghost" onClick={() => abrirClassificar(i)} title="Classificar severidade"><Scale className="h-4 w-4 text-brand-600" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => abrirEdicao(i)}><Pencil className="h-4 w-4" /></Button>
                       <Button size="sm" variant="ghost" onClick={() => deletar(i.id)}><Trash2 className="h-4 w-4 text-red-600" /></Button>
                     </div>
@@ -373,6 +383,12 @@ export function IncidentesList({ items }: { items: Inc[]; qtdInventariosAprovado
           onClose={() => setTitularesOpen(false)}
         />
       )}
+
+      <ClassificarSeveridadeModal
+        incidente={classificarAlvo}
+        open={classificarOpen}
+        onClose={() => setClassificarOpen(false)}
+      />
     </>
   );
 }
