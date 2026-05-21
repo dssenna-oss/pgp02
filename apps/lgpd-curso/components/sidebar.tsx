@@ -138,8 +138,12 @@ const STORAGE_KEY_EXPANDIDA = "curso-sidebar-fase-expandida";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const role = session?.user?.role;
+  // Enquanto o status da sessão é "loading", ainda não se sabe o papel —
+  // não renderizar nenhum menu pra não piscar o menu errado (participante)
+  // antes de confirmar que é o facilitador.
+  const sessaoPronta = status === "authenticated";
   const isAdmin = role === "ADMIN";
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -237,7 +241,10 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {!isAdmin && (
+          {!sessaoPronta && (
+            <div className="px-3 py-3 text-xs text-gray-400">Carregando menu…</div>
+          )}
+          {sessaoPronta && !isAdmin && (
             <>
               <Link
                 href="/dashboard"
@@ -389,7 +396,7 @@ export function Sidebar() {
             </>
           )}
 
-          {isAdmin && (
+          {sessaoPronta && isAdmin && (
             <div>
               <div className="px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500">
                 Facilitador
