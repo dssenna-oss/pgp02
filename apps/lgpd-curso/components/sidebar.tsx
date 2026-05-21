@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -445,6 +445,19 @@ export function Sidebar() {
                   </Link>
                 );
               })}
+
+              {/* Telão — tela de projeção com placar + conquistas ao vivo.
+                  Abre em nova aba pra projetar numa tela separada. */}
+              <a
+                href="/telao"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px] text-gray-700 hover:bg-gray-100"
+              >
+                <Trophy className="h-4 w-4 shrink-0" />
+                <span className="flex-1">Telão (placar)</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+              </a>
 
               {/* Guias de apoio — telas de projeção pra ajudar os grupos nas
                   missões sem ir de mesa em mesa. */}
