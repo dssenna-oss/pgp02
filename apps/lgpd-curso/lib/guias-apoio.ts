@@ -169,3 +169,39 @@ export const GUIAS: Guia[] = [
 export function getGuia(slug: string): Guia | undefined {
   return GUIAS.find((g) => g.slug === slug);
 }
+
+// Nome do campo/seção EXATAMENTE como o participante o vê no formulário do
+// mini-app. Resolve a ambiguidade dos títulos de ajuda (ex.: "O que listar
+// aqui"), que foram escritos pro tooltip "?" — onde o nome do campo já está
+// ao lado. No guia, o título da ajuda vira o subtítulo e o rótulo do campo
+// vira o cabeçalho, dizendo EM QUE campo a informação entra.
+// Chaves sem entrada aqui (RIPD/Aviso) já têm o nome da seção no título da
+// própria ajuda — caem no fallback.
+export const ROTULO_CAMPO: Record<string, string> = {
+  // Inventário
+  baseLegal: "Base legal (Art. 7º / 11)",
+  tiposDados: "Tipos de dados coletados",
+  dadosSensiveis: "Contém dados pessoais sensíveis?",
+  retencao: "Prazo de retenção",
+  compartilhamento: "Compartilhamentos",
+  medidasSeguranca: "Medidas de segurança",
+  // Análise de Riscos
+  riscoDescricao: "Descrição do risco",
+  riscoCategoria: "Categoria",
+  riscoProbabilidade: "Probabilidade",
+  riscoImpacto: "Impacto",
+  riscoMitigacao: "Plano de mitigação",
+  // GAP Analysis
+  gap_classificacao: "Classificação de cada controle",
+  // Gestão de Terceiros
+  terceiro_avaliacao_risco: "Avaliação de risco do terceiro",
+  terceiro_due_diligence: "Due diligence",
+  terceiro_clausulas: "Cláusulas LGPD no contrato",
+  // Direitos do Titular (DSR)
+  dsr_direitos: "Tipo de direito solicitado",
+  dsr_prazo: "Prazo de resposta",
+  // Incidentes
+  incidente_severidade: "Severidade do incidente",
+  incidente_72h_anpd: "Comunicação à ANPD",
+  incidente_comunicado_titular: "Comunicação aos titulares",
+};
