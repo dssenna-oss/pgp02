@@ -21,6 +21,7 @@ import { SosBotao } from "./sos-botao";
 import { SenhaTurmasWidget } from "./senha-turmas-widget";
 import { cn } from "@/lib/utils";
 import { GUIAS } from "@/lib/guias-apoio";
+import { SLIDES_FASES } from "@/lib/slides-fases";
 import type { MissoesProgresso } from "@/lib/missoes-progresso";
 
 type ProgressoKey = keyof MissoesProgresso;
@@ -70,6 +71,7 @@ const MENU: MenuItem[] = [
     rotulo: "Fase 1 — Formação das equipes",
     cor: "border-l-violet-400",
     itens: [
+      { href: "/dashboard/fase-1", label: "Conteúdo da fase", icon: BookOpen },
       { href: "/dashboard/encarregado", label: "Encarregado (DPO)", icon: UserCheck, dpoOnly: true },
     ],
   },
@@ -458,6 +460,34 @@ export function Sidebar() {
                 <span className="flex-1">Telão (placar)</span>
                 <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" />
               </a>
+
+              {/* Slides das fases — apresentação teórica (Preliminar/1/2)
+                  que o facilitador projeta antes das missões. */}
+              <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
+                <Projector className="h-3 w-3" /> Slides das fases
+              </div>
+              {SLIDES_FASES.map((f) => {
+                const href = `/dashboard/${f.slug}`;
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={f.slug}
+                    href={href}
+                    onClick={closeMobile}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
+                      active
+                        ? "bg-brand-50 text-brand-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-100",
+                    )}
+                  >
+                    <BookOpen className="h-4 w-4 shrink-0 text-gray-500" />
+                    <span className="flex-1 text-[13px] leading-tight">
+                      {f.emoji} {f.titulo}
+                    </span>
+                  </Link>
+                );
+              })}
 
               {/* Guias de apoio — telas de projeção pra ajudar os grupos nas
                   missões sem ir de mesa em mesa. */}
