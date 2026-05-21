@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { papeisPorOrgao, processosPorOrgao } from "@/lib/seeds/processos-vegas";
 import { terceirosPorOrgao } from "@/lib/seeds/terceiros-vegas";
 import { slugifyTurma } from "@/lib/slugify";
+import { ensureColunaSenhaExibicao } from "@/lib/coluna-senha-turma";
 
 // ~10 ops sequenciais no banco por grupo (company + cursoGrupo + 5 users +
 // 2 processos) + bcrypt hash. Com Neon dormindo pode passar de 15s.
@@ -78,11 +79,14 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await bcrypt.hash(senhaPadrao, 10);
 
+  // Garante a coluna senhaExibicao (auto-migração idempotente)
+  await ensureColunaSenhaExibicao();
+
   // Cria turma
   let turma: { id: string; nome: string; cidade: string };
   try {
     turma = await prisma.cursoTurma.create({
-      data: { nome, slug, cidade, status: "ATIVA" },
+      data: { nome, slug, cidade, status: "ATIVA", senhaExibicao: senhaPadrao },
       select: { id: true, nome: true, cidade: true },
     });
   } catch (e: any) {

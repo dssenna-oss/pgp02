@@ -95,6 +95,10 @@ model CursoTurma {
   // qual turma vai ser rodada a seguir. Apenas 1 turma pode ter true por vez.
   proximoCurso Boolean   @default(false)
   observacao   String?
+  // Senha em texto pra o facilitador relembrar/divulgar aos participantes.
+  // Curso fictício, senha compartilhada de propósito — não é segredo.
+  // Backfill automático via lib/coluna-senha-turma.ts.
+  senhaExibicao String?
   // Pacote customizado de controles GAP — array de IDs do catálogo
   // (lib/gap-catalogo.ts). Vazio = usa PACOTE_DEFAULT. Permite ao facilitador
   // adaptar o GAP ao perfil do grupo (técnicos / jurídicos / gestão).
