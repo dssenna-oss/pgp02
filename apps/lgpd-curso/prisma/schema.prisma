@@ -505,6 +505,13 @@ model Operator {
   servico   String?
   papel     String?  @default("OPERADOR") // OPERADOR | CONTROLADOR | CONJUNTO
   contato   String?
+  // Tramitação multi-setor (Comitê LGPD): o DPO pede parecer a TI/Jurídico/etc.
+  // sobre o terceiro. O setor de apoio responde em tramitacaoParecer (Opção B —
+  // dá parecer, não edita). Auto-migração via lib/colunas-tramitacao-operador.ts.
+  tramitadoPara     String?
+  tramitacaoNota    String?
+  tramitadoEm       DateTime?
+  tramitacaoParecer String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

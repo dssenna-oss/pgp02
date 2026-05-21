@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireCompany } from "@/lib/auth-server";
+import { ensureColunasTramitacaoOperador } from "@/lib/colunas-tramitacao-operador";
+import { PAPEIS_APOIO_IDS } from "@/lib/papeis-apoio";
 import { revalidatePath } from "next/cache";
 import { checkGapConcluido } from "@/lib/phase-guard";
 import { calcularNivelRisco } from "@/lib/risco-anpd";
@@ -9,6 +11,7 @@ import type { RespostaDD } from "@/lib/due-diligence";
 
 export async function listOperadores() {
   const { companyId } = await requireCompany();
+  await ensureColunasTramitacaoOperador();
   return prisma.operator.findMany({
     where: { companyId },
     include: { contracts: true },
@@ -180,6 +183,106 @@ export async function salvarDueDiligence(input: {
     where: { id: contract.id },
     data: {
       dueDiligenceRespostas: input.respostas as any,
+    },
+  });
+
+  revalidatePath("/dashboard/terceiros");
+  return { ok: true };
+}
+
+// ============================================================================
+// Tramitação multi-setor (Comitê LGPD): o DPO pede parecer a um setor de apoio
+// sobre um terceiro. Opção B — o setor responde com um parecer; quem edita o
+// operador continua sendo o DPO. Espelha o padrão de Riscos.
+// ============================================================================
+
+// DPO encaminha um terceiro pra um setor de apoio dar parecer.
+export async function tramitarOperador(operatorId: string, papelDestino: string, nota: string) {
+  const { companyId, session } = await requireCompany();
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO pode pedir apoio do Comitê LGPD.");
+  }
+  if (!PAPEIS_APOIO_IDS.includes(papelDestino)) {
+    throw new Error("Setor de apoio inválido.");
+  }
+  if (!nota || nota.trim().length < 10) {
+    throw new Error("Escreva uma nota explicando o que você precisa do setor (mínimo 10 caracteres).");
+  }
+  await ensureColunasTramitacaoOperador();
+
+  const op = await prisma.operator.findFirst({
+    where: { id: operatorId, companyId },
+    select: { id: true, nome: true, tramitadoPara: true },
+  });
+  if (!op) throw new Error("Operador não encontrado.");
+  if (op.tramitadoPara) {
+    throw new Error(`"${op.nome}" já está em tramitação. Encerre a tramitação atual primeiro.`);
+  }
+
+  await prisma.operator.update({
+    where: { id: operatorId },
+    data: {
+      tramitadoPara: papelDestino,
+      tramitacaoNota: nota.trim(),
+      tramitadoEm: new Date(),
+      tramitacaoParecer: null,
+    },
+  });
+
+  revalidatePath("/dashboard/terceiros");
+  return { ok: true };
+}
+
+// Setor de apoio (papel == tramitadoPara) envia o parecer ao DPO.
+export async function enviarParecerOperador(operatorId: string, parecer: string) {
+  const { companyId, session } = await requireCompany();
+  if (!parecer || parecer.trim().length < 10) {
+    throw new Error("Escreva um parecer com ao menos 10 caracteres.");
+  }
+  await ensureColunasTramitacaoOperador();
+
+  const op = await prisma.operator.findFirst({
+    where: { id: operatorId, companyId },
+    select: { id: true, tramitadoPara: true },
+  });
+  if (!op) throw new Error("Operador não encontrado.");
+  if (!op.tramitadoPara) throw new Error("Este operador não está em tramitação.");
+
+  const isDpoOuAdmin = session.user.role === "DPO" || session.user.role === "ADMIN";
+  if (!isDpoOuAdmin && op.tramitadoPara !== session.user.papel) {
+    throw new Error("Esta tramitação não foi encaminhada pro seu setor.");
+  }
+
+  await prisma.operator.update({
+    where: { id: operatorId },
+    data: { tramitacaoParecer: parecer.trim() },
+  });
+
+  revalidatePath("/dashboard/terceiros");
+  return { ok: true };
+}
+
+// DPO encerra a tramitação (após ler o parecer, ou pra cancelar).
+export async function encerrarTramitacaoOperador(operatorId: string) {
+  const { companyId, session } = await requireCompany();
+  if (!["DPO", "ADMIN"].includes(session.user.role)) {
+    throw new Error("Apenas o DPO pode encerrar a tramitação.");
+  }
+  await ensureColunasTramitacaoOperador();
+
+  const op = await prisma.operator.findFirst({
+    where: { id: operatorId, companyId },
+    select: { id: true },
+  });
+  if (!op) throw new Error("Operador não encontrado.");
+
+  await prisma.operator.update({
+    where: { id: operatorId },
+    data: {
+      tramitadoPara: null,
+      tramitacaoNota: null,
+      tramitadoEm: null,
+      tramitacaoParecer: null,
     },
   });
 
