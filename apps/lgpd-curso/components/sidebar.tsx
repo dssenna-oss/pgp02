@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
+import { SenhaTurmasWidget } from "./senha-turmas-widget";
 import { cn } from "@/lib/utils";
 import type { MissoesProgresso } from "@/lib/missoes-progresso";
 
@@ -413,6 +414,7 @@ export function Sidebar() {
                   </Link>
                 );
               })}
+              <SenhaTurmasWidget />
             </div>
           )}
         </nav>
