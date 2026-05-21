@@ -8,13 +8,40 @@ import {
   gerarTextoAnpd, gerarTextoTitulares,
   type FormularioAnpd, type FormularioTitulares,
 } from "@/lib/incidente-formulario";
+import { ensureColunaSeveridadeFatores } from "@/lib/coluna-severidade-incidente";
+import { calcularSeveridade, type SeveridadeFatores } from "@/lib/incidente-severidade";
 
 export async function listIncidentes() {
   const { companyId } = await requireCompany();
+  await ensureColunaSeveridadeFatores();
   return prisma.incident.findMany({
     where: { companyId },
     orderBy: { createdAt: "desc" },
   });
+}
+
+// Classifica a severidade do incidente objetivamente (Frente 2 — PRI).
+// Guarda os fatores marcados e grava a severidade calculada pela régua.
+export async function classificarSeveridade(
+  id: string,
+  fatores: SeveridadeFatores,
+): Promise<{ ok: true; severidade: string } | { ok: false; error: string }> {
+  const skip = await checkGapConcluido("FASE_7", "Classificar severidade");
+  if (skip) return skip as any;
+  const { companyId } = await requireCompany();
+  await ensureColunaSeveridadeFatores();
+  const existente = await prisma.incident.findFirst({
+    where: { id, companyId },
+    select: { id: true },
+  });
+  if (!existente) return { ok: false, error: "Incidente não encontrado." };
+  const severidade = calcularSeveridade(fatores);
+  await prisma.incident.update({
+    where: { id },
+    data: { severidadeFatores: fatores as any, severidade },
+  });
+  revalidatePath("/dashboard/incidentes");
+  return { ok: true, severidade };
 }
 
 // Pré-requisito do registro de incidente — pra dimensionar dados afetados,
