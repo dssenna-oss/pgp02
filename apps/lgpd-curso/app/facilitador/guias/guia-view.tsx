@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { Projector, Lightbulb, AlertTriangle, ExternalLink } from "lucide-react";
 import { HELP_POR_CAMPO } from "@/lib/lgpd-refs";
-import { PROCESSOS_CONTEXTO, type Guia } from "@/lib/guias-apoio";
+import { PROCESSOS_CONTEXTO, ROTULO_CAMPO, type Guia } from "@/lib/guias-apoio";
 
 export function GuiaView({ guia }: { guia: Guia }) {
   const [projecao, setProjecao] = useState(false);
@@ -31,6 +31,11 @@ export function GuiaView({ guia }: { guia: Guia }) {
   function renderCampo(key: string, idx: number) {
     const h = HELP_POR_CAMPO[key];
     if (!h) return null;
+    // Cabeçalho = nome do campo no formulário (diz ONDE entra a informação).
+    // O título da ajuda ("O que listar aqui" etc.) vira subtítulo.
+    const rotulo = ROTULO_CAMPO[key];
+    const cabecalho = rotulo ?? h.titulo;
+    const subtitulo = rotulo && h.titulo !== rotulo ? h.titulo : null;
     return (
       <div key={key} className={`rounded-lg border bg-white ${sz.card}`}>
         <div className="flex items-start gap-3">
@@ -40,7 +45,10 @@ export function GuiaView({ guia }: { guia: Guia }) {
             {idx}
           </span>
           <div className="flex-1 min-w-0">
-            <h3 className={`${sz.campoTitulo} font-bold text-gray-900 leading-tight`}>{h.titulo}</h3>
+            <h3 className={`${sz.campoTitulo} font-bold text-gray-900 leading-tight`}>{cabecalho}</h3>
+            {subtitulo && (
+              <div className={`${sz.corpo} text-gray-600`}>{subtitulo}</div>
+            )}
             {h.artigo && (
               <div className={`${sz.rotulo} mt-0.5 font-medium text-brand-700`}>{h.artigo}</div>
             )}
