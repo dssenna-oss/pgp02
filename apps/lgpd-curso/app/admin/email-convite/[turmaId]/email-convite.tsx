@@ -105,6 +105,12 @@ const TELAS: { arquivo: string; legenda: string }[] = [
   },
 ];
 
+// Destaque "Nossas Recomendações" — orientações de preparação para o curso.
+const RECOMENDACOES: string[] = [
+  "É altamente recomendável que você possa utilizar seu celular ao longo de todo o curso. Geralmente a Instituição patrocinadora oferece a possibilidade de acesso Wi-Fi. Se puder levar um Notebook, seria ideal.",
+  `Estude a Lei 13.709/2018 (LGPD) e leve uma cópia para consulta. Mas, para facilitar seu aprendizado, preparamos uma sugestão especial: no link a seguir você pode acessar resumos interativos de quase todos os artigos da LGPD. Basta clicar em <a href="https://heyzine.com/shelf/b96e0786a2.html" style="color:#2563eb;font-weight:600;">https://heyzine.com/shelf/b96e0786a2.html</a>.`,
+];
+
 // Bloco "Informações do curso" — exibido no final do e-mail. Valores
 // editáveis direto no texto da pré-visualização antes de copiar.
 const INFO_CURSO: { label: string; valor: string }[] = [
@@ -165,6 +171,14 @@ function buildEmailHtml(opts: {
     (i) => `<div style="padding:2px 0;"><b>${i.label}:</b> ${i.valor}</div>`,
   ).join("");
 
+  const recomendacoesHtml = RECOMENDACOES.map(
+    (r, i) => `
+      <div style="margin-bottom:${i < RECOMENDACOES.length - 1 ? "12px" : "0"};">
+        <span style="display:inline-block;width:24px;height:24px;background:#2563eb;color:#ffffff;border-radius:12px;text-align:center;line-height:24px;font-size:12px;font-weight:700;vertical-align:top;">${i + 1}</span>
+        <span style="display:inline-block;width:88%;font-size:14px;line-height:1.55;color:#1f2937;padding-left:8px;">${r}</span>
+      </div>`,
+  ).join("");
+
   return `
   <div style="background:#1e3a8a;padding:34px 28px;text-align:center;">
     <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#93c5fd;margin-bottom:8px;">Curso Prático de LGPD</div>
@@ -209,6 +223,11 @@ function buildEmailHtml(opts: {
 
     <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:18px 0 4px;">Qualquer dúvida, é só responder este e-mail.</p>
     <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:0;">Até breve!<br /><b>Equipe do Curso Prático de LGPD</b></p>
+
+    <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:6px;padding:18px 20px;margin:24px 0 0;">
+      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Nossas Recomendações</div>
+      ${recomendacoesHtml}
+    </div>
 
     <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;padding:20px;margin:24px 0 0;">
       <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Informações do curso</div>
