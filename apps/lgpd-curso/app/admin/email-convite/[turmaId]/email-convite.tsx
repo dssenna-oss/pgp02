@@ -1,9 +1,21 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Copy, Mail, Users, RotateCcw, Info } from "lucide-react";
+import {
+  Copy,
+  Mail,
+  Users,
+  User,
+  RotateCcw,
+  Info,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
+
+type Participante = { nome: string; email: string };
 
 type Props = {
   turmaId: string;
@@ -11,7 +23,7 @@ type Props = {
   cidade: string;
   acessoInicio: string | null;
   acessoFim: string | null;
-  emails: string[];
+  participantes: Participante[];
   baseUrl: string;
 };
 
@@ -24,9 +36,18 @@ function dataLonga(iso: string): string {
   });
 }
 
+// Substitui o marcador [nome] do modelo pelo nome do participante. Quando o
+// participante não tem nome cadastrado, remove o vocativo para o texto não
+// ficar "Olá, !". No modelo genérico, [nome] é mantido (para mala direta).
+function personalizar(texto: string, nome: string): string {
+  if (nome) return texto.split("[nome]").join(nome);
+  return texto.split("Olá, [nome]!").join("Olá!").split("[nome], ").join("");
+}
+
 // ---------------------------------------------------------------------------
 // Conteúdo do e-mail (HTML com estilos inline — exigência dos clientes de
-// e-mail, que ignoram <style> e classes CSS).
+// e-mail, que ignoram <style> e classes CSS). O marcador [nome] é trocado
+// na hora de copiar.
 // ---------------------------------------------------------------------------
 
 const ETAPAS: { titulo: string; desc: string }[] = [
@@ -109,12 +130,14 @@ function buildEmailHtml(opts: {
       </div>`,
   ).join("");
 
-  const dinamicaHtml = dinamicaBullets(cidade).map(
-    (b) => `
+  const dinamicaHtml = dinamicaBullets(cidade)
+    .map(
+      (b) => `
       <div style="margin-bottom:10px;font-size:14px;line-height:1.5;color:#1f2937;">
         <span style="color:#2563EB;font-weight:700;">&#9656;</span>&nbsp; ${b}
       </div>`,
-  ).join("");
+    )
+    .join("");
 
   const telasHtml = TELAS.map(
     (t) => `
@@ -131,7 +154,7 @@ function buildEmailHtml(opts: {
   </div>
 
   <div style="padding:28px;">
-    <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 14px;">Olá!</p>
+    <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 14px;">Olá, [nome]!</p>
     <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 14px;">
       Estamos muito perto de começar o <b>Curso Prático de LGPD</b> — turma <b>${turmaNome}</b> — e o seu nome está na lista de inscritos. Antes da aula, precisamos de um passo rápido seu: <b>confirmar a sua presença</b>. Isso ajuda a organizar os grupos e garante o seu lugar.
     </p>
@@ -161,7 +184,7 @@ function buildEmailHtml(opts: {
     </div>
 
     <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 4px;">
-      Conte com a gente nessa. Confirme a sua presença agora e garanta o seu lugar:
+      [nome], Conte com a gente nessa. Confirme a sua presença agora e garanta o seu lugar:
     </p>
 
     ${botaoConfirmar(confirmUrl)}
@@ -196,7 +219,7 @@ export function EmailConvite({
   cidade,
   acessoInicio,
   acessoFim,
-  emails,
+  participantes,
   baseUrl,
 }: Props) {
   const emailRef = useRef<HTMLDivElement>(null);
@@ -204,6 +227,9 @@ export function EmailConvite({
   const [assunto, setAssunto] = useState(
     `Confirme sua presença — Curso Prático de LGPD (turma ${turmaNome})`,
   );
+
+  // -1 = modelo genérico (mantém [nome]); 0..n-1 = participante selecionado.
+  const [selecionado, setSelecionado] = useState(-1);
 
   const confirmUrl = `${baseUrl}/confirmar/${turmaId}`;
 
@@ -220,43 +246,54 @@ export function EmailConvite({
     return "Além da aula prática, o app fica liberado por um período extra para você rever todo o conteúdo no seu ritmo — as datas serão informadas em breve.";
   }, [acessoInicio, acessoFim]);
 
+  // Modelo do e-mail — constante (com [nome]). Não muda ao trocar de
+  // participante, então as edições do facilitador no texto são preservadas.
   const emailHtml = useMemo(
     () => buildEmailHtml({ turmaNome, cidade, confirmUrl, acessoTexto, baseUrl }),
     [turmaNome, cidade, confirmUrl, acessoTexto, baseUrl],
   );
 
-  function copiar(tipo: "email" | "destinatarios" | "assunto") {
-    if (tipo === "assunto") {
-      navigator.clipboard.writeText(assunto).then(
-        () => toast.success("Assunto copiado."),
-        () => toast.error("Não foi possível copiar."),
-      );
+  const atual = selecionado >= 0 ? participantes[selecionado] : null;
+  const destinatarios = atual ? [atual.email] : participantes.map((p) => p.email);
+
+  function copiarTexto(texto: string, msg: string) {
+    navigator.clipboard.writeText(texto).then(
+      () => toast.success(msg),
+      () => toast.error("Não foi possível copiar."),
+    );
+  }
+
+  function copiarDestinatarios() {
+    if (destinatarios.length === 0) {
+      toast.error("Nenhum participante cadastrado nesta turma ainda.");
       return;
     }
-    if (tipo === "destinatarios") {
-      if (emails.length === 0) {
-        toast.error("Nenhum e-mail cadastrado nesta turma ainda.");
-        return;
-      }
-      navigator.clipboard.writeText(emails.join(", ")).then(
-        () => toast.success(`${emails.length} destinatário(s) copiado(s).`),
-        () => toast.error("Não foi possível copiar."),
-      );
-      return;
-    }
-    // tipo === "email"
+    copiarTexto(
+      destinatarios.join(", "),
+      atual ? "Destinatário copiado." : `${destinatarios.length} destinatário(s) copiado(s).`,
+    );
+  }
+
+  function copiarEmail() {
     const div = emailRef.current;
     if (!div) return;
     const clone = div.cloneNode(true) as HTMLElement;
     clone.removeAttribute("contenteditable");
     clone.querySelectorAll("[contenteditable]").forEach((el) => el.removeAttribute("contenteditable"));
-    const html = clone.outerHTML;
-    const texto = div.innerText;
-    copiarRico(html, texto, div);
+    let html = clone.outerHTML;
+    let texto = div.innerText;
+    // Genérico mantém [nome]; participante tem o nome aplicado.
+    if (atual) {
+      html = personalizar(html, atual.nome);
+      texto = personalizar(texto, atual.nome);
+    }
+    const msg = atual
+      ? `E-mail de ${atual.nome || atual.email} copiado! Cole no corpo da mensagem (Ctrl+V).`
+      : "E-mail copiado! Cole no corpo da mensagem (Ctrl+V).";
+    copiarRico(html, texto, div, msg);
   }
 
-  function copiarRico(html: string, texto: string, node: HTMLElement) {
-    const okMsg = "E-mail copiado! Cole no corpo da mensagem (Ctrl+V).";
+  function copiarRico(html: string, texto: string, node: HTMLElement, msg: string) {
     if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
       navigator.clipboard
         .write([
@@ -266,16 +303,16 @@ export function EmailConvite({
           }),
         ])
         .then(
-          () => toast.success(okMsg),
-          () => copiarPorSelecao(node, okMsg),
+          () => toast.success(msg),
+          () => copiarPorSelecao(node, msg),
         );
     } else {
-      copiarPorSelecao(node, okMsg);
+      copiarPorSelecao(node, msg);
     }
   }
 
   // Fallback: seleciona o nó renderizado e usa execCommand (copia formatado).
-  function copiarPorSelecao(node: HTMLElement, okMsg: string) {
+  function copiarPorSelecao(node: HTMLElement, msg: string) {
     try {
       const range = document.createRange();
       range.selectNode(node);
@@ -284,7 +321,7 @@ export function EmailConvite({
       sel?.addRange(range);
       const ok = document.execCommand("copy");
       sel?.removeAllRanges();
-      if (ok) toast.success(okMsg);
+      if (ok) toast.success(msg);
       else toast.error("Não foi possível copiar — selecione o e-mail manualmente.");
     } catch {
       toast.error("Não foi possível copiar — selecione o e-mail manualmente.");
@@ -296,6 +333,8 @@ export function EmailConvite({
     toast.success("Modelo restaurado.");
   }
 
+  const totalPart = participantes.length;
+
   return (
     <div className="space-y-5">
       {/* Como usar */}
@@ -303,34 +342,116 @@ export function EmailConvite({
         <div className="flex items-center gap-1.5 text-sm font-semibold text-blue-900 mb-2">
           <Info className="h-4 w-4" /> Como enviar este convite
         </div>
-        <ol className="text-[13px] text-blue-900 space-y-1 list-decimal pl-5">
-          <li>Copie os <b>destinatários</b> e cole no campo <b>Cco</b> (cópia oculta) do seu e-mail — assim um inscrito não vê o e-mail do outro.</li>
-          <li>Copie o <b>assunto</b> e cole no campo de assunto.</li>
-          <li>Clique em <b>Copiar e-mail</b> e cole no corpo da mensagem (Ctrl+V) — a formatação vai junto.</li>
-          <li>Ajuste o que quiser direto no texto abaixo antes de copiar, revise e envie.</li>
+        <p className="text-[13px] text-blue-900 mb-1">
+          <b>Para enviar com o nome de cada pessoa:</b>
+        </p>
+        <ol className="text-[13px] text-blue-900 space-y-1 list-decimal pl-5 mb-2">
+          <li>Em <b>"Para quem enviar"</b>, escolha um participante — o e-mail passa a falar com ele pelo nome.</li>
+          <li>Copie o <b>destinatário</b>, o <b>assunto</b> e o <b>e-mail</b>, cole no seu Gmail/Outlook e envie.</li>
+          <li>Clique em <b>"Próximo"</b> e repita para a próxima pessoa.</li>
         </ol>
+        <p className="text-[13px] text-blue-900">
+          <b>Para enviar de uma vez para todos:</b> escolha <b>"Modelo genérico"</b>. O texto mantém
+          a marca <code className="bg-blue-100 px-1 rounded">[nome]</code> — use a mala direta
+          (mail merge) do seu e-mail, ou envie assim mesmo.
+        </p>
       </div>
 
-      {/* Destinatários */}
+      {/* Para quem enviar */}
       <div className="border rounded-lg bg-white p-4">
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 text-sm font-semibold">
-            <Users className="h-4 w-4 text-brand-600" />
-            Destinatários ({emails.length})
-          </div>
-          <Button size="sm" variant="outline" onClick={() => copiar("destinatarios")}>
-            <Copy className="h-4 w-4" /> Copiar destinatários
-          </Button>
+        <div className="flex items-center gap-1.5 text-sm font-semibold mb-2">
+          <Users className="h-4 w-4 text-brand-600" />
+          Para quem enviar
         </div>
-        {emails.length > 0 ? (
-          <div className="bg-gray-50 border rounded p-2 text-[11px] font-mono text-gray-700 max-h-24 overflow-y-auto break-all">
-            {emails.join(", ")}
-          </div>
-        ) : (
+
+        {totalPart === 0 ? (
           <p className="text-xs text-gray-500">
-            Nenhum e-mail cadastrado nesta turma. Volte ao <b>Controle de turma</b>, clique em
-            <b> Gerenciar</b> na turma e cole a lista de e-mails dos inscritos.
+            Nenhum participante cadastrado nesta turma. Volte ao <b>Controle de turma</b>, clique
+            em <b>Gerenciar</b> na turma e cole a lista de nomes e e-mails dos inscritos.
           </p>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 flex-wrap">
+              <select
+                value={selecionado}
+                onChange={(e) => setSelecionado(Number(e.target.value))}
+                className="flex-1 min-w-[200px] px-3 py-2 border rounded-md text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+              >
+                <option value={-1}>— Modelo genérico (todos, com [nome]) —</option>
+                {participantes.map((p, i) => (
+                  <option key={p.email} value={i}>
+                    {p.nome || "(sem nome)"} — {p.email}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelecionado((s) => Math.max(-1, s - 1))}
+                  disabled={selecionado <= -1}
+                  title="Anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelecionado((s) => Math.min(totalPart - 1, s + 1))}
+                  disabled={selecionado >= totalPart - 1}
+                  title="Próximo"
+                >
+                  Próximo <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-2 text-xs text-gray-600 flex items-center gap-1.5">
+              {atual ? (
+                <>
+                  <User className="h-3.5 w-3.5 text-brand-600" />
+                  <span>
+                    Enviando para <b>{atual.nome || atual.email}</b> — participante{" "}
+                    {selecionado + 1} de {totalPart}.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Users className="h-3.5 w-3.5 text-brand-600" />
+                  <span>
+                    Modelo genérico para todos os <b>{totalPart}</b> inscritos (texto mantém [nome]).
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Destinatário(s) */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1 flex-wrap gap-2">
+                <span className="text-xs font-medium text-gray-700">
+                  {atual ? "Destinatário" : `Destinatários (${destinatarios.length})`}
+                </span>
+                <div className="flex gap-2">
+                  {atual && (
+                    <Button size="sm" variant="ghost" asChild>
+                      <a
+                        href={`mailto:${atual.email}?subject=${encodeURIComponent(assunto)}`}
+                        title="Abre seu programa de e-mail com destinatário e assunto preenchidos"
+                      >
+                        <ExternalLink className="h-4 w-4" /> Abrir no e-mail
+                      </a>
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" onClick={copiarDestinatarios}>
+                    <Copy className="h-4 w-4" /> Copiar
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-gray-50 border rounded p-2 text-[11px] font-mono text-gray-700 max-h-24 overflow-y-auto break-all">
+                {destinatarios.join(", ")}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -341,7 +462,7 @@ export function EmailConvite({
             <Mail className="h-4 w-4 text-brand-600" />
             Assunto
           </div>
-          <Button size="sm" variant="outline" onClick={() => copiar("assunto")}>
+          <Button size="sm" variant="outline" onClick={() => copiarTexto(assunto, "Assunto copiado.")}>
             <Copy className="h-4 w-4" /> Copiar assunto
           </Button>
         </div>
@@ -360,17 +481,25 @@ export function EmailConvite({
             Corpo do e-mail
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="ghost" onClick={restaurar} title="Desfazer as edições e voltar ao modelo original">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={restaurar}
+              title="Desfazer as edições e voltar ao modelo original"
+            >
               <RotateCcw className="h-4 w-4" /> Restaurar modelo
             </Button>
-            <Button size="sm" onClick={() => copiar("email")}>
-              <Copy className="h-4 w-4" /> Copiar e-mail
+            <Button size="sm" onClick={copiarEmail}>
+              <Copy className="h-4 w-4" />
+              {atual ? `Copiar e-mail de ${atual.nome || "destinatário"}` : "Copiar e-mail"}
             </Button>
           </div>
         </div>
         <p className="text-[11px] text-gray-500 mb-3">
-          Clique em qualquer texto abaixo para editar. As telas do app aparecem no e-mail quando ele
-          é aberto pelo destinatário.
+          Clique em qualquer texto abaixo para editar. Onde aparece{" "}
+          <code className="bg-gray-100 px-1 rounded">[nome]</code>, entra o nome do participante
+          escolhido na hora de copiar. As telas do app aparecem no e-mail quando ele é aberto pelo
+          destinatário.
         </p>
 
         {/* Pré-visualização — o quadro cinza imita a caixa de entrada */}

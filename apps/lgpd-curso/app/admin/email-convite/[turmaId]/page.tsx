@@ -43,14 +43,17 @@ export default async function Page({ params }: { params: { turmaId: string } }) 
     );
   }
 
-  const emails = normalizarParticipantes(turma.participantes).map((p) => p.email);
+  const participantes = normalizarParticipantes(turma.participantes).map((p) => ({
+    nome: p.nome,
+    email: p.email,
+  }));
 
   return (
     <div className="max-w-3xl mx-auto">
       <PageHeader
         missao="Admin"
         titulo="E-mail de convite"
-        descricao={`Modelo pronto e editável para enviar aos inscritos da turma "${turma.nome}". Edite o que quiser direto no texto, copie e envie pelo seu e-mail.`}
+        descricao={`Modelo pronto e editável para enviar aos inscritos da turma "${turma.nome}". Personalize pelo nome de cada participante, edite o que quiser e copie para enviar.`}
       />
       <EmailConvite
         turmaId={turma.id}
@@ -58,7 +61,7 @@ export default async function Page({ params }: { params: { turmaId: string } }) 
         cidade={turma.cidade}
         acessoInicio={turma.acessoInicio ? turma.acessoInicio.toISOString() : null}
         acessoFim={turma.acessoFim ? turma.acessoFim.toISOString() : null}
-        emails={emails}
+        participantes={participantes}
         baseUrl={BASE_URL}
       />
     </div>

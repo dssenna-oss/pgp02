@@ -17,7 +17,7 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
-import { normalizarParticipantes, parseEmails } from "@/lib/participantes-turma";
+import { normalizarParticipantes, parseParticipantes } from "@/lib/participantes-turma";
 import toast from "react-hot-toast";
 
 type Turma = {
@@ -46,10 +46,12 @@ export function ControleTurmaModal({ turma }: { turma: Turma }) {
 
   const [inicio, setInicio] = useState(() => paraInputDate(turma.acessoInicio));
   const [fim, setFim] = useState(() => paraInputDate(turma.acessoFim));
-  const [emailsTexto, setEmailsTexto] = useState(() => salvos.map((p) => p.email).join("\n"));
+  const [emailsTexto, setEmailsTexto] = useState(() =>
+    salvos.map((p) => (p.nome ? `${p.nome} <${p.email}>` : p.email)).join("\n"),
+  );
 
-  // Prévia ao vivo de quantos e-mails válidos o texto colado contém.
-  const emailsValidos = useMemo(() => parseEmails(emailsTexto), [emailsTexto]);
+  // Prévia ao vivo de quantos participantes válidos o texto contém.
+  const parsed = useMemo(() => parseParticipantes(emailsTexto), [emailsTexto]);
   const confirmados = salvos.filter((p) => p.confirmado).length;
 
   function salvar() {
@@ -128,21 +130,25 @@ export function ControleTurmaModal({ turma }: { turma: Turma }) {
               Participantes inscritos
             </h3>
             <p className="text-[11px] text-gray-500 mb-2">
-              Cole os e-mails dos inscritos — um por linha, ou separados por vírgula. Se a lista
-              estiver no Excel, basta selecionar a coluna, copiar e colar. O sistema limpa
-              duplicados e ignora o que não for e-mail válido.
+              Cole os participantes — um por linha, com o nome e o e-mail. Forma mais fácil:
+              abra a planilha no Excel, selecione as colunas de nome e e-mail, copie e cole
+              aqui. O sistema separa o nome do e-mail sozinho, remove duplicados e descarta o
+              que estiver inválido.
             </p>
             <Textarea
               rows={6}
               value={emailsTexto}
               onChange={(e) => setEmailsTexto(e.target.value)}
-              placeholder={"maria.silva@email.com\njoao.souza@email.com\n..."}
+              placeholder={"Maria Silva\tmaria.silva@email.com\nJoão Souza\tjoao.souza@email.com"}
               className="font-mono text-xs"
             />
             <div className="mt-1.5 flex items-center gap-3 text-[11px] text-gray-600">
               <span className="inline-flex items-center gap-1">
-                <Users className="h-3 w-3" /> {emailsValidos.length} e-mail(s) válido(s)
+                <Users className="h-3 w-3" /> {parsed.length} participante(s)
               </span>
+              {parsed.length > 0 && (
+                <span className="text-gray-400">{parsed.filter((p) => p.nome).length} com nome</span>
+              )}
               {salvos.length > 0 && (
                 <span className="inline-flex items-center gap-1 text-emerald-700">
                   <CheckCircle2 className="h-3 w-3" /> {confirmados} de {salvos.length} confirmaram
@@ -152,13 +158,16 @@ export function ControleTurmaModal({ turma }: { turma: Turma }) {
 
             {/* Status das confirmações já salvas */}
             {salvos.length > 0 && (
-              <div className="mt-2 border rounded-md max-h-40 overflow-y-auto divide-y bg-gray-50">
+              <div className="mt-2 border rounded-md max-h-44 overflow-y-auto divide-y bg-gray-50">
                 {salvos.map((p) => (
                   <div
                     key={p.email}
-                    className="flex items-center justify-between px-2.5 py-1.5 text-xs"
+                    className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs"
                   >
-                    <span className="font-mono truncate mr-2">{p.email}</span>
+                    <div className="min-w-0">
+                      {p.nome && <div className="font-medium truncate">{p.nome}</div>}
+                      <div className="font-mono text-[10px] text-gray-500 truncate">{p.email}</div>
+                    </div>
                     {p.confirmado ? (
                       <span className="shrink-0 inline-flex items-center gap-1 text-emerald-700 font-medium">
                         <CheckCircle2 className="h-3.5 w-3.5" /> Confirmou
@@ -173,8 +182,8 @@ export function ControleTurmaModal({ turma }: { turma: Turma }) {
               </div>
             )}
             <p className="mt-1 text-[10px] text-gray-400">
-              A lista de status atualiza depois de salvar. Remover um e-mail do texto acima o
-              retira da turma.
+              A lista de status atualiza depois de salvar. Remover uma linha do texto acima
+              retira a pessoa da turma.
             </p>
           </section>
 
