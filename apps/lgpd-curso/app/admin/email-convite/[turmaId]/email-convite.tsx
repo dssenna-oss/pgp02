@@ -105,6 +105,20 @@ const TELAS: { arquivo: string; legenda: string }[] = [
   },
 ];
 
+// Bloco "Informações do curso" — exibido no final do e-mail. Valores
+// editáveis direto no texto da pré-visualização antes de copiar.
+const INFO_CURSO: { label: string; valor: string }[] = [
+  { label: "Local", valor: "IFES Campus Venda Nova do Imigrante" },
+  { label: "Data", valor: "25 e 26 de Maio" },
+  { label: "Carga Horária", valor: "12 h/a" },
+  { label: "Horário 25 de Maio", valor: "08h30 às 17h30" },
+  { label: "Horário 26 de Maio", valor: "08h30 às 12h30" },
+];
+
+const INSTRUTOR_NOME = "Durval Senna da Silva";
+const INSTRUTOR_BIO =
+  "Servidor Público desde 1984, ocupante do cargo de Auditor de Controle Externo do TCEES, com atuação em diversos setores do Tribunal, como Gerência de RH, Coordenação do Núcleo de Controle de Documentos, Secretaria de Tecnologia da Informação, e atualmente um dos Coordenadores da Ouvidoria do Tribunal. Formação em Economia e pós-graduação em Gestão de RH e Gestão Pública. Pós-graduado em Lei Geral de Proteção de Dados – LGPD pela PUC Campinas. Certificado em curso de Proteção de Dados Pessoais pela DataPrivacy Brasil, parceira oficial da IAPP – International Association of Privacy Professionals. Certificado como Profissional de Privacidade de Dados – LGPD – e Certificação como Gestor de Privacidade pela empresa TIExames. CDPA - Certified Data Privacy Auditor. Cursos Google Generative AI Fundamentals. Pós-graduando em inteligência artificial e tecnologia na gestão pública - lato sensu. Treinamento EXIN Privacy and Data Protection Levels Essentials, Foundation &amp; Professional. Possui Certificação em Ouvidorias Públicas, Certificação em NPS – Net Promoter Score 2.0 – pela Track.Co. Atualmente coordena a Ouvidoria do TCE-ES e o Comitê Executivo de Proteção de Dados Pessoais do TCE-ES.";
+
 function botaoConfirmar(confirmUrl: string): string {
   return `
     <div style="text-align:center;margin:24px 0;">
@@ -145,6 +159,10 @@ function buildEmailHtml(opts: {
         <img src="${baseUrl}/email-assets/${t.arquivo}" alt="${t.legenda}" width="516" style="width:100%;max-width:516px;border:1px solid #e5e7eb;border-radius:8px;display:block;margin:0 auto;" />
         <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:6px;">${t.legenda}</div>
       </div>`,
+  ).join("");
+
+  const infoCursoHtml = INFO_CURSO.map(
+    (i) => `<div style="padding:2px 0;"><b>${i.label}:</b> ${i.valor}</div>`,
   ).join("");
 
   return `
@@ -191,6 +209,15 @@ function buildEmailHtml(opts: {
 
     <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:18px 0 4px;">Qualquer dúvida, é só responder este e-mail.</p>
     <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:0;">Até breve!<br /><b>Equipe do Curso Prático de LGPD</b></p>
+
+    <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;padding:20px;margin:24px 0 0;">
+      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Informações do curso</div>
+      <div style="font-size:14px;line-height:1.7;color:#1f2937;">${infoCursoHtml}</div>
+      <div style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px;">
+        <div style="font-size:14px;color:#1f2937;"><b>Instrutor:</b> ${INSTRUTOR_NOME}</div>
+        <p style="font-size:12.5px;line-height:1.6;color:#4b5563;margin:6px 0 0;">${INSTRUTOR_BIO}</p>
+      </div>
+    </div>
   </div>
 
   <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;text-align:center;">
