@@ -109,7 +109,7 @@ const TELAS: { arquivo: string; legenda: string }[] = [
 // Destaque "Nossas Recomendações" — orientações de preparação para o curso.
 const RECOMENDACOES: string[] = [
   "É altamente recomendável que você possa utilizar seu celular ao longo de todo o curso. Geralmente a Instituição patrocinadora oferece a possibilidade de acesso Wi-Fi. Se puder levar um Notebook, seria ideal.",
-  `Estude a Lei 13.709/2018 (LGPD) e leve uma cópia para consulta. Mas, para facilitar seu aprendizado, preparamos uma sugestão especial: no link a seguir você pode acessar resumos interativos de quase todos os artigos da LGPD. Basta clicar em <a href="https://heyzine.com/shelf/b96e0786a2.html" style="color:#2563eb;font-weight:600;">https://heyzine.com/shelf/b96e0786a2.html</a>.`,
+  `Estude a Lei 13.709/2018 (LGPD) e leve uma cópia para consulta. Mas, para facilitar seu aprendizado, preparamos uma sugestão especial: no link a seguir você pode acessar resumos interativos de quase todos os artigos da LGPD. Basta clicar em <a href="https://heyzine.com/shelf/b96e0786a2.html" style="color:#2563eb;font-weight:700;word-break:break-all;">https://heyzine.com/shelf/b96e0786a2.html</a>.`,
 ];
 
 // Bloco "Informações do curso" — exibido no final do e-mail. Valores
@@ -126,14 +126,6 @@ const INSTRUTOR_NOME = "Durval Senna da Silva";
 const INSTRUTOR_BIO =
   "Servidor Público desde 1984, ocupante do cargo de Auditor de Controle Externo do TCEES, com atuação em diversos setores do Tribunal, como Gerência de RH, Coordenação do Núcleo de Controle de Documentos, Secretaria de Tecnologia da Informação, e atualmente um dos Coordenadores da Ouvidoria do Tribunal. Formação em Economia e pós-graduação em Gestão de RH e Gestão Pública. Pós-graduado em Lei Geral de Proteção de Dados – LGPD pela PUC Campinas. Certificado em curso de Proteção de Dados Pessoais pela DataPrivacy Brasil, parceira oficial da IAPP – International Association of Privacy Professionals. Certificado como Profissional de Privacidade de Dados – LGPD – e Certificação como Gestor de Privacidade pela empresa TIExames. CDPA - Certified Data Privacy Auditor. Cursos Google Generative AI Fundamentals. Pós-graduando em inteligência artificial e tecnologia na gestão pública - lato sensu. Treinamento EXIN Privacy and Data Protection Levels Essentials, Foundation &amp; Professional. Possui Certificação em Ouvidorias Públicas, Certificação em NPS – Net Promoter Score 2.0 – pela Track.Co. Atualmente coordena a Ouvidoria do TCE-ES e o Comitê Executivo de Proteção de Dados Pessoais do TCE-ES.";
 
-function botaoConfirmar(confirmUrl: string): string {
-  return `
-    <div style="text-align:center;margin:24px 0;">
-      <a href="${confirmUrl}" style="display:inline-block;background:#2563EB;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 34px;border-radius:8px;">Confirmar minha presença</a>
-      <div style="font-size:12px;color:#6b7280;margin-top:8px;">Leva 10 segundos — é só informar o e-mail desta inscrição.</div>
-    </div>`;
-}
-
 function buildEmailHtml(opts: {
   turmaNome: string;
   cidade: string;
@@ -143,118 +135,132 @@ function buildEmailHtml(opts: {
 }): string {
   const { turmaNome, cidade, confirmUrl, acessoTexto, baseUrl } = opts;
 
-  const etapasHtml = ETAPAS.map(
-    (e, i) => `
-      <div style="margin-bottom:12px;">
-        <span style="display:inline-block;width:26px;height:26px;background:#2563EB;color:#ffffff;border-radius:13px;text-align:center;line-height:26px;font-size:13px;font-weight:700;vertical-align:top;">${i + 1}</span>
-        <span style="display:inline-block;width:90%;font-size:14px;line-height:1.5;color:#1f2937;padding-left:8px;"><b>${e.titulo}</b> — ${e.desc}</span>
-      </div>`,
-  ).join("");
+  // Cartão branco de seção. `extra` sobrescreve estilos (fundo/borda/padding).
+  const card = (corpo: string, extra = "") =>
+    `<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;padding:28px;margin-bottom:14px;${extra}">${corpo}</div>`;
+  // Cabeçalho de seção — barrinha de destaque + título (+ subtítulo opcional).
+  const tituloSecao = (texto: string, sub = "") =>
+    `<div style="width:40px;height:5px;background:#2563eb;border-radius:3px;margin-bottom:14px;"></div>` +
+    `<div style="font-size:21px;font-weight:800;color:#1e3a8a;margin:0 0 ${sub ? "4px" : "16px"};">${texto}</div>` +
+    (sub ? `<p style="font-size:15px;color:#6b7280;margin:0 0 18px;">${sub}</p>` : "");
 
-  const dinamicaHtml = dinamicaBullets(cidade)
+  const dinamica = dinamicaBullets(cidade);
+  const dinamicaHtml = dinamica
     .map(
-      (b) => `
-      <div style="margin-bottom:10px;font-size:14px;line-height:1.5;color:#1f2937;">
-        <span style="color:#2563EB;font-weight:700;">&#9656;</span>&nbsp; ${b}
-      </div>`,
+      (b, i) =>
+        `<div style="font-size:16px;line-height:1.6;color:#374151;${i < dinamica.length - 1 ? "margin-bottom:12px;" : ""}"><span style="color:#2563eb;font-weight:700;">&#9656;</span>&nbsp; ${b}</div>`,
     )
     .join("");
 
-  const telasHtml = TELAS.map(
-    (t) => `
-      <div style="margin-bottom:18px;">
-        <img src="${baseUrl}/email-assets/${t.arquivo}" alt="${t.legenda}" width="516" style="width:100%;max-width:516px;border:1px solid #e5e7eb;border-radius:8px;display:block;margin:0 auto;" />
-        <div style="font-size:12px;color:#6b7280;text-align:center;margin-top:6px;">${t.legenda}</div>
-      </div>`,
-  ).join("");
+  const etapasHtml = ETAPAS.map((e, i) => {
+    const fim = i === ETAPAS.length - 1 ? "0" : "16px";
+    return `<tr>
+        <td width="54" valign="top" style="padding:0 0 ${fim};"><div style="width:40px;height:40px;background:#2563eb;color:#ffffff;border-radius:50%;text-align:center;line-height:40px;font-size:17px;font-weight:700;">${i + 1}</div></td>
+        <td valign="top" style="padding:3px 0 ${fim};font-size:16px;line-height:1.55;color:#374151;"><b style="color:#1e3a8a;">${e.titulo}</b> — ${e.desc}</td>
+      </tr>`;
+  }).join("");
 
-  const infoCursoHtml = INFO_CURSO.map(
-    (i) => `<div style="padding:2px 0;"><b>${i.label}:</b> ${i.valor}</div>`,
-  ).join("");
+  const telasHtml = TELAS.map((t, i) => {
+    const mb = i === TELAS.length - 1 ? "" : "margin-bottom:18px;";
+    return `<div style="${mb}">
+        <img src="${baseUrl}/email-assets/${t.arquivo}" alt="${t.legenda}" style="display:block;width:100%;border:1px solid #e5e7eb;border-radius:10px;" />
+        <div style="font-size:13px;color:#6b7280;margin-top:7px;">${t.legenda}</div>
+      </div>`;
+  }).join("");
 
-  const recomendacoesHtml = RECOMENDACOES.map(
-    (r, i) => `
-      <div style="margin-bottom:${i < RECOMENDACOES.length - 1 ? "12px" : "0"};">
-        <span style="display:inline-block;width:24px;height:24px;background:#2563eb;color:#ffffff;border-radius:12px;text-align:center;line-height:24px;font-size:12px;font-weight:700;vertical-align:top;">${i + 1}</span>
-        <span style="display:inline-block;width:88%;font-size:14px;line-height:1.55;color:#1f2937;padding-left:8px;">${r}</span>
-      </div>`,
-  ).join("");
+  const recomendacoesHtml = RECOMENDACOES.map((r, i) => {
+    const fim = i === RECOMENDACOES.length - 1 ? "0" : "14px";
+    return `<tr>
+        <td width="44" valign="top" style="padding:0 0 ${fim};"><div style="width:32px;height:32px;background:#2563eb;color:#ffffff;border-radius:50%;text-align:center;line-height:32px;font-size:15px;font-weight:700;">${i + 1}</div></td>
+        <td valign="top" style="padding:2px 0 ${fim};font-size:16px;line-height:1.6;color:#1e3a8a;">${r}</td>
+      </tr>`;
+  }).join("");
+
+  const infoCursoHtml = INFO_CURSO.map((it, i) => {
+    const borda = i === INFO_CURSO.length - 1 ? "" : "border-bottom:1px solid #eef1f4;";
+    return `<div style="padding:10px 0;${borda}">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#2563eb;">${it.label}</div>
+        <div style="font-size:16.5px;color:#1f2937;margin-top:3px;">${it.valor}</div>
+      </div>`;
+  }).join("");
 
   return `
-  <div style="background:#1e3a8a;padding:34px 28px;text-align:center;">
-    <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#93c5fd;margin-bottom:8px;">Curso Prático de LGPD</div>
-    <div style="font-size:23px;font-weight:700;color:#ffffff;line-height:1.35;">A sua vaga está reservada.<br />Falta só você confirmar presença!</div>
+  <img src="${baseUrl}/slides-curso/slide-1.jpg" alt="Curso Prático de LGPD — 7 Passos Práticos de Adequação" style="display:block;width:100%;height:auto;" />
+
+  <div style="padding:16px;">
+
+    ${card(
+      `<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2563eb;margin-bottom:14px;text-align:center;">Curso Prático de LGPD &middot; Turma ${turmaNome}</div>
+      <div style="font-size:26px;font-weight:800;color:#1e3a8a;line-height:1.3;margin-bottom:16px;text-align:center;">Olá, [nome]!<br />Sua vaga está reservada.</div>
+      <p style="font-size:17px;line-height:1.65;color:#374151;margin:0 0 24px;">Estamos muito perto de começar o <b>Curso Prático de LGPD</b> e o seu nome está na lista de inscritos. Antes da aula, precisamos de um passo rápido seu: <b>confirmar a sua presença</b>. Isso ajuda a organizar os grupos e garante o seu lugar.</p>
+      <div style="text-align:center;">
+        <a href="${confirmUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;font-size:18px;font-weight:700;text-decoration:none;padding:17px 44px;border-radius:10px;">Confirmar minha presença</a>
+        <div style="font-size:13px;color:#6b7280;margin-top:12px;">Leva 10 segundos — é só informar o e-mail desta inscrição.</div>
+      </div>`,
+      "padding:32px 28px;",
+    )}
+
+    ${card(tituloSecao("Não é uma palestra. É prática.") + dinamicaHtml)}
+
+    ${card(
+      tituloSecao(
+        "As etapas da LGPD que você vai praticar",
+        "Em cerca de 3 horas, o seu grupo percorre o caminho completo de adequação à lei:",
+      ) +
+        `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;">${etapasHtml}</table>`,
+    )}
+
+    ${card(
+      tituloSecao(
+        "O app que você vai usar",
+        "Cada etapa acontece numa tela simples e guiada. Veja alguns exemplos:",
+      ) + telasHtml,
+    )}
+
+    ${card(
+      `<div style="width:40px;height:5px;background:#d97706;border-radius:3px;margin-bottom:14px;"></div>
+      <div style="font-size:19px;font-weight:800;color:#92400e;margin:0 0 10px;">Acesso estendido para revisão</div>
+      <p style="font-size:16px;line-height:1.6;color:#78350f;margin:0;">${acessoTexto}</p>`,
+      "background:#fffbeb;border:1px solid #fde68a;",
+    )}
+
+    ${card(
+      `<div style="width:40px;height:5px;background:#2563eb;border-radius:3px;margin-bottom:14px;"></div>
+      <div style="font-size:19px;font-weight:800;color:#1e3a8a;margin:0 0 16px;">Nossas Recomendações</div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;">${recomendacoesHtml}</table>`,
+      "background:#eff6ff;border:1px solid #bfdbfe;",
+    )}
+
+    ${card(tituloSecao("Informações do curso") + infoCursoHtml)}
+
+    ${card(
+      `<div style="width:40px;height:5px;background:#2563eb;border-radius:3px;margin-bottom:14px;"></div>
+      <div style="font-size:14px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#2563eb;margin-bottom:2px;">Instrutor</div>
+      <div style="font-size:20px;font-weight:800;color:#1e3a8a;margin:0 0 12px;">${INSTRUTOR_NOME}</div>
+      <p style="font-size:14px;line-height:1.65;color:#4b5563;margin:0;">${INSTRUTOR_BIO}</p>`,
+    )}
+
+    <div style="background:#1e3a8a;border-radius:14px;padding:32px 28px;text-align:center;">
+      <div style="font-size:19px;font-weight:800;color:#ffffff;line-height:1.4;margin-bottom:18px;">[nome], Conte com a gente nessa.<br />Confirme a sua presença e garanta o seu lugar:</div>
+      <a href="${confirmUrl}" style="display:inline-block;background:#fbbf24;color:#1e3a8a;font-size:18px;font-weight:800;text-decoration:none;padding:17px 44px;border-radius:10px;">Confirmar minha presença</a>
+      <p style="font-size:14px;line-height:1.6;color:#bfdbfe;margin:20px 0 0;">Qualquer dúvida, é só responder este e-mail.<br />Até breve! — Equipe do Curso Prático de LGPD</p>
+    </div>
+
   </div>
 
-  <div style="padding:28px;">
-    <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 14px;">Olá, [nome]!</p>
-    <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 14px;">
-      Estamos muito perto de começar o <b>Curso Prático de LGPD</b> — turma <b>${turmaNome}</b> — e o seu nome está na lista de inscritos. Antes da aula, precisamos de um passo rápido seu: <b>confirmar a sua presença</b>. Isso ajuda a organizar os grupos e garante o seu lugar.
-    </p>
-
-    ${botaoConfirmar(confirmUrl)}
-
-    <div style="background:#eff6ff;border-radius:10px;padding:20px;margin:24px 0;">
-      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Não é uma palestra. É prática.</div>
-      ${dinamicaHtml}
-    </div>
-
-    <div style="margin:24px 0;">
-      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 4px;">As etapas da LGPD que você vai praticar</div>
-      <p style="font-size:13px;color:#6b7280;margin:0 0 14px;">Em cerca de 3 horas, o seu grupo percorre o caminho completo de adequação à lei:</p>
-      ${etapasHtml}
-    </div>
-
-    <div style="margin:24px 0;">
-      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 4px;">O app que você vai usar</div>
-      <p style="font-size:13px;color:#6b7280;margin:0 0 14px;">Cada etapa acontece numa tela simples e guiada. Veja alguns exemplos:</p>
-      ${telasHtml}
-    </div>
-
-    <div style="background:#fef3c7;border-left:4px solid #d97706;border-radius:6px;padding:16px;margin:24px 0;">
-      <div style="font-size:14px;font-weight:700;color:#78350f;margin:0 0 4px;">Acesso estendido para revisão</div>
-      <p style="margin:0;font-size:14px;line-height:1.55;color:#78350f;">${acessoTexto}</p>
-    </div>
-
-    <p style="font-size:15px;line-height:1.6;color:#1f2937;margin:0 0 4px;">
-      [nome], Conte com a gente nessa. Confirme a sua presença agora e garanta o seu lugar:
-    </p>
-
-    ${botaoConfirmar(confirmUrl)}
-
-    <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:18px 0 4px;">Qualquer dúvida, é só responder este e-mail.</p>
-    <p style="font-size:14px;line-height:1.6;color:#1f2937;margin:0;">Até breve!<br /><b>Equipe do Curso Prático de LGPD</b></p>
-
-    <div style="background:#eff6ff;border-left:4px solid #2563eb;border-radius:6px;padding:18px 20px;margin:24px 0 0;">
-      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Nossas Recomendações</div>
-      ${recomendacoesHtml}
-    </div>
-
-    <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;padding:20px;margin:24px 0 0;">
-      <div style="font-size:16px;font-weight:700;color:#1e3a8a;margin:0 0 12px;">Informações do curso</div>
-      <div style="font-size:14px;line-height:1.7;color:#1f2937;">${infoCursoHtml}</div>
-      <div style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:14px;">
-        <div style="font-size:14px;color:#1f2937;"><b>Instrutor:</b> ${INSTRUTOR_NOME}</div>
-        <p style="font-size:12.5px;line-height:1.6;color:#4b5563;margin:6px 0 0;">${INSTRUTOR_BIO}</p>
-      </div>
-    </div>
-  </div>
-
-  <div style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:16px 28px;text-align:center;">
-    <div style="font-size:11px;line-height:1.5;color:#9ca3af;">
-      Curso Prático de LGPD &middot; Ambiente de treinamento — toda a prática acontece num cenário fictício, sem dados reais.
-    </div>
+  <div style="padding:6px 26px 24px;text-align:center;">
+    <div style="font-size:12px;line-height:1.5;color:#9ca3af;">Curso Prático de LGPD &middot; Ambiente de treinamento — toda a prática acontece num cenário fictício, sem dados reais.</div>
   </div>`;
 }
 
-// Estilo do "envelope" branco do e-mail — aplicado tanto na pré-visualização
-// quanto no HTML copiado.
+// Estilo do "envelope" do e-mail — aplicado tanto na pré-visualização quanto
+// no HTML copiado. Fundo cinza claro: os cartões brancos das seções "saltam".
 const CARD_STYLE: React.CSSProperties = {
-  maxWidth: 600,
+  maxWidth: 680,
   margin: "0 auto",
-  background: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 12,
+  background: "#f4f6f8",
+  border: "1px solid #e2e6ea",
+  borderRadius: 16,
   overflow: "hidden",
   fontFamily: "-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
   color: "#1f2937",
@@ -400,7 +406,7 @@ export function EmailConvite({
     win.document.write(
       `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />` +
         `<title>${titulo}</title>` +
-        `<style>@page{margin:14mm;}body{margin:0;background:#ffffff;}</style>` +
+        `<style>@page{margin:12mm;}body{margin:0;background:#ffffff;}</style>` +
         `</head><body>${html}` +
         `<script>window.onload=function(){window.print()};window.onafterprint=function(){window.close()};</script>` +
         `</body></html>`,
@@ -429,7 +435,8 @@ export function EmailConvite({
         <p className="text-[13px] text-blue-900">
           <b>Para enviar de uma vez para todos:</b> escolha <b>"Modelo genérico"</b>. O texto mantém
           a marca <code className="bg-blue-100 px-1 rounded">[nome]</code> — use a mala direta
-          (mail merge) do seu e-mail, ou envie assim mesmo.
+          (mail merge) do seu e-mail, ou envie assim mesmo. Você também pode usar o
+          <b> Baixar PDF</b> para anexar o convite.
         </p>
       </div>
 
