@@ -30,18 +30,18 @@ export type KpisGrupo = {
 };
 
 export function calcularMaturidade(k: KpisGrupo): number {
-  // Pilares ponderados (somam 100):
-  //   Governança institucional (Política do PGP) — implícita, 0 aqui · 10
-  //   Inventário (precisa estar APROVADO pelos 2 processos) · 25
+  // Mede SÓ o que o grupo faz nas missões — grupo que não começou = 0.
+  // Pilares ponderados (90 pontos brutos, normalizados pra 0-100 no fim):
+  //   Inventário (2 processos APROVADOS) · 25
   //   GAP — score direto · 20
   //   Aviso publicado · 15
   //   RIPDs aprovados · 10
   //   Riscos identificados · 10
   //   Gestão Terceiros · 5
   //   Canal DSR · 5
-  //   = 100
+  //   = 90 brutos · ×(100/90) no fim
 
-  let score = 10; // governança institucional baseline
+  let score = 0;
 
   // Inventário (25): 100% se 2 aprovados, 50% se 1 aprovado, 25% se algum submetido
   const invAprovadosFator =
@@ -68,7 +68,9 @@ export function calcularMaturidade(k: KpisGrupo): number {
   // DSR (5): basta ter 1 cadastrado pra ganhar 3, 2+ ganha 5
   score += k.dsr.total >= 2 ? 5 : k.dsr.total === 1 ? 3 : 0;
 
-  return Math.round(Math.min(100, score));
+  // Normaliza os 90 pontos brutos pra escala 0-100 (sem baseline: grupo
+  // que não fez nada = 0; grupo que fez tudo = 100).
+  return Math.round(Math.min(100, score * (100 / 90)));
 }
 
 export function nivelMaturidade(score: number): {
