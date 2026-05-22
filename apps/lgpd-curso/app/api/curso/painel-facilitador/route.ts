@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/auth-server";
 import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
 import { montarTimeline } from "@/lib/timeline";
 import { resumoPontuacao } from "@/lib/dsr-game";
+import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -21,6 +22,9 @@ export async function GET(req: NextRequest) {
 
   const turmaId = req.nextUrl.searchParams.get("turmaId");
   if (!turmaId) return NextResponse.json({ error: "turmaId obrigatório" }, { status: 400 });
+
+  // Auto-migração idempotente — esta query seleciona todas as colunas da turma.
+  await ensureColunasControleTurma();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },

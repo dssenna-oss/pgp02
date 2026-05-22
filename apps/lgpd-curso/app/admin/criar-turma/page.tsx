@@ -3,6 +3,7 @@ import { CriarTurmaForm } from "./criar-turma-form";
 import { TurmasList } from "./turmas-list";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
+import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 
 export const dynamic = "force-dynamic";
 // Neon pode levar 10-20s pra acordar. Folga pra absorver retry do Prisma.
@@ -10,6 +11,7 @@ export const maxDuration = 30;
 
 export default async function Page() {
   await requireAdmin();
+  await ensureColunasControleTurma();
   const turmas = await prisma.cursoTurma.findMany({
     include: {
       grupos: { include: { company: { include: { _count: { select: { users: true, inventories: true } } } } } },
@@ -21,8 +23,8 @@ export default async function Page() {
     <div className="max-w-4xl mx-auto">
       <PageHeader
         missao="Admin"
-        titulo="Criar Turma"
-        descricao="Cria turma + grupos PM/CM + 6 logins por grupo + 2 processos pré-cadastrados. Cada grupo é uma Company isolada; o slug da turma isola os logins de outras turmas."
+        titulo="Controle de Turma"
+        descricao="Cria e gerencia as turmas do curso. Cada turma cria grupos PM/CM + 6 logins por grupo + 2 processos pré-cadastrados. Em cada turma você define o período de acesso ao app, registra os e-mails dos inscritos e gera o e-mail de convite."
       />
       <CriarTurmaForm />
       <div className="mt-10">

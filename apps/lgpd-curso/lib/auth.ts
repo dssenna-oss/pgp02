@@ -11,6 +11,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import { prisma } from "@/lib/prisma";
+import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -41,6 +42,40 @@ export const authOptions: NextAuthOptions = {
 
         if (!user.isActive) {
           throw new Error("Conta inativa. Procure o facilitador.");
+        }
+
+        // Auto-migração idempotente das colunas de Controle de Turma — roda em
+        // qualquer login (inclusive do facilitador), garantindo que as colunas
+        // existam antes de qualquer query que selecione todas as colunas de
+        // curso_turmas.
+        await ensureColunasControleTurma();
+
+        // Janela de acesso da turma — participantes só entram entre a data
+        // inicial e a final definidas pelo facilitador. O facilitador (ADMIN)
+        // entra sempre. Turma sem datas configuradas = sem restrição.
+        if (user.role !== "ADMIN" && user.companyId) {
+          const grupo = await prisma.cursoGrupo.findUnique({
+            where: { companyId: user.companyId },
+            select: {
+              turma: { select: { acessoInicio: true, acessoFim: true } },
+            },
+          });
+          const turma = grupo?.turma;
+          if (turma?.acessoInicio || turma?.acessoFim) {
+            const agora = new Date();
+            const fmt = (d: Date) =>
+              d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+            if (turma.acessoInicio && agora < turma.acessoInicio) {
+              throw new Error(
+                `O acesso a esta turma abre em ${fmt(turma.acessoInicio)}. Volte nessa data para entrar.`,
+              );
+            }
+            if (turma.acessoFim && agora > turma.acessoFim) {
+              throw new Error(
+                `O período de acesso a esta turma encerrou em ${fmt(turma.acessoFim)}. Procure o facilitador.`,
+              );
+            }
+          }
         }
 
         return {

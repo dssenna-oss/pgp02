@@ -2,13 +2,27 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Printer, Users, Target, KeyRound } from "lucide-react";
+import { Trash2, Printer, Target, KeyRound, CalendarDays, Users, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
+import { ControleTurmaModal } from "./controle-turma-modal";
+import { normalizarParticipantes } from "@/lib/participantes-turma";
 import toast from "react-hot-toast";
 
 type Turma = any;
+
+// Formata um instante ISO como "DD/MM" no fuso de Brasília.
+function diaMes(valor: string | null | undefined): string {
+  if (!valor) return "";
+  const d = new Date(valor);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  });
+}
 
 export function TurmasList({ turmas }: { turmas: Turma[] }) {
   const router = useRouter();
@@ -90,6 +104,35 @@ export function TurmasList({ turmas }: { turmas: Turma[] }) {
                   )}
                   {t.nome}
                 </div>
+                {(() => {
+                  const inscritos = normalizarParticipantes(t.participantes);
+                  const confirmados = inscritos.filter((p) => p.confirmado).length;
+                  const temJanela = t.acessoInicio || t.acessoFim;
+                  if (!temJanela && inscritos.length === 0) return null;
+                  return (
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-normal text-gray-500">
+                      {temJanela && (
+                        <span className="inline-flex items-center gap-1" title="Período de acesso ao app">
+                          <CalendarDays className="h-3 w-3" />
+                          {t.acessoInicio ? diaMes(t.acessoInicio) : "…"} a{" "}
+                          {t.acessoFim ? diaMes(t.acessoFim) : "…"}
+                        </span>
+                      )}
+                      {inscritos.length > 0 && (
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {inscritos.length} inscrito(s)
+                        </span>
+                      )}
+                      {confirmados > 0 && (
+                        <span className="inline-flex items-center gap-1 text-emerald-600">
+                          <CheckCircle2 className="h-3 w-3" />
+                          {confirmados} confirmado(s)
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
               </TD>
               <TD className="text-xs font-mono text-gray-600">
                 {t.slug ? (
@@ -116,6 +159,7 @@ export function TurmasList({ turmas }: { turmas: Turma[] }) {
               <TD className="text-xs">{new Date(t.createdAt).toLocaleDateString("pt-BR")}</TD>
               <TD>
                 <div className="flex justify-end gap-1">
+                  <ControleTurmaModal turma={t} />
                   <Button
                     size="sm" variant="ghost"
                     onClick={() => toggleProximoCurso(t.id, t.nome, t.proximoCurso)}

@@ -9,6 +9,7 @@ import { papeisPorOrgao, processosPorOrgao } from "@/lib/seeds/processos-vegas";
 import { terceirosPorOrgao } from "@/lib/seeds/terceiros-vegas";
 import { slugifyTurma } from "@/lib/slugify";
 import { ensureColunaSenhaExibicao } from "@/lib/coluna-senha-turma";
+import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 
 // ~10 ops sequenciais no banco por grupo (company + cursoGrupo + 5 users +
 // 2 processos) + bcrypt hash. Com Neon dormindo pode passar de 15s.
@@ -36,6 +37,10 @@ export async function POST(req: NextRequest) {
 
   if (!nome) return NextResponse.json({ error: "Nome da turma obrigatório" }, { status: 400 });
   if (qtdPM + qtdCM < 1) return NextResponse.json({ error: "Pelo menos 1 grupo" }, { status: 400 });
+
+  // Garante as colunas de Controle de Turma antes de qualquer query que
+  // selecione todas as colunas de curso_turmas (auto-migração idempotente).
+  await ensureColunasControleTurma();
 
   // Verifica se a turma já existe
   const existing = await prisma.cursoTurma.findUnique({ where: { nome } });
