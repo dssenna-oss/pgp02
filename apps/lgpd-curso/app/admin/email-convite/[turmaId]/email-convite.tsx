@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  FileDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
@@ -379,6 +380,35 @@ export function EmailConvite({
     toast.success("Modelo restaurado.");
   }
 
+  // Gera o convite como PDF (via janela de impressão do navegador). Útil
+  // para anexar no e-mail. O PDF nunca mostra o marcador [nome]: personaliza
+  // se houver participante selecionado, senão usa a versão sem vocativo.
+  function baixarPdf() {
+    const div = emailRef.current;
+    if (!div) return;
+    const clone = div.cloneNode(true) as HTMLElement;
+    clone.removeAttribute("contenteditable");
+    clone.querySelectorAll("[contenteditable]").forEach((el) => el.removeAttribute("contenteditable"));
+    const html = personalizar(clone.outerHTML, atual ? atual.nome : "");
+    const titulo = `Convite - Curso Prático de LGPD${atual ? " - " + (atual.nome || atual.email) : ""}`;
+
+    const win = window.open("", "_blank");
+    if (!win) {
+      toast.error("O navegador bloqueou a janela. Libere os pop-ups e tente de novo.");
+      return;
+    }
+    win.document.write(
+      `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8" />` +
+        `<title>${titulo}</title>` +
+        `<style>@page{margin:14mm;}body{margin:0;background:#ffffff;}</style>` +
+        `</head><body>${html}` +
+        `<script>window.onload=function(){window.print()};window.onafterprint=function(){window.close()};</script>` +
+        `</body></html>`,
+    );
+    win.document.close();
+    toast.success('Abrindo a impressão — escolha "Salvar como PDF" no destino.');
+  }
+
   const totalPart = participantes.length;
 
   return (
@@ -526,7 +556,7 @@ export function EmailConvite({
             <Mail className="h-4 w-4 text-brand-600" />
             Corpo do e-mail
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               size="sm"
               variant="ghost"
@@ -534,6 +564,14 @@ export function EmailConvite({
               title="Desfazer as edições e voltar ao modelo original"
             >
               <RotateCcw className="h-4 w-4" /> Restaurar modelo
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={baixarPdf}
+              title="Gera o convite como arquivo PDF para anexar no e-mail"
+            >
+              <FileDown className="h-4 w-4" /> Baixar PDF
             </Button>
             <Button size="sm" onClick={copiarEmail}>
               <Copy className="h-4 w-4" />
