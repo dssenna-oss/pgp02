@@ -19,6 +19,7 @@ const DPO_ONLY_DASHBOARD_PATHS = [
 // dependem de companyId, então o ADMIN pode acessá-las pra projetar.
 // Exceção ao redirecionamento de admin que sai de /dashboard.
 const ADMIN_DASHBOARD_PERMITIDO = [
+  "/dashboard/conteudos-didaticos",
   "/dashboard/fase-preliminar",
   "/dashboard/fase-1",
   "/dashboard/fase-2",
