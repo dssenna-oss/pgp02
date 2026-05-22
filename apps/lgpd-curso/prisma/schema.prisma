@@ -103,6 +103,15 @@ model CursoTurma {
   // (lib/gap-catalogo.ts). Vazio = usa PACOTE_DEFAULT. Permite ao facilitador
   // adaptar o GAP ao perfil do grupo (técnicos / jurídicos / gestão).
   gapPacote    Int[]     @default([])
+  // Janela de acesso ao app pelos participantes — período "extra" de revisão
+  // dos conteúdos (da data inicial do curso até a data limite). Fora dela o
+  // login do participante é bloqueado; o facilitador (ADMIN) entra sempre.
+  // Null = sem restrição. Backfill automático via lib/colunas-controle-turma.ts.
+  acessoInicio  DateTime?
+  acessoFim     DateTime?
+  // Lista de e-mails reais dos inscritos pra o convite de confirmação de
+  // presença. JSON: [{ email, confirmado, confirmadoEm }]. Null = lista vazia.
+  participantes Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
