@@ -11,7 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 import {
-  parseEmails,
+  parseParticipantes,
   normalizarParticipantes,
   mesclarParticipantes,
 } from "@/lib/participantes-turma";
@@ -67,12 +67,12 @@ export async function POST(req: NextRequest) {
   });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
-  // Mescla a lista de e-mails preservando as confirmações já registradas.
-  // Só mexe na lista se o texto veio no body (salvar só datas não a apaga).
+  // Mescla a lista preservando as confirmações já registradas. Só mexe na
+  // lista se o texto veio no body (salvar só datas não a apaga).
   const atuais = normalizarParticipantes(turma.participantes);
   let participantes = atuais;
   if (typeof body.participantesTexto === "string") {
-    participantes = mesclarParticipantes(atuais, parseEmails(body.participantesTexto));
+    participantes = mesclarParticipantes(atuais, parseParticipantes(body.participantesTexto));
   }
 
   const atualizada = await prisma.cursoTurma.update({
