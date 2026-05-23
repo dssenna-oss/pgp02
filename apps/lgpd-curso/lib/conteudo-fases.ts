@@ -290,21 +290,233 @@ const FASE_3: ConteudoFase = {
 
 // ─── PLACEHOLDERS — Fases 4 a 7 (preenchidas nas próximas fatias) ─────────
 
-const FASE_4_STUB: ConteudoFase = {
+const FASE_4: ConteudoFase = {
   slug: "fase-4",
   numero: 4,
   titulo: "Fase 4 — GAP Analysis",
-  subtitulo: "Diagnóstico de aderência aos controles da LGPD",
+  subtitulo: "Análise de lacunas entre o estado atual e os requisitos da LGPD",
   missao: "Antes da Missão M3 (GAP Analysis)",
   ebook: {
-    titulo: "Em breve",
-    descricao: "Conteúdo desta fase será adicionado na próxima fatia.",
-    url: "",
+    titulo: "Trilha LGPD Descomplicada — Clube do Servidor",
+    descricao:
+      "Biblioteca de e-books interativos sobre as 7 fases do PGP. Folheável, com vídeos embutidos e resumos.",
+    url: "https://heyzine.com/shelf/trilha_lgpd_descomplicada.html",
   },
-  descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
-  comoProc: [],
-  checklist: [],
-  pratica: [],
+  descricao: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "Com base no mapeamento e análise de riscos da Fase 3, esta etapa identifica as lacunas (gaps) entre o estado atual da Instituição e os requisitos estabelecidos pela LGPD e boas práticas de proteção de dados.",
+    },
+    { tipo: "subtitulo", texto: "O que é GAP Analysis?" },
+    {
+      tipo: "paragrafo",
+      texto:
+        'É uma análise sistemática que compara o "estado atual" (AS-IS) com o "estado desejado" (TO-BE) de conformidade, identificando todas as lacunas que precisam ser endereçadas.',
+    },
+    { tipo: "subtitulo", texto: "Áreas Avaliadas" },
+    {
+      tipo: "lista",
+      itens: [
+        "Bases Legais: todos os tratamentos possuem base legal adequada e documentada?",
+        "Transparência: as políticas e avisos de privacidade são completos e acessíveis?",
+        "Direitos dos Titulares: há processos para atender às solicitações (Arts. 18 e 19)?",
+        "Segurança: as medidas de segurança são adequadas aos riscos?",
+        "Contratos: fornecedores e parceiros têm cláusulas adequadas (Art. 39)?",
+        "Governança: há políticas, procedimentos e documentação adequados?",
+        "Retenção: períodos de retenção estão definidos e respeitados?",
+        "Treinamento: colaboradores estão capacitados e conscientizados?",
+      ],
+    },
+    { tipo: "subtitulo", texto: "Priorização de Gaps" },
+    { tipo: "paragrafo", texto: "As lacunas devem ser priorizadas considerando:" },
+    {
+      tipo: "lista",
+      itens: [
+        "Criticidade do risco associado",
+        "Impacto potencial sobre os titulares",
+        "Exposição a sanções regulatórias",
+        "Esforço e custo de correção",
+        "Dependências entre gaps",
+      ],
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "aviso",
+        titulo: "Atenção",
+        texto:
+          "Esta análise é fundamental para priorizar as ações corretivas que serão implementadas na próxima fase (Plano de Ação). Seja completo e objetivo na identificação dos gaps, pois eles guiarão todo o plano de ação.",
+      },
+    },
+    { tipo: "subtitulo", texto: "Resultado Esperado" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Ao final desta fase, a Instituição deve ter um Relatório de GAP Analysis completo, com todas as lacunas identificadas, classificadas e priorizadas, servindo de base para o Plano de Ação da próxima fase.",
+    },
+  ],
+  comoProc: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "GAP Analysis é a fase que SEPARA órgãos honestos dos que estão fingindo. A regra é simples: medir maturidade real vale mais que parecer maduro. Algumas orientações pra esta fase no curso:",
+    },
+    { tipo: "subtitulo", texto: "1. ADERENTE significa praticado, não previsto" },
+    {
+      tipo: "paragrafo",
+      texto:
+        'A pegadinha mais comum: marcar ADERENTE porque "existe uma política no papel". Não. ADERENTE é "está sendo PRATICADO de verdade, posso provar com um caso real dos últimos 12 meses". Política guardada em pasta de PDF que ninguém abre não é aderência — é decoração.',
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "info",
+        titulo: "Régua honesta de classificação",
+        texto:
+          "ADERENTE = praticado E documentado · PARCIAL = praticado mas inconsistente OU documentado mas não praticado · NÃO ADERENTE = não praticado, mesmo que esteja no papel",
+      },
+    },
+    { tipo: "subtitulo", texto: "2. No curso, o pacote é enxuto — 10 controles" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Em uma adequação real, o GAP completo tem 119 controles em 28 domínios. Pra o jogo de 3h, curamos 10 controles que cobrem 5 áreas (Governança, Bases Legais, Direitos, Segurança, Incidentes) com 2 controles por área. A lição não é a profundidade — é o MÉTODO de classificar com honestidade.",
+    },
+    { tipo: "subtitulo", texto: "3. A linha de justificativa importa mais que a classificação" },
+    {
+      tipo: "paragrafo",
+      texto:
+        '"Não aderente" sem justificativa é confissão sem ação. "Não aderente — falta política de senhas formal; usuários compartilham logins administrativos" é insumo direto pro Plano de Ação. Capriche na justificativa: ela vira a primeira coluna do que o Plano vai resolver.',
+    },
+    { tipo: "subtitulo", texto: "4. Score baixo não é fracasso — é diagnóstico" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Score 30% honesto vale 10x mais que score 90% inflado. A ANPD não pune órgão por baixa maturidade declarada — pune por descumprimento sem reconhecimento. O órgão que documenta suas lacunas demonstra governança ativa; quem mascara, vira manchete quando algo dá errado.",
+    },
+    { tipo: "subtitulo", texto: "5. Apoio de outros setores é parte do método" },
+    {
+      tipo: "paragrafo",
+      texto:
+        'No app, controles podem ficar marcados como "APOIO PENDENTE" com indicação do setor solicitado (Procuradoria, TI, RH...). É honestidade institucional: nem todo controle o DPO consegue avaliar sozinho. No curso, observe quais grupos pedem apoio — é sinal de maturidade pedagógica, não de fraqueza.',
+    },
+  ],
+  checklist: [
+    {
+      id: "preparacao-gap-analysis",
+      titulo: "1. Preparação para GAP Analysis",
+      itens: [
+        { id: "revisar-inventario-riscos", texto: "Revise o inventário de dados e relatório de riscos da Fase 3" },
+        { id: "definir-metodologia-gap", texto: "Defina a metodologia de análise de lacunas" },
+        { id: "preparar-templates-gap", texto: "Prepare templates para documentação de gaps identificados" },
+        { id: "estudar-requisitos-lgpd", texto: "Estude detalhadamente os requisitos da LGPD aplicáveis" },
+      ],
+    },
+    {
+      id: "gap-bases-legais",
+      titulo: "2. GAP: Bases Legais e Consentimento",
+      itens: [
+        { id: "verificar-bases-legais", texto: "Verifique se todos os tratamentos possuem base legal adequada" },
+        { id: "avaliar-consentimentos", texto: "Avalie se os consentimentos são coletados de forma válida (específico, livre, informado)" },
+        { id: "verificar-documentacao-bases", texto: "Verifique se as bases legais estão documentadas para cada tratamento" },
+        { id: "identificar-tratamentos-sem-base", texto: "Identifique tratamentos sem base legal clara" },
+      ],
+    },
+    {
+      id: "gap-transparencia",
+      titulo: "3. GAP: Transparência e Direitos dos Titulares",
+      itens: [
+        { id: "avaliar-politica-privacidade", texto: "Avalie se a política de privacidade é completa e acessível" },
+        { id: "verificar-avisos-coleta", texto: "Verifique se há avisos de privacidade em todos os pontos de coleta" },
+        { id: "avaliar-processos-direitos", texto: "Avalie se há processos para atender direitos dos titulares (acesso, correção, exclusão)" },
+        { id: "verificar-canal-titular", texto: "Verifique se há canal claro para solicitações de titulares" },
+        { id: "avaliar-prazo-resposta", texto: "Avalie se há processo para responder solicitações no prazo legal" },
+      ],
+    },
+    {
+      id: "gap-seguranca",
+      titulo: "4. GAP: Medidas de Segurança",
+      itens: [
+        { id: "verificar-controles-acesso", texto: "Verifique lacunas nos controles de acesso" },
+        { id: "identificar-falta-criptografia", texto: "Identifique dados sensíveis não criptografados" },
+        { id: "avaliar-monitoramento", texto: "Avalie lacunas em logs e monitoramento" },
+        { id: "verificar-backup", texto: "Verifique adequação de backup e recuperação" },
+        { id: "identificar-vulnerabilidades", texto: "Identifique vulnerabilidades de segurança não tratadas" },
+      ],
+    },
+    {
+      id: "gap-contratos",
+      titulo: "5. GAP: Contratos e Fornecedores",
+      itens: [
+        { id: "verificar-clausulas-fornecedores", texto: "Verifique se contratos com fornecedores têm cláusulas de proteção de dados" },
+        { id: "avaliar-acordos-operadores", texto: "Avalie se há acordos formais de controlador-operador" },
+        { id: "verificar-diligencia-fornecedores", texto: "Verifique se há processo de due diligence de fornecedores" },
+        { id: "identificar-contratos-inadequados", texto: "Identifique contratos que precisam ser atualizados" },
+      ],
+    },
+    {
+      id: "gap-governanca",
+      titulo: "6. GAP: Governança e Documentação",
+      itens: [
+        { id: "verificar-politicas-internas", texto: "Verifique lacunas em políticas internas de proteção de dados" },
+        { id: "avaliar-procedimentos", texto: "Avalie se há procedimentos operacionais documentados" },
+        { id: "verificar-registro-tratamentos", texto: "Verifique se há registro de atividades de tratamento (ROPA)" },
+        { id: "avaliar-gestao-incidentes", texto: "Avalie se há processo de gestão de incidentes" },
+        { id: "verificar-privacidade-design", texto: "Verifique se há implementação de privacy by design" },
+      ],
+    },
+    {
+      id: "gap-retencao",
+      titulo: "7. GAP: Retenção e Descarte",
+      itens: [
+        { id: "avaliar-politica-retencao", texto: "Avalie se os períodos de retenção estão definidos e documentados" },
+        { id: "verificar-processo-descarte", texto: "Verifique se há processo adequado de descarte de dados" },
+        { id: "identificar-dados-desnecessarios", texto: "Identifique dados sendo mantidos além do necessário" },
+      ],
+    },
+    {
+      id: "gap-treinamento",
+      titulo: "8. GAP: Treinamento e Conscientização",
+      itens: [
+        { id: "verificar-programa-treinamento", texto: "Verifique se há programa de treinamento em LGPD" },
+        { id: "avaliar-conscientizacao", texto: "Avalie o nível de conscientização dos servidores" },
+        { id: "identificar-necessidades-capacitacao", texto: "Identifique necessidades de capacitação por área" },
+      ],
+    },
+    {
+      id: "consolidacao-gaps",
+      titulo: "9. Consolidação e Priorização",
+      itens: [
+        { id: "documentar-todos-gaps", texto: "Documente todas as lacunas identificadas" },
+        { id: "classificar-gaps-criticidade", texto: "Classifique os gaps por criticidade (alto, médio, baixo)" },
+        { id: "priorizar-gaps", texto: "Priorize os gaps considerando risco e urgência" },
+        { id: "estimar-esforco", texto: "Estime esforço e recursos para corrigir cada gap" },
+        { id: "elaborar-relatorio-gap", texto: "Elabore relatório consolidado de GAP Analysis" },
+        { id: "apresentar-diretoria", texto: "Apresente os resultados para a alta direção" },
+      ],
+    },
+  ],
+  pratica: [
+    {
+      emoji: "⚖️",
+      titulo: "Honestidade institucional: o paradoxo do score baixo",
+      descricao:
+        "A intuição diz: 'quero score alto pra parecer maduro'. A realidade institucional é o oposto: score 30% bem registrado, com justificativas claras, é diagnóstico que vira ação. Score 90% inflado é bomba-relógio — o dia em que a ANPD bater, o castelo de cartas cai.",
+      badge: "💡 Dica de ouro do curso",
+      destaque: true,
+      detalhe:
+        'Método prático: pra cada controle, pergunte ao grupo "QUANDO foi a última vez que essa política foi USADA em um caso real?". Se ninguém lembra, é NÃO ADERENTE — não importa se existe um PDF chamado "Política de Senhas v3.docx" no servidor. Documente o motivo em uma linha clara. Esse motivo vira a primeira coluna do Plano de Ação da Fase 5. Marcar tudo ADERENTE pra "não ficar feio" é o equivalente a uma auditoria interna que oculta achados — um dia o auditor externo aparece e tudo vem à tona junto.',
+    },
+    {
+      emoji: "📋",
+      titulo: "GAP Analysis (pacote curado pra turma)",
+      descricao:
+        "No jogo, o pacote tem 10 controles em 5 áreas (Governança, Bases Legais, Direitos, Segurança, Incidentes). Cada grupo classifica como ADERENTE / PARCIAL / NÃO ADERENTE / APOIO PENDENTE, com uma linha de justificativa. Score esperado da turma: 30-50%.",
+      badge: "Missão 3 · 10 min",
+      href: "/dashboard/gap",
+    },
+  ],
 };
 
 const FASE_5_STUB: ConteudoFase = {
@@ -350,7 +562,7 @@ const FASE_7_STUB: ConteudoFase = {
 
 export const CONTEUDO_FASES: ConteudoFase[] = [
   FASE_3,
-  FASE_4_STUB,
+  FASE_4,
   FASE_5_STUB,
   FASE_6_STUB,
   FASE_7_STUB,
