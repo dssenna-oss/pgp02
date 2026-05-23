@@ -42,17 +42,23 @@ export type PraticaCard = {
   detalhe?: string;     // texto extra que abre no card
 };
 
+export type EbookFase = {
+  titulo: string;
+  descricao: string;
+  url: string;
+};
+
 export type ConteudoFase = {
   slug: string;
   numero: number;
   titulo: string;
   subtitulo: string;
   missao: string;        // Ex.: "antes das Missões M1 e M2"
-  ebook: {
-    titulo: string;
-    descricao: string;
-    url: string;
-  };
+  // Lista numerada — espelha o card "E-books Interativos" da prod, que
+  // mostra "1, 2, 3..." pra cada e-book. Pra Fase 3 mantemos a Trilha
+  // (visão geral) + o e-book específico. Pras Fases 4-7 fica SÓ o
+  // específico da fase, conforme orientação do user.
+  ebooks: EbookFase[];
   descricao: DescricaoBloco[];
   comoProc: DescricaoBloco[];
   checklist: ChecklistSecao[];
@@ -68,12 +74,20 @@ const FASE_3: ConteudoFase = {
   subtitulo:
     "Mapeamento completo dos processos e avaliação dos riscos de privacidade e segurança",
   missao: "Antes das Missões M1 (Inventário) e M2 (Análise de Riscos)",
-  ebook: {
-    titulo: "Trilha LGPD Descomplicada — Clube do Servidor",
-    descricao:
-      "Biblioteca de e-books interativos sobre as 7 fases do PGP. Folheável, com vídeos embutidos e resumos.",
-    url: "https://heyzine.com/shelf/trilha_lgpd_descomplicada.html",
-  },
+  ebooks: [
+    {
+      titulo: "Trilha LGPD Descomplicada — Clube do Servidor",
+      descricao:
+        "Biblioteca completa de e-books interativos sobre as 7 fases do PGP. Visão geral, com vídeos embutidos e resumos.",
+      url: "https://heyzine.com/shelf/trilha_lgpd_descomplicada.html",
+    },
+    {
+      titulo: "PGP — Fase 3: Mapeamento de Dados e Análise de Riscos",
+      descricao:
+        "E-book específico desta fase. Resumo: o processo de mapeamento dos dados pessoais, ferramenta fundamental pra apoiar a gestão de riscos de privacidade e segurança da informação — identificação de dados de cidadãos, colaboradores e fornecedores externos.",
+      url: "https://heyzine.com/flip-book/a8d5f1e986.html",
+    },
+  ],
   descricao: [
     {
       tipo: "paragrafo",
@@ -296,12 +310,14 @@ const FASE_4: ConteudoFase = {
   titulo: "Fase 4 — GAP Analysis",
   subtitulo: "Análise de lacunas entre o estado atual e os requisitos da LGPD",
   missao: "Antes da Missão M3 (GAP Analysis)",
-  ebook: {
-    titulo: "Trilha LGPD Descomplicada — Clube do Servidor",
-    descricao:
-      "Biblioteca de e-books interativos sobre as 7 fases do PGP. Folheável, com vídeos embutidos e resumos.",
-    url: "https://heyzine.com/shelf/trilha_lgpd_descomplicada.html",
-  },
+  ebooks: [
+    {
+      titulo: "PGP — Fase 4: GAP Analysis",
+      descricao:
+        "E-book específico desta fase. Diagnóstico das lacunas (gaps) entre o estado atual da Instituição e os requisitos da LGPD — base pra construir o Plano de Ação da Fase 5.",
+      url: "https://heyzine.com/flip-book/80b29eeff6.html",
+    },
+  ],
   descricao: [
     {
       tipo: "paragrafo",
@@ -525,7 +541,7 @@ const FASE_5_STUB: ConteudoFase = {
   titulo: "Fase 5 — Plano de Ação",
   subtitulo: "Consolida o que veio de Riscos e GAP em ações com responsável e prazo",
   missao: "Após M3 (GAP), entre M3 e M4a",
-  ebook: { titulo: "Em breve", descricao: "Conteúdo desta fase será adicionado na próxima fatia.", url: "" },
+  ebooks: [],
   descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
   comoProc: [],
   checklist: [],
@@ -538,7 +554,7 @@ const FASE_6_STUB: ConteudoFase = {
   titulo: "Fase 6 — Execução",
   subtitulo: "RIPD, Gestão de Terceiros, Direitos do Titular e Aviso de Privacidade",
   missao: "Antes das Missões M4a (RIPD/Terceiros/DSR) e M4b (Aviso)",
-  ebook: { titulo: "Em breve", descricao: "Conteúdo desta fase será adicionado na próxima fatia.", url: "" },
+  ebooks: [],
   descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
   comoProc: [],
   checklist: [],
@@ -551,7 +567,7 @@ const FASE_7_STUB: ConteudoFase = {
   titulo: "Fase 7 — Monitoramento",
   subtitulo: "Resposta a Incidentes + PRI institucional",
   missao: "Antes da Missão M5 (Incidente Surpresa)",
-  ebook: { titulo: "Em breve", descricao: "Conteúdo desta fase será adicionado na próxima fatia.", url: "" },
+  ebooks: [],
   descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
   comoProc: [],
   checklist: [],
