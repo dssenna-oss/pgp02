@@ -1015,17 +1015,281 @@ const FASE_6: ConteudoFase = {
   ],
 };
 
-const FASE_7_STUB: ConteudoFase = {
+const FASE_7: ConteudoFase = {
   slug: "fase-7",
   numero: 7,
-  titulo: "Fase 7 — Monitoramento",
-  subtitulo: "Resposta a Incidentes + PRI institucional",
+  titulo: "Fase 7 — Monitoramento Contínuo e Melhoria",
+  subtitulo:
+    "Acompanhamento contínuo, auditorias e evolução do programa de governança",
   missao: "Antes da Missão M5 (Incidente Surpresa)",
-  ebooks: [],
-  descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
-  comoProc: [],
-  checklist: [],
-  pratica: [],
+  ebooks: [
+    {
+      titulo: "PGP — Fase 7: Resposta a Incidentes",
+      descricao:
+        "E-book específico desta fase. Como registrar, classificar a severidade e comunicar à ANPD e aos titulares dentro do prazo da Res. CD/ANPD nº 15/2024.",
+      url: "https://heyzine.com/flip-book/5936314498.html",
+    },
+    {
+      titulo: "PGP — Fase 7: PRI (Plano de Resposta a Incidentes)",
+      descricao:
+        "E-book específico desta fase. Documento institucional inspirado no ciclo NIST (Preparar, Detectar, Conter, Erradicar, Recuperar, Aprender) com Matriz RACI e Equipe ETIR/CSIRT.",
+      url: "https://heyzine.com/flip-book/ab58c1976b.html",
+    },
+    {
+      titulo: "PGP — Fase 7: Monitoramento Contínuo",
+      descricao:
+        "E-book específico desta fase. KPIs de privacidade, auditorias periódicas, revisão de documentação, acompanhamento legislativo e ciclo PDCA — o PGP como programa, não projeto.",
+      url: "https://heyzine.com/flip-book/9df0dd8581.html",
+    },
+  ],
+  descricao: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "A conformidade com a LGPD não é um projeto com início, meio e fim, mas um processo contínuo. Esta última fase estabelece os mecanismos de monitoramento, auditoria e melhoria contínua do programa de governança de dados.",
+    },
+    { tipo: "subtitulo", texto: "Atividades de Monitoramento" },
+    {
+      tipo: "lista",
+      itens: [
+        "Auditorias Periódicas: internas e/ou externas para verificar conformidade",
+        "Indicadores de Performance (KPIs): métricas para medir eficácia do programa",
+        "Revisão de Políticas: atualização periódica da documentação",
+        "Gestão de Incidentes: acompanhamento e análise de eventos de segurança",
+        "Avaliação de Fornecedores: verificação contínua de operadores",
+        "Atualização Legislativa: acompanhamento de mudanças na legislação",
+      ],
+    },
+    { tipo: "subtitulo", texto: "Indicadores Sugeridos" },
+    {
+      tipo: "lista",
+      itens: [
+        "Tempo médio de resposta a solicitações de titulares (meta: < 15 dias úteis)",
+        "Número de incidentes de segurança reportados (e prazo de comunicação à ANPD)",
+        "Percentual de servidores treinados em LGPD",
+        "Índice de conformidade em auditorias",
+        "Tempo médio para correção de não conformidades",
+        "Número de RIPDs realizados",
+      ],
+    },
+    { tipo: "subtitulo", texto: "Melhoria Contínua" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Com base nos indicadores e auditorias, identifique oportunidades de melhoria:",
+    },
+    {
+      tipo: "lista",
+      itens: [
+        "Ajuste de processos que não estão funcionando",
+        "Implementação de novas tecnologias de proteção",
+        "Reforço de treinamentos em áreas problemáticas",
+        "Atualização de políticas conforme evolução da Instituição",
+        "Incorporação de melhores práticas do mercado",
+      ],
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "info",
+        titulo: "🔄 Ciclo PDCA",
+        texto:
+          "Utilize o ciclo Plan-Do-Check-Act (Planejar-Executar-Verificar-Agir) como metodologia para melhoria contínua. A adequação à LGPD é uma jornada, não um destino.",
+      },
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "sucesso",
+        titulo: "Parabéns!",
+        texto:
+          "Ao chegar nesta fase, a Instituição terá um programa robusto de governança de dados. Mantenha o compromisso com a proteção de dados e a conformidade contínua — PGP é programa, não projeto.",
+      },
+    },
+  ],
+  comoProc: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "A Fase 7 é a que separa órgãos públicos QUE TÊM um PGP dos que TÊM UM PDF chamado PGP guardado em pasta. O programa só EXISTE enquanto está em movimento. Algumas orientações pra esta fase, especialmente conectadas com a Missão 5 do curso (Incidente Surpresa):",
+    },
+    { tipo: "subtitulo", texto: "1. Incidentes vão acontecer — a pergunta é se você está pronto" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Toda Instituição vai ter incidente. Pendrive perdido. Email enviado pra lista errada. Servidor demitido que levou backup. Não é POSSÍVEL prevenir 100%. A diferença entre o órgão que vira manchete e o que resolve nas próximas 72h não é a ausência de incidente — é o PREPARO. Quem tem PRI testado, equipe ETIR definida, matriz RACI clara, descobre o incidente em 1h e comunica em 24h. Quem não tem, descobre pela imprensa.",
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "aviso",
+        titulo: "Res. CD/ANPD nº 15/2024 — o prazo de pesadelo",
+        texto:
+          "A ANPD orienta comunicação \"em prazo razoável\", interpretada como 3 dias úteis pra incidentes de alta severidade. Sem PRI testado, é praticamente impossível cumprir.",
+      },
+    },
+    { tipo: "subtitulo", texto: "2. Severidade objetiva (não a 'gut feeling' do DPO)" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "A Res. 15/2024 define uma régua objetiva pra severidade: BAIXA (sem acesso indevido), MÉDIA (1 agravante), ALTA (2 agravantes), CRÍTICA (3+ agravantes). Agravantes incluem: dados sensíveis, dados de crianças/idosos, alto volume, dados financeiros. O app aplica essa régua automaticamente. Não chuta severidade — calcula.",
+    },
+    { tipo: "subtitulo", texto: "3. Métricas que matam: 5 KPIs essenciais" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Não invente 30 KPIs que ninguém vai medir. Comece com 5 que importam: (1) tempo médio de resposta DSR vs. prazo legal de 15 dias úteis, (2) número de incidentes/trimestre vs. trimestre anterior, (3) % de servidores treinados em 12 meses, (4) índice de conformidade em auditoria interna anual, (5) RIPDs realizados vs. processos críticos que exigem. Se esses 5 estão saudáveis, o resto vem.",
+    },
+    { tipo: "subtitulo", texto: "4. Acompanhamento legislativo é parte do método" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "A ANPD publica guias, resoluções e orientações regularmente — desde 2022 já saíram 15+ instrumentos relevantes. Ignorar isso é estar a 1 ano de atraso por padrão. Crie um RITUAL: 1 hora por mês, o DPO + 1 servidor (Procuradoria?) abrem o site da ANPD, leem o que foi publicado, decidem o que precisa virar ação no Plano. Custo: 12h/ano. Economia: não virar manchete por descumprimento de regra que existe há 6 meses.",
+    },
+    { tipo: "subtitulo", texto: "5. Auditoria interna anual é não-negociável" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Programa sem auditoria interna anual vira ficção em 12 meses. Não precisa ser auditoria externa cara — pode ser uma colega da Controladoria ou Auditoria Interna, com checklist baseado no GAP. Roda em 2-3 dias. Resultado: relatório com não-conformidades + plano de correção. Esse documento É a evidência viva do princípio de accountability (Art. 6º X LGPD).",
+    },
+    { tipo: "subtitulo", texto: "6. PGP é programa contínuo, não projeto pontual" },
+    {
+      tipo: "paragrafo",
+      texto:
+        'A frase que define a Fase 7: "PROGRAMA, não projeto". Projeto tem fim. Programa não. A cada ciclo (anual), você revisa o que mudou, refaz o que precisa, melhora o que descobriu. É como manter um prédio — nunca acaba, sempre há manutenção, mas se você parar de fazer manutenção, o prédio desaba aos poucos. Não dramatize — apenas mantenha o ritmo.',
+    },
+  ],
+  checklist: [
+    {
+      id: "estrutura-monitoramento",
+      titulo: "1. Estruturação do Monitoramento",
+      itens: [
+        { id: "definir-indicadores-chave", texto: "Defina indicadores-chave de performance (KPIs) de privacidade" },
+        { id: "estabelecer-metas", texto: "Estabeleça metas para cada indicador" },
+        { id: "criar-dashboard", texto: "Crie dashboard de monitoramento de conformidade" },
+        { id: "definir-periodicidade-medicao", texto: "Defina periodicidade de medição (mensal, trimestral)" },
+        { id: "designar-responsaveis-kpis", texto: "Designe responsáveis por cada KPI" },
+      ],
+    },
+    {
+      id: "implementacao-kpis",
+      titulo: "2. Implementação de KPIs",
+      itens: [
+        { id: "monitorar-tempo-resposta", texto: "Monitore tempo médio de resposta a solicitações de titulares (meta: < 15 dias úteis)" },
+        { id: "monitorar-incidentes", texto: "Monitore número e severidade de incidentes de segurança" },
+        { id: "acompanhar-treinamentos", texto: "Acompanhe percentual de servidores treinados" },
+        { id: "medir-conformidade-processos", texto: "Meça índice de conformidade dos processos" },
+        { id: "controlar-solicitacoes-titulares", texto: "Controle volume de solicitações de titulares por tipo" },
+        { id: "avaliar-fornecedores", texto: "Avalie conformidade de fornecedores/operadores" },
+      ],
+    },
+    {
+      id: "auditorias-periodicas",
+      titulo: "3. Auditorias Periódicas",
+      itens: [
+        { id: "agendar-auditorias-internas", texto: "Agende auditorias internas (no mínimo anuais)" },
+        { id: "definir-escopo-auditoria", texto: "Defina escopo de cada auditoria" },
+        { id: "preparar-checklist-auditoria", texto: "Prepare checklist de auditoria baseado no GAP" },
+        { id: "realizar-auditoria", texto: "Realize auditorias conforme cronograma" },
+        { id: "documentar-achados", texto: "Documente todos os achados e não conformidades" },
+        { id: "plano-acao-auditoria", texto: "Crie plano de ação para correção de não conformidades" },
+        { id: "considerar-auditoria-externa", texto: "Considere auditorias externas/certificações (ISO 27001, etc.)" },
+      ],
+    },
+    {
+      id: "gestao-incidentes-continua",
+      titulo: "4. Gestão Contínua de Incidentes",
+      itens: [
+        { id: "manter-registro-incidentes", texto: "Mantenha registro atualizado de todos os incidentes" },
+        { id: "analisar-causas-raiz", texto: "Analise causas raiz dos incidentes" },
+        { id: "implementar-acoes-preventivas", texto: "Implemente ações preventivas para evitar recorrência" },
+        { id: "testar-plano-resposta", texto: "Teste periodicamente o plano de resposta a incidentes (PRI)" },
+        { id: "atualizar-procedimentos", texto: "Atualize procedimentos com base em lições aprendidas" },
+      ],
+    },
+    {
+      id: "revisao-documentacao",
+      titulo: "5. Revisão e Atualização de Documentação",
+      itens: [
+        { id: "revisar-politicas-anualmente", texto: "Revise todas as políticas pelo menos anualmente" },
+        { id: "atualizar-inventario-dados", texto: "Atualize o inventário de dados regularmente" },
+        { id: "revisar-contratos-fornecedores", texto: "Revise contratos com fornecedores periodicamente" },
+        { id: "atualizar-avisos-privacidade", texto: "Atualize avisos de privacidade quando houver mudanças" },
+        { id: "versionar-mudancas", texto: "Versione e documente todas as mudanças" },
+      ],
+    },
+    {
+      id: "atualizacao-legislativa",
+      titulo: "6. Acompanhamento Legislativo e Regulatório",
+      itens: [
+        { id: "acompanhar-anpd", texto: "Acompanhe publicações da ANPD (guias, resoluções)" },
+        { id: "monitorar-jurisprudencia", texto: "Monitore jurisprudência e decisões judiciais" },
+        { id: "participar-eventos", texto: "Participe de eventos e fóruns sobre privacidade" },
+        { id: "atualizar-praticas", texto: "Atualize práticas conforme novas orientações" },
+        { id: "comunicar-mudancas", texto: "Comunique mudanças relevantes para a Instituição" },
+      ],
+    },
+    {
+      id: "avaliacao-fornecedores-continua",
+      titulo: "7. Avaliação Contínua de Fornecedores",
+      itens: [
+        { id: "reavaliar-fornecedores", texto: "Reavalie fornecedores/operadores periodicamente" },
+        { id: "auditar-operadores-criticos", texto: "Audite operadores críticos" },
+        { id: "verificar-incidentes-fornecedores", texto: "Verifique se fornecedores tiveram incidentes de segurança" },
+        { id: "atualizar-contratos-fornecedores", texto: "Atualize contratos quando necessário" },
+      ],
+    },
+    {
+      id: "melhoria-continua",
+      titulo: "8. Ciclo de Melhoria Contínua",
+      itens: [
+        { id: "reunioes-periodicas-governanca", texto: "Realize reuniões periódicas do Comitê de Governança" },
+        { id: "analisar-indicadores", texto: "Analise indicadores e identifique oportunidades de melhoria" },
+        { id: "priorizar-melhorias", texto: "Priorize e implemente melhorias identificadas" },
+        { id: "incorporar-melhores-praticas", texto: "Incorpore melhores práticas do mercado" },
+        { id: "avaliar-novas-tecnologias", texto: "Avalie e implemente novas tecnologias de proteção" },
+        { id: "documentar-evolucao", texto: "Documente a evolução do programa de governança" },
+      ],
+    },
+    {
+      id: "relatorios-prestacao-contas",
+      titulo: "9. Relatórios e Prestação de Contas",
+      itens: [
+        { id: "preparar-relatorios-periodicos", texto: "Prepare relatórios periódicos para a alta direção" },
+        { id: "documentar-accountability", texto: "Documente evidências de accountability (prestação de contas)" },
+        { id: "reportar-metricas", texto: "Reporte métricas e evolução do programa" },
+        { id: "apresentar-resultados-anuais", texto: "Apresente resultados anuais para stakeholders e ANPD se solicitado" },
+      ],
+    },
+  ],
+  pratica: [
+    {
+      emoji: "🔄",
+      titulo: "PGP é programa contínuo: como NÃO virar peça de exposição",
+      descricao:
+        "A armadilha clássica da Fase 7: o órgão termina as Fases 1-6, faz a foto da equipe com o documento na mão, posta no portal, e o PGP morre ali. Em 12 meses, ninguém mais lembra que existe — até o dia do incidente. O programa SÓ EXISTE enquanto está em movimento. A diferença entre PGP vivo e PGP de exposição não é a qualidade da entrega inicial, é o RITMO que vem depois.",
+      badge: "💡 Dica de ouro do curso",
+      destaque: true,
+      detalhe:
+        'Método prático: estabeleça desde o dia 1 da Fase 7 uma agenda anual recorrente, com responsáveis nomeados e prazos cravados. Janeiro: revisão anual do Inventário (com Donos). Março: auditoria interna (Controladoria/Auditoria com checklist GAP). Maio: revisão das Políticas (DPO + Procuradoria). Julho: 1 simulação de incidente (PRI testado de verdade — pessoa A reporta, equipe ETIR é acionada, cronômetro). Setembro: revisão dos contratos com Terceiros críticos. Novembro: relatório anual ao Comitê + alta direção. A cada mês, o DPO reserva 1 hora pra ler ANPD + atualizar Plano de Ação. Custo: ~80h/ano (1 servidor 0,5 dia/mês). Resultado: no dia do incidente real, a Instituição responde em 24h e não vira manchete. No app de curso, o Painel do Facilitador mostra a timeline das 7 missões — esse é o protótipo da operação da Fase 7 institucional.',
+    },
+    {
+      emoji: "🚨",
+      titulo: "Incidentes",
+      descricao:
+        "Resposta a incidentes — registrar, classificar severidade pela régua objetiva da Res. 15/2024, comunicar à ANPD (3 dias úteis pra alta severidade) e aos titulares afetados (Art. 48 §1º LGPD).",
+      badge: "Missão 5 · 25 min",
+      href: "/dashboard/incidentes",
+    },
+    {
+      emoji: "📋",
+      titulo: "Documento do PRI",
+      descricao:
+        "Plano de Resposta a Incidentes institucional — 8 seções (ciclo NIST + LGPD), Equipe ETIR/CSIRT, Matriz RACI. Documento que SOBREVIVE rotações de servidor e mantém o método em movimento.",
+      badge: "Fase 7",
+      href: "/dashboard/pri",
+    },
+  ],
 };
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────
@@ -1035,7 +1299,7 @@ export const CONTEUDO_FASES: ConteudoFase[] = [
   FASE_4,
   FASE_5,
   FASE_6,
-  FASE_7_STUB,
+  FASE_7,
 ];
 
 export function getConteudoFase(slug: string): ConteudoFase | undefined {
