@@ -535,17 +535,195 @@ const FASE_4: ConteudoFase = {
   ],
 };
 
-const FASE_5_STUB: ConteudoFase = {
+const FASE_5: ConteudoFase = {
   slug: "fase-5",
   numero: 5,
-  titulo: "Fase 5 — Plano de Ação",
-  subtitulo: "Consolida o que veio de Riscos e GAP em ações com responsável e prazo",
-  missao: "Após M3 (GAP), entre M3 e M4a",
-  ebooks: [],
-  descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
-  comoProc: [],
-  checklist: [],
-  pratica: [],
+  titulo: "Fase 5 — Plano de Ação e Adequação",
+  subtitulo: "Elaboração e implementação de medidas corretivas e preventivas",
+  missao: "Entre as Missões M3 (GAP) e M4a (RIPD/Terceiros/DSR)",
+  ebooks: [
+    {
+      titulo: "PGP — Fase 5: Plano de Ação e Adequação",
+      descricao:
+        "E-book específico desta fase. Como transformar riscos e gaps identificados em ações concretas com responsáveis, prazos e indicadores — base do princípio de accountability da LGPD.",
+      url: "https://heyzine.com/flip-book/bbbf7c0121.html",
+    },
+  ],
+  descricao: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "Com base nos riscos e lacunas identificadas nas Fases 3 e 4, esta etapa consiste em criar um plano de ação detalhado para corrigir as não conformidades e implementar as melhorias necessárias para adequação à LGPD.",
+    },
+    { tipo: "subtitulo", texto: "Elementos do Plano de Ação" },
+    {
+      tipo: "lista",
+      itens: [
+        "Priorização: organize as ações por criticidade e urgência",
+        "Responsáveis: defina quem será responsável por cada ação",
+        "Prazos: estabeleça cronograma realista para implementação",
+        "Recursos: identifique os recursos necessários (financeiros, humanos, tecnológicos)",
+        "Indicadores: defina como medir o sucesso de cada ação",
+      ],
+    },
+    { tipo: "subtitulo", texto: "Ações Típicas" },
+    {
+      tipo: "lista",
+      itens: [
+        "Criação/atualização de Políticas de Privacidade",
+        "Adequação de contratos e termos de uso",
+        "Implementação de medidas de segurança técnicas",
+        "Treinamento de servidores e colaboradores",
+        "Adequação de processos de coleta e consentimento",
+        "Criação de procedimentos para atendimento aos direitos dos titulares",
+        "Implementação de gestão de incidentes",
+      ],
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "sucesso",
+        titulo: "Dica de accountability",
+        texto:
+          "Mantenha registro detalhado de todas as ações implementadas. Esta documentação será importante para demonstrar conformidade e o princípio da accountability (prestação de contas) exigido pela LGPD.",
+      },
+    },
+  ],
+  comoProc: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "O Plano de Ação é o coração do PGP — onde o diagnóstico vira ação concreta. É também onde a maioria dos órgãos públicos tropeça: faz um Plano belíssimo, apresenta pro Comitê com powerpoint elegante, e depois ele vira PDF de gaveta. Pra essa fase no curso, algumas orientações:",
+    },
+    { tipo: "subtitulo", texto: "1. Plano é matéria-prima, não enfeite" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "O Plano não é entregue PRA ser bonito — é entregue PRA ser executado. Cada ação deve ter responsável NOMEADO (não 'a área de TI'), prazo CONCRETO (não 'a definir') e indicador MEDÍVEL (não 'melhorar a segurança'). Se não cabe em uma linha do estilo 'Joana cria a política X até 15/abr e a medida é X% de servidores treinados', a ação está mal formulada.",
+    },
+    { tipo: "subtitulo", texto: "2. Importação automática do que já existe" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "No app, o botão 'Auto-importar do PGP' puxa de um clique: cada controle NÃO ADERENTE do GAP vira uma ação no Plano, e cada risco com plano de mitigação vira outra. Você não digita ação a partir do zero — você EDITA o que o app gerou da Fase 4. Isso resolve a dor 'não sei por onde começar'.",
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "info",
+        titulo: "Fontes que alimentam o Plano",
+        texto:
+          "GAP Não Aderente / Parcial / Ação Planejada · Riscos com mitigação · Diagnóstico de Privacidade · Pendências do Inventário. Tudo entra como uma linha editável.",
+      },
+    },
+    { tipo: "subtitulo", texto: "3. Priorização honesta: 4 critérios, sem furada" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Pra ordenar o Plano, use SEMPRE os mesmos 4 critérios: (a) risco ao titular se nada for feito, (b) prazo legal exigido pela LGPD, (c) esforço de execução, (d) dependências entre ações (uma destrava outra?). 'Vontade política do gestor' não entra — porque muda com a próxima eleição.",
+    },
+    { tipo: "subtitulo", texto: "4. Acompanhamento mata o Plano de Gaveta" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Plano de Ação sem reunião quinzenal de acompanhamento vira PDF de gaveta em ~60 dias. Comprove: agende reuniões CURTAS (15 min) com os responsáveis quinzenalmente, projete o status do app no telão, e cobre evidência (não 'tá em andamento' — print, ata, link).",
+    },
+    { tipo: "subtitulo", texto: "5. Conexão com a Fase 6 é direta" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "As ações do Plano não viram conformidade por si — viram quando EXECUTADAS na Fase 6 (Políticas, RIPD, Terceiros, Aviso de Privacidade). O Plano é o contrato; a Fase 6 é a entrega. Se o Plano marca 'criar Aviso de Privacidade até X' e na Fase 6 o Aviso fica em rascunho 6 meses, é o Plano que está falhando — não a Fase 6.",
+    },
+  ],
+  checklist: [
+    {
+      id: "elaboracao-plano",
+      titulo: "1. Elaboração do Plano de Ação",
+      itens: [
+        { id: "listar-gaps-riscos", texto: "Liste todos os gaps e riscos identificados nas Fases 3 e 4" },
+        { id: "priorizar-acoes", texto: "Priorize as ações por criticidade, urgência e impacto" },
+        { id: "definir-responsaveis", texto: "Defina responsáveis específicos para cada ação (nome, não área)" },
+        { id: "estabelecer-prazos", texto: "Estabeleça prazos realistas para cada ação" },
+        { id: "estimar-recursos", texto: "Estime recursos necessários (financeiros, humanos, tecnológicos)" },
+        { id: "definir-indicadores", texto: "Defina indicadores para medir o sucesso de cada ação" },
+      ],
+    },
+    {
+      id: "adequacao-politicas",
+      titulo: "2. Adequação de Políticas e Documentos",
+      itens: [
+        { id: "criar-politica-privacidade", texto: "Crie ou atualize a Política de Privacidade pública" },
+        { id: "criar-politica-interna", texto: "Crie Política Interna de Proteção de Dados" },
+        { id: "atualizar-termos-uso", texto: "Atualize Termos de Uso e Consentimento" },
+        { id: "criar-avisos-privacidade", texto: "Crie avisos de privacidade específicos para cada finalidade" },
+        { id: "revisar-contratos", texto: "Revise e atualize contratos com fornecedores e parceiros (Art. 39)" },
+      ],
+    },
+    {
+      id: "adequacao-processos",
+      titulo: "3. Adequação de Processos",
+      itens: [
+        { id: "implementar-coleta-consentimento", texto: "Implemente processos adequados de coleta de consentimento" },
+        { id: "criar-processo-direitos", texto: "Crie processo para atendimento aos direitos dos titulares (Arts. 18 e 19)" },
+        { id: "implementar-gestao-incidentes", texto: "Implemente processo de gestão de incidentes de segurança" },
+        { id: "definir-retencao-dados", texto: "Defina e implemente políticas de retenção e descarte de dados" },
+        { id: "adequar-coleta-dados", texto: "Adeque formulários e processos de coleta de dados (minimização)" },
+      ],
+    },
+    {
+      id: "medidas-seguranca",
+      titulo: "4. Implementação de Medidas de Segurança",
+      itens: [
+        { id: "implementar-controles-acesso", texto: "Implemente controles de acesso baseados em função e necessidade" },
+        { id: "implementar-criptografia", texto: "Implemente criptografia para dados sensíveis (em trânsito e em repouso)" },
+        { id: "configurar-logs-auditoria", texto: "Configure logs e trilhas de auditoria" },
+        { id: "implementar-backup", texto: "Implemente e teste procedimentos de backup e recuperação" },
+        { id: "atualizar-seguranca-sistemas", texto: "Atualize medidas de segurança em sistemas e aplicações" },
+        { id: "implementar-anonimizacao", texto: "Implemente técnicas de anonimização/pseudonimização quando aplicável" },
+      ],
+    },
+    {
+      id: "adequacao-tecnologica",
+      titulo: "5. Adequação Tecnológica",
+      itens: [
+        { id: "atualizar-sistemas", texto: "Atualize sistemas para suportar requisitos de privacidade" },
+        { id: "implementar-ferramentas-gestao", texto: "Implemente ferramentas de gestão de privacidade (se aplicável)" },
+        { id: "ajustar-formularios-web", texto: "Ajuste formulários web para conformidade (consentimento, minimização)" },
+        { id: "implementar-portal-titular", texto: "Implemente portal ou canal para solicitações de titulares" },
+      ],
+    },
+    {
+      id: "acompanhamento-plano",
+      titulo: "6. Acompanhamento do Plano de Ação",
+      itens: [
+        { id: "criar-cronograma-detalhado", texto: "Crie cronograma detalhado de implementação" },
+        { id: "agendar-reunioes-acompanhamento", texto: "Agende reuniões periódicas de acompanhamento (quinzenais)" },
+        { id: "documentar-implementacoes", texto: "Documente todas as implementações e evidências de conformidade" },
+        { id: "monitorar-indicadores", texto: "Monitore indicadores de progresso estabelecidos" },
+        { id: "reportar-diretoria", texto: "Reporte progresso regularmente para a alta direção e Comitê" },
+      ],
+    },
+  ],
+  pratica: [
+    {
+      emoji: "📂",
+      titulo: "Como NÃO virar mais um Plano de Gaveta",
+      descricao:
+        "O Plano de Ação é o documento que mais vira PDF esquecido em pasta compartilhada. A diferença entre Plano vivo e Plano morto não é a qualidade da escrita inicial — é o ritual de acompanhamento que vem DEPOIS. Sem reunião quinzenal de status, nem o melhor Plano sobrevive 60 dias.",
+      badge: "💡 Dica de ouro do curso",
+      destaque: true,
+      detalhe:
+        'Método prático: na hora da assinatura do Plano pelo Comitê, agende JÁ na agenda as próximas 6 reuniões quinzenais de status, com convite enviado aos responsáveis (nome, não área). Cada reunião dura 15 minutos: cada responsável diz o status de cada ação atribuída + traz EVIDÊNCIA (print, ata, link, documento). Sem evidência, status fica como "Não iniciado" — não importa o que ele falar. Em 3 meses, ou o Plano avançou de verdade, ou você sabe exatamente onde está parado e por quê. Bônus: projete o status real do app no telão da reunião — visual aberto neutraliza "estou trabalhando nisso" sem ação. No app de curso, o Plano lista cada ação com origem (Risco/GAP/Diagnóstico), responsável, prazo e evidência anexada.',
+    },
+    {
+      emoji: "🎯",
+      titulo: "Plano de Ação",
+      descricao:
+        "No app, o Plano consolida automaticamente as pendências de Riscos (mitigação) e GAP (Não Aderente, Parcial, Ação Planejada) em uma única tabela com responsável, prazo, status e evidência. O botão 'Auto-importar do PGP' faz o trabalho braçal — você só edita e prioriza.",
+      badge: "Entre M3 e M4a",
+      href: "/dashboard/plano-acao",
+    },
+  ],
 };
 
 const FASE_6_STUB: ConteudoFase = {
@@ -579,7 +757,7 @@ const FASE_7_STUB: ConteudoFase = {
 export const CONTEUDO_FASES: ConteudoFase[] = [
   FASE_3,
   FASE_4,
-  FASE_5_STUB,
+  FASE_5,
   FASE_6_STUB,
   FASE_7_STUB,
 ];
