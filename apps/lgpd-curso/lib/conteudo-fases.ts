@@ -726,17 +726,293 @@ const FASE_5: ConteudoFase = {
   ],
 };
 
-const FASE_6_STUB: ConteudoFase = {
+const FASE_6: ConteudoFase = {
   slug: "fase-6",
   numero: 6,
   titulo: "Fase 6 — Execução",
-  subtitulo: "RIPD, Gestão de Terceiros, Direitos do Titular e Aviso de Privacidade",
+  subtitulo:
+    "Implementação de documentação, políticas, medidas de segurança e treinamentos",
   missao: "Antes das Missões M4a (RIPD/Terceiros/DSR) e M4b (Aviso)",
-  ebooks: [],
-  descricao: [{ tipo: "paragrafo", texto: "Conteúdo em construção — disponível em breve." }],
-  comoProc: [],
-  checklist: [],
-  pratica: [],
+  ebooks: [
+    {
+      titulo: "PGP — Fase 6: RIPD (Relatório de Impacto à Proteção de Dados)",
+      descricao:
+        "E-book específico desta fase. Como elaborar o RIPD nas 8 seções do modelo ANPD — pré-requisito do Aviso de Privacidade (Art. 38 LGPD).",
+      url: "https://heyzine.com/flip-book/0a10d977b3.html",
+    },
+    {
+      titulo: "PGP — Fase 6: Termos de Consentimento",
+      descricao:
+        "E-book específico desta fase. Quando o consentimento é a base legal apropriada e como coletá-lo de forma livre, informada, inequívoca e específica (Art. 5º XII e Art. 8º LGPD).",
+      url: "https://heyzine.com/flip-book/1576d27a9d.html",
+    },
+    {
+      titulo: "PGP — Fase 6: Direitos do Titular (DSR)",
+      descricao:
+        "E-book específico desta fase. Os 9 direitos do Art. 18 LGPD e como estruturar o canal de atendimento ao cidadão dentro do prazo legal de 15 dias úteis.",
+      url: "https://heyzine.com/flip-book/6c398039ff.html",
+    },
+    {
+      titulo: "PGP — Fase 6: Aviso de Privacidade",
+      descricao:
+        "E-book específico desta fase. As 12 seções do modelo ANPD — síntese pública que depende do RIPD, da lista de Terceiros e do canal DSR pra fazer sentido.",
+      url: "https://heyzine.com/flip-book/d376d06f3e.html",
+    },
+    {
+      titulo: "PGP — Fase 6: Políticas LGPD",
+      descricao:
+        "E-book específico desta fase. Políticas externas (pra cidadãos) e internas (pra servidores) — Política de Privacidade, Política Interna de Proteção de Dados, Política de Segurança, Código de Conduta.",
+      url: "https://heyzine.com/flip-book/a694923f33.html",
+    },
+    {
+      titulo: "PGP — Fase 6: Gestão de Terceiros",
+      descricao:
+        "E-book específico desta fase. Como avaliar operadores que tratam dados por conta do órgão (due diligence) e quais cláusulas LGPD são obrigatórias nos contratos (Art. 39 LGPD).",
+      url: "https://heyzine.com/flip-book/23f36d6b72.html",
+    },
+  ],
+  descricao: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "A Fase 6 marca o momento de colocar em prática tudo o que foi planejado nas fases anteriores. É onde a adequação à LGPD sai do papel e se torna realidade operacional na Instituição.",
+    },
+    { tipo: "subtitulo", texto: "Principais Objetivos" },
+    {
+      tipo: "lista",
+      itens: [
+        "Implementar Políticas e Documentação — políticas de privacidade externas e internas, POPs, contratos adequados e avisos de privacidade conforme planejado",
+        "Executar Medidas de Segurança — controles técnicos e organizacionais identificados na análise de riscos: criptografia, controles de acesso, logs de auditoria, backups",
+        "Adequar Processos Operacionais — coleta de dados, gestão de consentimentos, atendimento aos direitos dos titulares e resposta a incidentes",
+        "Realizar Treinamentos e Conscientização — programa pra todos os servidores (geral e específico por área)",
+        "Registrar Evidências de Compliance — documentar implementações e arquivar evidências do princípio da accountability",
+      ],
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "aviso",
+        titulo: "Ponto de atenção",
+        texto:
+          "Esta fase exige coordenação entre múltiplas áreas da Instituição. O DPO deve atuar como facilitador, garantindo que todas as ações do Plano de Ação sejam executadas dentro dos prazos estabelecidos e com a qualidade necessária.",
+      },
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "sucesso",
+        titulo: "Resultado esperado",
+        texto:
+          "Ao final desta fase, a Instituição deve ter todas as políticas, procedimentos e medidas de segurança operacionais, com equipes treinadas e conscientes de suas responsabilidades na proteção de dados pessoais.",
+      },
+    },
+  ],
+  comoProc: [
+    {
+      tipo: "paragrafo",
+      texto:
+        "A Fase 6 é a maior do PGP em volume de entrega — onde RIPD, Aviso, Terceiros, DSR, Políticas e Capacitação acontecem em paralelo. Aqui o DPO deixa de ser apenas ESCRITOR e vira REGENTE: o trabalho dele é fazer áreas convergirem. Algumas orientações práticas:",
+    },
+    { tipo: "subtitulo", texto: "1. A ORDEM importa: RIPD → Terceiros → DSR → Aviso" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "O Aviso de Privacidade é uma SÍNTESE pública — depende do RIPD (Seção 3 do Aviso puxa dele), da lista de Terceiros (Seção 7 puxa dela) e do canal DSR (Seção 11 puxa dele). Grupos que pulam direto pro Aviso produzem documento vago, cheio de promessa vazia. No app, o quadro \"Pré-requisitos da Missão 4a\" no topo da tela de Aviso mostra exatamente o que falta antes de publicar.",
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "info",
+        titulo: "Sequência canônica",
+        texto:
+          "RIPD do processo crítico → 1-2 Operadores com cláusulas LGPD → Canal DSR estruturado → Aviso de Privacidade (12 seções ANPD)",
+      },
+    },
+    { tipo: "subtitulo", texto: "2. Conteúdo NÃO se inventa — vem das fases anteriores" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Cada documento da Fase 6 tem fonte de dados em uma fase anterior: o RIPD bebe do Inventário (Fase 3) e da Análise de Riscos (Fase 3); o Aviso bebe do RIPD; as Políticas bebem do Plano de Ação (Fase 5). No app, o botão 'Auto-preencher do PGP' faz isso automaticamente — você revisa em vez de digitar do zero.",
+    },
+    { tipo: "subtitulo", texto: "3. Política de Privacidade externa vs. Política Interna" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "São DOIS documentos com públicos diferentes. A externa (no site) é pro CIDADÃO — linguagem simples, 12 seções ANPD, fala dos direitos dele. A interna é pros SERVIDORES — fala das responsabilidades do dia a dia, do que fazer ao detectar um incidente, das regras de acesso e descarte. Não confundir.",
+    },
+    { tipo: "subtitulo", texto: "4. Terceiros que tratam dados: a maior dor invisível" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Quase todo órgão tem dezenas de operadores (empresa de tecnologia, lab terceirizado, empresa de RH, escritório de advocacia, gráfica, transportadora...) que tratam dados pessoais por conta da Instituição. Cada um precisa de DPA (Data Processing Agreement) com cláusulas específicas (Art. 39 LGPD). Sem isso, em caso de incidente, a responsabilização pode vir 100% pra Instituição.",
+    },
+    { tipo: "subtitulo", texto: "5. Direitos do Titular: 15 dias úteis é prazo curto" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Quando um cidadão pede 'me mostra todos os dados que vocês têm sobre mim' (Art. 18 II), você tem 15 dias úteis pra responder. Sem canal estruturado (formulário + fluxo interno + responsável + monitoramento de prazo), o prazo estoura no primeiro pedido sério. O canal DSR do app já vem com fluxo padrão — vocês só precisam definir QUEM responde e EM QUANTO TEMPO internamente.",
+    },
+    { tipo: "subtitulo", texto: "6. Treinamento: separar 'sensibilização' de 'capacitação'" },
+    {
+      tipo: "paragrafo",
+      texto:
+        "Sensibilização (1-2h) é pra TODO servidor — entender o que é dado pessoal, por que importa, o que fazer se descobrir um vazamento. Capacitação (4-8h) é pra QUEM TRATA dados todo dia — RH, atendimento, ouvidoria, TI. São treinamentos DIFERENTES, com públicos diferentes. Misturar os dois afoga o detalhe e não satisfaz nenhum dos públicos.",
+    },
+  ],
+  checklist: [
+    {
+      id: "politicas-externas",
+      titulo: "1. Políticas Externas (Para Titulares)",
+      itens: [
+        { id: "elaborar-politica-privacidade", texto: "Elabore Política de Privacidade completa e transparente" },
+        { id: "criar-avisos-coleta", texto: "Crie avisos de privacidade específicos para cada ponto de coleta" },
+        { id: "elaborar-termos-consentimento", texto: "Elabore termos de consentimento claros e específicos" },
+        { id: "publicar-politicas", texto: "Publique as políticas no site e canais de comunicação" },
+      ],
+    },
+    {
+      id: "politicas-internas",
+      titulo: "2. Políticas Internas (Para Servidores)",
+      itens: [
+        { id: "criar-politica-interna-dados", texto: "Crie Política Interna de Proteção de Dados" },
+        { id: "elaborar-politica-seguranca", texto: "Elabore Política de Segurança da Informação" },
+        { id: "criar-politica-uso-aceitavel", texto: "Crie Política de Uso Aceitável de Recursos de TI" },
+        { id: "criar-codigo-conduta", texto: "Crie Código de Conduta sobre privacidade e proteção de dados" },
+      ],
+    },
+    {
+      id: "procedimentos-operacionais",
+      titulo: "3. Procedimentos Operacionais Padrão (POPs)",
+      itens: [
+        { id: "pop-direitos-titulares", texto: "Crie POP para atendimento aos direitos dos titulares" },
+        { id: "pop-gestao-incidentes", texto: "Crie POP para gestão de incidentes de segurança" },
+        { id: "pop-gestao-consentimento", texto: "Crie POP para gestão de consentimentos" },
+        { id: "pop-retencao-descarte", texto: "Crie POP para retenção e descarte de dados" },
+      ],
+    },
+    {
+      id: "documentos-contratuais",
+      titulo: "4. Documentos Contratuais",
+      itens: [
+        { id: "clausulas-fornecedores", texto: "Elabore cláusulas de proteção de dados para contratos com fornecedores" },
+        { id: "acordo-controlador-operador", texto: "Crie modelo de Acordo de Controlador-Operador (Art. 39)" },
+        { id: "termo-confidencialidade", texto: "Elabore Termo de Confidencialidade para servidores" },
+      ],
+    },
+    {
+      id: "adequacao-processos",
+      titulo: "5. Adequação de Processos",
+      itens: [
+        { id: "implementar-coleta-consentimento", texto: "Implemente processos adequados de coleta de consentimento" },
+        { id: "criar-processo-direitos", texto: "Crie processo para atendimento aos direitos dos titulares" },
+        { id: "implementar-gestao-incidentes", texto: "Implemente processo de gestão de incidentes de segurança" },
+        { id: "adequar-coleta-dados", texto: "Adeque formulários e processos de coleta de dados (minimização)" },
+      ],
+    },
+    {
+      id: "medidas-seguranca",
+      titulo: "6. Implementação de Medidas de Segurança",
+      itens: [
+        { id: "implementar-controles-acesso", texto: "Implemente controles de acesso baseados em função e necessidade" },
+        { id: "implementar-criptografia", texto: "Implemente criptografia para dados sensíveis" },
+        { id: "configurar-logs-auditoria", texto: "Configure logs e trilhas de auditoria" },
+        { id: "implementar-backup", texto: "Implemente e teste procedimentos de backup e recuperação" },
+      ],
+    },
+    {
+      id: "planejamento-treinamento",
+      titulo: "7. Planejamento do Programa de Treinamento",
+      itens: [
+        { id: "mapear-publicos", texto: "Mapeie os diferentes públicos-alvo (geral, específico, gestão, DPO)" },
+        { id: "definir-conteudos", texto: "Defina conteúdos específicos para cada público" },
+        { id: "escolher-metodologias", texto: "Escolha metodologias de treinamento (presencial, online, híbrido)" },
+        { id: "estabelecer-cronograma", texto: "Estabeleça cronograma de treinamentos" },
+      ],
+    },
+    {
+      id: "treinamento-geral",
+      titulo: "8. Treinamento Geral (Todos os Servidores)",
+      itens: [
+        { id: "fundamentos-lgpd", texto: "Treine sobre fundamentos da LGPD" },
+        { id: "conceitos-basicos", texto: "Explique conceitos básicos (dados pessoais, sensíveis, tratamento)" },
+        { id: "direitos-titulares", texto: "Ensine sobre direitos dos titulares" },
+        { id: "boas-praticas-diarias", texto: "Treine boas práticas de segurança no dia a dia" },
+      ],
+    },
+    {
+      id: "treinamento-especifico",
+      titulo: "9. Treinamento Específico por Área",
+      itens: [
+        { id: "treinar-ti", texto: "Treine equipe de TI sobre segurança técnica e gestão de acessos" },
+        { id: "treinar-rh", texto: "Treine RH sobre tratamento de dados de servidores e candidatos" },
+        { id: "treinar-comunicacao", texto: "Treine Comunicação sobre consentimento e transparência ativa" },
+        { id: "treinar-atendimento", texto: "Treine Atendimento ao Cidadão sobre coleta e uso de dados" },
+      ],
+    },
+    {
+      id: "conscientizacao-continua",
+      titulo: "10. Programa de Conscientização Contínua",
+      itens: [
+        { id: "criar-campanhas-internas", texto: "Crie campanhas internas de conscientização" },
+        { id: "enviar-newsletters", texto: "Envie newsletters periódicas sobre proteção de dados" },
+        { id: "realizar-workshops", texto: "Realize workshops temáticos periódicos" },
+      ],
+    },
+    {
+      id: "registro-evidencias",
+      titulo: "11. Registro e Evidências",
+      itens: [
+        { id: "registrar-implementacoes", texto: "Registre todas as implementações realizadas" },
+        { id: "documentar-treinamentos", texto: "Documente todos os treinamentos realizados (data, participantes, conteúdo)" },
+        { id: "arquivar-evidencias", texto: "Arquive evidências de conformidade" },
+        { id: "versionar-documentos", texto: "Implemente versionamento de todos os documentos" },
+      ],
+    },
+  ],
+  pratica: [
+    {
+      emoji: "🎼",
+      titulo: "O DPO regente: como evitar que cada documento vire um silo",
+      descricao:
+        "A armadilha clássica da Fase 6: cada documento (Política, RIPD, Aviso, Termo) é tocado por uma área diferente, ninguém conversa, e no fim os documentos se contradizem entre si — o que está no Aviso não bate com o RIPD, o que está nas Políticas não bate com os POPs. O DPO precisa atuar como REGENTE, não como autor solo.",
+      badge: "💡 Dica de ouro do curso",
+      destaque: true,
+      detalhe:
+        'Método prático: agende um RITUAL ÚNICO de revisão cruzada antes de publicar qualquer documento da Fase 6. Junte numa sala (presencial ou virtual) por 1 hora: Procuradoria, Comunicação, TI, dono do processo, DPO. Projete o documento + o RIPD + o Inventário no telão. Leia o documento parágrafo a parágrafo perguntando: "Isto bate com o que está no RIPD? E no Inventário? E no Plano de Ação?". Cada divergência vira ajuste antes da publicação. Custo: 1 hora. Economia: 6 meses de retrabalho explicando à ANPD por que a Política diz uma coisa e o Aviso diz outra. No app, o botão "Auto-preencher do PGP" no Aviso já faz parte desse alinhamento automaticamente — mas a revisão humana cruzada é insubstituível.',
+    },
+    {
+      emoji: "🔍",
+      titulo: "RIPD",
+      descricao:
+        "Relatório de Impacto à Proteção de Dados (Art. 38 LGPD). 8 seções do modelo ANPD. No app, pré-rascunhado a partir do Inventário e da Análise de Riscos — você revisa e completa.",
+      badge: "Missão 4a",
+      href: "/dashboard/ripd",
+    },
+    {
+      emoji: "🏢",
+      titulo: "Gestão de Terceiros",
+      descricao:
+        "Operadores que tratam dados por conta do órgão (Art. 39 LGPD). Avaliação de risco + due diligence + cláusulas LGPD nos contratos. Quase todo órgão tem 10-30 terceiros, e quase nenhum os cataloga.",
+      badge: "Missão 4a",
+      href: "/dashboard/terceiros",
+    },
+    {
+      emoji: "👤",
+      titulo: "Direitos do Titular (DSR)",
+      descricao:
+        "Canal de exercício dos 9 direitos do Art. 18 LGPD. Prazo legal de 15 dias úteis. Sem canal estruturado (formulário + fluxo + responsável + monitoramento), o prazo estoura no primeiro pedido sério.",
+      badge: "Missão 4a",
+      href: "/dashboard/dsr",
+    },
+    {
+      emoji: "📄",
+      titulo: "Aviso de Privacidade",
+      descricao:
+        "Síntese pública — 12 seções ANPD. Depende dos 3 pré-requisitos acima (RIPD ✓, Terceiros ✓, DSR ✓). No app, o quadro 'Pré-requisitos da Missão 4a' no topo da tela indica o que ainda falta antes de publicar.",
+      badge: "Missão 4b",
+      href: "/dashboard/aviso",
+    },
+  ],
 };
 
 const FASE_7_STUB: ConteudoFase = {
@@ -758,7 +1034,7 @@ export const CONTEUDO_FASES: ConteudoFase[] = [
   FASE_3,
   FASE_4,
   FASE_5,
-  FASE_6_STUB,
+  FASE_6,
   FASE_7_STUB,
 ];
 
