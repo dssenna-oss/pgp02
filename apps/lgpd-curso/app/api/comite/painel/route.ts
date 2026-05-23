@@ -1,17 +1,20 @@
-// GET /api/observador/painel?turmaSlug=X
-// Endpoint PÚBLICO (sem auth) — visão consolidada da turma pros observadores
-// acompanharem pelo celular. Versão SIMPLIFICADA do painel-facilitador:
+// GET /api/comite/painel?turmaSlug=X&orgao=PM|CM
+// Endpoint PÚBLICO (sem auth) — visão consolidada da turma pro Comitê
+// Executivo (PM ou CM) acompanhar pelo celular. Versão SIMPLIFICADA do
+// painel-facilitador, FILTRADA pelos grupos do órgão.
 //
 // Inclui:
-//   - Lista de grupos com timeline visual + status da missão atual
+//   - Lista de grupos do órgão (PM ou CM) com timeline visual + status
 //   - Score parcial de cada grupo (maturidade)
 //   - Última atividade
 //   - Turma nome + cidade
 //
-// EXCLUI (intencionalmente — são pedagógicos pro facilitador, não pro observador):
+// EXCLUI (intencionalmente — são pedagógicos pro facilitador):
 //   - SOS, phaseSkips, erros plantados
 //   - DSR game outros (textos livres dos DPOs)
-//   - Detalhes de SOS/incidentes individuais
+//
+// Sem o filtro orgao= o endpoint retorna TODOS os grupos (compat. caso
+// alguém abra a URL sem param — útil pra debug do facilitador).
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +27,7 @@ export const maxDuration = 30;
 export async function GET(req: NextRequest) {
   try {
     const turmaSlug = req.nextUrl.searchParams.get("turmaSlug");
+    const orgaoFiltro = req.nextUrl.searchParams.get("orgao"); // "PM" | "CM" | null
     if (!turmaSlug) {
       return NextResponse.json({ error: "turmaSlug obrigatório" }, { status: 400 });
     }
@@ -37,6 +41,9 @@ export async function GET(req: NextRequest) {
         status: true,
         grupos: {
           orderBy: { numero: "asc" },
+          where: orgaoFiltro === "PM" || orgaoFiltro === "CM"
+            ? { orgao: orgaoFiltro }
+            : undefined,
           include: { company: { select: { id: true, name: true, orgao: true } } },
         },
       },
@@ -188,11 +195,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       turma: { nome: turma.nome, cidade: turma.cidade },
+      orgaoFiltro: orgaoFiltro === "PM" || orgaoFiltro === "CM" ? orgaoFiltro : null,
       grupos: result,
       geradoEm: new Date().toISOString(),
     });
   } catch (e: any) {
-    console.error("[observador/painel]", e);
+    console.error("[comite/painel]", e);
     return NextResponse.json({ error: e.message || "Erro" }, { status: 500 });
   }
 }
