@@ -44,10 +44,16 @@ type CrachaData = {
   loginUrl?: string;
   // OBSERVADOR fields:
   observadorIdx?: number;
+  // URL pública /observador/<turmaSlug> — não-autenticada, mostra timeline+status
+  // dos grupos pro observador acompanhar do celular durante o curso.
+  observadorUrl?: string;
 };
 
 function renderCracha(c: CrachaData): string {
   if (c.tipo === "OBSERVADOR") {
+    // Observador agora tem QR Code pra acompanhar o painel da turma pelo
+    // celular (rota PÚBLICA /observador/<slug>, sem login). 4 atribuições
+    // foram condensadas pra abrir espaço pro QR.
     return `
       <div class="cracha">
         <div class="cracha-furo"></div>
@@ -59,20 +65,15 @@ function renderCracha(c: CrachaData): string {
           <div class="papel-icon" style="background:#475569">🔍</div>
           <div>
             <div class="papel-nome">Observador #${String(c.observadorIdx).padStart(2, "0")}</div>
-            <div class="papel-resp">Assessora facilitador e grupos</div>
+            <div class="papel-resp">Acompanha sem interferir</div>
           </div>
         </div>
-        <div class="cracha-corpo">
-          <div class="obs-bloco">
-            <div class="obs-titulo">📌 ATRIBUIÇÕES</div>
-            <ul class="obs-lista">
-              <li>Apoiar o facilitador na condução</li>
-              <li>Circular pelos grupos e observar dinâmicas</li>
-              <li>Anotar dúvidas recorrentes da turma</li>
-              <li>Não interfere nas decisões — só observa</li>
-            </ul>
-          </div>
+        <div class="cracha-corpo qr-corpo">
+          <img src="${qrUrl(c.observadorUrl || "")}" alt="QR" class="qr-img" />
+          <div class="qr-label">📷 acompanhe a turma</div>
+          <div class="qr-login-obs">painel read-only</div>
         </div>
+        <div class="obs-mini-atr">Circule · Observe · Anote · Não interfira</div>
         <div class="nome-bloco">
           <div class="nome-label">NOME</div>
           <div class="nome-linha"></div>
@@ -162,9 +163,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 10 crachás Consultor/Observador (genéricos)
+  // 10 crachás Consultor/Observador (genéricos) — QR aponta pra
+  // /observador/<turmaSlug> (público, read-only, view da turma toda).
+  const observadorUrl = `${url}/observador/${turma.slug || ""}`;
   for (let i = 1; i <= 10; i++) {
-    crachas.push({ tipo: "OBSERVADOR", observadorIdx: i });
+    crachas.push({ tipo: "OBSERVADOR", observadorIdx: i, observadorUrl });
   }
 
   const cards = crachas.map(renderCracha).join("");
@@ -342,6 +345,21 @@ export async function GET(req: NextRequest) {
     margin-bottom: 1mm;
   }
   .obs-lista li:before { content: "▸ "; color: #94a3b8; }
+  .qr-login-obs {
+    font-size: 6.5pt;
+    color: #64748b;
+    font-style: italic;
+    margin-top: 0.5mm;
+  }
+  .obs-mini-atr {
+    padding: 1.5mm 3mm;
+    text-align: center;
+    font-size: 6.5pt;
+    color: #475569;
+    font-weight: 600;
+    letter-spacing: 0.3pt;
+    border-top: 1px dashed #e2e8f0;
+  }
 
   .nome-bloco {
     padding: 1.5mm 3mm;
