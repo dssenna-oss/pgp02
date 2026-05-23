@@ -78,17 +78,32 @@ export function ConteudoFaseView({ fase }: { fase: ConteudoFase }) {
     <div className={`${sz.wrap} mx-auto`}>
       <Header fase={fase} projecao={projecao} setProjecao={setProjecao} sz={sz} />
 
-      {/* E-book / Biblioteca */}
-      {fase.ebook?.url && (
+      {/* E-books interativos — lista numerada (estilo prod) */}
+      {fase.ebooks.length > 0 && (
         <section className="mb-6">
           <h2 className={`${sz.h2} font-bold text-gray-900 mb-3 flex items-center gap-2`}>
-            <span>📚</span> E-book interativo
+            <span>📚</span> E-books Interativos
           </h2>
-          <BibliotecaFlipbook
-            titulo={fase.ebook.titulo}
-            descricao={fase.ebook.descricao}
-            url={fase.ebook.url}
-          />
+          <div className="space-y-3">
+            {fase.ebooks.map((eb, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span
+                  className={`shrink-0 mt-1 inline-flex items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold ${
+                    projecao ? "h-9 w-9 text-base" : "h-7 w-7 text-sm"
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <BibliotecaFlipbook
+                    titulo={eb.titulo}
+                    descricao={eb.descricao}
+                    url={eb.url}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
