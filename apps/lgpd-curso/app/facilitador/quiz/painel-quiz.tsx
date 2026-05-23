@@ -14,8 +14,9 @@ import { useEffect, useState } from "react";
 import {
   Lightbulb, Scale, Users, Shield, Flag,
   ClipboardCheck, RefreshCw, ExternalLink, Copy, Check,
-  AlertTriangle, TrendingUp, BarChart3, Award,
+  AlertTriangle, TrendingUp, BarChart3, Award, QrCode, Projector,
 } from "lucide-react";
+import Link from "next/link";
 import { Select } from "@/components/ui/select";
 import type { CategoriaQuiz } from "@/lib/quiz-perguntas";
 
@@ -68,6 +69,13 @@ const ICONE_CATEGORIA: Record<CategoriaQuiz, React.ComponentType<{ className?: s
   direitos_titular: Shield,
   fases_pgp: Flag,
 };
+
+// QR Code via api.qrserver.com (padrão do projeto, mesmo dos crachás).
+// Sem dependência de lib local — funciona em qualquer navegador.
+function qrSrc(data: string, size = 200): string {
+  if (!data) return "";
+  return `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(data)}&size=${size}x${size}&margin=2`;
+}
 
 export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
   const inicial = turmas.find((t) => t.proximoCurso)?.id ?? turmas[0]?.id ?? "";
@@ -148,35 +156,59 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
         </div>
       </div>
 
-      {/* URL pública pro QR/copiar */}
+      {/* URL pública + QR Code */}
       {turmaSel && (
         <div className="mt-4 rounded-lg border-l-4 border-l-blue-400 bg-blue-50 p-4">
-          <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1.5">
-            🔗 URL pública pra o participante
+          <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-2">
+            🔗 Acesso ao quiz
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <code className="flex-1 min-w-0 truncate rounded bg-white px-3 py-2 text-sm font-mono text-blue-700 ring-1 ring-blue-200">
-              {quizUrl}
-            </code>
-            <button
-              type="button"
-              onClick={copiarUrl}
-              className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              {copiou ? <><Check className="h-4 w-4" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar</>}
-            </button>
-            <a
-              href={quizUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              <ExternalLink className="h-4 w-4" /> Abrir
-            </a>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+            {/* QR Code */}
+            <div className="shrink-0 flex flex-col items-center gap-1.5">
+              <div className="rounded-lg bg-white p-2 ring-1 ring-blue-200 shadow-sm">
+                <img
+                  src={qrSrc(quizUrl, 180)}
+                  alt="QR Code do quiz"
+                  className="h-[156px] w-[156px] block"
+                />
+              </div>
+              <Link
+                href={`/facilitador/quiz/cartaz/${turmaSel.slug}`}
+                target="_blank"
+                className="text-[11px] font-medium text-blue-700 hover:text-blue-900 inline-flex items-center gap-1"
+              >
+                <Projector className="h-3 w-3" /> Abrir cartaz tela cheia
+              </Link>
+            </div>
+            {/* URL + botões */}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs text-blue-800 mb-1.5">URL pública (anônima):</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <code className="flex-1 min-w-0 truncate rounded bg-white px-3 py-2 text-sm font-mono text-blue-700 ring-1 ring-blue-200">
+                  {quizUrl}
+                </code>
+                <button
+                  type="button"
+                  onClick={copiarUrl}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  {copiou ? <><Check className="h-4 w-4" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar</>}
+                </button>
+                <a
+                  href={quizUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-md border bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <ExternalLink className="h-4 w-4" /> Abrir
+                </a>
+              </div>
+              <p className="mt-2 text-xs text-blue-800">
+                💡 Projete o cartaz no telão pra a turma escanear, ou cole o link no e-mail de convite.
+                O QR funciona em qualquer câmera de celular sem app extra.
+              </p>
+            </div>
           </div>
-          <p className="mt-2 text-xs text-blue-800">
-            Gere o QR Code dessa URL (qualquer ferramenta online) e projete no início do curso, ou cole no e-mail de convite.
-          </p>
         </div>
       )}
 
