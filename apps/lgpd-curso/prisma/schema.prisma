@@ -116,8 +116,33 @@ model CursoTurma {
   updatedAt    DateTime  @updatedAt
 
   grupos CursoGrupo[]
+  quizResponses QuizResponse[]
 
   @@map("curso_turmas")
+}
+
+model QuizResponse {
+  id                String   @id @default(cuid())
+  turmaId           String
+  // UUID gerado no localStorage do cliente — permite resgatar resultado sem login.
+  // O index único (turmaId, uuid) impede que o mesmo dispositivo conte 2 vezes.
+  uuid              String
+  startedAt         DateTime @default(now())
+  finishedAt        DateTime?
+  // Snapshot das respostas: [{ qid, selected, correct, categoria }]. JSON pra
+  // evitar tabela auxiliar — o quiz é estático (30 perguntas em lib/), análise
+  // agregada é simples sobre o JSON.
+  respostas         Json     @default("[]")
+  scoreTotal        Int      @default(0)
+  // { principios: { correct, total }, bases_legais: {...}, ... } pra mostrar
+  // lacunas por categoria ao participante e agregar no painel do facilitador.
+  scorePorCategoria Json     @default("{}")
+
+  turma CursoTurma @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@unique([turmaId, uuid])
+  @@index([turmaId, finishedAt])
+  @@map("quiz_responses")
 }
 
 model CursoGrupo {

@@ -135,6 +135,7 @@ const MENU: MenuItem[] = [
 
 const adminItems: MiniApp[] = [
   { href: "/facilitador",       label: "Painel do Facilitador", icon: LayoutDashboard },
+  { href: "/facilitador/quiz",  label: "Quiz Diagnóstico",      icon: ClipboardCheck },
   { href: "/admin/criar-turma", label: "Controle de turma",     icon: Settings },
   { href: "/admin/pacote-gap",  label: "Pacote GAP por turma",  icon: ClipboardCheck },
 ];
