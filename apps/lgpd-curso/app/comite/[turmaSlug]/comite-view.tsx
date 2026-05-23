@@ -1,11 +1,12 @@
 "use client";
 
-// Visão consolidada da turma pro Observador acompanhar do celular.
-// Polling 5s — mesmo padrão do Painel do Facilitador. Sem detalhes
-// pedagógicos sensíveis (SOS, erros plantados, phaseSkips).
+// Visão consolidada da turma pro Comitê Executivo (PM ou CM) acompanhar
+// pelo celular. Polling 5s — mesmo padrão do Painel do Facilitador.
+// Sem detalhes pedagógicos sensíveis (SOS, erros plantados, phaseSkips).
 //
-// Pensado pra ser lido enquanto o observador CIRCULA pela sala — leitura
-// rápida, layout vertical mobile-first, tipografia generosa.
+// Pensado pra ser lido enquanto os 5 membros do Comitê (1 Coordenador +
+// 4 Auxiliares) circulam pela sala apoiando os grupos do próprio órgão.
+// Layout mobile-first, tipografia generosa.
 
 import { useEffect, useState } from "react";
 import {
@@ -47,6 +48,7 @@ type Grupo = {
 
 type Dados = {
   turma: { nome: string; cidade: string };
+  orgaoFiltro: "PM" | "CM" | null;
   grupos: Grupo[];
   geradoEm: string;
 };
@@ -59,7 +61,13 @@ function tempoRelativo(iso: string | null): string {
   return `há ${Math.floor(seg / 3600)}h`;
 }
 
-export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
+export function ComiteView({
+  turmaSlug,
+  orgao,
+}: {
+  turmaSlug: string;
+  orgao: "PM" | "CM" | null;
+}) {
   const [dados, setDados] = useState<Dados | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregandoInicial, setCarregandoInicial] = useState(true);
@@ -68,7 +76,10 @@ export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
     let cancelado = false;
     async function load() {
       try {
-        const res = await fetch(`/api/observador/painel?turmaSlug=${turmaSlug}`, { cache: "no-store" });
+        const url = orgao
+          ? `/api/comite/painel?turmaSlug=${turmaSlug}&orgao=${orgao}`
+          : `/api/comite/painel?turmaSlug=${turmaSlug}`;
+        const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data?.error || `Erro ${res.status}`);
@@ -90,7 +101,7 @@ export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
       cancelado = true;
       clearInterval(id);
     };
-  }, [turmaSlug]);
+  }, [turmaSlug, orgao]);
 
   if (carregandoInicial) {
     return (
@@ -117,10 +128,25 @@ export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
 
   if (!dados) return null;
 
+  // Hero por órgão: emerald pra PM (combina com o gradient dos cards),
+  // blue pra CM, slate (neutro) se vier sem filtro.
+  const orgaoFiltro = dados.orgaoFiltro;
+  const heroCor = orgaoFiltro === "PM"
+    ? "from-emerald-600 via-emerald-700 to-teal-800"
+    : orgaoFiltro === "CM"
+    ? "from-blue-600 via-blue-700 to-indigo-800"
+    : "from-slate-600 via-slate-700 to-slate-800";
+  const tituloComite = orgaoFiltro === "PM"
+    ? "Comitê Executivo · Prefeitura"
+    : orgaoFiltro === "CM"
+    ? "Comitê Executivo · Câmara"
+    : "Comitê Executivo (visão geral)";
+  const emojiOrgao = orgaoFiltro === "PM" ? "🛕" : orgaoFiltro === "CM" ? "🏛" : "👥";
+
   return (
     <div className="space-y-5">
-      {/* Hero do Observador */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 px-5 py-6 text-white shadow-lg">
+      {/* Hero do Comitê */}
+      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${heroCor} px-5 py-6 text-white shadow-lg`}>
         <svg
           className="absolute inset-0 h-full w-full opacity-10"
           viewBox="0 0 400 200"
@@ -128,29 +154,29 @@ export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
           aria-hidden
         >
           <defs>
-            <pattern id="obs-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <pattern id="comite-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#obs-grid)" />
+          <rect width="100%" height="100%" fill="url(#comite-grid)" />
         </svg>
         <div className="relative flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-2 ring-white/40 backdrop-blur">
-            <Eye className="h-8 w-8" />
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 ring-2 ring-white/40 backdrop-blur text-3xl">
+            {emojiOrgao}
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-200">
-              Painel do Observador
+            <div className="text-[11px] font-semibold uppercase tracking-[0.15em] text-white/80">
+              Painel do Comitê
             </div>
             <h1 className="mt-0.5 text-xl font-bold leading-tight sm:text-2xl">
-              {dados.turma.nome}
+              {tituloComite}
             </h1>
-            <div className="text-sm text-slate-200/90">{dados.turma.cidade}</div>
+            <div className="text-sm text-white/90">{dados.turma.nome} · {dados.turma.cidade}</div>
           </div>
         </div>
         <div className="relative mt-3 flex flex-wrap gap-2 text-[11px] font-medium">
           <span className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/20">
-            🔍 {dados.grupos.length} grupos ativos
+            👥 {dados.grupos.length} grupo(s) sob acompanhamento
           </span>
           <span className="rounded-full bg-white/15 px-2.5 py-1 ring-1 ring-white/20">
             👁 Modo leitura — você acompanha sem interferir
@@ -161,10 +187,14 @@ export function ObservadorView({ turmaSlug }: { turmaSlug: string }) {
       {/* Resumo institucional */}
       <div className="rounded-lg border-l-4 border-l-slate-400 bg-white p-4">
         <p className="text-xs leading-relaxed text-gray-600">
-          Você é um(a) <strong className="text-gray-800">Observador(a) da turma</strong>: circula
-          pelos grupos, anota dúvidas recorrentes na Folha do Observador (papel) e devolve ao
-          facilitador na Reflexão Final. Esta página atualiza sozinha a cada 5 segundos —
-          consulte quando quiser saber onde a turma está, sem precisar perguntar.
+          Você é membro do <strong className="text-gray-800">Comitê Executivo</strong> ({orgaoFiltro === "PM" ? "Prefeitura" : orgaoFiltro === "CM" ? "Câmara" : "turma"}):
+          5 pessoas (1 Coordenador + 4 Auxiliares) que acompanham os grupos do órgão durante o curso. Anotem dúvidas recorrentes
+          na <strong>Folha do Comitê Executivo</strong> (papel) e entreguem ao facilitador na Reflexão Final.
+          Esta página atualiza sozinha a cada 5 segundos.
+        </p>
+        <p className="mt-2 text-[11px] italic text-gray-500">
+          ⚠️ Não confundir com o <strong>Comitê de Governança</strong> da Fase 1 do PGP — aquele é um órgão interno permanente
+          que cada Instituição forma pra gerir privacidade no dia a dia. Este Comitê Executivo é o papel de vocês neste curso.
         </p>
       </div>
 

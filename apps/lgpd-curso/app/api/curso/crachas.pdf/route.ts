@@ -31,7 +31,7 @@ function qrUrl(data: string, size = 200): string {
 }
 
 type CrachaData = {
-  tipo: "PAPEL" | "OBSERVADOR";
+  tipo: "PAPEL" | "COMITE";
   // PAPEL fields:
   orgao?: "PM" | "CM";
   grupoNumero?: number;
@@ -42,38 +42,46 @@ type CrachaData = {
   responsabilidade?: string;
   login?: string;
   loginUrl?: string;
-  // OBSERVADOR fields:
-  observadorIdx?: number;
-  // URL pública /observador/<turmaSlug> — não-autenticada, mostra timeline+status
-  // dos grupos pro observador acompanhar do celular durante o curso.
-  observadorUrl?: string;
+  // COMITE EXECUTIVO fields:
+  comiteOrgao?: "PM" | "CM";     // a qual órgão o comitê pertence
+  comiteFuncao?: "COORD" | "AUX"; // hierarquia interna do comitê (só visual)
+  comiteIdx?: number;             // 1 (Coord) ou 2..5 (Aux #1 a #4)
+  // URL pública /comite/<turmaSlug>?orgao=PM|CM — não-autenticada, mostra
+  // timeline+status dos grupos do órgão pro Comitê acompanhar.
+  comiteUrl?: string;
 };
 
 function renderCracha(c: CrachaData): string {
-  if (c.tipo === "OBSERVADOR") {
-    // Observador agora tem QR Code pra acompanhar o painel da turma pelo
-    // celular (rota PÚBLICA /observador/<slug>, sem login). 4 atribuições
-    // foram condensadas pra abrir espaço pro QR.
+  if (c.tipo === "COMITE") {
+    // Comitê Executivo (PM ou CM) — 5 membros: 1 Coordenador + 4 Auxiliares.
+    // Coord tem badge dourada; Aux tem badge cinza. Diferença é SÓ visual —
+    // funcionalmente acessam a mesma página (QR aponta pra mesma URL).
+    // QR Code aponta pra /comite/<slug>?orgao=PM|CM (rota pública).
+    const orgaoComite = c.comiteOrgao === "PM" ? "Prefeitura" : "Câmara";
+    const orgaoComiteClass = c.comiteOrgao === "PM" ? "comite-pm" : "comite-cm";
+    const ehCoord = c.comiteFuncao === "COORD";
+    const funcaoLabel = ehCoord ? "COORDENADOR(A)" : `AUXILIAR #${(c.comiteIdx || 0) - 1}`;
+    const funcaoBadgeClass = ehCoord ? "func-coord" : "func-aux";
     return `
       <div class="cracha">
         <div class="cracha-furo"></div>
-        <div class="orgao-observador">
-          <div class="orgao-tipo">CONSULTOR · OBSERVADOR</div>
-          <div class="orgao-nome">Apoio ao Facilitador</div>
+        <div class="orgao-banda ${orgaoComiteClass}">
+          <div class="orgao-tipo">COMITÊ EXECUTIVO</div>
+          <div class="orgao-nome">${orgaoComite}</div>
         </div>
         <div class="papel-row">
-          <div class="papel-icon" style="background:#475569">🔍</div>
+          <div class="papel-icon comite-icon">${ehCoord ? "⭐" : "🔍"}</div>
           <div>
-            <div class="papel-nome">Observador #${String(c.observadorIdx).padStart(2, "0")}</div>
+            <div class="papel-nome">${funcaoLabel}</div>
             <div class="papel-resp">Acompanha sem interferir</div>
           </div>
         </div>
         <div class="cracha-corpo qr-corpo">
-          <img src="${qrUrl(c.observadorUrl || "")}" alt="QR" class="qr-img" />
-          <div class="qr-label">📷 acompanhe a turma</div>
-          <div class="qr-login-obs">painel read-only</div>
+          <img src="${qrUrl(c.comiteUrl || "")}" alt="QR" class="qr-img" />
+          <div class="qr-label">📷 painel do comitê</div>
+          <div class="qr-login-obs">read-only · grupos do(a) ${orgaoComite}</div>
         </div>
-        <div class="obs-mini-atr">Circule · Observe · Anote · Não interfira</div>
+        <div class="comite-badge ${funcaoBadgeClass}">${ehCoord ? "lidera · organiza · apresenta no debrief" : "apoia o Coordenador · anota · circula"}</div>
         <div class="nome-bloco">
           <div class="nome-label">NOME</div>
           <div class="nome-linha"></div>
@@ -163,11 +171,32 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 10 crachás Consultor/Observador (genéricos) — QR aponta pra
-  // /observador/<turmaSlug> (público, read-only, view da turma toda).
-  const observadorUrl = `${url}/observador/${turma.slug || ""}`;
-  for (let i = 1; i <= 10; i++) {
-    crachas.push({ tipo: "OBSERVADOR", observadorIdx: i, observadorUrl });
+  // 10 crachás do Comitê Executivo: 2 Comitês × 5 membros cada
+  //   - Comitê PM: 1 Coordenador + 4 Auxiliares (acompanha grupos PM)
+  //   - Comitê CM: 1 Coordenador + 4 Auxiliares (acompanha grupos CM)
+  // QR aponta pra /comite/<slug>?orgao=PM|CM (público, read-only).
+  // Diferença Coord/Aux é SÓ visual — mesma URL, mesma view.
+  const baseComiteUrl = `${url}/comite/${turma.slug || ""}`;
+  for (const orgaoComite of ["PM", "CM"] as const) {
+    const comiteUrl = `${baseComiteUrl}?orgao=${orgaoComite}`;
+    // 1º crachá do comitê é Coordenador
+    crachas.push({
+      tipo: "COMITE",
+      comiteOrgao: orgaoComite,
+      comiteFuncao: "COORD",
+      comiteIdx: 1,
+      comiteUrl,
+    });
+    // 2º a 5º são Auxiliares
+    for (let aux = 1; aux <= 4; aux++) {
+      crachas.push({
+        tipo: "COMITE",
+        comiteOrgao: orgaoComite,
+        comiteFuncao: "AUX",
+        comiteIdx: aux + 1,
+        comiteUrl,
+      });
+    }
   }
 
   const cards = crachas.map(renderCracha).join("");
@@ -361,6 +390,34 @@ export async function GET(req: NextRequest) {
     border-top: 1px dashed #e2e8f0;
   }
 
+  /* Comitê Executivo — cabeçalho colorido por órgão (PM=verde, CM=azul,
+     mesma paleta dos crachás de papel da PM/CM) */
+  .comite-pm { background: linear-gradient(135deg, #065f46 0%, #047857 100%); }
+  .comite-cm { background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%); }
+  .comite-icon {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-size: 18pt;
+  }
+  .comite-badge {
+    padding: 1.5mm 3mm;
+    text-align: center;
+    font-size: 6.5pt;
+    font-style: italic;
+    border-top: 1px dashed #e2e8f0;
+  }
+  /* Coord recebe badge dourada (Coord = ⭐ na faixa do papel) */
+  .func-coord {
+    background: #fef3c7;
+    color: #78350F;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: 0.3pt;
+  }
+  .func-aux {
+    color: #475569;
+  }
+
   .nome-bloco {
     padding: 1.5mm 3mm;
     border-top: 1px dashed #cbd5e1;
@@ -395,7 +452,7 @@ export async function GET(req: NextRequest) {
     <h1>Crachás · Turma "${turma.nome}"</h1>
     <div class="sub">
       ${turma.cidade} · ${turma.grupos.length} grupos · ${crachas.length} crachás
-      (${crachas.filter(c => c.tipo === "PAPEL").length} papéis + ${crachas.filter(c => c.tipo === "OBSERVADOR").length} observadores)
+      (${crachas.filter(c => c.tipo === "PAPEL").length} papéis + ${crachas.filter(c => c.tipo === "COMITE").length} membros do Comitê Executivo)
     </div>
     <div class="aviso-impressao">
       <strong>⚙️ Antes de imprimir — abra o diálogo (Ctrl+P) e confira 3 coisas:</strong>
