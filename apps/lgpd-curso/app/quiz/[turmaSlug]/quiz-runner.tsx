@@ -461,12 +461,56 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Conceito visual + mensagem de estímulo (uma por faixa, exceto celebração
+  // que tem banner próprio amarelo). Tom alinhado ao DNA do curso: "errar
+  // aqui é o objetivo". Cada faixa tem cor consistente com o card de score.
   const conceito = ehCelebracao
-    ? { txt: "Domínio excelente!", cor: "from-yellow-400 via-amber-500 to-orange-500", emoji: "🏆" }
-    : perc >= 75 ? { txt: "Conhecimento sólido", cor: "from-emerald-500 to-teal-600", emoji: "🌟" }
-    : perc >= 50 ? { txt: "Conhecimento intermediário", cor: "from-blue-500 to-indigo-600", emoji: "📘" }
-    : perc >= 25 ? { txt: "Espaço pra aprofundar", cor: "from-amber-500 to-orange-600", emoji: "📖" }
-    :              { txt: "Curso vai te ajudar bastante", cor: "from-rose-500 to-pink-600", emoji: "🌱" };
+    ? {
+        txt: "Domínio excelente!",
+        cor: "from-yellow-400 via-amber-500 to-orange-500",
+        emoji: "🏆",
+        estimulo: null,
+      }
+    : perc >= 75 ? {
+        txt: "Conhecimento sólido",
+        cor: "from-emerald-500 to-teal-600",
+        emoji: "🌟",
+        estimulo: {
+          titulo: "Você já tem boa base!",
+          texto: "O curso vai te levar do teórico ao PRÁTICO. As lacunas acima são onde vamos aprofundar.",
+          tom: "emerald" as const,
+        },
+      }
+    : perc >= 50 ? {
+        txt: "Conhecimento intermediário",
+        cor: "from-blue-500 to-indigo-600",
+        emoji: "📘",
+        estimulo: {
+          titulo: "No caminho certo!",
+          texto: "Você sabe o essencial. As lacunas acima são EXATAMENTE o que vamos resolver hoje.",
+          tom: "blue" as const,
+        },
+      }
+    : perc >= 25 ? {
+        txt: "Espaço pra aprofundar",
+        cor: "from-amber-500 to-orange-600",
+        emoji: "📖",
+        estimulo: {
+          titulo: "Errar AQUI é o objetivo!",
+          texto: "Cada lacuna que aparece agora é uma armadilha que NÃO vai acontecer com você no órgão real.",
+          tom: "amber" as const,
+        },
+      }
+    : {
+        txt: "Curso vai te ajudar bastante",
+        cor: "from-rose-500 to-pink-600",
+        emoji: "🌱",
+        estimulo: {
+          titulo: "Você está no melhor lugar pra começar!",
+          texto: "Começar do zero é vantagem — sem vícios de aprendizado errado. Em algumas horas, você sai falando essa língua.",
+          tom: "rose" as const,
+        },
+      };
 
   return (
     <div className="space-y-5">
@@ -509,6 +553,16 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
             Use o curso pra aprofundar nos detalhes práticos.
           </div>
         </div>
+      )}
+
+      {/* Mensagem de estímulo por faixa (pra quem ficou abaixo de 27).
+          Tom alinhado ao DNA do curso: errar AQUI é o objetivo. */}
+      {!ehCelebracao && conceito.estimulo && (
+        <MensagemEstimulo
+          titulo={conceito.estimulo.titulo}
+          texto={conceito.estimulo.texto}
+          tom={conceito.estimulo.tom}
+        />
       )}
 
       {/* Lacunas por categoria */}
@@ -567,6 +621,31 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
         Resposta enviada anonimamente. O facilitador vê só números agregados da turma.<br />
         Bom curso! 🎯
       </div>
+    </div>
+  );
+}
+
+// Banner de estímulo logo abaixo do card de score (pra quem ficou abaixo
+// de 27). Cor consistente com a faixa do conceito.
+function MensagemEstimulo({
+  titulo,
+  texto,
+  tom,
+}: {
+  titulo: string;
+  texto: string;
+  tom: "emerald" | "blue" | "amber" | "rose";
+}) {
+  const config = {
+    emerald: { border: "border-emerald-300", bg: "bg-emerald-50", titulo: "text-emerald-900", texto: "text-emerald-800" },
+    blue:    { border: "border-blue-300",    bg: "bg-blue-50",    titulo: "text-blue-900",    texto: "text-blue-800" },
+    amber:   { border: "border-amber-300",   bg: "bg-amber-50",   titulo: "text-amber-900",   texto: "text-amber-800" },
+    rose:    { border: "border-rose-300",    bg: "bg-rose-50",    titulo: "text-rose-900",    texto: "text-rose-800" },
+  }[tom];
+  return (
+    <div className={`rounded-xl border-2 ${config.border} ${config.bg} p-4 text-center shadow-sm`}>
+      <div className={`text-base font-bold ${config.titulo}`}>{titulo}</div>
+      <div className={`mt-1 text-xs ${config.texto} leading-relaxed`}>{texto}</div>
     </div>
   );
 }
