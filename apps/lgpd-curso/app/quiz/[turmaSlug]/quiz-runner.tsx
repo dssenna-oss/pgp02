@@ -17,8 +17,72 @@ import {
   ArrowRight, ArrowLeft, CheckCircle2, Circle, Sparkles, AlertTriangle,
   RefreshCw, Award, Loader2,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import { QuizHero } from "./quiz-hero";
 import type { CategoriaQuiz, PerguntaPublica } from "@/lib/quiz-perguntas";
+
+// Pontuação mínima pra disparar a celebração (confete + palmas).
+// 27/30 = 90% — sinaliza "domínio sólido" raro o suficiente pra render
+// o ritual de celebração impactante (não banaliza).
+const PONTUACAO_CELEBRACAO = 27;
+
+// Palmas sintetizadas via Web Audio — mesmo padrão de resumo-turma.tsx.
+// Buffer de ruído branco curto + filtro passa-banda em ~2kHz + envelope rápido.
+function tocarPalmas(audioCtx: AudioContext, qtdPalmas = 14) {
+  const sampleRate = audioCtx.sampleRate;
+  for (let i = 0; i < qtdPalmas; i++) {
+    const atrasoMs = i * 85 + Math.random() * 30;
+    setTimeout(() => {
+      try {
+        const duration = 0.08;
+        const buf = audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
+        const dados = buf.getChannelData(0);
+        for (let j = 0; j < dados.length; j++) dados[j] = Math.random() * 2 - 1;
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        const filtro = audioCtx.createBiquadFilter();
+        filtro.type = "bandpass";
+        filtro.frequency.value = 1500 + Math.random() * 1500;
+        filtro.Q.value = 0.8;
+        const gain = audioCtx.createGain();
+        const volume = 0.11 + Math.random() * 0.08;
+        const now = audioCtx.currentTime;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(volume, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        src.connect(filtro);
+        filtro.connect(gain);
+        gain.connect(audioCtx.destination);
+        src.start(now);
+        src.stop(now + duration);
+      } catch {}
+    }, atrasoMs);
+  }
+}
+
+// Confete dos 2 cantos por ~3s — mesmo padrão de resumo-turma.tsx.
+function dispararConfete() {
+  const duracaoMs = 3000;
+  const fim = Date.now() + duracaoMs;
+  const cores = ["#fbbf24", "#34d399", "#60a5fa", "#a78bfa", "#f87171", "#facc15"];
+  (function frame() {
+    confetti({
+      particleCount: 4,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.7 },
+      colors: cores,
+    });
+    confetti({
+      particleCount: 4,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.7 },
+      colors: cores,
+    });
+    if (Date.now() < fim) requestAnimationFrame(frame);
+  })();
+}
 
 type Estado = "IDLE" | "READY" | "RUNNING" | "SUBMITTING" | "RESULT" | "JA_RESPONDEU" | "ERRO";
 
@@ -221,7 +285,7 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
             </div>
             <div className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
               <Award className="h-4 w-4 shrink-0" />
-              <span>Sirve pra calibrar o curso do dia</span>
+              <span>Ajuda a identificar os tópicos mais necessários</span>
             </div>
           </div>
           <button
@@ -374,12 +438,35 @@ function categoriaRotulo(cat: CategoriaQuiz): string {
 function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }) {
   const perc = Math.round((resultado.scoreTotal / resultado.totalPerguntas) * 100);
   const lacunas = resultado.lacunas.filter((l) => l.ehLacuna);
+  const ehCelebracao = resultado.scoreTotal >= PONTUACAO_CELEBRACAO;
 
-  const conceito =
-    perc >= 75 ? { txt: "Conhecimento sólido", cor: "from-emerald-500 to-teal-600", emoji: "🌟" } :
-    perc >= 50 ? { txt: "Conhecimento intermediário", cor: "from-blue-500 to-indigo-600", emoji: "📘" } :
-    perc >= 25 ? { txt: "Espaço pra aprofundar", cor: "from-amber-500 to-orange-600", emoji: "📖" } :
-                 { txt: "Curso vai te ajudar bastante", cor: "from-rose-500 to-pink-600", emoji: "🌱" };
+  // Dispara confete + palmas se score >= 27. Só roda 1x quando o componente
+  // monta (entrada do user na tela de resultado). Se for "ja respondeu",
+  // NÃO dispara — celebração é pra quem acabou de fechar o quiz, não pra
+  // quem está revisitando.
+  useEffect(() => {
+    if (!ehCelebracao || ja) return;
+    try {
+      dispararConfete();
+      const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        // Em alguns navegadores o ctx nasce "suspended" — retoma antes de tocar
+        if (ctx.state === "suspended" && "resume" in ctx) {
+          (ctx as any).resume();
+        }
+        tocarPalmas(ctx, 16);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const conceito = ehCelebracao
+    ? { txt: "Domínio excelente!", cor: "from-yellow-400 via-amber-500 to-orange-500", emoji: "🏆" }
+    : perc >= 75 ? { txt: "Conhecimento sólido", cor: "from-emerald-500 to-teal-600", emoji: "🌟" }
+    : perc >= 50 ? { txt: "Conhecimento intermediário", cor: "from-blue-500 to-indigo-600", emoji: "📘" }
+    : perc >= 25 ? { txt: "Espaço pra aprofundar", cor: "from-amber-500 to-orange-600", emoji: "📖" }
+    :              { txt: "Curso vai te ajudar bastante", cor: "from-rose-500 to-pink-600", emoji: "🌱" };
 
   return (
     <div className="space-y-5">
@@ -409,6 +496,20 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
           </div>
         </div>
       </div>
+
+      {/* Mensagem extra de celebração quando score >= 27 */}
+      {ehCelebracao && (
+        <div className="rounded-xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 text-center shadow-sm">
+          <div className="text-2xl">🎉 🎊 🎉</div>
+          <div className="mt-1 text-base font-bold text-amber-900">
+            Parabéns! Você está no topo da turma!
+          </div>
+          <div className="mt-0.5 text-xs text-amber-800">
+            {resultado.scoreTotal} de {resultado.totalPerguntas} é um resultado raro — domínio sólido da LGPD.
+            Use o curso pra aprofundar nos detalhes práticos.
+          </div>
+        </div>
+      )}
 
       {/* Lacunas por categoria */}
       <div className="rounded-xl border bg-white p-5">
