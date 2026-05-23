@@ -22,6 +22,7 @@ import { SenhaTurmasWidget } from "./senha-turmas-widget";
 import { cn } from "@/lib/utils";
 import { GUIAS } from "@/lib/guias-apoio";
 import { SLIDES_FASES } from "@/lib/slides-fases";
+import { CONTEUDO_FASES, temConteudo } from "@/lib/conteudo-fases";
 import type { MissoesProgresso } from "@/lib/missoes-progresso";
 
 type ProgressoKey = keyof MissoesProgresso;
@@ -500,6 +501,40 @@ export function Sidebar() {
                     <span className="flex-1 text-[13px] leading-tight">
                       {f.emoji} {f.titulo}
                     </span>
+                  </Link>
+                );
+              })}
+
+              {/* Conteúdo das Fases — telas institucionais (Descrição/Como
+                  Proceder/Checklist/Coloque em Prática) adaptadas do app
+                  principal, pra projetar antes da missão correspondente. */}
+              <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
+                <Projector className="h-3 w-3" /> Conteúdo das Fases
+              </div>
+              {CONTEUDO_FASES.map((f) => {
+                const href = `/facilitador/conteudo-fase/${f.slug}`;
+                const active = pathname === href;
+                const pronto = temConteudo(f);
+                return (
+                  <Link
+                    key={f.slug}
+                    href={href}
+                    onClick={closeMobile}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
+                      active
+                        ? "bg-brand-50 text-brand-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-100",
+                      !pronto && "opacity-70",
+                    )}
+                  >
+                    <Flag className="h-4 w-4 shrink-0 text-gray-500" />
+                    <span className="flex-1 text-[13px] leading-tight">{f.titulo}</span>
+                    {!pronto && (
+                      <span className="text-[9px] bg-gray-200 text-gray-600 px-1 py-0.5 rounded shrink-0 uppercase tracking-wide">
+                        em breve
+                      </span>
+                    )}
                   </Link>
                 );
               })}
