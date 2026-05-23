@@ -776,6 +776,12 @@ const FASE_6: ConteudoFase = {
         "E-book específico desta fase. Documento transversal que define princípios, controles e responsabilidades de proteção da informação — alicerce das medidas de segurança técnicas e organizacionais.",
       url: "https://heyzine.com/flip-book/7c96fc6631.html",
     },
+    {
+      titulo: "LIA — Avaliação de Legítimo Interesse",
+      descricao:
+        "E-book específico desta fase. Como elaborar a LIA exigida pelo Art. 10 §3º LGPD pra qualquer tratamento que use legítimo interesse (Art. 7º IX) como base — 3 etapas (Finalidade · Necessidade · Balanceamento) com workflow de aprovação.",
+      url: "https://heyzine.com/flip-book/60ec74d696.html",
+    },
   ],
   descricao: [
     {
@@ -1017,6 +1023,16 @@ const FASE_6: ConteudoFase = {
         "Síntese pública — 12 seções ANPD. Depende dos 3 pré-requisitos acima (RIPD ✓, Terceiros ✓, DSR ✓). No app, o quadro 'Pré-requisitos da Missão 4a' no topo da tela indica o que ainda falta antes de publicar.",
       badge: "Missão 4b",
       href: "/dashboard/aviso",
+    },
+    {
+      emoji: "⚖️",
+      titulo: "LIA — quando Legítimo Interesse vira obrigação",
+      descricao:
+        "Toda vez que um processo do Inventário usa Art. 7º IX (legítimo interesse) como base legal, o Art. 10 §3º LGPD EXIGE uma LIA (Avaliação de Legítimo Interesse) — 3 etapas estruturadas: Finalidade · Necessidade · Balanceamento. Sem LIA aprovada, o uso da base legal é frágil — a ANPD pode questionar.",
+      badge: "💡 Dica de ouro do curso",
+      destaque: true,
+      detalhe:
+        "Regra crítica que poucos sabem: LIA NUNCA serve pra dados sensíveis (saúde, opinião política, dados de crianças). Pra esses, a base legal correta vem do Art. 11 — consentimento específico ou hipótese restrita. O app principal (lgpd-pgp) tem mini-app de LIA completo (criar/editar/aprovar/DOCX). No curso vamos VER 2 modelos prontos na Reflexão Final: um pra Pegadinha #1 do Posto (marketing) — BLOQUEADA porque envolve dados sensíveis; outro pra Pegadinha #4 da Ouvidoria (newsletter) — REPROVADA no Balanceamento porque titular não esperaria razoavelmente. Conexão dramática: na hora do debrief, a LIA mostra que a falha NÃO foi acidente — foi consequência de ter pulado o controle.",
     },
   ],
 };

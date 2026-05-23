@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -134,10 +134,11 @@ const MENU: MenuItem[] = [
 ];
 
 const adminItems: MiniApp[] = [
-  { href: "/facilitador",       label: "Painel do Facilitador", icon: LayoutDashboard },
-  { href: "/facilitador/quiz",  label: "Quiz Diagnóstico",      icon: ClipboardCheck },
-  { href: "/admin/criar-turma", label: "Controle de turma",     icon: Settings },
-  { href: "/admin/pacote-gap",  label: "Pacote GAP por turma",  icon: ClipboardCheck },
+  { href: "/facilitador",              label: "Painel do Facilitador", icon: LayoutDashboard },
+  { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",      icon: ClipboardCheck },
+  { href: "/facilitador/lia-modelos",  label: "LIA — Modelos (debrief)", icon: Scale },
+  { href: "/admin/criar-turma",        label: "Controle de turma",     icon: Settings },
+  { href: "/admin/pacote-gap",         label: "Pacote GAP por turma",  icon: ClipboardCheck },
 ];
 
 const STORAGE_KEY_EXPANDIDA = "curso-sidebar-fase-expandida";
