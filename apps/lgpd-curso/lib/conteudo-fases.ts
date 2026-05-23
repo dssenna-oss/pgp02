@@ -543,9 +543,9 @@ const FASE_5: ConteudoFase = {
   missao: "Entre as Missões M3 (GAP) e M4a (RIPD/Terceiros/DSR)",
   ebooks: [
     {
-      titulo: "PGP — Fase 5: Plano de Ação e Adequação",
+      titulo: "Plano de Ação e Priorização de Atividades",
       descricao:
-        "E-book específico desta fase. Como transformar riscos e gaps identificados em ações concretas com responsáveis, prazos e indicadores — base do princípio de accountability da LGPD.",
+        "E-book específico desta fase. Como transformar riscos e gaps identificados em ações concretas com responsáveis, prazos e indicadores — priorização que vira execução, base do princípio de accountability da LGPD.",
       url: "https://heyzine.com/flip-book/bbbf7c0121.html",
     },
   ],
@@ -735,40 +735,46 @@ const FASE_6: ConteudoFase = {
   missao: "Antes das Missões M4a (RIPD/Terceiros/DSR) e M4b (Aviso)",
   ebooks: [
     {
-      titulo: "PGP — Fase 6: RIPD (Relatório de Impacto à Proteção de Dados)",
+      titulo: "Relatório de Impacto à Proteção de Dados (RIPD)",
       descricao:
         "E-book específico desta fase. Como elaborar o RIPD nas 8 seções do modelo ANPD — pré-requisito do Aviso de Privacidade (Art. 38 LGPD).",
-      url: "https://heyzine.com/flip-book/0a10d977b3.html",
-    },
-    {
-      titulo: "PGP — Fase 6: Termos de Consentimento",
-      descricao:
-        "E-book específico desta fase. Quando o consentimento é a base legal apropriada e como coletá-lo de forma livre, informada, inequívoca e específica (Art. 5º XII e Art. 8º LGPD).",
-      url: "https://heyzine.com/flip-book/1576d27a9d.html",
-    },
-    {
-      titulo: "PGP — Fase 6: Direitos do Titular (DSR)",
-      descricao:
-        "E-book específico desta fase. Os 9 direitos do Art. 18 LGPD e como estruturar o canal de atendimento ao cidadão dentro do prazo legal de 15 dias úteis.",
-      url: "https://heyzine.com/flip-book/6c398039ff.html",
-    },
-    {
-      titulo: "PGP — Fase 6: Aviso de Privacidade",
-      descricao:
-        "E-book específico desta fase. As 12 seções do modelo ANPD — síntese pública que depende do RIPD, da lista de Terceiros e do canal DSR pra fazer sentido.",
-      url: "https://heyzine.com/flip-book/d376d06f3e.html",
-    },
-    {
-      titulo: "PGP — Fase 6: Políticas LGPD",
-      descricao:
-        "E-book específico desta fase. Políticas externas (pra cidadãos) e internas (pra servidores) — Política de Privacidade, Política Interna de Proteção de Dados, Política de Segurança, Código de Conduta.",
       url: "https://heyzine.com/flip-book/a694923f33.html",
     },
     {
-      titulo: "PGP — Fase 6: Gestão de Terceiros",
+      titulo: "Gestão de Contratos e Fornecedores",
       descricao:
-        "E-book específico desta fase. Como avaliar operadores que tratam dados por conta do órgão (due diligence) e quais cláusulas LGPD são obrigatórias nos contratos (Art. 39 LGPD).",
+        "E-book específico desta fase. Avaliação de operadores que tratam dados por conta do órgão (due diligence) e cláusulas LGPD obrigatórias nos contratos (Art. 39 LGPD).",
+      url: "https://heyzine.com/flip-book/6c398039ff.html",
+    },
+    {
+      titulo: "Canais de Atendimento a Titulares de Dados Pessoais",
+      descricao:
+        "E-book específico desta fase. Como estruturar o canal pra o cidadão exercer os 9 direitos do Art. 18 LGPD dentro do prazo legal de 15 dias úteis.",
+      url: "https://heyzine.com/flip-book/1576d27a9d.html",
+    },
+    {
+      titulo: "Termo de Uso, Política/Aviso de Privacidade",
+      descricao:
+        "E-book específico desta fase. Documentos públicos que comunicam ao cidadão a forma de tratamento de dados — Termo de Uso (regras de uso do serviço) + Política/Aviso de Privacidade (12 seções ANPD).",
+      url: "https://heyzine.com/flip-book/d376d06f3e.html",
+    },
+    {
+      titulo: "Política de Cookies no Setor Público",
+      descricao:
+        "E-book específico desta fase. Guia da ANPD pra elaboração de políticas e banners de cookies em websites e aplicações do serviço público — extensão web do Aviso de Privacidade.",
+      url: "https://heyzine.com/flip-book/0a10d977b3.html",
+    },
+    {
+      titulo: "Política de Retenção de Dados",
+      descricao:
+        "E-book específico desta fase. Definição de prazos de retenção e descarte de dados pessoais — política interna estrutural que define quanto tempo cada dado é guardado e como é descartado.",
       url: "https://heyzine.com/flip-book/23f36d6b72.html",
+    },
+    {
+      titulo: "Política de Segurança da Informação (PSI)",
+      descricao:
+        "E-book específico desta fase. Documento transversal que define princípios, controles e responsabilidades de proteção da informação — alicerce das medidas de segurança técnicas e organizacionais.",
+      url: "https://heyzine.com/flip-book/7c96fc6631.html",
     },
   ],
   descricao: [
@@ -1024,21 +1030,21 @@ const FASE_7: ConteudoFase = {
   missao: "Antes da Missão M5 (Incidente Surpresa)",
   ebooks: [
     {
-      titulo: "PGP — Fase 7: Resposta a Incidentes",
+      titulo: "Programa de Governança em Privacidade",
       descricao:
-        "E-book específico desta fase. Como registrar, classificar a severidade e comunicar à ANPD e aos titulares dentro do prazo da Res. CD/ANPD nº 15/2024.",
-      url: "https://heyzine.com/flip-book/5936314498.html",
+        "E-book específico desta fase. O PGP como cultura institucional contínua — não projeto pontual. Conexão entre o monitoramento da F7 e o ciclo completo do programa de governança.",
+      url: "https://heyzine.com/flip-book/bbbf7c0121.html",
     },
     {
-      titulo: "PGP — Fase 7: PRI (Plano de Resposta a Incidentes)",
+      titulo: "Resolução ANPD Nº 15 — Comunicação de Incidentes de Segurança",
       descricao:
-        "E-book específico desta fase. Documento institucional inspirado no ciclo NIST (Preparar, Detectar, Conter, Erradicar, Recuperar, Aprender) com Matriz RACI e Equipe ETIR/CSIRT.",
+        "E-book específico desta fase. Resolução CD/ANPD nº 15/2024 detalhada — regras objetivas pra comunicação de incidentes de segurança da informação à Autoridade Nacional.",
       url: "https://heyzine.com/flip-book/ab58c1976b.html",
     },
     {
-      titulo: "PGP — Fase 7: Monitoramento Contínuo",
+      titulo: "Guia Prático: Quando e Como Comunicar um Incidente à ANPD",
       descricao:
-        "E-book específico desta fase. KPIs de privacidade, auditorias periódicas, revisão de documentação, acompanhamento legislativo e ciclo PDCA — o PGP como programa, não projeto.",
+        "E-book específico desta fase. Guia prático complementar à Res. 15/2024 — fluxo passo a passo, prazos, modelo de comunicação e exemplos de casos reais.",
       url: "https://heyzine.com/flip-book/9df0dd8581.html",
     },
   ],
