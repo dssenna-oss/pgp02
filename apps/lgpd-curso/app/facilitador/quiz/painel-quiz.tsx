@@ -14,9 +14,10 @@ import { useEffect, useState } from "react";
 import {
   Lightbulb, Scale, Users, Shield, Flag,
   ClipboardCheck, RefreshCw, ExternalLink, Copy, Check,
-  AlertTriangle, TrendingUp, BarChart3, Award, QrCode, Projector,
+  AlertTriangle, TrendingUp, BarChart3, Award, QrCode, Projector, Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { Select } from "@/components/ui/select";
 import type { CategoriaQuiz } from "@/lib/quiz-perguntas";
 
@@ -83,6 +84,7 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
   const [dados, setDados] = useState<Dados | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [copiou, setCopiou] = useState(false);
+  const [zerando, setZerando] = useState(false);
 
   const turmaSel = turmas.find((t) => t.id === turmaId);
   const quizUrl = turmaSel
@@ -119,6 +121,48 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
     });
   }
 
+  // Zerar respostas: ação destrutiva — confirmação dupla. A 1ª pergunta o
+  // intent; a 2ª pede pra digitar "ZERAR" pra evitar clique acidental.
+  async function zerarRespostas() {
+    if (!turmaSel) return;
+    const totalAtual = dados?.total.respondentes ?? 0;
+    if (totalAtual === 0) {
+      toast("Nenhuma resposta pra apagar nesta turma.");
+      return;
+    }
+    const c1 = confirm(
+      `Apagar TODAS as ${totalAtual} respostas do quiz da turma "${turmaSel.nome}"?\n\n` +
+      `Esta ação é IRREVERSÍVEL. Use só depois de um quiz de teste, antes do curso real começar.`
+    );
+    if (!c1) return;
+    const c2 = prompt('Pra confirmar, digite ZERAR (maiúsculas):');
+    if (c2 !== "ZERAR") {
+      toast.error("Cancelado — confirmação não bateu.");
+      return;
+    }
+    setZerando(true);
+    try {
+      const res = await fetch("/api/curso/quiz/reset-turma", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turmaId: turmaSel.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(`Erro: ${data.error || "falha ao zerar"}`);
+        return;
+      }
+      toast.success(`✅ ${data.deletedCount} resposta(s) apagada(s) da turma ${data.turmaNome}.`);
+      // Refetch imediato pra zerar o painel
+      const refetch = await fetch(`/api/quiz/painel?turmaId=${turmaSel.id}`, { cache: "no-store" });
+      if (refetch.ok) setDados(await refetch.json());
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message || "falha ao zerar"}`);
+    } finally {
+      setZerando(false);
+    }
+  }
+
   if (turmas.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -145,7 +189,7 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
             Aplicado no início do curso, anônimo, 30 perguntas. Resultado consolidado da turma.
           </p>
         </div>
-        <div className="shrink-0">
+        <div className="shrink-0 flex items-center gap-2 flex-wrap">
           <Select value={turmaId} onChange={(e) => setTurmaId(e.target.value)} className="text-sm">
             {turmas.map((t) => (
               <option key={t.id} value={t.id}>
@@ -153,6 +197,18 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
               </option>
             ))}
           </Select>
+          {turmaSel && (
+            <button
+              type="button"
+              onClick={zerarRespostas}
+              disabled={zerando || !dados || dados.total.respondentes === 0}
+              className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Apagar todas as respostas desta turma (use depois de quiz de teste, antes do curso real)"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {zerando ? "Zerando..." : "Zerar respostas"}
+            </button>
+          )}
         </div>
       </div>
 
