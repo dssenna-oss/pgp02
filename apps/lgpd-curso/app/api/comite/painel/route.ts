@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         }),
         prisma.operator.findMany({
           where: { companyId: cid },
-          include: { contracts: { select: { clausulasLgpd: true, createdAt: true, updatedAt: true } } },
+          include: { contracts: { select: { clausulasLgpd: true, clausulasSelecionadas: true, createdAt: true, updatedAt: true } } },
         }),
         prisma.dsrRequest.findMany({
           where: { companyId: cid },
@@ -164,6 +164,7 @@ export async function GET(req: NextRequest) {
         operadores: operadores.map((o) => ({
           createdAt: o.createdAt,
           updatedAt: o.contracts?.[0]?.updatedAt ?? o.updatedAt,
+          clausulasSelecionadas: o.contracts?.[0]?.clausulasSelecionadas ?? [],
         })),
         dsrs: dsr,
         aviso: aviso ? { status: aviso.status, createdAt: aviso.createdAt, updatedAt: aviso.updatedAt } : null,
