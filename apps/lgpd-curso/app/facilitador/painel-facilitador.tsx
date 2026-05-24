@@ -62,7 +62,35 @@ type Grupo = {
   dsrGameOutros?: Array<{ titularNome: string; pedido: string; resposta: string }>;
   avisoErrosPlantados?: string[];
   avisoErrosReportados?: Array<{ userName: string; descricao: string; criadoEm: string }>;
+  // Usuários do grupo com lastSeenAt nos últimos 2min (heartbeat).
+  // Vazio = ninguém logou ou todos saíram. API garante que vem só com sessão ativa.
+  papeisAtivos?: Array<{ email: string; name: string; lastSeenAt: string | null }>;
 };
+
+// Catálogo de papéis esperados por órgão (5 cada). Pra renderizar pílulas mesmo
+// quem AINDA não logou — facilitador vê "DPO ✓ · Saúde ✓ · TI · RH · Com." e
+// sabe quem falta. Match por prefixo do email (saude.g1.<slug>@... → "saude").
+type PapelEsperado = { prefixo: string; label: string };
+
+const PAPEIS_PM: PapelEsperado[] = [
+  { prefixo: "dpo",         label: "DPO" },
+  { prefixo: "saude",       label: "Saúde" },
+  { prefixo: "rh",          label: "RH" },
+  { prefixo: "ti",          label: "TI" },
+  { prefixo: "comunicacao", label: "Com." },
+];
+
+const PAPEIS_CM: PapelEsperado[] = [
+  { prefixo: "dpo",          label: "DPO" },
+  { prefixo: "cerimonial",   label: "Cerim." },
+  { prefixo: "ouvidoria",    label: "Ouv." },
+  { prefixo: "ti",           label: "TI" },
+  { prefixo: "procuradoria", label: "Proc." },
+];
+
+function prefixoDoEmail(email: string): string {
+  return (email.split("@")[0] || "").split(".")[0] || "";
+}
 
 // Bip sintético via Web Audio (sem arquivo MP3).
 function tocarBip(audioCtx: AudioContext | null) {
@@ -688,6 +716,42 @@ function GrupoTimelineCard({
           )}
         </div>
       </header>
+
+      {/* Papéis ativos (heartbeat) — pílulas mostrando quais dos 5 papéis
+          esperados do grupo estão com sessão ativa. Útil pra confirmar
+          ANTES da Missão 1 que todos logaram. Verde claro = ativo nos
+          últimos 2min; cinza = sem heartbeat (não logado, deslogado,
+          ou sem conexão). */}
+      {(() => {
+        const esperados = grupo.orgao === "PM" ? PAPEIS_PM : PAPEIS_CM;
+        const prefixosAtivos = new Set(
+          (grupo.papeisAtivos || []).map((p) => prefixoDoEmail(p.email))
+        );
+        const qtdAtivos = esperados.filter((e) => prefixosAtivos.has(e.prefixo)).length;
+        return (
+          <div className="mb-2 flex items-center gap-1.5 flex-wrap text-[10px]">
+            <span className="text-gray-500 font-medium">
+              👥 {qtdAtivos}/{esperados.length} logados:
+            </span>
+            {esperados.map((e) => {
+              const ativo = prefixosAtivos.has(e.prefixo);
+              return (
+                <span
+                  key={e.prefixo}
+                  className={`px-1.5 py-0.5 rounded border ${
+                    ativo
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-medium"
+                      : "bg-gray-50 border-gray-200 text-gray-400"
+                  }`}
+                  title={ativo ? `${e.label} — ativo nos últimos 2min` : `${e.label} — sem heartbeat`}
+                >
+                  {ativo ? "●" : "○"} {e.label}
+                </span>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* Timeline horizontal */}
       <TimelineGrupo bolinhas={grupo.timeline} />
