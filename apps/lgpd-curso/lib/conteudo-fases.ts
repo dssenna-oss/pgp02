@@ -205,6 +205,39 @@ const FASE_3: ConteudoFase = {
       texto:
         "No app, o DPO APROVA ou DEVOLVE COM MOTIVO cada processo do Inventário. Devolver não é punição — é parte do método. Um motivo bem escrito na devolução vira aprendizado pro Contribuidor refazer.",
     },
+    {
+      tipo: "subtitulo",
+      texto: "5. Quem preenche o Inventário? 3 caminhos válidos",
+    },
+    {
+      tipo: "paragrafo",
+      texto:
+        "A LGPD não prescreve QUEM preenche cada campo — exige apenas que o resultado final esteja sob responsabilidade do controlador (Art. 37 LGPD). Na realidade da implementação, 3 dinâmicas convivem nos órgãos públicos, e o app suporta as 3:",
+    },
+    {
+      tipo: "paragrafo",
+      texto:
+        "**(a) DPO sozinho** — quando o Encarregado conhece o processo o suficiente pra mapear sem apoio. Útil em processos simples ou quando o DPO tem origem técnica/jurídica no tema (ex: Encarregado da área de TI mapeando um sistema próprio). Vantagem: rapidez. Limite: depende do DPO ter informação atualizada — o que nem sempre é o caso.",
+    },
+    {
+      tipo: "paragrafo",
+      texto:
+        "**(b) Contribuidor submete ao DPO** — o Dono do processo (Sec. de Saúde, RH, Cerimonial, Ouvidoria…) preenche os campos técnicos, clica em \"Submeter ao DPO\", e o Encarregado revisa para aprovar ou devolver com observações. **Esta é a dinâmica mais comum em órgãos públicos com áreas técnicas especializadas** — preserva a autoridade do DPO sem exigir que ele saiba os detalhes de cada sistema da casa. É também a que o curso prático simula com maior ênfase.",
+    },
+    {
+      tipo: "paragrafo",
+      texto:
+        "**(c) DPO + Contribuidor preenchem juntos** — edição colaborativa em qualquer ordem (ambos os papéis abrem o mesmo formulário e vão complementando). Indicada pra processos com dados sensíveis, risco alto ou alto impacto institucional — quando o custo de um erro justifica a revisão a quatro mãos desde o primeiro rascunho.",
+    },
+    {
+      tipo: "callout",
+      callout: {
+        tom: "info",
+        titulo: "Por que importa pedagogicamente",
+        texto:
+          "No curso desta turma, predomina o cenário (b) — Contribuidor submete ao DPO — porque é o que mais reflete a realidade do setor público. Mas tenha clareza: na sua instituição, vocês escolhem a dinâmica conforme o processo. O DPO não precisa fazer tudo sozinho, nem deve abdicar da palavra final. O que conta é o registro formal de aprovação no fim.",
+      },
+    },
   ],
   checklist: [
     {

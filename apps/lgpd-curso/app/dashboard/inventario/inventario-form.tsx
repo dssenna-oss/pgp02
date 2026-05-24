@@ -110,6 +110,32 @@ export function InventarioForm({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Callout pedagógico — 3 caminhos válidos pra completar este Inventário.
+            Reflete cenários reais de implementação da LGPD: DPO sozinho · workflow
+            Contribuidor→DPO · edição colaborativa. Aparece SEMPRE (não condicional),
+            pra reforçar que o app suporta os 3 e que a escolha é institucional. */}
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] text-slate-700">
+          <div className="font-semibold text-slate-800 mb-1">
+            💼 3 caminhos válidos pra completar este Inventário:
+          </div>
+          <ul className="space-y-1 ml-1">
+            <li>
+              <strong className="text-slate-900">DPO sozinho</strong> — útil em processos simples ou quando o
+              Encarregado tem domínio técnico-informacional do tema.
+            </li>
+            <li>
+              <strong className="text-slate-900">Contribuidor → DPO</strong> — Dono do processo (ex: Sec. de
+              Saúde, RH) preenche, clica em <em>Submeter ao DPO</em>, e o DPO aprova ou devolve
+              com observações. <em>Mais comum em órgãos públicos com áreas técnicas especializadas.</em>
+            </li>
+            <li>
+              <strong className="text-slate-900">DPO + Contribuidor juntos</strong> — edição
+              colaborativa em qualquer ordem (este modal pode ser aberto pelos dois papéis).
+              Bom pra processos com dados sensíveis ou risco alto.
+            </li>
+          </ul>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="col-span-2">
