@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 import { Brand } from "@/components/brand";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [loading, setLoading] = useState(false);
   const [veioDoQr, setVeioDoQr] = useState(false);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -84,16 +86,26 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-gray-700">Senha</label>
-            <input
-              ref={passwordRef}
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="informada pelo facilitador"
-              className="mt-1 w-full px-3 py-2 border rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
-            />
+            <div className="relative mt-1">
+              <input
+                ref={passwordRef}
+                type={mostrarSenha ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="informada pelo facilitador"
+                className="w-full px-3 py-2 pr-10 border rounded-md text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((v) => !v)}
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700"
+              >
+                {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"
