@@ -26,6 +26,15 @@ export type BlocoGuia = {
   campoKeys: string[];
 };
 
+// Destaque pedagógico — bloco proeminente antes dos campos, pra reforçar
+// um conceito que não está no preenchimento campo-a-campo (ex.: dinâmicas
+// de colaboração, regras de prioridade, exceções comuns).
+export type DestaqueEspecial = {
+  titulo: string;
+  nota?: string; // 1 linha de contexto (ex.: citação de artigo da LGPD)
+  itens: Array<{ rotulo: string; texto: string }>;
+};
+
 export type Guia = {
   slug: string;
   missao: string;
@@ -34,6 +43,7 @@ export type Guia = {
   resumo: string; // chamada curta, aparece na sidebar e no índice
   intro: string;
   ordem?: string; // ordem de preenchimento sugerida, mostrada em destaque
+  destaquesEspeciais?: DestaqueEspecial[];
   blocos: BlocoGuia[];
   comProcessos?: boolean; // Inventário: mostra o seletor dos 4 processos
 };
@@ -69,6 +79,37 @@ export const GUIAS: Guia[] = [
       "O grupo completa o resto. A lição é pensar na ordem certa: o titular antes do dado, a " +
       "finalidade antes da base legal.",
     ordem: "titulares → dados coletados → finalidade → base legal → retenção → compartilhamentos",
+    destaquesEspeciais: [
+      {
+        titulo: "👥 Quem preenche o Inventário? 3 caminhos válidos",
+        nota:
+          "Art. 37 LGPD não prescreve QUEM mapeia cada processo — exige apenas que o resultado " +
+          "esteja sob responsabilidade do controlador. Reforce isso com a turma antes da Missão 1.",
+        itens: [
+          {
+            rotulo: "DPO sozinho",
+            texto:
+              "Útil em processos simples ou quando o Encarregado tem domínio técnico-informacional " +
+              "do tema. Vantagem: rapidez. Limite: depende de o DPO ter informação atualizada.",
+          },
+          {
+            rotulo: "Contribuidor → DPO",
+            texto:
+              "Dono do processo (Sec. de Saúde, RH, Cerimonial, Ouvidoria) preenche, clica em " +
+              '"Submeter ao DPO", e o Encarregado aprova ou devolve com observações. É o cenário ' +
+              "MAIS COMUM em órgãos públicos com áreas técnicas especializadas — é o que o curso " +
+              "simula com maior ênfase.",
+          },
+          {
+            rotulo: "DPO + Contribuidor juntos",
+            texto:
+              "Edição colaborativa em qualquer ordem (ambos os papéis abrem o mesmo formulário e " +
+              "vão complementando). Indicada pra processos com dados sensíveis, risco alto ou alto " +
+              "impacto institucional.",
+          },
+        ],
+      },
+    ],
     comProcessos: true,
     blocos: [
       {

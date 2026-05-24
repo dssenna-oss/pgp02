@@ -143,6 +143,35 @@ export function GuiaView({ guia }: { guia: Guia }) {
         </div>
       )}
 
+      {/* Destaques especiais — conceitos pedagógicos que não cabem no
+          preenchimento campo-a-campo (ex.: 3 caminhos de colaboração no
+          Inventário). Renderizado em amarelo-claro pra diferenciar visualmente
+          do verde da "Ordem de preenchimento" e do branco dos campos. */}
+      {guia.destaquesEspeciais?.map((destaque, i) => (
+        <div
+          key={i}
+          className={`mb-5 rounded-lg border-l-4 border-l-amber-500 border border-amber-200 bg-amber-50 ${sz.card}`}
+        >
+          <h2 className={`${sz.bloco} font-bold text-amber-900 leading-tight mb-1`}>
+            {destaque.titulo}
+          </h2>
+          {destaque.nota && (
+            <p className={`${sz.corpo} text-amber-800 italic mb-3`}>{destaque.nota}</p>
+          )}
+          <ul className={`space-y-2 ${sz.corpo}`}>
+            {destaque.itens.map((item, j) => (
+              <li key={j} className="flex gap-2">
+                <span className="text-amber-600 font-bold shrink-0">•</span>
+                <div>
+                  <strong className="text-amber-900">{item.rotulo}</strong>
+                  <span className="text-amber-900"> — {item.texto}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
       {/* Seletor de processo — só no Inventário */}
       {guia.comProcessos && processos.length > 0 && (
         <div className="mb-5">
