@@ -32,6 +32,16 @@ const FASES: Fase[] = [
   { id: "f7",         rotulo: "Fase 7",     titulo: "Monitoramento" },
 ];
 
+// Mapa modal-key → página de slides correspondente. Cada modal ganha no rodapé
+// um botão que abre a página em nova aba — assim o participante pode revisar
+// os slides que o facilitador apresentou ao vivo (a página `/dashboard/fase-*`
+// já existe e usa o componente `<VisualizadorSlides>` — não duplica nada).
+const ROTA_SLIDES: Record<"preliminar" | "f1" | "f2", { href: string; qtd: number }> = {
+  preliminar: { href: "/dashboard/fase-preliminar", qtd: 10 },
+  f1:         { href: "/dashboard/fase-1",         qtd: 8 },
+  f2:         { href: "/dashboard/fase-2",         qtd: 10 },
+};
+
 const EXPLICACOES: Record<"preliminar" | "f1" | "f2", { titulo: string; corpo: React.ReactNode }> = {
   preliminar: {
     titulo: "Fase Preliminar — Sensibilização e Engajamento",
@@ -185,10 +195,18 @@ export function MapaPgp({ faseAtual = "f3" as FaseAtual }: { faseAtual?: FaseAtu
             <div className="text-sm text-gray-700 space-y-3">
               {EXPLICACOES[modal].corpo}
             </div>
+            <a
+              href={ROTA_SLIDES[modal].href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 block w-full bg-blue-600 hover:bg-blue-700 text-white text-center font-medium py-2 rounded transition-colors"
+            >
+              📊 Ver os {ROTA_SLIDES[modal].qtd} slides apresentados pelo facilitador →
+            </a>
             <button
               type="button"
               onClick={() => setModal(null)}
-              className="mt-5 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 rounded"
+              className="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 rounded"
             >
               Fechar
             </button>
