@@ -8,6 +8,7 @@ import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
 import { montarTimeline } from "@/lib/timeline";
 import { resumoPontuacao } from "@/lib/dsr-game";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
+import { ensureColunaLastSeenAt } from "@/lib/coluna-user-last-seen";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
 
   // Auto-migração idempotente — esta query seleciona todas as colunas da turma.
   await ensureColunasControleTurma();
+  await ensureColunaLastSeenAt();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },
@@ -70,6 +72,28 @@ export async function GET(req: NextRequest) {
     const arr = skipsPorGrupo.get(s.grupoId) || [];
     arr.push(s);
     skipsPorGrupo.set(s.grupoId, arr);
+  }
+
+  // Papéis ativos por grupo — usuários com lastSeenAt nos últimos 2 minutos.
+  // 2min = 4 ciclos de heartbeat (30s cada), tolerante a uma falha de rede.
+  // Busca tudo em 1 query e agrupa por companyId pra evitar N+1.
+  const companyIds = turma.grupos.map((g) => g.companyId).filter(Boolean) as string[];
+  const PRESENCA_LIMITE_MS = 2 * 60 * 1000;
+  const usuariosAtivosRaw = companyIds.length
+    ? await prisma.user.findMany({
+        where: {
+          companyId: { in: companyIds },
+          lastSeenAt: { gte: new Date(Date.now() - PRESENCA_LIMITE_MS) },
+        },
+        select: { companyId: true, email: true, name: true, lastSeenAt: true },
+      }).catch(() => [] as { companyId: string | null; email: string; name: string; lastSeenAt: Date | null }[])
+    : [];
+  const ativosPorCompany = new Map<string, typeof usuariosAtivosRaw>();
+  for (const u of usuariosAtivosRaw) {
+    if (!u.companyId) continue;
+    const arr = ativosPorCompany.get(u.companyId) || [];
+    arr.push(u);
+    ativosPorCompany.set(u.companyId, arr);
   }
 
   const result = [];
@@ -258,6 +282,13 @@ export async function GET(req: NextRequest) {
       criadoEm: String(r?.criadoEm || ""),
     }));
 
+    // Papéis ativos deste grupo (heartbeat dos últimos 2min)
+    const papeisAtivos = (ativosPorCompany.get(cid) || []).map((u) => ({
+      email: u.email,
+      name: u.name,
+      lastSeenAt: u.lastSeenAt?.toISOString() ?? null,
+    }));
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
@@ -272,6 +303,7 @@ export async function GET(req: NextRequest) {
       timeline,
       sos,
       phaseSkips,
+      papeisAtivos,
     });
   }
 

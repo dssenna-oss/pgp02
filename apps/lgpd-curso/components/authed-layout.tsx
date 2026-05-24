@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar";
 import { PhaseSkipProvider } from "@/components/phase-skip-provider";
 import { DsrAlertBanner } from "@/components/dsr-alert-banner";
 import { IncidentAlertBanner } from "@/components/incident-alert-banner";
+import { Heartbeat } from "@/components/heartbeat";
 
 export function AuthedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,10 @@ export function AuthedLayout({ children }: { children: React.ReactNode }) {
         <div className="flex-1 p-4 sm:p-6">{children}</div>
       </main>
       <PhaseSkipProvider />
+      {/* Heartbeat invisível — POST /api/curso/heartbeat a cada 30s pra
+          atualizar lastSeenAt. Painel do Facilitador usa pra mostrar
+          papéis ativos por grupo. */}
+      <Heartbeat />
     </div>
   );
 }

@@ -67,6 +67,10 @@ model User {
   isActive  Boolean  @default(true)
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  // Atualizado pelo heartbeat do client (POST /api/curso/heartbeat a cada 30s)
+  // — usado pelo Painel do Facilitador pra mostrar "papéis ativos" em
+  // real-time por grupo. Nullable porque users antigos não tinham essa coluna.
+  lastSeenAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
