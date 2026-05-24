@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.operator.findMany({
         where: { companyId: cid },
-        include: { contracts: { select: { clausulasLgpd: true, createdAt: true, updatedAt: true } } },
+        include: { contracts: { select: { clausulasLgpd: true, clausulasSelecionadas: true, createdAt: true, updatedAt: true } } },
       }),
       prisma.dsrRequest.findMany({
         where: { companyId: cid },
@@ -167,7 +167,12 @@ export async function GET(req: NextRequest) {
       },
       terceiros: {
         total: operadores.length,
-        comClausula: operadores.filter((o) => o.contracts?.[0]?.clausulasLgpd).length,
+        // Alinhado com `m4a_terceiros` da sidebar do participante
+        // (lib/missoes-progresso.ts) — mesma chave, mesmo critério:
+        // operador "com cláusula" = tem pelo menos 1 cláusula LGPD selecionada
+        // pra entrar no aditamento DOCX. O Boolean `clausulasLgpd` é flag
+        // legada e fica mantido pra outros usos (gap-import, certificado).
+        comClausula: operadores.filter((o) => (o.contracts?.[0]?.clausulasSelecionadas?.length ?? 0) > 0).length,
       },
       dsr: { total: dsr.length },
       dsrGame: resumoPontuacao(dsr),
@@ -203,9 +208,13 @@ export async function GET(req: NextRequest) {
       // avaliação de risco, due diligence, cláusulas). updatedAt do Operator
       // raramente muda. Sem isso, edições no contract não aparecem como "tocado"
       // na regra `foiTocado` da timeline.
+      // clausulasSelecionadas: pra timeline checar se a missão Terceiros
+      // realmente foi entregue (não basta "tocou" — precisa ter cláusulas
+      // selecionadas). Alinhado com a sidebar do participante.
       operadores: operadores.map((o) => ({
         createdAt: o.createdAt,
         updatedAt: o.contracts?.[0]?.updatedAt ?? o.updatedAt,
+        clausulasSelecionadas: o.contracts?.[0]?.clausulasSelecionadas ?? [],
       })),
       dsrs: dsr,
       aviso: aviso ? { status: aviso.status, createdAt: aviso.createdAt, updatedAt: aviso.updatedAt } : null,

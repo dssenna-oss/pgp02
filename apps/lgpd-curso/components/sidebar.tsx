@@ -128,7 +128,7 @@ const MENU: MenuItem[] = [
     cor: "border-l-red-400",
     itens: [
       { href: "/dashboard/incidentes", label: "Incidentes", missao: "M5", icon: AlertTriangle, progressoKey: "m5", dpoOnly: true, observavel: true, alertaCountKey: "incidentesEmAberto" },
-      { href: "/dashboard/pri", label: "Documento do PRI", icon: FileText, dpoOnly: true, observavel: true },
+      { href: "/dashboard/pri", label: "Documento do PRI", icon: FileText, progressoKey: "pri", dpoOnly: true, observavel: true },
     ],
   },
 ];

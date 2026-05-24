@@ -13,6 +13,7 @@
 //   M4a (DSR)        — pelo menos 1 solicitação registrada
 //   M4b (Aviso)      — Aviso com status PUBLICADO
 //   M5 (Incidentes)  — pelo menos 1 incidente movido de RASCUNHO
+//   PRI (Documento)  — Policy de slug "pri-resposta-incidentes" com status PUBLICADO
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
@@ -27,6 +28,7 @@ export type MissoesProgresso = {
   m4a_dsr: boolean;
   m4b: boolean;
   m5: boolean;
+  pri: boolean;
   // DSR Surpresa: quantos pedidos disparados pelo facilitador ainda estão
   // sem ação do DPO (gameAction = null). Banner/badge usa essa contagem.
   dsrSurpresaPendentes: number;
@@ -41,6 +43,7 @@ const EMPTY: MissoesProgresso = {
   plano_acao: false,
   m4a_ripd: false, m4a_terceiros: false, m4a_dsr: false,
   m4b: false, m5: false,
+  pri: false,
   dsrSurpresaPendentes: 0,
   incidentesEmAberto: 0,
 };
@@ -50,7 +53,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, operadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, operadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes, priDoc] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
     prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
@@ -68,6 +71,12 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
       select: { status: true },
     }),
     prisma.incident.findMany({ where: { companyId }, select: { status: true } }),
+    // Documento do PRI — reusa a tabela Policy com slug fixo (decisão da
+    // Fatia 3 da Fase 7, ver actions.ts em /dashboard/pri). Done = PUBLICADO.
+    prisma.policy.findFirst({
+      where: { companyId, slug: "pri-resposta-incidentes" },
+      select: { status: true },
+    }),
   ]);
 
   return {
@@ -85,6 +94,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     m4a_dsr: qtdDsr > 0,
     m4b: aviso?.status === "PUBLICADO",
     m5: incidentes.some((i) => i.status && i.status !== "RASCUNHO"),
+    pri: priDoc?.status === "PUBLICADO",
     dsrSurpresaPendentes: qtdDsrSurpresaPendentes,
     incidentesEmAberto: incidentes.filter((i) => i.status !== "ENCERRADO").length,
   };

@@ -57,7 +57,10 @@ export type TimelineInput = {
   riscos: { status: string; createdAt: Date; updatedAt: Date }[];
   gapAnswers: { createdAt: Date; updatedAt: Date }[];
   ripds: { status: string; createdAt: Date; updatedAt: Date }[];
-  operadores: { createdAt: Date; updatedAt: Date }[];
+  // clausulasSelecionadas: IDs das cláusulas LGPD que o DPO escolheu pro
+  // aditamento DOCX. Quando length > 0, a missão Terceiros considera o
+  // operador "entregue" (mesmo critério do `m4a_terceiros` da sidebar).
+  operadores: { createdAt: Date; updatedAt: Date; clausulasSelecionadas: string[] }[];
   dsrs: { createdAt: Date; updatedAt: Date }[];
   aviso: { status: string | null; createdAt?: Date; updatedAt?: Date } | null;
   incidentes: { status: string; createdAt: Date; updatedAt: Date }[];
@@ -121,20 +124,28 @@ export function montarTimeline(input: TimelineInput): BolinhaMissao[] {
   };
 
   // M4a — RIPD + Terceiros + DSR (mostra como 1 bolinha consolidada).
-  // DONE quando os 3 estão preenchidos: RIPD aprovado + algum operador
-  // TOCADO (não só os 2 pré-cadastrados intactos) + alguma DSR criada.
-  // DOING quando qualquer um foi tocado (RIPD/DSR são sempre criados pelo
-  // user, mas operadores precisam de filtro `foiTocado`).
+  // DONE quando os 3 estão preenchidos:
+  //   • RIPD: ≥1 APROVADO
+  //   • Terceiros: TODOS os operadores com cláusulas LGPD selecionadas
+  //     (mesmo critério do `m4a_terceiros` da sidebar — alinhado pra não
+  //     divergir entre as 2 telas. Antes era só `foiTocado`, que era frouxo
+  //     demais: deixava o painel marcar ✓ enquanto a sidebar do participante
+  //     mostrava o item como pendente).
+  //   • DSR: ≥1 criada
+  // DOING quando qualquer um foi tocado.
   const ripdAprovados = input.ripds.filter(aprov).length;
   const operadoresTocados = input.operadores.filter(foiTocado);
+  const operadoresCompletos =
+    input.operadores.length > 0 &&
+    input.operadores.every((o) => (o.clausulasSelecionadas?.length ?? 0) > 0);
   const m4aDone =
     ripdAprovados > 0 &&
-    operadoresTocados.length > 0 &&
+    operadoresCompletos &&
     input.dsrs.length > 0;
   const m4aTouched =
     input.ripds.length > 0 || operadoresTocados.length > 0 || input.dsrs.length > 0;
   const m4aBounds = bounds([...input.ripds, ...operadoresTocados, ...input.dsrs]);
-  const m4aTotal = (ripdAprovados > 0 ? 1 : 0) + (operadoresTocados.length > 0 ? 1 : 0) + (input.dsrs.length > 0 ? 1 : 0);
+  const m4aTotal = (ripdAprovados > 0 ? 1 : 0) + (operadoresCompletos ? 1 : 0) + (input.dsrs.length > 0 ? 1 : 0);
   const m4a: BolinhaMissao = {
     id: "m4a",
     label: "M4a",
