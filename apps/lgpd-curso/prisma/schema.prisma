@@ -116,6 +116,12 @@ model CursoTurma {
   // Lista de e-mails reais dos inscritos pra o convite de confirmação de
   // presença. JSON: [{ email, confirmado, confirmadoEm }]. Null = lista vazia.
   participantes Json?
+  // Duração do quiz em minutos. Null = sem limite (comportamento anterior).
+  // Quando definido, /api/quiz/start retorna `deadline = startedAt + N min`
+  // pro cliente, que ao bater na hora bloqueia próximas perguntas e submete
+  // automático o que foi respondido. Configurado no /facilitador/quiz.
+  // Backfill automático via lib/coluna-quiz-duracao.ts.
+  quizDuracaoMinutos Int?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

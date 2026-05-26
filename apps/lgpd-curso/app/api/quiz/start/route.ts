@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureTabelaQuiz } from "@/lib/colunas-quiz";
+import { ensureColunaQuizDuracao } from "@/lib/coluna-quiz-duracao";
 import { perguntasPublicas, TOTAL_PERGUNTAS } from "@/lib/quiz-perguntas";
 
 export const maxDuration = 30;
@@ -18,6 +19,7 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     await ensureTabelaQuiz();
+    await ensureColunaQuizDuracao();
 
     const body = await req.json();
     const turmaSlug = String(body?.turmaSlug || "").trim();
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const turma = await prisma.cursoTurma.findFirst({
       where: { slug: turmaSlug },
-      select: { id: true, nome: true, cidade: true, status: true },
+      select: { id: true, nome: true, cidade: true, status: true, quizDuracaoMinutos: true },
     });
     if (!turma) {
       return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
@@ -51,8 +53,18 @@ export async function POST(req: NextRequest) {
         turmaId: turma.id,
         uuid,
       },
-      select: { id: true, finishedAt: true, scoreTotal: true, scorePorCategoria: true },
+      select: { id: true, startedAt: true, finishedAt: true, scoreTotal: true, scorePorCategoria: true },
     });
+
+    // Calcula deadline se a turma tem duração configurada.
+    // Decisão UX (2026-05-25): timer POR participante (cada um tem o mesmo
+    // tempo desde o seu próprio startedAt) — mais justo que cronômetro global.
+    // Null = sem timer (comportamento legado).
+    const deadline = turma.quizDuracaoMinutos
+      ? new Date(
+          resposta.startedAt.getTime() + turma.quizDuracaoMinutos * 60 * 1000
+        ).toISOString()
+      : null;
 
     return NextResponse.json({
       turma: { nome: turma.nome, cidade: turma.cidade },
@@ -66,6 +78,10 @@ export async function POST(req: NextRequest) {
             scorePorCategoria: resposta.scorePorCategoria,
           }
         : null,
+      // Timer: deadline ISO ou null. O cliente respeita silenciosamente
+      // (sem UI) — quando bater na hora, submete automático.
+      deadline,
+      duracaoMinutos: turma.quizDuracaoMinutos,
     });
   } catch (e: any) {
     console.error("[quiz/start]", e);

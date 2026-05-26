@@ -84,7 +84,15 @@ function dispararConfete() {
   })();
 }
 
-type Estado = "IDLE" | "READY" | "RUNNING" | "SUBMITTING" | "RESULT" | "JA_RESPONDEU" | "ERRO";
+type Estado =
+  | "IDLE"
+  | "READY"
+  | "RUNNING"
+  | "TEMPO_ESGOTADO" // NOVO: timer da turma zerou — bloqueia perguntas, mostra mensagem, submete auto
+  | "SUBMITTING"
+  | "RESULT"
+  | "JA_RESPONDEU"
+  | "ERRO";
 
 type Lacuna = {
   categoria: CategoriaQuiz;
@@ -131,6 +139,10 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
   const [respostas, setRespostas] = useState<Record<string, number>>({});
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [uuid, setUuid] = useState<string>("");
+  // deadline: ISO string vinda do /start se a turma tem quizDuracaoMinutos
+  // configurado. Null = sem timer. O cliente respeita silenciosamente — não
+  // mostra contador na UI pra não pressionar (decisão UX 2026-05-25).
+  const [deadline, setDeadline] = useState<string | null>(null);
 
   // Inicializa: pega/cria UUID + chama /start
   useEffect(() => {
@@ -160,6 +172,8 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
         }
         setTurmaNome(`${data.turma.nome} · ${data.turma.cidade}`);
         setPerguntas(data.perguntas || []);
+        // Guarda deadline pro timer invisível (efeito separado abaixo agenda).
+        setDeadline(data.deadline ?? null);
         if (data.jaRespondeu && data.resultadoSalvo) {
           // Tela "você já respondeu" com o resultado salvo
           const lacunas: Lacuna[] = [];
@@ -200,6 +214,28 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
     })();
   }, [turmaSlug]);
 
+  // Timer invisível: se a turma definiu duração, agenda submit automático
+  // quando o deadline chegar. Sem UI de countdown — decisão UX pra não
+  // pressionar o participante. Funciona enquanto o estado é READY ou RUNNING.
+  useEffect(() => {
+    if (!deadline) return;
+    if (estado !== "READY" && estado !== "RUNNING") return;
+    const restanteMs = new Date(deadline).getTime() - Date.now();
+    if (restanteMs <= 0) {
+      // Já passou — bloqueia imediatamente e dispara submit auto.
+      setEstado("TEMPO_ESGOTADO");
+      // Pequeno delay pra UI mostrar a mensagem antes de submeter.
+      setTimeout(() => { enviarForcado(); }, 1500);
+      return;
+    }
+    const id = setTimeout(() => {
+      setEstado("TEMPO_ESGOTADO");
+      setTimeout(() => { enviarForcado(); }, 1500);
+    }, restanteMs);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deadline, estado]);
+
   function escolher(qid: string, selected: number) {
     setRespostas((prev) => ({ ...prev, [qid]: selected }));
   }
@@ -220,6 +256,17 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
 
   async function enviar() {
     setEstado("SUBMITTING");
+    await fazerSubmit();
+  }
+
+  // Submit "forçado" — chamado pelo timer quando o tempo esgota. Não troca
+  // pra SUBMITTING porque a UI já está mostrando "Tempo esgotado". No fim
+  // vai pra RESULT igual ao fluxo normal.
+  async function enviarForcado() {
+    await fazerSubmit();
+  }
+
+  async function fazerSubmit() {
     try {
       const respostasArr = Object.entries(respostas).map(([qid, selected]) => ({ qid, selected }));
       const res = await fetch("/api/quiz/submit", {
@@ -313,6 +360,28 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-gray-500">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         <p className="text-sm">Calculando seu resultado…</p>
+      </div>
+    );
+  }
+
+  // Tempo esgotado: timer da turma zerou. Bloqueia próximas perguntas
+  // (não renderiza UI de questão), mostra mensagem clara, e o useEffect
+  // do timer dispara enviarForcado() ~1.5s depois (delay pra leitura).
+  if (estado === "TEMPO_ESGOTADO") {
+    const respondidas = Object.keys(respostas).length;
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="rounded-full bg-amber-100 p-4">
+          <Loader2 className="h-10 w-10 animate-spin text-amber-700" />
+        </div>
+        <h2 className="text-2xl font-bold text-amber-900">⏱ Tempo esgotado</h2>
+        <p className="max-w-md text-sm text-gray-700">
+          O tempo definido pelo facilitador para responder o quiz acabou.
+          Estamos enviando suas {respondidas} resposta(s) para o painel da turma.
+        </p>
+        <p className="text-xs text-gray-500 italic">
+          Aguarde um instante — seu resultado aparece em seguida.
+        </p>
       </div>
     );
   }
