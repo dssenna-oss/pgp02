@@ -133,12 +133,40 @@ const MENU: MenuItem[] = [
   },
 ];
 
-const adminItems: MiniApp[] = [
-  { href: "/facilitador",              label: "Painel do Facilitador", icon: LayoutDashboard },
-  { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",      icon: ClipboardCheck },
-  { href: "/facilitador/lia-modelos",  label: "LIA — Modelos (debrief)", icon: Scale },
-  { href: "/admin/criar-turma",        label: "Controle de turma",     icon: Settings },
-  { href: "/admin/pacote-gap",         label: "Pacote GAP por turma",  icon: ClipboardCheck },
+// Itens da sidebar do facilitador agrupados pela ETAPA do curso em que são
+// usados — preparação (D-7 a D-0), execução (durante) e encerramento (debrief).
+// Comunica visualmente "onde estou no fluxo" e ajuda facilitador iniciante a
+// percorrer na ordem natural. Reorganizado em 2026-05-25 após feedback do 1º
+// curso presencial.
+type AdminItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  externalNewTab?: boolean; // Telão abre em nova aba pra projeção
+};
+
+const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
+  {
+    titulo: "Preparação",
+    itens: [
+      { href: "/admin/criar-turma",        label: "Controle de turma",         icon: Settings },
+      { href: "/admin/pacote-gap",         label: "Pacote GAP por turma",      icon: ClipboardCheck },
+    ],
+  },
+  {
+    titulo: "Execução",
+    itens: [
+      { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",          icon: ClipboardCheck },
+      { href: "/facilitador",              label: "Painel do Facilitador",     icon: LayoutDashboard },
+      { href: "/telao",                    label: "Telão (placar)",            icon: Trophy, externalNewTab: true },
+    ],
+  },
+  {
+    titulo: "Encerramento",
+    itens: [
+      { href: "/facilitador/lia-modelos",  label: "LIA — Modelos (debrief)",   icon: Scale },
+    ],
+  },
 ];
 
 const STORAGE_KEY_EXPANDIDA = "curso-sidebar-fase-expandida";
@@ -430,39 +458,52 @@ export function Sidebar() {
               <div className="px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500">
                 Facilitador
               </div>
-              {adminItems.map((adminItem) => {
-                const active = pathname === adminItem.href;
-                const Icon = adminItem.icon;
-                return (
-                  <Link
-                    key={adminItem.href}
-                    href={adminItem.href}
-                    onClick={closeMobile}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px]",
-                      active
-                        ? "bg-training-100 text-training-900 font-medium"
-                        : "text-gray-700 hover:bg-gray-100"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    <span>{adminItem.label}</span>
-                  </Link>
-                );
-              })}
 
-              {/* Telão — tela de projeção com placar + conquistas ao vivo.
-                  Abre em nova aba pra projetar numa tela separada. */}
-              <a
-                href="/telao"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px] text-gray-700 hover:bg-gray-100"
-              >
-                <Trophy className="h-4 w-4 shrink-0" />
-                <span className="flex-1">Telão (placar)</span>
-                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-              </a>
+              {/* Grupos por etapa do curso — subcabeçalho cinza-claro pra
+                  comunicar visualmente "preparação / execução / encerramento".
+                  Telão é o único que abre em nova aba (precisa de projeção). */}
+              {GRUPOS_FACILITADOR.map((grupo, gi) => (
+                <div key={grupo.titulo} className={gi === 0 ? "" : "mt-3"}>
+                  <div className="px-3 pb-0.5 pt-1 text-[9px] uppercase tracking-wider font-semibold text-gray-400">
+                    {grupo.titulo}
+                  </div>
+                  {grupo.itens.map((item) => {
+                    const Icon = item.icon;
+                    if (item.externalNewTab) {
+                      return (
+                        <a
+                          key={item.href}
+                          href={item.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px] text-gray-700 hover:bg-gray-100"
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="flex-1">{item.label}</span>
+                          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        </a>
+                      );
+                    }
+                    const active = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={closeMobile}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px]",
+                          active
+                            ? "bg-training-100 text-training-900 font-medium"
+                            : "text-gray-700 hover:bg-gray-100"
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
 
               {/* Conteúdos Didáticos — biblioteca de leitura complementar. */}
               <Link
