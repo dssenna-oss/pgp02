@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import {
   Lightbulb, Scale, Users, Shield, Flag,
   ClipboardCheck, RefreshCw, ExternalLink, Copy, Check,
-  AlertTriangle, TrendingUp, BarChart3, Award, QrCode, Projector, Trash2,
+  AlertTriangle, TrendingUp, BarChart3, Award, QrCode, Projector, Trash2, Timer,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -60,8 +60,24 @@ type Dados = {
     totalQuestoes: number;
     respondentes: number;
   }[];
+  timer?: {
+    duracaoMinutos: number | null;
+    emAndamento: number;
+    proximoExpirarSeg: number | null;
+    tempoMedioRestanteSeg: number | null;
+  };
   geradoEm: string;
 };
+
+// Formata segundos como MM:SS ou "—" se null/inválido.
+// Negativo vira "00:00" (já expirou).
+function formatTempo(seg: number | null | undefined): string {
+  if (seg === null || seg === undefined) return "—";
+  const s = Math.max(0, Math.floor(seg));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+}
 
 const ICONE_CATEGORIA: Record<CategoriaQuiz, React.ComponentType<{ className?: string }>> = {
   principios: Lightbulb,
@@ -85,6 +101,7 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
   const [carregando, setCarregando] = useState(false);
   const [copiou, setCopiou] = useState(false);
   const [zerando, setZerando] = useState(false);
+  const [salvandoTempo, setSalvandoTempo] = useState(false);
 
   const turmaSel = turmas.find((t) => t.id === turmaId);
   const quizUrl = turmaSel
@@ -163,6 +180,56 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
     }
   }
 
+  // Define o tempo limite do quiz pra esta turma. Null/vazio = sem limite.
+  // Pergunta via prompt() simples — minutos como número inteiro 1-600.
+  // Mudança afeta apenas participantes que começarem o quiz DEPOIS — quem
+  // já está respondendo mantém o deadline original (calculado no /start dele).
+  async function definirTempo() {
+    if (!turmaSel) return;
+    const atual = dados?.timer?.duracaoMinutos;
+    const entrada = prompt(
+      `Tempo do quiz para a turma "${turmaSel.nome}", em minutos.\n\n` +
+      `Digite um número entre 1 e 600, ou deixe VAZIO pra remover o limite.\n` +
+      `(Valor atual: ${atual ? `${atual} min` : "sem limite"})`,
+      atual ? String(atual) : ""
+    );
+    if (entrada === null) return; // cancelou
+    let minutos: number | null = null;
+    if (entrada.trim() !== "") {
+      const n = Number(entrada.trim());
+      if (!Number.isFinite(n) || n < 1 || n > 600) {
+        toast.error("Valor inválido — use número entre 1 e 600, ou deixe vazio.");
+        return;
+      }
+      minutos = Math.round(n);
+    }
+    setSalvandoTempo(true);
+    try {
+      const res = await fetch("/api/curso/quiz/duracao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turmaId: turmaSel.id, minutos }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(`Erro: ${data.error || "falha"}`);
+        return;
+      }
+      toast.success(
+        minutos === null
+          ? `Limite de tempo REMOVIDO da turma ${data.turma.nome}.`
+          : `Tempo do quiz: ${minutos} min para a turma ${data.turma.nome}.`
+      );
+      // Refetch pra atualizar o painel
+      const refetch = await fetch(`/api/quiz/painel?turmaId=${turmaSel.id}`, { cache: "no-store" });
+      if (refetch.ok) setDados(await refetch.json());
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message || "falha"}`);
+    } finally {
+      setSalvandoTempo(false);
+    }
+  }
+
   if (turmas.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
@@ -186,7 +253,7 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
             Quiz Diagnóstico LGPD
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Aplicado no início do curso, anônimo, 30 perguntas. Resultado consolidado da turma.
+            Aplicado no início do curso, anônimo, 20 perguntas. Resultado consolidado da turma.
           </p>
         </div>
         <div className="shrink-0 flex items-center gap-2 flex-wrap">
@@ -198,19 +265,80 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
             ))}
           </Select>
           {turmaSel && (
-            <button
-              type="button"
-              onClick={zerarRespostas}
-              disabled={zerando || !dados || dados.total.respondentes === 0}
-              className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Apagar todas as respostas desta turma (use depois de quiz de teste, antes do curso real)"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              {zerando ? "Zerando..." : "Zerar respostas"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={definirTempo}
+                disabled={salvandoTempo}
+                className="inline-flex items-center gap-1.5 rounded-md border border-blue-300 bg-white px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Define limite de tempo. Vale só pra quem começar o quiz depois — quem já está respondendo mantém o tempo original."
+              >
+                <Timer className="h-3.5 w-3.5" />
+                {salvandoTempo ? "Salvando..." : "Definir tempo"}
+              </button>
+              <button
+                type="button"
+                onClick={zerarRespostas}
+                disabled={zerando || !dados || dados.total.respondentes === 0}
+                className="inline-flex items-center gap-1.5 rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Apagar todas as respostas desta turma (use depois de quiz de teste, antes do curso real)"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {zerando ? "Zerando..." : "Zerar respostas"}
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {/* Card de Timer — só aparece se tempo está configurado. Mostra duração
+          + tempo restante do "próximo a expirar" + tempo médio dos em-andamento.
+          Polling de 5s do painel faz o card atualizar sozinho. Pulsa em amber
+          quando próximo a expirar tem ≤2min. */}
+      {turmaSel && dados?.timer?.duracaoMinutos != null && (() => {
+        const t = dados.timer!;
+        const proxSeg = t.proximoExpirarSeg ?? 0;
+        const urgente = t.emAndamento > 0 && proxSeg <= 120 && proxSeg > 0;
+        const expirados = t.emAndamento > 0 && proxSeg <= 0;
+        const cor = expirados
+          ? "border-red-300 bg-red-50 text-red-900"
+          : urgente
+          ? "border-amber-300 bg-amber-50 text-amber-900 animate-pulse"
+          : "border-blue-200 bg-blue-50 text-blue-900";
+        return (
+          <div className={`mt-4 rounded-lg border ${cor} p-3 sm:p-4`}>
+            <div className="flex items-center gap-2 flex-wrap text-sm">
+              <Timer className="h-4 w-4" />
+              <span className="font-semibold uppercase tracking-wide text-xs">
+                Timer do quiz · {t.duracaoMinutos} min por participante
+              </span>
+              <span className="text-xs opacity-70">
+                (vale só pra quem começar depois — quem está respondendo mantém o seu)
+              </span>
+            </div>
+            {t.emAndamento > 0 ? (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide opacity-70">Em andamento</div>
+                  <div className="font-bold text-base">{t.emAndamento} pessoa(s)</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide opacity-70">Próximo a expirar</div>
+                  <div className="font-bold text-base font-mono">{formatTempo(proxSeg)}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wide opacity-70">Tempo médio restante</div>
+                  <div className="font-bold text-base font-mono">{formatTempo(t.tempoMedioRestanteSeg)}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1 text-xs opacity-70">
+                Nenhum participante respondendo agora. O contador aparece quando alguém começar.
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* URL pública + QR Code */}
       {turmaSel && (

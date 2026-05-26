@@ -1,12 +1,14 @@
-// Banco estático das 30 perguntas do Quiz Diagnóstico de LGPD.
-// Curado pelo facilitador (DPO de profissão) em 23/Mai/2026.
+// Banco estático das 20 perguntas do Quiz Diagnóstico de LGPD.
+// Curado pelo facilitador (DPO de profissão) — reduzido de 30 pra 20 em
+// 2026-05-25 após feedback do 1º curso presencial (engajamento melhor com
+// menos perguntas; mantida cobertura das 5 categorias).
 //
-// Estrutura: 5 categorias × distribuição variável (total 30):
-//   - principios (6): Princípios da LGPD
-//   - bases_legais (5): Bases legais Arts. 7º e 11
-//   - personagens (7): Controlador, Operador, Encarregado, Titular, ANPD
-//   - direitos_titular (6): Arts. 18 e 19 LGPD
-//   - fases_pgp (6): As 8 fases do PGP institucional
+// Estrutura: 5 categorias × 4 perguntas (total 20):
+//   - principios (4): Princípios da LGPD
+//   - bases_legais (4): Bases legais Arts. 7º e 11
+//   - personagens (4): Controlador, Operador, Encarregado, Titular, ANPD
+//   - direitos_titular (4): Arts. 18 e 19 LGPD
+//   - fases_pgp (4): Práticas estruturantes do PGP
 //
 // Aplicação: URL pública /quiz/[turmaSlug] no início do curso, anônima.
 // Cada participante responde 1x; resultados agregados aparecem no
@@ -36,14 +38,7 @@ export const CATEGORIAS: Record<CategoriaQuiz, { rotulo: string; emoji: string; 
 };
 
 export const PERGUNTAS: Pergunta[] = [
-  // ─── PRINCÍPIOS DA LGPD (6) ──────────────────────────────────────────
-  {
-    qid: "q01",
-    categoria: "principios",
-    enunciado: "Qual desses é um princípio da LGPD?",
-    alternativas: ["Lucratividade", "Minimização", "Reciprocidade", "Confidencialidade contratual"],
-    correta: 1,
-  },
+  // ─── PRINCÍPIOS DA LGPD (4) ──────────────────────────────────────────
   {
     qid: "q02",
     categoria: "principios",
@@ -76,18 +71,6 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 2,
   },
   {
-    qid: "q22",
-    categoria: "principios",
-    enunciado: "\"Não discriminação\" como princípio LGPD significa que:",
-    alternativas: [
-      "Todos os cidadãos pagam mesma taxa",
-      "Dados não podem ser usados para fins discriminatórios ilícitos ou abusivos",
-      "Tratamento deve ser igual entre setores",
-      "Acesso aos dados é universal",
-    ],
-    correta: 1,
-  },
-  {
     qid: "q23",
     categoria: "principios",
     enunciado: "O princípio da \"responsabilização e prestação de contas\" (accountability) exige:",
@@ -100,7 +83,7 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 0,
   },
 
-  // ─── BASES LEGAIS (5) ────────────────────────────────────────────────
+  // ─── BASES LEGAIS (4) ────────────────────────────────────────────────
   {
     qid: "q05",
     categoria: "bases_legais",
@@ -133,18 +116,6 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 2,
   },
   {
-    qid: "q25",
-    categoria: "bases_legais",
-    enunciado: "A base legal \"obrigação legal ou regulatória\" significa:",
-    alternativas: [
-      "Decisão da diretoria",
-      "Cumprimento de lei ou regulamento aplicável ao controlador",
-      "Termo de serviço unilateral",
-      "Acordo verbal",
-    ],
-    correta: 1,
-  },
-  {
     qid: "q26",
     categoria: "bases_legais",
     enunciado: "O \"legítimo interesse\" só pode ser usado:",
@@ -157,7 +128,7 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 2,
   },
 
-  // ─── PERSONAGENS (7) ─────────────────────────────────────────────────
+  // ─── PERSONAGENS (4) ─────────────────────────────────────────────────
   {
     qid: "q09",
     categoria: "personagens",
@@ -183,18 +154,6 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 2,
   },
   {
-    qid: "q11",
-    categoria: "personagens",
-    enunciado: "O TITULAR dos dados é:",
-    alternativas: [
-      "A organização que coleta",
-      "A pessoa natural a quem os dados se referem",
-      "O sistema que armazena",
-      "O fornecedor de software",
-    ],
-    correta: 1,
-  },
-  {
     qid: "q12",
     categoria: "personagens",
     enunciado: "O OPERADOR pode tratar dados pessoais:",
@@ -205,30 +164,6 @@ export const PERGUNTAS: Pergunta[] = [
       "Apenas se for órgão público",
     ],
     correta: 1,
-  },
-  {
-    qid: "q29",
-    categoria: "personagens",
-    enunciado: "O CONTROLADOR CONJUNTO acontece quando:",
-    alternativas: [
-      "Há mais de um operador",
-      "Dois controladores decidem em conjunto finalidades e meios",
-      "A empresa terceiriza armazenamento",
-      "Há terceirização de TI",
-    ],
-    correta: 1,
-  },
-  {
-    qid: "q30",
-    categoria: "personagens",
-    enunciado: "O ENCARREGADO (DPO) deve ser:",
-    alternativas: [
-      "Sempre advogado",
-      "Sempre interno à organização",
-      "Pode ser pessoa interna OU contratada externamente",
-      "Sempre fiscalizado pela ANPD",
-    ],
-    correta: 2,
   },
   {
     qid: "q31",
@@ -243,7 +178,7 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 1,
   },
 
-  // ─── DIREITOS DO TITULAR (6) ─────────────────────────────────────────
+  // ─── DIREITOS DO TITULAR (4) ─────────────────────────────────────────
   {
     qid: "q14",
     categoria: "direitos_titular",
@@ -276,30 +211,6 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 1,
   },
   {
-    qid: "q34",
-    categoria: "direitos_titular",
-    enunciado: "O direito de \"OPOSIÇÃO\" se aplica quando:",
-    alternativas: [
-      "O titular discorda da decisão judicial",
-      "O tratamento é com base no legítimo interesse e o titular contesta",
-      "O órgão erra a finalidade declarada",
-      "Não há base legal informada",
-    ],
-    correta: 1,
-  },
-  {
-    qid: "q35",
-    categoria: "direitos_titular",
-    enunciado: "O direito de \"informação sobre compartilhamentos\" garante saber:",
-    alternativas: [
-      "Apenas os compartilhamentos comerciais",
-      "Com quais entes públicos e privados os dados são compartilhados",
-      "Apenas operadores",
-      "Só compartilhamentos via API",
-    ],
-    correta: 1,
-  },
-  {
     qid: "q36",
     categoria: "direitos_titular",
     enunciado: "Quando os direitos podem ser exercidos pelo TITULAR?",
@@ -312,28 +223,19 @@ export const PERGUNTAS: Pergunta[] = [
     correta: 1,
   },
 
-  // ─── FASES DO PGP (6) ────────────────────────────────────────────────
+  // ─── FASES DO PGP (4) ────────────────────────────────────────────────
+  // q17 e q38 foram REESCRITAS em 2026-05-25 — removeram referência à
+  // sequência de fases do PGP pra permitir aplicar o quiz ANTES da
+  // apresentação das fases (cenário do 1º curso presencial).
   {
     qid: "q17",
     categoria: "fases_pgp",
-    enunciado: "Em qual fase do PGP se faz o Inventário de Dados?",
+    enunciado: "Quando deve ser feito o Inventário de Dados Pessoais em um programa de adequação à LGPD?",
     alternativas: [
-      "Fase Preliminar (capacitação)",
-      "Fase 1 (designação do DPO)",
-      "Fase 3 — Mapeamento",
-      "Fase 6 — Execução",
-    ],
-    correta: 2,
-  },
-  {
-    qid: "q18",
-    categoria: "fases_pgp",
-    enunciado: "O RIPD (Relatório de Impacto à Proteção de Dados) é elaborado:",
-    alternativas: [
-      "Antes de qualquer tratamento",
-      "Quando há alto risco ao titular",
-      "Anualmente, sempre",
-      "Apenas após incidente",
+      "Apenas quando solicitado pela ANPD",
+      "Como uma das primeiras ações estruturadas do programa, depois de designar o Encarregado e definir o escopo do trabalho",
+      "Anualmente, sempre em janeiro",
+      "Apenas após algum incidente de segurança",
     ],
     correta: 1,
   },
@@ -352,8 +254,13 @@ export const PERGUNTAS: Pergunta[] = [
   {
     qid: "q38",
     categoria: "fases_pgp",
-    enunciado: "A formação do COMITÊ DE GOVERNANÇA acontece em qual fase?",
-    alternativas: ["Preliminar", "Fase 1", "Fase 3", "Fase 6"],
+    enunciado: "Quando deve ser formado o COMITÊ DE GOVERNANÇA de Dados Pessoais?",
+    alternativas: [
+      "Apenas após o primeiro incidente registrado",
+      "No início do programa de adequação, junto com a designação do Encarregado (DPO)",
+      "Apenas em organizações com mais de 500 funcionários",
+      "Somente quando a ANPD exigir formalmente",
+    ],
     correta: 1,
   },
   {
@@ -368,21 +275,9 @@ export const PERGUNTAS: Pergunta[] = [
     ],
     correta: 1,
   },
-  {
-    qid: "q40",
-    categoria: "fases_pgp",
-    enunciado: "A Fase 6 (Execução) tipicamente entrega:",
-    alternativas: [
-      "Multa institucional",
-      "Política/Aviso de Privacidade publicado, RIPDs realizados, contratos atualizados, treinamentos executados",
-      "Apenas certificado ANPD",
-      "Dossiês individuais",
-    ],
-    correta: 1,
-  },
 ];
 
-// Total esperado = 30. Mantém ordem por categoria (não embaralha — o
+// Total esperado = 20. Mantém ordem por categoria (não embaralha — o
 // participante percorre Princípios → Bases → Personagens → Direitos → Fases).
 export const TOTAL_PERGUNTAS = PERGUNTAS.length;
 

@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { ensureTabelaQuiz } from "@/lib/colunas-quiz";
+import { ensureColunaQuizDuracao } from "@/lib/coluna-quiz-duracao";
 import { PERGUNTAS, CATEGORIAS, type CategoriaQuiz } from "@/lib/quiz-perguntas";
 
 export const maxDuration = 30;
@@ -30,11 +31,17 @@ export async function GET(req: NextRequest) {
 
   try {
     await ensureTabelaQuiz();
+    await ensureColunaQuizDuracao();
 
     const turmaId = req.nextUrl.searchParams.get("turmaId");
     if (!turmaId) {
       return NextResponse.json({ error: "turmaId obrigatório" }, { status: 400 });
     }
+
+    const turma = await prisma.cursoTurma.findUnique({
+      where: { id: turmaId },
+      select: { quizDuracaoMinutos: true },
+    });
 
     const respostas = await prisma.quizResponse.findMany({
       where: { turmaId, finishedAt: { not: null } },
@@ -45,8 +52,33 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Em andamento — pra calcular "tempo restante" de cada um e mostrar ao
+    // facilitador. Limita a 100 pra não pesar (turma típica tem 50).
+    const emAndamento = await prisma.quizResponse.findMany({
+      where: { turmaId, finishedAt: null },
+      select: { startedAt: true },
+      orderBy: { startedAt: "asc" },
+      take: 100,
+    });
+
     const totalRespondentes = await prisma.quizResponse.count({ where: { turmaId } });
     const completos = respostas.length;
+
+    // Calcula tempo restante POR participante em andamento (em segundos).
+    // Negativo = já passou do prazo (cliente deve ter submetido auto, mas se
+    // bateu offline pode aparecer aqui — facilitador vê e pode investigar).
+    const duracaoMinutos = turma?.quizDuracaoMinutos ?? null;
+    const tempoRestantesSeg: number[] = duracaoMinutos
+      ? emAndamento.map((r) => {
+          const deadlineMs = r.startedAt.getTime() + duracaoMinutos * 60 * 1000;
+          return Math.floor((deadlineMs - Date.now()) / 1000);
+        })
+      : [];
+    const proximoExpirarSeg = tempoRestantesSeg.length > 0 ? Math.min(...tempoRestantesSeg) : null;
+    const tempoMedioRestanteSeg =
+      tempoRestantesSeg.length > 0
+        ? Math.round(tempoRestantesSeg.reduce((a, b) => a + b, 0) / tempoRestantesSeg.length)
+        : null;
 
     // Score médio + histograma
     const totalPerguntas = PERGUNTAS.length;
@@ -157,6 +189,14 @@ export async function GET(req: NextRequest) {
       histograma,
       porQuestao,
       porCategoria,
+      // Info do timer pro Facilitador visualizar — null se a turma não tem
+      // duração configurada. Cliente do quiz é INVISÍVEL (sem UI de tempo).
+      timer: {
+        duracaoMinutos,
+        emAndamento: emAndamento.length,
+        proximoExpirarSeg, // pode ser negativo (já passou)
+        tempoMedioRestanteSeg,
+      },
       geradoEm: new Date().toISOString(),
     });
   } catch (e: any) {
