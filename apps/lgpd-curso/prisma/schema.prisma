@@ -37,6 +37,19 @@ model Company {
   dpoSubstitutoNome     String?
   dpoSubstitutoEmail    String?
   dpoSubstitutoTelefone String?
+  // === Práticas da FASE PRELIMINAR (Sensibilização e Engajamento) ===
+  // Termômetro Institucional aplicado pelo grupo no INÍCIO do curso (auto-
+  // diagnóstico de maturidade percebida em 5 dimensões) e repetido no FIM
+  // pra evidenciar a evolução. JSON: { dimensoes:[...], score, finalizadoEm }.
+  // Estrutura em lib/termometro-perguntas.ts. Auto-migração em
+  // lib/coluna-fase-preliminar.ts.
+  termometroInicio Json?
+  termometroFim    Json?
+  // Carta para a Alta Gestão — documento institucional que o grupo personaliza
+  // (5 campos com templates auto-preenchidos) e gera DOCX pra impressão.
+  // JSON: { destinatario, justificativa, riscosNaoFazer, pedido, assinatura,
+  // finalizadaEm, atualizadoEm }.
+  cartaAltaGestao  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
