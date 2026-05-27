@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building, Target, Calendar, ArrowRight } from "lucide-react";
 import { VisualizadorSlides } from "@/components/visualizador-slides";
 import { BaseLegalCard } from "@/components/base-legal-card";
+import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getFaseSlides } from "@/lib/slides-fases";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
@@ -35,6 +36,10 @@ export default async function Fase2Page() {
   return (
     <div className="max-w-4xl mx-auto">
       <VisualizadorSlides fase={fase} />
+
+      <div className="mt-4">
+        <AdminPreviewBanner />
+      </div>
 
       {/* Coloque em prática — 3 atividades pedagógicas da Fase 2:
           (2A) Setores que tratam dados · (2B) Matriz de Priorização ·

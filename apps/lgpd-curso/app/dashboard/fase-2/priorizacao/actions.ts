@@ -25,17 +25,24 @@ async function requireCompany() {
   return { companyId };
 }
 
+// ADMIN sem companyId vê processos PM padrão + salva=null (banner avisa).
 export async function getPriorizacao(): Promise<{
   processos: ProcessoContexto[];
   salva: PriorizacaoSalva | null;
 }> {
   await ensureColunasFase2();
-  const { companyId } = await requireCompany();
-  const company = await prisma.company.findUnique({
-    where: { id: companyId },
-    select: { orgao: true, priorizacaoProcessos: true },
-  });
-  const orgao: "PM" | "CM" = company?.orgao === "CM" ? "CM" : "PM";
+  const session = await getSession();
+  const companyId = session?.user?.companyId;
+  let orgao: "PM" | "CM" = "PM";
+  let salva: PriorizacaoSalva | null = null;
+  if (companyId) {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { orgao: true, priorizacaoProcessos: true },
+    });
+    if (company?.orgao === "CM") orgao = "CM";
+    salva = (company?.priorizacaoProcessos as PriorizacaoSalva | null) ?? null;
+  }
   const procs = processosPorOrgao(orgao);
   const processos: ProcessoContexto[] = procs.map((p, i) => ({
     id: `${orgao.toLowerCase()}-${i + 1}`,
@@ -43,10 +50,7 @@ export async function getPriorizacao(): Promise<{
     setor: p.setor,
     finalidade: p.finalidade,
   }));
-  return {
-    processos,
-    salva: (company?.priorizacaoProcessos as PriorizacaoSalva | null) ?? null,
-  };
+  return { processos, salva };
 }
 
 export async function salvarPriorizacao(input: {

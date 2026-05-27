@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { UserCheck, ArrowRight } from "lucide-react";
 import { VisualizadorSlides } from "@/components/visualizador-slides";
+import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getFaseSlides } from "@/lib/slides-fases";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
@@ -27,6 +28,10 @@ export default async function Fase1Page() {
   return (
     <div className="max-w-4xl mx-auto">
       <VisualizadorSlides fase={fase} />
+
+      <div className="mt-4">
+        <AdminPreviewBanner />
+      </div>
 
       {/* Coloque em prática — Designação formal do Encarregado (Art. 41 LGPD).
           Aproveita a página /dashboard/encarregado que já existe; aqui é só

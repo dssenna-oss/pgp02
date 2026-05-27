@@ -5,9 +5,13 @@ import { requireCompany, requireSession } from "@/lib/auth-server";
 import { ensureColunaDpoJustificativa } from "@/lib/coluna-dpo-justificativa";
 import { revalidatePath } from "next/cache";
 
+// ADMIN sem companyId recebe null — página renderiza formulário vazio +
+// banner de preview explica. Não crasha.
 export async function getEncarregado() {
   await ensureColunaDpoJustificativa();
-  const { companyId } = await requireCompany();
+  const session = await requireSession();
+  const companyId = session.user.companyId;
+  if (!companyId) return null;
   return prisma.company.findUnique({
     where: { id: companyId },
     select: {

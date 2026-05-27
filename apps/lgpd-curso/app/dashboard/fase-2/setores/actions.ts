@@ -33,17 +33,24 @@ async function requireCompany() {
 
 // Lê contexto + estado salvo. Contexto vem dos processos pré-cadastrados
 // do órgão (PM: Saúde + RH · CM: Cerimonial + Ouvidoria).
+// ADMIN sem companyId vê processos PM padrão + salvos=null (banner avisa).
 export async function getSetores(): Promise<{
   setores: SetorContexto[];
   salvos: SetoresSalvos | null;
 }> {
   await ensureColunasFase2();
-  const { companyId } = await requireCompany();
-  const company = await prisma.company.findUnique({
-    where: { id: companyId },
-    select: { orgao: true, setoresDiscutidos: true },
-  });
-  const orgao: "PM" | "CM" = company?.orgao === "CM" ? "CM" : "PM";
+  const session = await getSession();
+  const companyId = session?.user?.companyId;
+  let orgao: "PM" | "CM" = "PM";
+  let salvos: SetoresSalvos | null = null;
+  if (companyId) {
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { orgao: true, setoresDiscutidos: true },
+    });
+    if (company?.orgao === "CM") orgao = "CM";
+    salvos = (company?.setoresDiscutidos as SetoresSalvos | null) ?? null;
+  }
   const processos = processosPorOrgao(orgao);
   const setores: SetorContexto[] = processos.map((p, i) => ({
     id: `${orgao.toLowerCase()}-${i + 1}`,
@@ -51,10 +58,7 @@ export async function getSetores(): Promise<{
     setor: p.setor,
     finalidade: p.finalidade,
   }));
-  return {
-    setores,
-    salvos: (company?.setoresDiscutidos as SetoresSalvos | null) ?? null,
-  };
+  return { setores, salvos };
 }
 
 export async function salvarSetores(
