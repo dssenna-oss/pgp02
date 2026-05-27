@@ -441,6 +441,20 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
                   <Search className="h-3.5 w-3.5" /> Gabarito Debrief
                 </a>
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                title="Baixar Cartilha do PGP — Guia institucional ~120pg, não depende de grupo (pra distribuir aos participantes ou usar de referência)"
+              >
+                <a
+                  href="/api/curso/caderno/docx?modo=cartilha"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <BookOpen className="h-3.5 w-3.5" /> Cartilha PGP
+                </a>
+              </Button>
             </>
           );
         })()}

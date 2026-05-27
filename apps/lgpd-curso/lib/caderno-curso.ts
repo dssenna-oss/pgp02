@@ -51,6 +51,25 @@ import { getControleById } from "./gap-catalogo";
 import { gerarRoadmap90Dias } from "./roadmap-gerador";
 import { gerarCartaAutoPreenchida } from "./carta-alta-gestao";
 import { calcularMaturidade, nivelMaturidade, type KpisGrupo } from "./maturidade";
+import {
+  CONTEUDO_A_CARTA_SERVICOS,
+  CONTEUDO_B_MODELO_POLITICA_PGP,
+  CONTEUDO_B_COMUNICACAO_ANPD,
+  CONTEUDO_B_CLAUSULAS_LGPD,
+  CONTEUDO_B_POLITICA_RETENCAO,
+  CONTEUDO_B_TERMO_CONSENTIMENTO,
+  CONTEUDO_C_INTRO_PEGADINHAS,
+  CONTEUDO_D_GLOSSARIO,
+  CONTEUDO_E_BASE_LEGAL,
+  CONTEUDO_F_PORTE,
+  CONTEUDO_G_CALENDARIO,
+  CONTEUDO_H_CHECKLIST,
+  CONTEUDO_I_FAQ,
+  CONTEUDO_J_REFERENCIAS,
+  CONTEUDO_K_ROTEIROS,
+} from "./cartilha-conteudo";
+import { PEGADINHAS_PROCESSOS } from "./processos-pegadinhas";
+import { CATALOGO_ERROS_PLANTADOS } from "./aviso-erros-plantados";
 
 // =============================================================================
 // Tipo dos dados de entrada (formato do retorno do prisma.cursoGrupo.findUnique
@@ -2080,5 +2099,566 @@ export function gerarCadernoExecutivo(data: GrupoCadernoData): (Paragraph | Tabl
     ...statusFase6(data),
     ...statusFase7(data),
     ...conclusaoExecutiva(data),
+  ];
+}
+
+// =============================================================================
+// CARTILHA INSTITUCIONAL (C) — manual genérico ~100-150pg pra qualquer órgão
+//
+// Diferente de A e B, a Cartilha NÃO depende de nenhum grupo do curso. Reusa
+// 100% das funções de render das fases, passando um GrupoCadernoData mockado
+// pra forçar uso dos dados-MODELO em todas as seções. Adiciona capítulos
+// extras (A-K) específicos da Cartilha em torno das 8 fases.
+//
+// Cor de capa: roxo/índigo (diferencia visualmente dos outros 2 documentos).
+// Imports da cartilha estão no topo do arquivo, junto dos demais.
+// =============================================================================
+
+const COR_CARTILHA_TITULO = "5B21B6"; // roxo/índigo escuro
+const COR_CARTILHA_ACCENT = "7C3AED";
+
+export type CartilhaOpts = {
+  nomeInstituicao?: string;
+  tipoOrgao?: "PM" | "CM" | "AUTARQUIA" | "TRIBUNAL" | "OUTRO";
+};
+
+// Helpers específicos da cartilha
+function h1Cartilha(texto: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 480, after: 240 },
+    pageBreakBefore: true,
+    children: [new TextRun({ text: texto, bold: true, size: 38, color: COR_CARTILHA_TITULO })],
+  });
+}
+
+function h2Cartilha(texto: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 320, after: 160 },
+    children: [new TextRun({ text: texto, bold: true, size: 28, color: COR_CARTILHA_ACCENT })],
+  });
+}
+
+function h3Cartilha(texto: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_3,
+    spacing: { before: 240, after: 120 },
+    children: [new TextRun({ text: texto, bold: true, size: 24, color: "1E1B4B" })],
+  });
+}
+
+// Cria um GrupoCadernoData mockado, com TODOS os campos vazios — força os
+// renders existentes a caírem sempre no fallback "modelo de referência".
+function mockGrupoData(opts: CartilhaOpts): GrupoCadernoData {
+  const orgao = opts.tipoOrgao === "CM" ? "CM" : "PM";
+  const nome = opts.nomeInstituicao?.trim() || "Sua Instituição";
+  return {
+    grupo: {
+      id: "cartilha",
+      numero: 0,
+      orgao,
+      turma: { nome: "Cartilha Institucional", cidade: "(sua cidade)" },
+      company: {
+        id: "cartilha",
+        name: nome,
+        cnpj: null,
+        orgao,
+        cidade: null,
+        dpoName: null,
+        dpoEmail: null,
+        dpoTelefone: null,
+        dpoEndereco: null,
+        dpoSubstitutoNome: null,
+        dpoSubstitutoEmail: null,
+        dpoSubstitutoTelefone: null,
+        dpoJustificativaEscolha: null,
+        setoresDiscutidos: null,
+        priorizacaoProcessos: null,
+        termometroInicio: null,
+        termometroFim: null,
+        cartaAltaGestao: null,
+        users: [],
+        inventories: [],
+        risks: [],
+        gapAnswers: [],
+        actions: [],
+        ripds: [],
+        operators: [],
+        dsrRequests: [],
+        policies: [],
+        incidents: [],
+        priMembros: [],
+        priRaci: [],
+      },
+    },
+  };
+}
+
+// ─── Capa + Apresentação ────────────────────────────────────────────────────
+
+function capaCartilha(opts: CartilhaOpts): Paragraph[] {
+  const hoje = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const inst = opts.nomeInstituicao?.trim();
+  const tipoTexto = opts.tipoOrgao === "PM" ? "Prefeitura Municipal"
+    : opts.tipoOrgao === "CM" ? "Câmara Municipal"
+    : opts.tipoOrgao === "AUTARQUIA" ? "Autarquia"
+    : opts.tipoOrgao === "TRIBUNAL" ? "Tribunal"
+    : opts.tipoOrgao === "OUTRO" ? "Instituição Pública"
+    : null;
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 3000, after: 200 },
+      children: [
+        new TextRun({ text: "CARTILHA DO PGP", bold: true, size: 56, color: COR_CARTILHA_TITULO }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+      children: [
+        new TextRun({
+          text: "Programa de Governança em Privacidade",
+          italics: true,
+          size: 30,
+          color: "475569",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 800 },
+      children: [
+        new TextRun({
+          text: "Guia de Implementação da LGPD em Instituições Públicas",
+          italics: true,
+          size: 24,
+          color: "64748B",
+        }),
+      ],
+    }),
+    inst
+      ? new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 120 },
+          children: [new TextRun({ text: inst, bold: true, size: 32 })],
+        })
+      : new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 120 },
+          children: [
+            new TextRun({
+              text: "Para qualquer Instituição Pública brasileira",
+              italics: true,
+              size: 22,
+              color: "64748B",
+            }),
+          ],
+        }),
+    tipoTexto && inst
+      ? new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 1200 },
+          children: [
+            new TextRun({ text: tipoTexto, italics: true, size: 22, color: "64748B" }),
+          ],
+        })
+      : new Paragraph({ spacing: { after: 800 }, children: [new TextRun({ text: "" })] }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 2000 },
+      children: [
+        new TextRun({ text: `Edição de ${hoje}`, size: 22, color: "475569" }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "PGP Treinamento · Material institucional de apoio à conformidade LGPD",
+          italics: true,
+          size: 18,
+          color: "94A3B8",
+        }),
+      ],
+    }),
+  ];
+}
+
+function apresentacaoCartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Apresentação"));
+  out.push(
+    pComBold(
+      "Esta Cartilha consolida, em formato pragmático e auto-suficiente, o caminho de implementação da **Lei nº 13.709/2018** — Lei Geral de Proteção de Dados Pessoais (LGPD) — em Instituições Públicas brasileiras. É material institucional pra uso INDEPENDENTE: não exige treinamento prévio, não depende de aplicativo, não requer conhecimento técnico avançado. O Encarregado e o Comitê de Privacidade do órgão podem usá-la como base de partida pra estruturar o Programa de Governança em Privacidade (PGP) da Instituição.",
+    ),
+  );
+  out.push(h2Cartilha("O que esta Cartilha NÃO é"));
+  out.push(bullet("NÃO é parecer jurídico institucional — orienta, não vincula a Instituição perante a ANPD."));
+  out.push(bullet("NÃO substitui consulta a especialistas em casos de dúvida significativa."));
+  out.push(bullet("NÃO é exaustiva — a LGPD tem 65 artigos + dezenas de Resoluções; aqui condensamos o essencial pra o setor público."));
+  out.push(bullet("NÃO é receita única — Instituições diferem em porte, contexto e cultura; adaptar é parte do trabalho."));
+  out.push(h2Cartilha("Como usar"));
+  out.push(pComBold("**Leitura em sequência** — pra quem está começando do zero. Cada fase do PGP (Preliminar + 7 fases) está organizada em sequência. Lendo do início ao fim, fica claro o método completo."));
+  out.push(pComBold("**Consulta pontual** — pra dúvidas específicas. Use o sumário pra ir direto ao instrumento que está estruturando: Inventário · Riscos · GAP · Plano · RIPD · Aviso · DSR · Operadores · Incidentes · PRI."));
+  out.push(pComBold("**Apoio à capacitação** — pra capacitar a equipe. Os capítulos FAQ (perguntas frequentes), Glossário, Base Legal e Armadilhas Comuns servem de material didático em treinamentos internos."));
+  out.push(h2Cartilha("Estrutura"));
+  out.push(bullet("Glossário LGPD essencial (30 termos)"));
+  out.push(bullet("Base Legal — guia decisivo (Art. 7º + Art. 11)"));
+  out.push(bullet("8 etapas do PGP (Preliminar + Fases 1-7) com conteúdo institucional e modelos"));
+  out.push(bullet("Modelos de documentos: Política do PGP · Comunicação ANPD · Cláusulas LGPD · Retenção · Consentimento"));
+  out.push(bullet("Armadilhas comuns no setor público (10 situações reais)"));
+  out.push(bullet("Adaptação por porte (pequeno · médio · grande)"));
+  out.push(bullet("Calendário de revisões recomendado"));
+  out.push(bullet("Checklist final do PGP (25 perguntas)"));
+  out.push(bullet("FAQ — perguntas frequentes (15+ respostas detalhadas)"));
+  out.push(bullet("Referências externas curadas"));
+  out.push(bullet("Roteiros de implementação por prazo (30 dias · 90 dias · 12 meses)"));
+  return out;
+}
+
+// ─── D — Glossário ──────────────────────────────────────────────────────────
+
+function renderGlossario(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Glossário LGPD essencial"));
+  out.push(pComBold("**30 termos críticos** organizados por ordem alfabética com definição compatível com a Lei. Use como referência rápida durante a leitura desta Cartilha e nas reuniões do Comitê de Privacidade."));
+  const ordenados = [...CONTEUDO_D_GLOSSARIO].sort((a, b) => a.termo.localeCompare(b.termo, "pt-BR"));
+  for (const item of ordenados) {
+    out.push(p(item.termo, { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(item.definicao));
+    if (item.artigo) {
+      out.push(p(`Base: ${item.artigo}`, { italics: true, size: 18, color: "64748B" }));
+    }
+  }
+  return out;
+}
+
+// ─── E — Base legal — guia decisivo ─────────────────────────────────────────
+
+function renderBaseLegal(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha(CONTEUDO_E_BASE_LEGAL.titulo));
+  for (const par of CONTEUDO_E_BASE_LEGAL.intro) out.push(pComBold(par));
+  out.push(h2Cartilha(CONTEUDO_E_BASE_LEGAL.fluxograma.titulo));
+  for (const item of CONTEUDO_E_BASE_LEGAL.fluxograma.perguntas) {
+    out.push(p(item.pergunta, { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p("→ SIM: " + item.sim, { spacingAfter: 80 }));
+    out.push(p("→ NÃO: " + item.nao, { spacingAfter: 160 }));
+  }
+  out.push(h2Cartilha(CONTEUDO_E_BASE_LEGAL.erros.titulo));
+  for (const e of CONTEUDO_E_BASE_LEGAL.erros.lista) out.push(bullet(e));
+  out.push(...calloutBlock("dica", "Regra de ouro", CONTEUDO_E_BASE_LEGAL.dica));
+  return out;
+}
+
+// ─── A — Carta de Serviços como base do Inventário ─────────────────────────
+
+function renderCartaServicos(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_A_CARTA_SERVICOS.titulo));
+  for (const par of CONTEUDO_A_CARTA_SERVICOS.paragrafos) out.push(pComBold(par));
+  out.push(h3Cartilha(CONTEUDO_A_CARTA_SERVICOS.metodo.titulo));
+  for (let i = 0; i < CONTEUDO_A_CARTA_SERVICOS.metodo.passos.length; i++) {
+    out.push(bullet(`${i + 1}. ${CONTEUDO_A_CARTA_SERVICOS.metodo.passos[i]}`));
+  }
+  out.push(h3Cartilha("Exemplos típicos de mapeamento Carta → Inventário"));
+  for (const ex of CONTEUDO_A_CARTA_SERVICOS.exemplos) {
+    out.push(p(`Serviço na Carta: ${ex.servicoCarta}`, { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(
+      tabelaCampos([
+        ["Vira processo", ex.processoInventario],
+        ["Dados típicos", ex.dadosTipicos],
+        ["Base legal sugerida", ex.baseLegalSugerida],
+      ]),
+    );
+  }
+  out.push(...calloutBlock("dica", "Dica final", CONTEUDO_A_CARTA_SERVICOS.dicaFinal));
+  return out;
+}
+
+// ─── B — Modelos de documentos adicionais ──────────────────────────────────
+
+function renderModeloPoliticaPGP(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_B_MODELO_POLITICA_PGP.titulo));
+  out.push(p(CONTEUDO_B_MODELO_POLITICA_PGP.intro, { italics: true }));
+  for (const sec of CONTEUDO_B_MODELO_POLITICA_PGP.secoes) {
+    out.push(h3Cartilha(sec.titulo));
+    out.push(p(sec.texto));
+  }
+  return out;
+}
+
+function renderModeloClausulasLGPD(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_B_CLAUSULAS_LGPD.titulo));
+  out.push(p(CONTEUDO_B_CLAUSULAS_LGPD.intro, { italics: true }));
+  for (const c of CONTEUDO_B_CLAUSULAS_LGPD.clausulas) {
+    out.push(p(c.titulo, { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(c.texto));
+  }
+  return out;
+}
+
+function renderModeloPoliticaRetencao(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_B_POLITICA_RETENCAO.titulo));
+  out.push(p(CONTEUDO_B_POLITICA_RETENCAO.intro, { italics: true }));
+  for (const par of CONTEUDO_B_POLITICA_RETENCAO.conteudo) out.push(p(par));
+  return out;
+}
+
+function renderModeloConsentimento(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_B_TERMO_CONSENTIMENTO.titulo));
+  out.push(p(CONTEUDO_B_TERMO_CONSENTIMENTO.intro, { italics: true }));
+  for (const c of CONTEUDO_B_TERMO_CONSENTIMENTO.campos) out.push(p(c));
+  out.push(...calloutBlock("aviso", "Atenção", CONTEUDO_B_TERMO_CONSENTIMENTO.alerta));
+  return out;
+}
+
+function renderModeloComunicacaoAnpd(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h2Cartilha(CONTEUDO_B_COMUNICACAO_ANPD.titulo));
+  out.push(p(CONTEUDO_B_COMUNICACAO_ANPD.intro, { italics: true }));
+  out.push(p("Campos obrigatórios:", { bold: true }));
+  for (const c of CONTEUDO_B_COMUNICACAO_ANPD.campos) out.push(bullet(c));
+  out.push(p(CONTEUDO_B_COMUNICACAO_ANPD.rodape, { italics: true }));
+  return out;
+}
+
+// ─── C — Armadilhas comuns (10 pegadinhas) ─────────────────────────────────
+
+function renderArmadilhas(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha(CONTEUDO_C_INTRO_PEGADINHAS.titulo));
+  for (const par of CONTEUDO_C_INTRO_PEGADINHAS.paragrafos) out.push(pComBold(par));
+  out.push(h2Cartilha("Armadilhas em processos (4)"));
+  for (const peg of PEGADINHAS_PROCESSOS) {
+    out.push(h3Cartilha(`${peg.orgao === "PM" ? "Prefeitura — " : "Câmara — "}${peg.rotuloCurto}`));
+    out.push(p("Situação típica:", { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(`"${peg.trechoBriefing}"`, { italics: true }));
+    out.push(p("Por que é armadilha:", { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(peg.porqueEpegadinha));
+    out.push(p(`Base legal aplicável: ${peg.artigoLgpd}`, { italics: true, size: 18, color: "64748B" }));
+    out.push(p(`Como evitar / Como discutir: ${peg.dicaDoFacilitador}`, { italics: true }));
+  }
+  out.push(h2Cartilha("Armadilhas no Aviso de Privacidade (6)"));
+  for (const erro of CATALOGO_ERROS_PLANTADOS) {
+    out.push(h3Cartilha(erro.rotulo));
+    out.push(p(`Onde aparece: ${erro.secao}`, { italics: true, color: "64748B" }));
+    out.push(p("Por que é armadilha:", { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(erro.descricaoPedagogica));
+    out.push(p(`Base legal: ${erro.artigoLgpd}`, { italics: true, size: 18, color: "64748B" }));
+    out.push(p(`Como evitar: ${erro.dicaDoFacilitador}`, { italics: true }));
+  }
+  out.push(...calloutBlock("info", "Lembrete", CONTEUDO_C_INTRO_PEGADINHAS.fechamento));
+  return out;
+}
+
+// ─── F — Adaptação por porte ────────────────────────────────────────────────
+
+function renderAdaptacaoPorte(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha(CONTEUDO_F_PORTE.titulo));
+  for (const par of CONTEUDO_F_PORTE.intro) out.push(pComBold(par));
+  for (const faixa of CONTEUDO_F_PORTE.faixas) {
+    out.push(h2Cartilha(faixa.porte));
+    out.push(p(faixa.perfil, { italics: true }));
+    out.push(h3Cartilha("Orientações operacionais"));
+    for (const o of faixa.orientacoes) out.push(pComBold(o));
+    out.push(p("Orçamento aproximado:", { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(faixa.orcamento));
+  }
+  out.push(...calloutBlock("info", "Atenção", CONTEUDO_F_PORTE.rodape));
+  return out;
+}
+
+// ─── G — Calendário de revisões ─────────────────────────────────────────────
+
+function renderCalendarioRevisoes(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Calendário recomendado de revisões"));
+  out.push(
+    pComBold(
+      "Conformidade LGPD não é projeto com fim — é processo contínuo. Esta tabela orienta a periodicidade típica de revisão de cada instrumento do PGP. Adapte conforme o porte e os eventos disparadores específicos da sua Instituição.",
+    ),
+  );
+  for (const item of CONTEUDO_G_CALENDARIO) {
+    out.push(h3Cartilha(item.instrumento));
+    out.push(
+      tabelaCampos([
+        ["Periodicidade", item.periodicidade],
+        ["Por que", item.porQue],
+        ["Além disso", item.alemDisso],
+      ]),
+    );
+  }
+  return out;
+}
+
+// ─── H — Checklist final do PGP ─────────────────────────────────────────────
+
+function renderChecklistFinal(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Checklist final do PGP"));
+  out.push(
+    pComBold(
+      "**25 perguntas de auto-avaliação** organizadas pelas 8 etapas do PGP. Marque ✅ se cumprido, 🟡 se parcial e 🔴 se pendente. Score auto-avaliativo: 23-25 ✅ = PGP maduro; 18-22 = consolidação; 12-17 = em construção; abaixo de 12 = início. Repetir a cada 6 meses pra acompanhar evolução.",
+    ),
+  );
+  for (const secao of CONTEUDO_H_CHECKLIST) {
+    out.push(h2Cartilha(secao.secao));
+    for (const item of secao.itens) {
+      out.push(p(`☐ ${item}`));
+    }
+  }
+  return out;
+}
+
+// ─── I — FAQ ─────────────────────────────────────────────────────────────────
+
+function renderFAQ(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Perguntas frequentes (FAQ)"));
+  out.push(
+    pComBold(
+      "Compilação de **perguntas que aparecem com frequência** em treinamentos, atendimentos do canal DSR e reuniões do Comitê de Privacidade. As respostas têm caráter orientativo — não substituem parecer jurídico institucional em casos de dúvida significativa.",
+    ),
+  );
+  for (let i = 0; i < CONTEUDO_I_FAQ.length; i++) {
+    const item = CONTEUDO_I_FAQ[i];
+    out.push(h3Cartilha(`${i + 1}. ${item.pergunta}`));
+    out.push(p(item.resposta));
+  }
+  return out;
+}
+
+// ─── J — Referências externas curadas ──────────────────────────────────────
+
+function renderReferenciasExternas(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Referências externas curadas"));
+  out.push(
+    pComBold(
+      "Lista mínima e curada. Não busca exaustividade — busca ENTREGAR aquilo que efetivamente é usado no dia-a-dia da implementação. A ANPD publica regularmente novos materiais; consultar o portal `gov.br/anpd` periodicamente.",
+    ),
+  );
+  for (const cat of CONTEUDO_J_REFERENCIAS) {
+    out.push(h2Cartilha(cat.categoria));
+    for (const item of cat.itens) {
+      out.push(p(item.titulo, { bold: true, color: COR_CARTILHA_ACCENT }));
+      out.push(p(item.descricao));
+      if (item.url) out.push(p(item.url, { italics: true, size: 18, color: "64748B" }));
+    }
+  }
+  return out;
+}
+
+// ─── K — Roteiros de implementação por prazo ───────────────────────────────
+
+function renderRoteirosPorPrazo(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha(CONTEUDO_K_ROTEIROS.titulo));
+  out.push(pComBold(CONTEUDO_K_ROTEIROS.intro));
+  for (const r of CONTEUDO_K_ROTEIROS.roteiros) {
+    out.push(h2Cartilha(r.prazo));
+    out.push(p(r.cenario, { italics: true }));
+    out.push(h3Cartilha("Marcos"));
+    for (const m of r.marcos) out.push(bullet(m));
+    out.push(p("Entregáveis:", { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(r.entregaveis));
+  }
+  out.push(...calloutBlock("dica", "Recomendação", CONTEUDO_K_ROTEIROS.recomendacao));
+  return out;
+}
+
+// ─── Encerramento ───────────────────────────────────────────────────────────
+
+function encerramentoCartilha(): (Paragraph | Table)[] {
+  return [
+    h1Cartilha("Encerramento"),
+    pComBold(
+      "Esta Cartilha condensa, em formato pragmático, a experiência prática de implementação da LGPD em órgãos públicos brasileiros. **Não é o ponto final** — é ponto de partida estruturado pra que cada Instituição construa o seu próprio Programa de Governança em Privacidade.",
+    ),
+    pComBold(
+      "**Três princípios institucionais** valem destacar no fechamento:",
+    ),
+    bullet("**Patrocínio da Alta Gestão** é condição prévia. Sem decisão estratégica explícita do dirigente máximo, qualquer esforço técnico vira papel."),
+    bullet("**O programa respira com a Instituição.** Inventário, GAP, Plano e PRI são instrumentos vivos — exigem manutenção. Programa congelado envelhece em meses."),
+    bullet("**Cultura supera procedimento.** Documentos bem feitos sem cultura institucional são apenas papel. A capacitação contínua e o exemplo das chefias importam mais que qualquer checklist."),
+    h2Cartilha("Onde buscar ajuda"),
+    bullet("**ANPD** — Autoridade Nacional, primeira fonte oficial. Portal `gov.br/anpd` reúne Resoluções, Guias e canal de comunicações."),
+    bullet("**ENAP** — Escola Nacional de Administração Pública, cursos gratuitos pra servidores sobre LGPD."),
+    bullet("**Comunidade técnica** — grupos de DPOs do setor público trocam experiências em listas e fóruns. Privacy by Design não é solitário."),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 600 },
+      children: [
+        new TextRun({
+          text: "Boa jornada na implementação do PGP da sua Instituição.",
+          italics: true,
+          size: 22,
+          color: "475569",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "PGP Treinamento · Cartilha institucional",
+          italics: true,
+          size: 18,
+          color: "94A3B8",
+        }),
+      ],
+    }),
+  ];
+}
+
+// ─── Função principal ───────────────────────────────────────────────────────
+
+export function gerarCartilhaInstitucional(opts: CartilhaOpts = {}): (Paragraph | Table)[] {
+  const mock = mockGrupoData(opts);
+  return [
+    ...capaCartilha(opts),
+    ...apresentacaoCartilha(),
+    ...renderGlossario(),
+    ...renderBaseLegal(),
+    // 8 fases — reusa renders existentes, força modelos via mock
+    ...renderFasePreliminar(mock),
+    ...renderFase1(mock),
+    ...renderFase2(mock),
+    // Carta de Serviços encaixa lógicamente após a Fase 2
+    ...renderCartaServicos(),
+    ...renderFase3(mock),
+    ...renderFase4(mock),
+    ...renderFase5(mock),
+    // Política PGP encaixa antes da Fase 6 (documento-mater do programa)
+    ...renderModeloPoliticaPGP(),
+    ...renderFase6(mock),
+    // Cláusulas + Retenção + Consentimento são instrumentos da Fase 6
+    ...renderModeloClausulasLGPD(),
+    ...renderModeloPoliticaRetencao(),
+    ...renderModeloConsentimento(),
+    ...renderFase7(mock),
+    // Comunicação ANPD é da Fase 7
+    ...renderModeloComunicacaoAnpd(),
+    // Capítulos transversais
+    ...renderArmadilhas(),
+    ...renderAdaptacaoPorte(),
+    ...renderCalendarioRevisoes(),
+    ...renderChecklistFinal(),
+    ...renderFAQ(),
+    ...renderReferenciasExternas(),
+    ...renderRoteirosPorPrazo(),
+    ...encerramentoCartilha(),
   ];
 }
