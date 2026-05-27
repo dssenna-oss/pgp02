@@ -18,20 +18,39 @@ export default function LoginPage() {
 
   // QR Code do crachá codifica `/login#email=<email-do-papel>`.
   // Lemos o hash no mount e pré-preenchemos o campo email, agilizando o login
-  // no curso presencial (~36 participantes em paralelo). Senha continua manual.
+  // no curso presencial (~36 participantes em paralelo).
+  //
+  // O Painel Multi-Perfil do facilitador estende com #email=X&senha=Y&auto=1
+  // que pré-preenche AMBOS e dispara o submit automático — pra demonstrar
+  // várias contas rapidamente em janela anônima (Ctrl+Shift+N → cola → Enter).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash.slice(1); // remove "#"
     if (!hash) return;
     const params = new URLSearchParams(hash);
     const emailFromQr = params.get("email");
+    const senhaFromQr = params.get("senha");
+    const auto = params.get("auto") === "1";
+
     if (emailFromQr) {
       setEmail(decodeURIComponent(emailFromQr));
       setVeioDoQr(true);
-      // foca direto no campo senha (skip email)
-      setTimeout(() => passwordRef.current?.focus(), 100);
-      // limpa o hash da URL pra não vazar email se compartilhar a aba
+      if (senhaFromQr) {
+        setPassword(decodeURIComponent(senhaFromQr));
+      } else {
+        // foca direto no campo senha (skip email)
+        setTimeout(() => passwordRef.current?.focus(), 100);
+      }
+      // limpa o hash da URL pra não vazar credenciais se compartilhar a aba
       try { history.replaceState(null, "", window.location.pathname); } catch {}
+
+      // Auto-submit pra fluxo "demo multi-perfil" — só dispara se TUDO presente
+      if (auto && senhaFromQr) {
+        // Pequeno delay pra UI renderizar a tela "Identificado pelo QR" antes
+        setTimeout(() => {
+          (document.querySelector("form") as HTMLFormElement | null)?.requestSubmit();
+        }, 300);
+      }
     }
   }, []);
 
