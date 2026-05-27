@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function RiscosPage() {
   const [riscos, inventories] = await Promise.all([listRiscos(), listInventoriesForSelect()]);
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 2 · Riscos"
         titulo="Análise de Riscos"

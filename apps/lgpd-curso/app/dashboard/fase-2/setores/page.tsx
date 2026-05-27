@@ -8,7 +8,7 @@ export default async function SetoresPage() {
   const { setores, salvos } = await getSetores();
   return (
     <div>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <AdminPreviewBanner />
       </div>
       <SetoresView setores={setores} salvos={salvos} />

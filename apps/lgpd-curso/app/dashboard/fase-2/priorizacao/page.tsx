@@ -8,7 +8,7 @@ export default async function PriorizacaoPage() {
   const { processos, salva } = await getPriorizacao();
   return (
     <div>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <AdminPreviewBanner />
       </div>
       <PriorizacaoView processos={processos} salva={salva} />

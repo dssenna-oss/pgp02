@@ -22,7 +22,7 @@ export default async function PacoteGapPage({
       orderBy: { createdAt: "desc" },
     });
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <PageHeader
           missao="Admin"
           titulo="Pacote GAP por turma"
@@ -66,7 +66,7 @@ export default async function PacoteGapPage({
   });
   if (!turma) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <PageHeader missao="Admin" titulo="Turma não encontrada" />
         <Link href="/admin/pacote-gap" className="text-brand-600 underline">← Voltar</Link>
       </div>
@@ -74,7 +74,7 @@ export default async function PacoteGapPage({
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Admin · Pacote GAP"
         titulo={`${turma.nome} · ${turma.cidade}`}

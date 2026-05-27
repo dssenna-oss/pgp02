@@ -31,7 +31,7 @@ export default async function FasePreliminarPage() {
   const fase = getFaseSlides("fase-preliminar")!;
   const status = await getStatusPraticas();
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <VisualizadorSlides fase={fase} />
 
       {/* Banner quando ADMIN/Facilitador acessa — explica que práticas

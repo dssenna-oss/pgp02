@@ -14,7 +14,7 @@ export default async function PlanoAcaoPage() {
   const podeEditar = podeEditarFaseAvancada(session?.user?.role);
   const items = await listPlanoAcao();
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Fase 5"
         titulo="Programa de Governança em Privacidade (PGP)"

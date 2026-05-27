@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: { turmaId: string } }) 
 
   if (!turma) {
     return (
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <PageHeader
           missao="Admin"
           titulo="E-mail de convite"
@@ -49,7 +49,7 @@ export default async function Page({ params }: { params: { turmaId: string } }) 
   }));
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <PageHeader
         missao="Admin"
         titulo="E-mail de convite"

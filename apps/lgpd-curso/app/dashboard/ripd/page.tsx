@@ -20,7 +20,7 @@ export default async function RipdPage() {
   ]);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 4a · RIPD"
         titulo="Relatório de Impacto à Proteção de Dados"

@@ -14,7 +14,7 @@ export default async function DsrPage() {
   const podeEditar = podeEditarFaseAvancada(session?.user?.role);
   const items = await listDsr();
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 4a · DSR"
         titulo="Direitos do Titular"

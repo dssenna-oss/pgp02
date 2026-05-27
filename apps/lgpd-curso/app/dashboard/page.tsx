@@ -66,7 +66,7 @@ export default async function DashboardPage() {
   const faseAtual = getFaseAtual(progresso, isDpoOuAdmin);
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <header className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">Olá, {userName}</h1>
         <p className="text-sm text-gray-500 mt-1">

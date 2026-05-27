@@ -9,7 +9,7 @@ export default async function InventarioPage() {
   const items = await listInventarioWithUsers();
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 1 · Inventário"
         titulo="Inventário de Dados Pessoais"
