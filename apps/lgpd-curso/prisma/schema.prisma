@@ -64,6 +64,12 @@ model Company {
   // JSON: { destinatario, justificativa, riscosNaoFazer, pedido, assinatura,
   // finalizadaEm, atualizadoEm }.
   cartaAltaGestao  Json?
+  // === Quiz "Caça às Pegadinhas" (Encerramento) ===
+  // Respostas do grupo ao quiz de detecção das 8 pegadinhas plantadas:
+  // 2 nos processos do próprio órgão (PM ou CM) + 6 erros plantados no Aviso.
+  // Estrutura: { respostas: [{ pegadinhaId, tipo, detectou, observacao }], score,
+  // finalizadoEm }. Auto-migração em lib/coluna-olho-clinico.ts.
+  olhoClinicoQuiz  Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

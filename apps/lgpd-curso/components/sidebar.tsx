@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -131,6 +131,9 @@ const MENU: MenuItem[] = [
       { href: "/dashboard/pri", label: "Documento do PRI", icon: FileText, progressoKey: "pri", dpoOnly: true, observavel: true },
     ],
   },
+  // Missão de Encerramento — quiz "Caça às Pegadinhas" pra revelar as pegadinhas
+  // plantadas nos processos e no Aviso. Acessível a todo o grupo (DPO + Contribs).
+  { kind: "leitura", href: "/dashboard/caca-pegadinhas", rotulo: "🔍 Caça às Pegadinhas", icon: Search, cor: "border-l-amber-400" },
 ];
 
 // Itens da sidebar do facilitador agrupados pela ETAPA do curso em que são

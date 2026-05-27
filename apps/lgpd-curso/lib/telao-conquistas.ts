@@ -17,6 +17,7 @@ export const CONQUISTAS: ConquistaDef[] = [
   { id: "inventario",  emoji: "✅", nome: "Inventário fechado",        descricao: "Aprovou os 2 processos" },
   { id: "riscos",      emoji: "🎯", nome: "Riscos no mapa",            descricao: "Mapeou e aprovou os riscos" },
   { id: "olho",        emoji: "🔍", nome: "Olho clínico",              descricao: "Detectou uma pegadinha no Aviso" },
+  { id: "olho_total",  emoji: "🏆", nome: "Olho Clínico Total",         descricao: "Detectou as 8 pegadinhas no Caça às Pegadinhas" },
   { id: "aviso",       emoji: "📢", nome: "Aviso no ar",               descricao: "Publicou o Aviso de Privacidade" },
   { id: "incidente",   emoji: "⚡", nome: "Incidente sob controle",    descricao: "Comunicou o incidente à ANPD" },
   { id: "ajuda",       emoji: "🤝", nome: "Pediu ajuda na hora certa", descricao: "Usou o apoio entre setores no GAP" },
@@ -33,6 +34,13 @@ export type GrupoEstadoConquista = {
   kpis: {
     incidentes: { comunicadosAnpd: number };
     gap: { apoiosPendentes: number };
+  };
+  // Score do quiz "Caça às Pegadinhas" (Encerramento). Olho Clínico Total
+  // requer detectou todas as 8 (score === total).
+  olhoClinico?: {
+    finalizado: boolean;
+    score: number;
+    total: number;
   };
 };
 
@@ -58,6 +66,8 @@ function cumpre(def: ConquistaDef, g: GrupoEstadoConquista): boolean {
       return missaoConcluida(g, "m2");
     case "olho":
       return (g.avisoErrosReportados?.length || 0) >= 1;
+    case "olho_total":
+      return !!g.olhoClinico?.finalizado && g.olhoClinico.score >= (g.olhoClinico.total || 8);
     case "aviso":
       return missaoConcluida(g, "m4b");
     case "incidente":

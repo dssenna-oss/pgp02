@@ -29,6 +29,12 @@ type ApiGrupo = {
     incidentes: { comunicadosAnpd: number };
     gap: { apoiosPendentes: number };
   };
+  olhoClinico?: {
+    finalizado: boolean;
+    score: number;
+    total: number;
+    finalizadoEm: string | null;
+  };
 };
 
 const MEDALHA = ["🥇", "🥈", "🥉"];
@@ -119,6 +125,7 @@ export function TelaoView({ turmas }: { turmas: Turma[] }) {
             incidentes: { comunicadosAnpd: g.kpis?.incidentes?.comunicadosAnpd || 0 },
             gap: { apoiosPendentes: g.kpis?.gap?.apoiosPendentes || 0 },
           },
+          olhoClinico: g.olhoClinico,
         }));
         const r = avaliarConquistas(estados, conquistasRef.current, primeira);
         conquistasRef.current = r.ganhas;
@@ -170,6 +177,17 @@ export function TelaoView({ turmas }: { turmas: Turma[] }) {
 
   const turma = turmas.find((t) => t.id === turmaId);
   const ranking = [...grupos].sort((a, b) => b.score - a.score || a.numero - b.numero);
+
+  // Pódio do Olho Clínico — só aparece quando ao menos 1 grupo finalizou o quiz.
+  // Ranking por score do quiz "Caça às Pegadinhas" (desempate: nº do grupo).
+  const podioOlho = [...grupos]
+    .filter((g) => g.olhoClinico?.finalizado)
+    .sort((a, b) => {
+      const sb = b.olhoClinico?.score ?? 0;
+      const sa = a.olhoClinico?.score ?? 0;
+      return sb - sa || a.numero - b.numero;
+    })
+    .slice(0, 5);
 
   // Conquistas por grupo (pra contagem de selinhos)
   const porGrupo = new Map<string, ConquistaGanha[]>();
@@ -234,6 +252,43 @@ export function TelaoView({ turmas }: { turmas: Turma[] }) {
           </span>
         </div>
       </header>
+
+      {/* Pódio do Olho Clínico — só aparece quando ao menos 1 grupo terminou o quiz */}
+      {podioOlho.length > 0 && (
+        <section className="mt-3 rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-white to-amber-50 px-5 py-3 shadow-md">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="text-base font-bold uppercase tracking-wide text-amber-900 flex items-center gap-2">
+                🔍 Pódio do Olho Clínico
+              </h3>
+              <p className="text-xs text-amber-800 italic">Detecção das 8 pegadinhas plantadas (2 processos + 6 erros do Aviso)</p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              {podioOlho.map((g, i) => {
+                const medalha = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}º`;
+                const sc = g.olhoClinico!.score;
+                const tot = g.olhoClinico!.total;
+                return (
+                  <div
+                    key={g.grupoId}
+                    className={`flex items-center gap-2 rounded-lg px-3 py-1.5 ${
+                      i === 0 ? "bg-amber-200 border-2 border-amber-400" : "bg-white border border-amber-200"
+                    }`}
+                  >
+                    <span className="text-xl">{medalha}</span>
+                    <div className="text-sm">
+                      <div className="font-bold text-gray-900 leading-tight">{rotuloGrupo(g)}</div>
+                      <div className="text-amber-700 font-semibold leading-tight">
+                        {sc}/{tot} {sc === tot ? "🏆 Olho Total" : ""}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Corpo: ranking + conquistas */}
       <div className="mt-4 grid flex-1 grid-cols-[1.55fr_1fr] grid-rows-1 gap-5 overflow-hidden">
