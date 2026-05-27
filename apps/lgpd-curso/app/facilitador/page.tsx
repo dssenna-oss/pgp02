@@ -12,7 +12,7 @@ export default async function FacilitadorPage() {
   await requireAdmin();
   const turmas = await prisma.cursoTurma.findMany({
     where: { status: "ATIVA" },
-    select: { id: true, nome: true, cidade: true, createdAt: true },
+    select: { id: true, nome: true, cidade: true, slug: true, createdAt: true },
     orderBy: { createdAt: "desc" },
   });
 

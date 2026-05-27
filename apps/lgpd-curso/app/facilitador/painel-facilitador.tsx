@@ -4,8 +4,9 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail, Bug,
+  BarChart3, HandHelping, Mail, Bug, UserCircle2,
 } from "lucide-react";
+import Link from "next/link";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -15,7 +16,7 @@ import { TimelineGrupo, type BolinhaMissao } from "./timeline-grupo";
 import { CentralSos, type SosItem } from "./central-sos";
 import { ResumoTurmaDialog } from "./resumo-turma";
 
-type Turma = { id: string; nome: string; cidade: string };
+type Turma = { id: string; nome: string; cidade: string; slug: string };
 type TurmaDetalhe = Turma & { pacoteGapCustomizado?: boolean; pacoteGapTamanho?: number };
 type PhaseSkipItem = {
   id: string;
@@ -412,6 +413,21 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
         <Button size="sm" variant="outline" onClick={() => setResumoOpen(true)}>
           <BarChart3 className="h-3.5 w-3.5" /> Resumo
         </Button>
+
+        {/* Painel Multi-Perfil — facilitador escolhe um papel da turma e
+            abre login automático em janela anônima (sessão isolada).
+            Útil pra demonstração ao vivo do app. */}
+        {(() => {
+          const turmaSelecionada = turmas.find((t) => t.id === turmaId);
+          if (!turmaSelecionada?.slug) return null;
+          return (
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/facilitador/demo/${turmaSelecionada.slug}`} target="_blank">
+                <UserCircle2 className="h-3.5 w-3.5" /> Demo Perfis
+              </Link>
+            </Button>
+          );
+        })()}
 
         <div className="text-xs text-gray-500 flex items-center gap-2">
           <span className={`inline-block h-2 w-2 rounded-full ${pollingActive ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
