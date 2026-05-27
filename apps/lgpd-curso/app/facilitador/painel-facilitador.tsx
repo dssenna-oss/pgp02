@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen, FileText,
+  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen, FileText, Search,
 } from "lucide-react";
 import Link from "next/link";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
@@ -421,11 +421,27 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
           const turmaSelecionada = turmas.find((t) => t.id === turmaId);
           if (!turmaSelecionada?.slug) return null;
           return (
-            <Button size="sm" variant="outline" asChild>
-              <Link href={`/facilitador/demo/${turmaSelecionada.slug}`} target="_blank">
-                <UserCircle2 className="h-3.5 w-3.5" /> Demo Perfis
-              </Link>
-            </Button>
+            <>
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/facilitador/demo/${turmaSelecionada.slug}`} target="_blank">
+                  <UserCircle2 className="h-3.5 w-3.5" /> Demo Perfis
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                title="Baixar Gabarito do Debrief — DOCX com as 10 pegadinhas + quais grupos detectaram"
+              >
+                <a
+                  href={`/api/curso/gabarito-pegadinhas/docx?turmaSlug=${turmaSelecionada.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Search className="h-3.5 w-3.5" /> Gabarito Debrief
+                </a>
+              </Button>
+            </>
           );
         })()}
 

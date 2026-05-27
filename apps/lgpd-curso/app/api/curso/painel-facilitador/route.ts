@@ -9,6 +9,7 @@ import { montarTimeline } from "@/lib/timeline";
 import { resumoPontuacao } from "@/lib/dsr-game";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 import { ensureColunaLastSeenAt } from "@/lib/coluna-user-last-seen";
+import { ensureColunaOlhoClinico } from "@/lib/coluna-olho-clinico";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -27,13 +28,14 @@ export async function GET(req: NextRequest) {
   // Auto-migração idempotente — esta query seleciona todas as colunas da turma.
   await ensureColunasControleTurma();
   await ensureColunaLastSeenAt();
+  await ensureColunaOlhoClinico();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },
     include: {
       grupos: {
         orderBy: { numero: "asc" },
-        include: { company: { select: { id: true, name: true, orgao: true } } },
+        include: { company: { select: { id: true, name: true, orgao: true, olhoClinicoQuiz: true } } },
       },
     },
   });
@@ -289,6 +291,17 @@ export async function GET(req: NextRequest) {
       lastSeenAt: u.lastSeenAt?.toISOString() ?? null,
     }));
 
+    // Quiz "Caça às Pegadinhas" (Encerramento) — score por grupo se finalizado
+    const olhoQuiz = grupo.company.olhoClinicoQuiz as any;
+    const olhoClinico = olhoQuiz && typeof olhoQuiz.score === "number"
+      ? {
+          finalizado: !!olhoQuiz.finalizadoEm,
+          score: olhoQuiz.score as number,
+          total: typeof olhoQuiz.total === "number" ? olhoQuiz.total : 8,
+          finalizadoEm: olhoQuiz.finalizadoEm || null,
+        }
+      : { finalizado: false, score: 0, total: 8, finalizadoEm: null };
+
     result.push({
       grupoId: grupo.id,
       numero: grupo.numero,
@@ -304,6 +317,7 @@ export async function GET(req: NextRequest) {
       sos,
       phaseSkips,
       papeisAtivos,
+      olhoClinico,
     });
   }
 

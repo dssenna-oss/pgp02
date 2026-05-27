@@ -32,6 +32,9 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // "Coloque em prática" da Fase 1 linka pra cá. ADMIN consegue ver
   // a tela em modo visualização (form renderiza vazio, banner explica).
   "/dashboard/encarregado",
+  // Caça às Pegadinhas (missão de Encerramento) — ADMIN consegue ver
+  // o quiz pra preview/projeção mesmo sem grupo associado.
+  "/dashboard/caca-pegadinhas",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {
