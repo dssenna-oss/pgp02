@@ -6,6 +6,7 @@ import { PhaseSkipProvider } from "@/components/phase-skip-provider";
 import { DsrAlertBanner } from "@/components/dsr-alert-banner";
 import { IncidentAlertBanner } from "@/components/incident-alert-banner";
 import { Heartbeat } from "@/components/heartbeat";
+import { ModoProjecao } from "@/components/modo-projecao";
 
 export function AuthedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,6 +23,10 @@ export function AuthedLayout({ children }: { children: React.ReactNode }) {
           atualizar lastSeenAt. Painel do Facilitador usa pra mostrar
           papéis ativos por grupo. */}
       <Heartbeat />
+      {/* Modo Projeção — botão flutuante + banner verde quando ativo.
+          Esconde sidebar, aumenta fontes 30%, esconde rodapé. Estado
+          persiste em localStorage. */}
+      <ModoProjecao />
     </div>
   );
 }
