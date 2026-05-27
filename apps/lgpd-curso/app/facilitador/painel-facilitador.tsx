@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen,
+  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen, FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
@@ -610,8 +610,8 @@ function GrupoTimelineCard({
     window.open(`/api/curso/certificado?grupoId=${grupo.grupoId}`, "_blank");
   }
 
-  function downloadCaderno() {
-    window.open(`/api/curso/caderno/docx?grupoId=${grupo.grupoId}`, "_blank");
+  function downloadCaderno(modo: "completo" | "executivo") {
+    window.open(`/api/curso/caderno/docx?grupoId=${grupo.grupoId}&modo=${modo}`, "_blank");
   }
 
   const sosPending = grupo.sos.find((s) => s.status === "PENDING");
@@ -730,10 +730,18 @@ function GrupoTimelineCard({
           <Button
             size="sm"
             variant="outline"
-            onClick={downloadCaderno}
-            title="Baixar Caderno do Curso (DOCX consolidado com conteúdo institucional + dados do grupo)"
+            onClick={() => downloadCaderno("completo")}
+            title="Caderno Completo (~60-80 páginas) — kit institucional pessoal do DPO"
           >
             <BookOpen className="h-3.5 w-3.5" /> Caderno
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => downloadCaderno("executivo")}
+            title="Relatório Executivo (~12 páginas) — síntese pra Alta Gestão/chefia"
+          >
+            <FileText className="h-3.5 w-3.5" /> Resumo
           </Button>
           {grupo.kpis.aviso.publicSlug && (
             <Button size="sm" variant="ghost" asChild>

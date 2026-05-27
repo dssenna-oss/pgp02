@@ -1532,3 +1532,553 @@ export function gerarCadernoCompleto(data: GrupoCadernoData): (Paragraph | Table
     ...encerramento(data),
   ];
 }
+
+// =============================================================================
+// CADERNO EXECUTIVO (B) — versão curta (~12 páginas) pra Alta Gestão/chefia.
+//
+// Subset do Completo focado em status + métricas + recomendações estratégicas.
+// Sem o conteúdo educativo das 8 fases. Tom corporativo, cor verde-azulado
+// pra diferenciar do Completo (azul institucional). Mantém o destaque dos
+// dados-modelo (selo amarelo) pra ser honesto com a chefia sobre o que é
+// realização do grupo vs. exemplo de referência.
+// =============================================================================
+
+const COR_EXEC_TITULO = "065F46"; // verde escuro corporativo
+const COR_EXEC_ACCENT = "047857";
+
+function h1Exec(texto: string, pageBreak: boolean = true): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_1,
+    spacing: { before: 480, after: 240 },
+    pageBreakBefore: pageBreak,
+    children: [new TextRun({ text: texto, bold: true, size: 36, color: COR_EXEC_TITULO })],
+  });
+}
+
+function h2Exec(texto: string): Paragraph {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: 280, after: 140 },
+    children: [new TextRun({ text: texto, bold: true, size: 26, color: COR_EXEC_ACCENT })],
+  });
+}
+
+function pExec(texto: string, opts: { bold?: boolean; italics?: boolean; size?: number } = {}): Paragraph {
+  return new Paragraph({
+    spacing: { after: 120 },
+    children: [
+      new TextRun({
+        text: texto,
+        bold: opts.bold,
+        italics: opts.italics,
+        size: opts.size ?? 22,
+      }),
+    ],
+  });
+}
+
+function statusBadge(status: "ok" | "parcial" | "pendente", texto: string): Paragraph {
+  const cores = {
+    ok: { fundo: "D1FAE5", texto: "065F46", emoji: "✅" },
+    parcial: { fundo: "FEF3C7", texto: "92400E", emoji: "🟡" },
+    pendente: { fundo: "FEE2E2", texto: "991B1B", emoji: "🔴" },
+  };
+  const c = cores[status];
+  return new Paragraph({
+    shading: { type: ShadingType.CLEAR, fill: c.fundo },
+    spacing: { before: 80, after: 80 },
+    indent: { left: 200, right: 200 },
+    children: [
+      new TextRun({ text: `${c.emoji} ${texto}`, color: c.texto, size: 22, bold: true }),
+    ],
+  });
+}
+
+function capaExec(data: GrupoCadernoData): Paragraph[] {
+  const c = data.grupo.company;
+  const turma = data.grupo.turma;
+  const orgaoNome = data.grupo.orgao === "PM" ? "Prefeitura Municipal" : "Câmara Municipal";
+  const hoje = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 3200, after: 200 },
+      children: [
+        new TextRun({
+          text: "RELATÓRIO EXECUTIVO",
+          bold: true,
+          size: 48,
+          color: COR_EXEC_TITULO,
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+      children: [
+        new TextRun({
+          text: "Programa de Governança em Privacidade",
+          italics: true,
+          size: 28,
+          color: "475569",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 800 },
+      children: [
+        new TextRun({
+          text: "Síntese para a Alta Gestão",
+          italics: true,
+          size: 22,
+          color: "64748B",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 },
+      children: [new TextRun({ text: c.name, bold: true, size: 30 })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 1000 },
+      children: [
+        new TextRun({
+          text: `${orgaoNome} de ${turma.cidade} — Grupo ${data.grupo.numero}`,
+          italics: true,
+          size: 22,
+          color: "64748B",
+        }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new TextRun({ text: `Turma: ${turma.nome}`, size: 22, color: "475569" })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 2000 },
+      children: [
+        new TextRun({ text: `Documento elaborado em ${hoje}`, size: 22, color: "475569" }),
+      ],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [
+        new TextRun({
+          text: "PGP Treinamento · Curso prático de Lei Geral de Proteção de Dados",
+          italics: true,
+          size: 18,
+          color: "94A3B8",
+        }),
+      ],
+    }),
+  ];
+}
+
+function sumarioExecutivo(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const kpis = calcularKpis(data);
+  const score = calcularMaturidade(kpis);
+  const nivel = nivelMaturidade(score);
+  const c = data.grupo.company;
+
+  out.push(h1Exec("Sumário Executivo"));
+  out.push(
+    pExec(
+      "Este Relatório Executivo sintetiza o trabalho de adequação à LGPD realizado pelo grupo durante o curso prático de Programa de Governança em Privacidade (PGP). É documento complementar ao Caderno Completo, organizado pra leitura rápida pela Alta Gestão e suporte à tomada de decisões estratégicas.",
+    ),
+  );
+
+  out.push(h2Exec("Maturidade do PGP"));
+  out.push(
+    pExec(`Score consolidado: ${score}/100 — ${nivel.label} ${nivel.emoji}`, { bold: true, size: 26 }),
+  );
+  out.push(
+    pExec(
+      "Métrica calculada a partir dos instrumentos produzidos pelo grupo nas 8 etapas do PGP (Inventário, GAP, Aviso, RIPDs, Riscos, Terceiros, DSR), com pesos institucionais ajustados conforme a centralidade de cada item na adequação.",
+      { italics: true, size: 20 },
+    ),
+  );
+
+  // Evolução do Termômetro
+  const tInicio = c.termometroInicio;
+  const tFim = c.termometroFim;
+  if (tInicio || tFim) {
+    out.push(h2Exec("Evolução da Maturidade Percebida"));
+    const linhas: Array<[string, string]> = [];
+    if (tInicio) linhas.push(["Auto-diagnóstico no início do curso", `${tInicio.score || 0}/100 — ${faixaQualitativa(tInicio.score || 0).label}`]);
+    if (tFim) linhas.push(["Auto-diagnóstico no fim do curso", `${tFim.score || 0}/100 — ${faixaQualitativa(tFim.score || 0).label}`]);
+    if (tInicio && tFim) {
+      const delta = (tFim.score || 0) - (tInicio.score || 0);
+      linhas.push(["Δ Evolução", `${delta > 0 ? "+" : ""}${delta} pontos`]);
+    }
+    out.push(tabelaCampos(linhas));
+  }
+
+  out.push(h2Exec("Highlights"));
+  out.push(...renderHighlights(kpis, c));
+
+  return out;
+}
+
+function renderHighlights(kpis: KpisGrupo, company: GrupoCadernoData["grupo"]["company"]): Paragraph[] {
+  const highlights: string[] = [];
+  if (company.dpoName) {
+    highlights.push(`Encarregado(a) designado(a): ${company.dpoName}.`);
+  } else {
+    highlights.push("Encarregado(a) ainda não designado(a) formalmente — pendência prioritária.");
+  }
+  if (kpis.inventario.aprovados > 0) {
+    highlights.push(`${kpis.inventario.aprovados} processo${kpis.inventario.aprovados > 1 ? "s" : ""} aprovado${kpis.inventario.aprovados > 1 ? "s" : ""} no Inventário (de ${kpis.inventario.total} cadastrado${kpis.inventario.total > 1 ? "s" : ""}).`);
+  } else if (kpis.inventario.total > 0) {
+    highlights.push(`${kpis.inventario.total} processo${kpis.inventario.total > 1 ? "s" : ""} em mapeamento; aprovação formal do Encarregado ainda pendente.`);
+  } else {
+    highlights.push("Inventário ainda não iniciado — etapa estruturante a priorizar.");
+  }
+  if (kpis.gap.respondidos > 0) {
+    highlights.push(`GAP Analysis aplicado a ${kpis.gap.respondidos} controles — aderência geral em ${kpis.gap.score}%.`);
+  }
+  if (kpis.aviso.status === "PUBLICADO") {
+    highlights.push("Aviso de Privacidade publicado no portal externo (Art. 9 LGPD).");
+  } else {
+    highlights.push("Aviso de Privacidade ainda não publicado — exigência direta da LGPD.");
+  }
+  if (kpis.incidentes.total > 0) {
+    highlights.push(`${kpis.incidentes.total} incidente${kpis.incidentes.total > 1 ? "s" : ""} registrado${kpis.incidentes.total > 1 ? "s" : ""} no curso (simulação) — fluxo de resposta exercitado.`);
+  }
+  return highlights.map((h) => bullet(h));
+}
+
+function painelConsolidado(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const kpis = calcularKpis(data);
+  out.push(h1Exec("Painel de Indicadores"));
+  out.push(
+    pExec(
+      "Quadro consolidado dos instrumentos produzidos durante o curso, com indicação do estágio de cada um. Métricas comparáveis em revisões periódicas pra acompanhar a evolução institucional.",
+    ),
+  );
+  out.push(
+    tabelaCampos([
+      ["Inventário de Processos", `${kpis.inventario.total} cadastrados · ${kpis.inventario.aprovados} aprovados pelo DPO · ${kpis.inventario.submetidos} aguardando revisão`],
+      ["Análise de Riscos", `${kpis.riscos.total} riscos identificados · ${kpis.riscos.aprovados} aprovados pelo DPO`],
+      ["GAP Analysis", `${kpis.gap.respondidos} controles avaliados · ${kpis.gap.aderentes} aderentes · ${kpis.gap.parciais} parciais · score ${kpis.gap.score}%`],
+      ["RIPDs (Relatórios de Impacto)", `${kpis.ripds.total} elaborados · ${kpis.ripds.aprovados} aprovados pelo DPO`],
+      ["Operadores (Terceiros)", `${kpis.terceiros.total} cadastrados · ${kpis.terceiros.comClausula} com cláusulas LGPD`],
+      ["Canal DSR (Direitos do Titular)", `${kpis.dsr.total} solicitações registradas`],
+      ["Aviso de Privacidade", kpis.aviso.status === "PUBLICADO" ? "Publicado no portal externo" : kpis.aviso.status === "RASCUNHO" ? "Em rascunho (não publicado)" : "Não iniciado"],
+      ["Incidentes de Segurança", `${kpis.incidentes.total} registrados · ${kpis.incidentes.comunicadosAnpd} comunicados à ANPD · ${kpis.incidentes.comunicadosTitular} comunicados aos titulares`],
+    ]),
+  );
+  return out;
+}
+
+// ───── Status compacto por fase (1 página cada) ──────────────────────────────
+
+function statusFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase Preliminar — Sensibilização"));
+  // Termômetro
+  if (c.termometroInicio || c.termometroFim) {
+    out.push(statusBadge("ok", "Termômetro Institucional aplicado pelo grupo"));
+    const linhas: Array<[string, string]> = [];
+    if (c.termometroInicio) linhas.push(["Diagnóstico inicial", `${c.termometroInicio.score || 0}/100`]);
+    if (c.termometroFim) linhas.push(["Diagnóstico final", `${c.termometroFim.score || 0}/100`]);
+    out.push(tabelaCampos(linhas));
+  } else {
+    out.push(statusBadge("pendente", "Termômetro Institucional pendente — recomendado aplicar como linha de base"));
+  }
+  // Carta Alta Gestão
+  if (c.cartaAltaGestao && c.cartaAltaGestao.justificativa) {
+    const finalizada = c.cartaAltaGestao.finalizadaEm;
+    out.push(statusBadge(finalizada ? "ok" : "parcial", finalizada ? "Carta para a Alta Gestão finalizada" : "Carta para a Alta Gestão em rascunho"));
+  } else {
+    out.push(statusBadge("pendente", "Carta para a Alta Gestão pendente"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.PRELIMINAR.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase1(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 1 — Designação do Encarregado"));
+  if (c.dpoName) {
+    out.push(statusBadge("ok", "Encarregado(a) designado(a)"));
+    out.push(
+      tabelaCampos([
+        ["Nome", c.dpoName],
+        ["E-mail", c.dpoEmail || "—"],
+        ["Telefone", c.dpoTelefone || "—"],
+        ["Encarregado(a) Substituto(a)", c.dpoSubstitutoNome || "Não designado(a) — recomendado"],
+      ]),
+    );
+  } else {
+    out.push(statusBadge("pendente", "Encarregado(a) ainda não designado(a) formalmente — Art. 41 LGPD"));
+    out.push(pExec(
+      "A designação por ato formal (Portaria/Decreto) publicado em diário oficial é exigência direta da LGPD. Sem ela, todas as defesas institucionais posteriores ficam comprometidas em fiscalização da ANPD.",
+      { italics: true },
+    ));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_1.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase2(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 2 — Diagnóstico Inicial"));
+  // Setores
+  const setores = c.setoresDiscutidos;
+  const qtdSetores = setores && Array.isArray(setores.setores) ? setores.setores.filter((s: any) => s.discutido).length : 0;
+  if (qtdSetores > 0) {
+    out.push(statusBadge("ok", `${qtdSetores} setor${qtdSetores > 1 ? "es" : ""} discutido${qtdSetores > 1 ? "s" : ""} pelo grupo`));
+  } else {
+    out.push(statusBadge("pendente", "Levantamento de setores não realizado"));
+  }
+  // Priorização
+  const pri = c.priorizacaoProcessos;
+  const qtdProc = pri && Array.isArray(pri.processos) ? pri.processos.length : 0;
+  if (qtdProc > 0) {
+    out.push(statusBadge("ok", `${qtdProc} processo${qtdProc > 1 ? "s" : ""} pontuado${qtdProc > 1 ? "s" : ""} na Matriz de Priorização (Res. CD/ANPD nº 2/2022)`));
+    const topProcessos = [...pri.processos].sort((a: any, b: any) => (b.score || 0) - (a.score || 0)).slice(0, 3);
+    out.push(pExec("Top processos prioritários:", { bold: true }));
+    for (const p of topProcessos) {
+      out.push(bullet(`${p.processoId || "(processo)"} — score ${p.score}/18 (${faixaPriorizacao(p.score).label})`));
+    }
+  } else {
+    out.push(statusBadge("pendente", "Matriz de Priorização não aplicada"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_2.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase3(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 3 — Mapeamento e Análise de Riscos"));
+  // Inventário
+  const inv = c.inventories;
+  const aprovados = inv.filter((i) => i.status === "APROVADO").length;
+  if (aprovados > 0) {
+    out.push(statusBadge("ok", `${aprovados} processo${aprovados > 1 ? "s" : ""} aprovado${aprovados > 1 ? "s" : ""} no Inventário`));
+  } else if (inv.length > 0) {
+    out.push(statusBadge("parcial", `${inv.length} processo${inv.length > 1 ? "s" : ""} em mapeamento — aprovação formal pendente`));
+  } else {
+    out.push(statusBadge("pendente", "Inventário não iniciado"));
+  }
+  if (inv.length > 0) {
+    out.push(pExec("Processos cadastrados:", { bold: true }));
+    for (const i of inv.slice(0, 5)) {
+      out.push(bullet(`${i.nome} (${traduzirStatus(i.status)})`));
+    }
+    if (inv.length > 5) out.push(pExec(`... e mais ${inv.length - 5} processo${inv.length - 5 > 1 ? "s" : ""}.`, { italics: true }));
+  }
+  // Riscos
+  const riscos = c.risks;
+  if (riscos.length > 0) {
+    out.push(statusBadge("ok", `${riscos.length} risco${riscos.length > 1 ? "s" : ""} de privacidade identificado${riscos.length > 1 ? "s" : ""}`));
+    const altos = riscos.filter((r) => r.severityLevel?.includes("S:ALTO")).length;
+    if (altos > 0) out.push(pExec(`${altos} risco${altos > 1 ? "s" : ""} classificado${altos > 1 ? "s" : ""} como ALTO — exige${altos > 1 ? "m" : ""} atenção prioritária da Alta Gestão.`, { italics: true }));
+  } else {
+    out.push(statusBadge("pendente", "Análise de Riscos não realizada"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_3.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase4(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 4 — Análise de Conformidade (GAP)"));
+  const gap = c.gapAnswers;
+  if (gap.length > 0) {
+    const aderentes = gap.filter((g) => g.resposta === "ADERENTE").length;
+    const parciais = gap.filter((g) => g.resposta === "PARCIAL").length;
+    const naoAderentes = gap.filter((g) => g.resposta === "NAO_ADERENTE").length;
+    const score = Math.round(((aderentes * 100 + parciais * 50) / (gap.length * 100)) * 100);
+    out.push(statusBadge("ok", `${gap.length} controles avaliados — aderência ${score}%`));
+    out.push(
+      tabelaCampos([
+        ["Controles aderentes", `${aderentes} de ${gap.length} (${Math.round((aderentes / gap.length) * 100)}%)`],
+        ["Controles parciais", `${parciais} (precisam consolidação)`],
+        ["Controles NÃO aderentes", `${naoAderentes} (lacunas críticas a tratar)`],
+      ]),
+    );
+    if (naoAderentes > 0) {
+      out.push(pExec(`Os ${naoAderentes} controles não-aderentes devem virar ações no Plano da Fase 5 com responsável e prazo definidos. Sem ação, a lacuna persiste.`, { italics: true }));
+    }
+  } else {
+    out.push(statusBadge("pendente", "Análise de GAP não iniciada"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_4.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase5(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 5 — Programa de Governança em Privacidade"));
+  const acoes = c.actions;
+  if (acoes.length > 0) {
+    const abertas = acoes.filter((a) => a.status === "ABERTA").length;
+    const emAndamento = acoes.filter((a) => a.status === "EM_ANDAMENTO").length;
+    const concluidas = acoes.filter((a) => a.status === "CONCLUIDA").length;
+    const altas = acoes.filter((a) => a.prioridade === "ALTA").length;
+    out.push(statusBadge("ok", `${acoes.length} aç${acoes.length > 1 ? "ões" : "ão"} no Plano de Ação`));
+    out.push(
+      tabelaCampos([
+        ["Abertas (não iniciadas)", String(abertas)],
+        ["Em andamento", String(emAndamento)],
+        ["Concluídas", String(concluidas)],
+        ["Prioridade ALTA", `${altas} (atenção da Alta Gestão)`],
+      ]),
+    );
+  } else {
+    out.push(statusBadge("pendente", "Plano de Ação institucional ainda não consolidado"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_5.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase6(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 6 — Execução (Instrumentos)"));
+  // RIPD
+  if (c.ripds.length > 0) {
+    const aprovados = c.ripds.filter((r) => r.status === "APROVADO").length;
+    out.push(statusBadge(aprovados > 0 ? "ok" : "parcial", `${c.ripds.length} RIPD${c.ripds.length > 1 ? "s" : ""} elaborado${c.ripds.length > 1 ? "s" : ""}${aprovados > 0 ? ` · ${aprovados} aprovado${aprovados > 1 ? "s" : ""} pelo DPO` : ""}`));
+  } else {
+    out.push(statusBadge("pendente", "RIPDs não elaborados — exigência Art. 38 LGPD pra processos de alto risco"));
+  }
+  // Operadores
+  if (c.operators.length > 0) {
+    const comClausula = c.operators.filter((o) => o.contracts.some((ct) => ct.clausulasLgpd)).length;
+    out.push(statusBadge(comClausula === c.operators.length ? "ok" : "parcial", `${c.operators.length} operador${c.operators.length > 1 ? "es" : ""} cadastrado${c.operators.length > 1 ? "s" : ""} · ${comClausula} com cláusulas LGPD nos contratos`));
+  } else {
+    out.push(statusBadge("pendente", "Operadores (terceiros) ainda não cadastrados"));
+  }
+  // DSR
+  if (c.dsrRequests.length > 0) {
+    out.push(statusBadge("ok", `Canal DSR exercitado — ${c.dsrRequests.length} solicitaç${c.dsrRequests.length > 1 ? "ões" : "ão"} registrada${c.dsrRequests.length > 1 ? "s" : ""}`));
+  } else {
+    out.push(statusBadge("pendente", "Canal DSR (Direitos do Titular) ainda não exercitado"));
+  }
+  // Aviso
+  const aviso = c.policies.find((p) => p.slug === "aviso-privacidade");
+  if (aviso && aviso.status === "PUBLICADO") {
+    out.push(statusBadge("ok", "Aviso de Privacidade publicado no portal externo"));
+  } else if (aviso) {
+    out.push(statusBadge("parcial", "Aviso de Privacidade em rascunho — pendente publicação"));
+  } else {
+    out.push(statusBadge("pendente", "Aviso de Privacidade ainda não elaborado"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_6.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function statusFase7(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const c = data.grupo.company;
+  out.push(h1Exec("Fase 7 — Monitoramento e Resposta"));
+  // Incidentes
+  if (c.incidents.length > 0) {
+    const comAnpd = c.incidents.filter((i) => i.comunicadoAnpd).length;
+    out.push(statusBadge("ok", `${c.incidents.length} incidente${c.incidents.length > 1 ? "s" : ""} registrado${c.incidents.length > 1 ? "s" : ""} · ${comAnpd} comunicado${comAnpd > 1 ? "s" : ""} à ANPD`));
+  } else {
+    out.push(statusBadge("parcial", "Nenhum incidente registrado no curso — fluxo de resposta ainda não exercitado"));
+  }
+  // PRI
+  if (c.priMembros.length > 0 || c.priRaci.length > 0) {
+    out.push(statusBadge("ok", `Plano de Resposta a Incidentes (PRI) estruturado · ${c.priMembros.length} membro${c.priMembros.length > 1 ? "s" : ""} na equipe · ${c.priRaci.length} entrada${c.priRaci.length > 1 ? "s" : ""} na matriz RACI`));
+  } else {
+    out.push(statusBadge("pendente", "PRI ainda não estruturado — recomendado antes de qualquer incidente real"));
+  }
+  out.push(h2Exec("Próximos passos"));
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_7.slice(0, 3)) out.push(bullet(passo));
+  return out;
+}
+
+function conclusaoExecutiva(data: GrupoCadernoData): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const kpis = calcularKpis(data);
+  const score = calcularMaturidade(kpis);
+  const nivel = nivelMaturidade(score);
+  out.push(h1Exec("Recomendações à Alta Gestão"));
+  out.push(
+    pExec(
+      `A maturidade atual do PGP foi avaliada em ${score}/100 — ${nivel.label}. O caminho pra consolidação demanda apoio explícito da Alta Gestão em três frentes principais:`,
+    ),
+  );
+  out.push(h2Exec("1. Sustentação institucional"));
+  out.push(bullet("Formalizar o Programa de Governança em Privacidade (PGP) como Política institucional aprovada por ato do dirigente máximo."));
+  out.push(bullet("Constituir/consolidar o Comitê de Privacidade com representantes das áreas-chave (TI, Jurídico, Comunicação, RH, áreas de negócio)."));
+  out.push(bullet("Estabelecer agenda mensal de acompanhamento do PGP no nível da chefia superior."));
+
+  out.push(h2Exec("2. Recursos"));
+  out.push(bullet("Prever rubrica específica no orçamento pra adequação LGPD (capacitação contínua, ferramentas, eventual consultoria)."));
+  out.push(bullet("Alocar pessoal dedicado: Encarregado(a) + Substituto(a) + apoio técnico — não basta acúmulo de função."));
+  out.push(bullet("Garantir treinamento periódico obrigatório (mínimo anual) pra todos os servidores que tratam dados pessoais."));
+
+  out.push(h2Exec("3. Próximos 90 dias"));
+  out.push(bullet("Aprovar o Plano de Ação consolidado (Fase 5) e atribuir responsáveis formais por cada ação prioritária."));
+  out.push(bullet("Publicar/atualizar o Aviso de Privacidade no portal externo (exigência Art. 9 LGPD)."));
+  out.push(bullet("Promover aditamento contratual com cláusulas LGPD em contratos vigentes com operadores celebrados antes de 2020 (Art. 39 LGPD)."));
+  out.push(bullet("Repetir o Termômetro Institucional ao final do ciclo pra evidenciar a evolução da maturidade."));
+
+  out.push(h2Exec("Conclusão"));
+  out.push(
+    pExec(
+      "A LGPD deixou de ser opção e tornou-se obrigação institucional, com responsabilização direta do(a) gestor(a) máximo(a) em caso de descumprimento. O patrocínio explícito da Alta Gestão é o que diferencia órgãos que TÊM PGP de órgãos que apenas têm DPO designado. O trabalho realizado pelo grupo durante o curso é base estruturada — a próxima etapa depende de decisões estratégicas que somente a chefia superior pode tomar.",
+    ),
+  );
+  out.push(
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { before: 600 },
+      children: [
+        new TextRun({
+          text: "Para detalhamento completo de cada instrumento, consultar o Caderno do Curso (versão completa).",
+          italics: true,
+          size: 20,
+          color: "64748B",
+        }),
+      ],
+    }),
+  );
+  return out;
+}
+
+export function gerarCadernoExecutivo(data: GrupoCadernoData): (Paragraph | Table)[] {
+  return [
+    ...capaExec(data),
+    ...sumarioExecutivo(data),
+    ...painelConsolidado(data),
+    ...statusFasePreliminar(data),
+    ...statusFase1(data),
+    ...statusFase2(data),
+    ...statusFase3(data),
+    ...statusFase4(data),
+    ...statusFase5(data),
+    ...statusFase6(data),
+    ...statusFase7(data),
+    ...conclusaoExecutiva(data),
+  ];
+}
