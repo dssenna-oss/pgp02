@@ -1,12 +1,14 @@
-// GET /api/curso/caderno/docx?grupoId=X
+// GET /api/curso/caderno/docx?grupoId=X&modo=completo|executivo
 //
 // Gera o Caderno do Curso — DOCX consolidado entregue ao grupo no fim do
 // curso. Compila: conteúdo institucional das 8 etapas do PGP + dados reais
 // produzidos pelo grupo + recomendações de próximos passos.
 //
-// Modo "completo" (atual): ~60-80 páginas, kit institucional pessoal de
-// cada grupo. Onde não há dado real, usa modelo defensável marcado com
-// selo amarelo.
+// Modos:
+//   completo  — kit institucional pessoal do DPO (~60-80 páginas). Onde não
+//               há dado real, usa modelo defensável marcado com selo amarelo.
+//   executivo — Relatório Executivo pra Alta Gestão/chefia (~12 páginas).
+//               Foco em status + métricas + recomendações estratégicas.
 //
 // Admin-only — apenas facilitador baixa pelo Painel do Facilitador.
 
@@ -14,7 +16,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { Document, Packer } from "docx";
-import { gerarCadernoCompleto, type GrupoCadernoData } from "@/lib/caderno-curso";
+import {
+  gerarCadernoCompleto,
+  gerarCadernoExecutivo,
+  type GrupoCadernoData,
+} from "@/lib/caderno-curso";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // Vercel Pro: DOCX consolidado pode demorar ~10-15s
@@ -30,6 +36,8 @@ export async function GET(req: NextRequest) {
   if (!grupoId) {
     return NextResponse.json({ error: "grupoId obrigatório" }, { status: 400 });
   }
+  const modoParam = req.nextUrl.searchParams.get("modo");
+  const modo: "completo" | "executivo" = modoParam === "executivo" ? "executivo" : "completo";
 
   const grupo = await prisma.cursoGrupo.findUnique({
     where: { id: grupoId },
@@ -60,15 +68,18 @@ export async function GET(req: NextRequest) {
 
   // Monta a estrutura do DOCX
   const data: GrupoCadernoData = { grupo: grupo as any };
-  const children = gerarCadernoCompleto(data);
+  const children = modo === "executivo" ? gerarCadernoExecutivo(data) : gerarCadernoCompleto(data);
 
   const c = grupo.company;
   const orgaoNome = grupo.orgao === "PM" ? "Prefeitura Municipal" : "Câmara Municipal";
+  const tituloDoc = modo === "executivo"
+    ? `Relatório Executivo do PGP — ${c.name}`
+    : `Caderno do Curso — ${c.name}`;
 
   const doc = new Document({
     creator: "PGP Treinamento — Curso prático de LGPD",
-    title: `Caderno do Curso — ${c.name}`,
-    description: `Caderno consolidado do Grupo ${grupo.numero} (${orgaoNome} de ${grupo.turma.cidade}) — turma ${grupo.turma.nome}`,
+    title: tituloDoc,
+    description: `${modo === "executivo" ? "Relatório Executivo" : "Caderno consolidado"} do Grupo ${grupo.numero} (${orgaoNome} de ${grupo.turma.cidade}) — turma ${grupo.turma.nome}`,
     styles: {
       default: {
         document: {
@@ -107,7 +118,8 @@ export async function GET(req: NextRequest) {
     buffer.byteOffset + buffer.byteLength,
   ) as ArrayBuffer;
   const slugNome = c.name.replace(/[^a-zA-Z0-9]+/g, "_");
-  const nomeArquivo = `Caderno_Curso_${slugNome}_Grupo${grupo.numero}.docx`;
+  const prefixoArquivo = modo === "executivo" ? "Relatorio_Executivo_PGP" : "Caderno_Curso";
+  const nomeArquivo = `${prefixoArquivo}_${slugNome}_Grupo${grupo.numero}.docx`;
   return new NextResponse(ab, {
     status: 200,
     headers: {
