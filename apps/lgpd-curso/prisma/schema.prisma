@@ -37,6 +37,10 @@ model Company {
   dpoSubstitutoNome     String?
   dpoSubstitutoEmail    String?
   dpoSubstitutoTelefone String?
+  // Justificativa da escolha do Encarregado — campo opcional preenchido pelo
+  // grupo na Fase 1 (Designação do Encarregado). Aparece no Ato de Nomeação
+  // DOCX gerado. Auto-migração em lib/coluna-dpo-justificativa.ts.
+  dpoJustificativaEscolha String?
   // === Práticas da FASE PRELIMINAR (Sensibilização e Engajamento) ===
   // Termômetro Institucional aplicado pelo grupo no INÍCIO do curso (auto-
   // diagnóstico de maturidade percebida em 5 dimensões) e repetido no FIM
