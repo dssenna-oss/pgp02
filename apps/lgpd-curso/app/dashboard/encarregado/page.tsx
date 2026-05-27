@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function EncarregadoPage() {
   const company = await getEncarregado();
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <AdminPreviewBanner />
       <PageHeader
         missao="Fase 1 · Governança"

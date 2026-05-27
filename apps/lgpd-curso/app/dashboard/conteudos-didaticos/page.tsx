@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function ConteudosDidaticosPage() {
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
         Conteúdos Didáticos
       </div>

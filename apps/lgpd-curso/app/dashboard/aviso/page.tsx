@@ -14,7 +14,7 @@ export default async function AvisoPage() {
   const podeEditar = podeEditarFaseAvancada(session?.user?.role);
   const [aviso, prereq] = await Promise.all([getAviso(), getPrerequisitos()]);
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 4b · Aviso"
         titulo="Aviso de Privacidade"

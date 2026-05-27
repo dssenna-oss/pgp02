@@ -8,7 +8,7 @@ export default async function CartaPage() {
   const { salva, templateSugerido } = await getCarta();
   return (
     <div>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <AdminPreviewBanner />
       </div>
       <CartaEditor salva={salva} templateSugerido={templateSugerido} />

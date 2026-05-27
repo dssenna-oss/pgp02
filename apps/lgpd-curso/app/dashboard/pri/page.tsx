@@ -14,7 +14,7 @@ export default async function PriPage() {
   const podeEditar = podeEditarFaseAvancada(session?.user?.role);
   const pri = await getPri();
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Fase 7 · PRI"
         titulo="Documento do Plano de Resposta a Incidentes"

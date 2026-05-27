@@ -8,7 +8,7 @@ export default async function TermometroPage() {
   const { inicio, fim } = await getTermometro();
   return (
     <div>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <AdminPreviewBanner />
       </div>
       <TermometroRunner inicioSalvo={inicio} fimSalvo={fim} />

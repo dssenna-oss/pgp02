@@ -4,7 +4,7 @@ import { CONTEUDO_FASES, temConteudo } from "@/lib/conteudo-fases";
 
 export default function ConteudoFasesIndexPage() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="mb-1 text-xs uppercase tracking-wide text-gray-500 font-semibold">
         Facilitador · Conteúdo institucional
       </div>

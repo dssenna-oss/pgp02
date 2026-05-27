@@ -20,7 +20,7 @@ export default async function IncidentesPage() {
     listarPri().catch(() => ({ membros: [], raci: [] })), // se tabelas não migradas ainda, não quebra
   ]);
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 5 · Incidentes"
         titulo="Resposta a Incidentes"

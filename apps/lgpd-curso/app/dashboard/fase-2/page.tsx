@@ -34,7 +34,7 @@ export default async function Fase2Page() {
   const fase = getFaseSlides("fase-2")!;
   const status = await getStatusPraticasFase2();
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <VisualizadorSlides fase={fase} />
 
       <div className="mt-4">

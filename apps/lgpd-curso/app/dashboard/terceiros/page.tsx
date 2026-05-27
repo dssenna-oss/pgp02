@@ -17,7 +17,7 @@ export default async function TerceirosPage() {
   const podeEditar = podeEditarFaseAvancada(session?.user?.role);
   const operadores = await listOperadores();
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <PageHeader
         missao="Missão 4a · Terceiros"
         titulo="Gestão de Terceiros (Operadores)"
