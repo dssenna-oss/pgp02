@@ -1,43 +1,127 @@
-// GET /api/curso/caderno/docx?grupoId=X&modo=completo|executivo
+// GET /api/curso/caderno/docx?grupoId=X&modo=completo|executivo|cartilha
 //
-// Gera o Caderno do Curso — DOCX consolidado entregue ao grupo no fim do
-// curso. Compila: conteúdo institucional das 8 etapas do PGP + dados reais
-// produzidos pelo grupo + recomendações de próximos passos.
+// Gera 1 dos 3 documentos institucionais do curso:
 //
-// Modos:
-//   completo  — kit institucional pessoal do DPO (~60-80 páginas). Onde não
-//               há dado real, usa modelo defensável marcado com selo amarelo.
-//   executivo — Relatório Executivo pra Alta Gestão/chefia (~12 páginas).
-//               Foco em status + métricas + recomendações estratégicas.
-//
-// Admin-only — apenas facilitador baixa pelo Painel do Facilitador.
+//   completo  — Caderno do Curso (~60-80pg) pro DPO do grupo. Inclui dados
+//               reais ou modelo amarelo quando vazio. Exige grupoId. Admin-only.
+//   executivo — Relatório Executivo (~12pg) pra Alta Gestão do grupo. Score +
+//               métricas + recomendações estratégicas. Exige grupoId. Admin-only.
+//   cartilha  — Cartilha do PGP (~100-150pg) — guia genérico de implementação
+//               da LGPD pra qualquer Instituição Pública. NÃO depende de
+//               grupoId. Aberto a qualquer autenticado (facilitador OU
+//               participante). Opcionais: ?instituicao=X&tipo=PM|CM|AUTARQUIA|
+//               TRIBUNAL|OUTRO pra personalizar capa.
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth-server";
+import { requireAdmin, requireSession } from "@/lib/auth-server";
 import { Document, Packer } from "docx";
 import {
   gerarCadernoCompleto,
   gerarCadernoExecutivo,
+  gerarCartilhaInstitucional,
   type GrupoCadernoData,
+  type CartilhaOpts,
 } from "@/lib/caderno-curso";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // Vercel Pro: DOCX consolidado pode demorar ~10-15s
+export const maxDuration = 300; // DOCX grandes (Cartilha) podem demorar ~15-25s
 
 export async function GET(req: NextRequest) {
+  const modoParam = req.nextUrl.searchParams.get("modo");
+  const modo: "completo" | "executivo" | "cartilha" =
+    modoParam === "executivo" ? "executivo"
+    : modoParam === "cartilha" ? "cartilha"
+    : "completo";
+
+  // Cartilha tem auth menos restritivo (qualquer autenticado) — facilitador e
+  // participantes podem baixar pra levar pra Instituição. Outros modos são
+  // admin-only.
   try {
-    await requireAdmin();
+    if (modo === "cartilha") {
+      await requireSession();
+    } else {
+      await requireAdmin();
+    }
   } catch (e: any) {
     return new NextResponse(e.message, { status: 403 });
   }
 
+  // ─── MODO CARTILHA ──────────────────────────────────────────────────────
+  if (modo === "cartilha") {
+    const instituicao = req.nextUrl.searchParams.get("instituicao") || undefined;
+    const tipoRaw = req.nextUrl.searchParams.get("tipo");
+    const tipo: CartilhaOpts["tipoOrgao"] =
+      tipoRaw === "PM" || tipoRaw === "CM" || tipoRaw === "AUTARQUIA" ||
+      tipoRaw === "TRIBUNAL" || tipoRaw === "OUTRO"
+        ? (tipoRaw as CartilhaOpts["tipoOrgao"])
+        : undefined;
+
+    const opts: CartilhaOpts = {
+      nomeInstituicao: instituicao,
+      tipoOrgao: tipo,
+    };
+    const children = gerarCartilhaInstitucional(opts);
+
+    const doc = new Document({
+      creator: "PGP Treinamento — Curso prático de LGPD",
+      title: instituicao
+        ? `Cartilha do PGP — ${instituicao}`
+        : "Cartilha do PGP — Guia de Implementação da LGPD em Instituições Públicas",
+      description: "Cartilha institucional do Programa de Governança em Privacidade — guia genérico para implementação da LGPD em Instituições Públicas brasileiras.",
+      styles: {
+        default: {
+          document: { run: { font: "Calibri", size: 22 } },
+          heading1: {
+            run: { font: "Calibri", size: 38, bold: true, color: "5B21B6" },
+            paragraph: { spacing: { before: 480, after: 240 } },
+          },
+          heading2: {
+            run: { font: "Calibri", size: 28, bold: true, color: "7C3AED" },
+            paragraph: { spacing: { before: 320, after: 160 } },
+          },
+          heading3: {
+            run: { font: "Calibri", size: 24, bold: true, color: "1E1B4B" },
+            paragraph: { spacing: { before: 240, after: 120 } },
+          },
+        },
+      },
+      sections: [
+        {
+          properties: {
+            page: {
+              size: { orientation: "portrait" },
+              margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+            },
+          },
+          children,
+        },
+      ],
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    const ab = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength,
+    ) as ArrayBuffer;
+    const slugInst = instituicao
+      ? instituicao.replace(/[^a-zA-Z0-9]+/g, "_")
+      : "Generica";
+    const nomeArquivo = `Cartilha_PGP_${slugInst}.docx`;
+    return new NextResponse(ab, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="${nomeArquivo}"`,
+      },
+    });
+  }
+
+  // ─── MODOS COMPLETO / EXECUTIVO (exigem grupoId) ────────────────────────
   const grupoId = req.nextUrl.searchParams.get("grupoId");
   if (!grupoId) {
     return NextResponse.json({ error: "grupoId obrigatório" }, { status: 400 });
   }
-  const modoParam = req.nextUrl.searchParams.get("modo");
-  const modo: "completo" | "executivo" = modoParam === "executivo" ? "executivo" : "completo";
 
   const grupo = await prisma.cursoGrupo.findUnique({
     where: { id: grupoId },
@@ -66,7 +150,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 });
   }
 
-  // Monta a estrutura do DOCX
   const data: GrupoCadernoData = { grupo: grupo as any };
   const children = modo === "executivo" ? gerarCadernoExecutivo(data) : gerarCadernoCompleto(data);
 
