@@ -41,6 +41,16 @@ model Company {
   // grupo na Fase 1 (Designação do Encarregado). Aparece no Ato de Nomeação
   // DOCX gerado. Auto-migração em lib/coluna-dpo-justificativa.ts.
   dpoJustificativaEscolha String?
+  // === Práticas da FASE 2 (Diagnóstico Inicial) ===
+  // Lista de setores que tratam dados — grupo discute os setores
+  // pré-cadastrados do seu órgão e anota observações. JSON:
+  // { setores: [{id, discutido, observacao}], atualizadoEm }.
+  // Auto-migração em lib/coluna-fase-2.ts.
+  setoresDiscutidos       Json?
+  // Matriz de Priorização dos 2 processos — grupo aplica critérios da
+  // Res. CD/ANPD nº 2/2022 a cada processo e gera ranking. JSON:
+  // { processos: [{processoId, criterios:{...}, score, justificativa}], atualizadoEm }.
+  priorizacaoProcessos    Json?
   // === Práticas da FASE PRELIMINAR (Sensibilização e Engajamento) ===
   // Termômetro Institucional aplicado pelo grupo no INÍCIO do curso (auto-
   // diagnóstico de maturidade percebida em 5 dimensões) e repetido no FIM
