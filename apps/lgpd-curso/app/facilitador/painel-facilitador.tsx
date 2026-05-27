@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail, Bug, UserCircle2,
+  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
@@ -610,6 +610,10 @@ function GrupoTimelineCard({
     window.open(`/api/curso/certificado?grupoId=${grupo.grupoId}`, "_blank");
   }
 
+  function downloadCaderno() {
+    window.open(`/api/curso/caderno/docx?grupoId=${grupo.grupoId}`, "_blank");
+  }
+
   const sosPending = grupo.sos.find((s) => s.status === "PENDING");
   const sosAttended = grupo.sos.find((s) => s.status === "ATTENDED");
   const sosAtivo = sosPending || sosAttended;
@@ -722,6 +726,14 @@ function GrupoTimelineCard({
 
           <Button size="sm" variant="outline" onClick={downloadCertificado}>
             <Award className="h-3.5 w-3.5" /> Certificado
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={downloadCaderno}
+            title="Baixar Caderno do Curso (DOCX consolidado com conteúdo institucional + dados do grupo)"
+          >
+            <BookOpen className="h-3.5 w-3.5" /> Caderno
           </Button>
           {grupo.kpis.aviso.publicSlug && (
             <Button size="sm" variant="ghost" asChild>
