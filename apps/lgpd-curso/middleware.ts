@@ -15,15 +15,30 @@ const DPO_ONLY_DASHBOARD_PATHS = [
   "/dashboard/incidentes",
 ];
 
-// Páginas estáticas de fase (slides apresentados pelo facilitador) — não
-// dependem de companyId, então o ADMIN pode acessá-las pra projetar.
-// Exceção ao redirecionamento de admin que sai de /dashboard.
+// Páginas estáticas de fase (slides apresentados pelo facilitador) + suas
+// sub-rotas (práticas: termômetro, carta, setores, priorização, roadmap) —
+// ADMIN pode acessar pra projetar/visualizar. As páginas detectam ausência
+// de companyId e renderizam modo "Visualização do facilitador" no lugar
+// do formulário interativo, evitando 500.
+//
+// Match via startsWith: liberar "/dashboard/fase-preliminar" também libera
+// "/dashboard/fase-preliminar/termometro", "/dashboard/fase-preliminar/carta-alta-gestao", etc.
 const ADMIN_DASHBOARD_PERMITIDO = [
   "/dashboard/conteudos-didaticos",
   "/dashboard/fase-preliminar",
   "/dashboard/fase-1",
   "/dashboard/fase-2",
+  // Encarregado é DPO-only do ponto de vista do CADASTRO, mas o card
+  // "Coloque em prática" da Fase 1 linka pra cá. ADMIN consegue ver
+  // a tela em modo visualização (form renderiza vazio, banner explica).
+  "/dashboard/encarregado",
 ];
+
+function adminPodeAcessarDashboard(pathname: string): boolean {
+  return ADMIN_DASHBOARD_PERMITIDO.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+}
 
 export default withAuth(
   function middleware(req) {
@@ -36,7 +51,7 @@ export default withAuth(
     if (
       pathname.startsWith("/dashboard") &&
       role === "ADMIN" &&
-      !ADMIN_DASHBOARD_PERMITIDO.includes(pathname)
+      !adminPodeAcessarDashboard(pathname)
     ) {
       return NextResponse.redirect(new URL("/facilitador", req.url));
     }

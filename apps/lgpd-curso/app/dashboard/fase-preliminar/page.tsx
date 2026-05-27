@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Thermometer, FileText, ArrowRight } from "lucide-react";
 import { VisualizadorSlides } from "@/components/visualizador-slides";
 import { BaseLegalCard } from "@/components/base-legal-card";
+import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getFaseSlides } from "@/lib/slides-fases";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
@@ -32,6 +33,12 @@ export default async function FasePreliminarPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <VisualizadorSlides fase={fase} />
+
+      {/* Banner quando ADMIN/Facilitador acessa — explica que práticas
+          são dos participantes. Some quando usuário tem companyId. */}
+      <div className="mt-4">
+        <AdminPreviewBanner />
+      </div>
 
       {/* Coloque em prática — 2 atividades pedagógicas que o grupo executa
           após assistir aos slides. Termômetro (5min) + Carta (10min). */}

@@ -36,6 +36,37 @@ async function lerCompanyComContexto() {
   return { companyId, company };
 }
 
+// Variante tolerante a ADMIN sem company — retorna context fictício pra
+// renderizar template-padrão. Banner de preview avisa que é visualização.
+async function lerCompanyOuPlaceholder() {
+  const session = await getSession();
+  const companyId = session?.user?.companyId;
+  if (!companyId) {
+    return {
+      companyId: null as string | null,
+      company: {
+        name: "(modo facilitador — sem grupo)",
+        cidade: "Vegas",
+        orgao: "PM" as string | null,
+        dpoName: null as string | null,
+        cartaAltaGestao: null as any,
+      },
+    };
+  }
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: {
+      name: true,
+      cidade: true,
+      orgao: true,
+      dpoName: true,
+      cartaAltaGestao: true,
+    },
+  });
+  if (!company) return { companyId, company: { name: "(?)", cidade: "Vegas", orgao: "PM" as string | null, dpoName: null, cartaAltaGestao: null as any } };
+  return { companyId, company };
+}
+
 function contextoDe(c: { name: string; cidade: string | null; orgao: string | null; dpoName: string | null }): ContextoCarta {
   return {
     orgao: (c.orgao === "CM" ? "CM" : "PM"),
@@ -47,12 +78,13 @@ function contextoDe(c: { name: string; cidade: string | null; orgao: string | nu
 
 // Lê o estado atual da carta. Se nunca foi salva, retorna null (não auto-preenche
 // silenciosamente — preenchimento é decisão do user, via botão Auto-preencher).
+// ADMIN sem companyId vê template padrão + salva=null (banner de preview avisa).
 export async function getCarta(): Promise<{
   salva: CartaAltaGestaoSalva | null;
-  templateSugerido: CartaAltaGestaoData; // sempre disponível pra Auto-preencher
+  templateSugerido: CartaAltaGestaoData;
 }> {
   await ensureColunasFasePreliminar();
-  const { company } = await lerCompanyComContexto();
+  const { company } = await lerCompanyOuPlaceholder();
   const ctx = contextoDe(company);
   return {
     salva: (company.cartaAltaGestao as CartaAltaGestaoSalva | null) ?? null,

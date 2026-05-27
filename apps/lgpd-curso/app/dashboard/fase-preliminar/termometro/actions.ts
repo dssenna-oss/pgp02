@@ -24,12 +24,16 @@ async function requireCompany() {
 }
 
 // Lê o estado atual dos 2 termômetros da company.
+// ADMIN sem companyId vê tudo vazio (não crasha) — banner de preview
+// explica a situação. Salvar continua bloqueado nos guards do salvarTermometro.
 export async function getTermometro(): Promise<{
   inicio: TermometroSalvo | null;
   fim: TermometroSalvo | null;
 }> {
   await ensureColunasFasePreliminar();
-  const { companyId } = await requireCompany();
+  const session = await getSession();
+  const companyId = session?.user?.companyId;
+  if (!companyId) return { inicio: null, fim: null };
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     select: { termometroInicio: true, termometroFim: true },

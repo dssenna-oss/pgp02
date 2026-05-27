@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { BaseLegalCard } from "@/components/base-legal-card";
+import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getEncarregado } from "./actions";
 import { EncarregadoForm } from "./encarregado-form";
 
@@ -9,6 +10,7 @@ export default async function EncarregadoPage() {
   const company = await getEncarregado();
   return (
     <div className="max-w-3xl mx-auto">
+      <AdminPreviewBanner />
       <PageHeader
         missao="Fase 1 · Governança"
         titulo="Identidade do Encarregado (DPO)"
