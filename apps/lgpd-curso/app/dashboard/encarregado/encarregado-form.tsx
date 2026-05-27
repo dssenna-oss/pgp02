@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
-import { Save, UserCheck, UserPlus, Sparkles, Building2 } from "lucide-react";
+import { Save, UserCheck, UserPlus, Sparkles, Building2, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ type Company = {
   dpoEmail: string | null;
   dpoTelefone: string | null;
   dpoEndereco: string | null;
+  dpoJustificativaEscolha: string | null;
   dpoSubstitutoNome: string | null;
   dpoSubstitutoEmail: string | null;
   dpoSubstitutoTelefone: string | null;
@@ -33,6 +34,9 @@ export function EncarregadoForm({ company }: { company: Company }) {
   const [dpoEmail, setDpoEmail] = useState(company?.dpoEmail || "");
   const [dpoTelefone, setDpoTelefone] = useState(company?.dpoTelefone || "");
   const [dpoEndereco, setDpoEndereco] = useState(company?.dpoEndereco || "");
+  const [dpoJustificativaEscolha, setDpoJustificativaEscolha] = useState(
+    company?.dpoJustificativaEscolha || "",
+  );
   const [subNome, setSubNome] = useState(company?.dpoSubstitutoNome || "");
   const [subEmail, setSubEmail] = useState(company?.dpoSubstitutoEmail || "");
   const [subTelefone, setSubTelefone] = useState(company?.dpoSubstitutoTelefone || "");
@@ -47,7 +51,7 @@ export function EncarregadoForm({ company }: { company: Company }) {
     startTransition(async () => {
       try {
         await saveEncarregado({
-          dpoName, dpoEmail, dpoTelefone, dpoEndereco,
+          dpoName, dpoEmail, dpoTelefone, dpoEndereco, dpoJustificativaEscolha,
           dpoSubstitutoNome: subNome, dpoSubstitutoEmail: subEmail, dpoSubstitutoTelefone: subTelefone,
         });
         toast.success("Identidade do Encarregado salva — agora será reutilizada nos documentos");
@@ -55,6 +59,14 @@ export function EncarregadoForm({ company }: { company: Company }) {
         toast.error(e.message || "Erro");
       }
     });
+  }
+
+  function baixarAtoNomeacao() {
+    if (!completo) {
+      toast.error("Preencha Nome, E-mail e Telefone antes de gerar o Ato de Nomeação.");
+      return;
+    }
+    window.open("/api/curso/ato-nomeacao/docx", "_blank");
   }
 
   const completo = !!(dpoName.trim() && dpoEmail.trim() && dpoTelefone.trim());
@@ -118,6 +130,21 @@ export function EncarregadoForm({ company }: { company: Company }) {
         <p className="text-[11px] text-gray-500 mt-2">
           * Campos obrigatórios pra constar no Aviso de Privacidade público (Art. 9º, V LGPD) e no RIPD (Art. 38).
         </p>
+
+        {/* Justificativa da escolha — prática pedagógica da Fase 1.
+            Aparece no Ato de Nomeação DOCX se preenchida. Opcional. */}
+        <div className="mt-3">
+          <Label>Justificativa da escolha (opcional — entra no Ato de Nomeação)</Label>
+          <Textarea
+            value={dpoJustificativaEscolha}
+            onChange={(e) => setDpoJustificativaEscolha(e.target.value)}
+            placeholder="Ex: Servidor(a) com perfil técnico-jurídico, formação compatível e acesso à alta gestão, atendendo à recomendação da ANPD para órgãos públicos (Resolução CD/ANPD nº 18/2024)."
+            rows={3}
+          />
+          <p className="text-[11px] text-gray-500 mt-1">
+            Por que esta pessoa? Resposta breve sobre perfil, autonomia e disponibilidade.
+          </p>
+        </div>
       </section>
 
       {/* Encarregado substituto */}
@@ -146,7 +173,15 @@ export function EncarregadoForm({ company }: { company: Company }) {
         </div>
       </section>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2 flex-wrap">
+        <Button
+          variant="outline"
+          onClick={baixarAtoNomeacao}
+          disabled={!completo}
+          title={completo ? "Gera Ato de Nomeação formal em DOCX (Art. 41 LGPD)" : "Preencha Nome, E-mail e Telefone primeiro"}
+        >
+          <FileDown className="h-4 w-4" /> Baixar Ato de Nomeação
+        </Button>
         <Button onClick={salvar} disabled={pending}>
           <Save className="h-4 w-4" /> {pending ? "Salvando..." : "Salvar"}
         </Button>
