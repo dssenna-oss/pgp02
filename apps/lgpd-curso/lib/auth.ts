@@ -28,9 +28,33 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email e senha são obrigatórios");
         }
 
+        // SELECT específico em vez de include: { company: true }.
+        // Lição cravada em feedback_prisma_user_select: include genérico
+        // traz TODAS as colunas, então toda vez que o schema ganha coluna
+        // nova e o banco prod ainda não migrou, o login QUEBRA em cascata
+        // (todo endpoint autenticado falha). Listar campos protege contra
+        // isso — desempenha bem mesmo se adicionar coluna nova depois.
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: { company: true },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true, // necessário pra bcrypt.compare
+            role: true,
+            papel: true,
+            isActive: true,
+            companyId: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+                cnpj: true,
+                orgao: true,
+                cidade: true,
+              },
+            },
+          },
         });
 
         if (!user || !user.password) {
