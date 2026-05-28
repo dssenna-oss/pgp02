@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { RefreshCw, Projector, LayoutGrid, Users } from "lucide-react";
+import { RefreshCw, Projector, LayoutGrid, Users, FileText } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ATIVIDADES_C, type AgregadoAtividade } from "@/lib/atividades-c";
 import { AgregadoView } from "./agregado-view";
@@ -105,15 +105,27 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
           {dados ? `${dados.agregado.respondentes} respostas` : "carregando…"}
         </div>
         {turmaSel && (
-          <Link
-            href={`/facilitador/atividades/cartaz/${turmaSel.slug}?a=${atividadeId}`}
-            target="_blank"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800"
-          >
-            <Projector className="h-4 w-4" /> Abrir cartaz (telão)
-          </Link>
+          <div className="flex items-center gap-4">
+            <a
+              href={`/api/curso/modalidade-c/consolidacao/docx?turmaId=${turmaId}`}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              <FileText className="h-4 w-4" /> Relatório de consolidação (DOCX)
+            </a>
+            <Link
+              href={`/facilitador/atividades/cartaz/${turmaSel.slug}?a=${atividadeId}`}
+              target="_blank"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              <Projector className="h-4 w-4" /> Abrir cartaz (telão)
+            </Link>
+          </div>
         )}
       </div>
+
+      <p className="-mt-2 mb-4 text-xs text-gray-400">
+        O relatório junta o resultado de todas as atividades de celular desta turma e o guia de encerramento — sem digitação.
+      </p>
 
       {dados && <AgregadoView agregado={dados.agregado} />}
 
