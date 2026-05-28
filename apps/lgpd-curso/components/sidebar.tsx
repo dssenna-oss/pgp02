@@ -171,6 +171,7 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     titulo: "Execução",
     itens: [
       { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",          icon: ClipboardCheck },
+      { href: "/facilitador/atividades",   label: "Atividades ao vivo (C)",    icon: LayoutGrid },
       { href: "/facilitador",              label: "Painel do Facilitador",     icon: LayoutDashboard },
       { href: "/telao",                    label: "Telão (placar)",            icon: Trophy, externalNewTab: true },
     ],
@@ -308,6 +309,25 @@ export function Sidebar() {
                 <LayoutDashboard className="h-4 w-4 shrink-0" />
                 <span className="flex-1">Início</span>
               </Link>
+
+              {/* Modalidade C — Onda 2: Atividades ao vivo. Só aparece quando a
+                  turma está em Modo Cards (toques leves no celular durante o
+                  curso híbrido). Em Modalidade A/B não aparece. */}
+              {progresso?.modoCards && (
+                <Link
+                  href="/dashboard/atividades"
+                  onClick={closeMobile}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-indigo-400",
+                    pathname.startsWith("/dashboard/atividades")
+                      ? "bg-brand-50 text-brand-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-100",
+                  )}
+                >
+                  <LayoutGrid className="h-4 w-4 shrink-0 text-indigo-500" />
+                  <span className="flex-1 text-[13px] leading-tight">🃏 Atividades ao vivo</span>
+                </Link>
+              )}
 
               {MENU.map((item) => {
                 if (item.kind === "leitura") {

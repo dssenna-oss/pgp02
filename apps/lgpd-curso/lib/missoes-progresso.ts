@@ -17,6 +17,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
+import { turmaEmModoCards } from "@/lib/curso-permissoes";
 
 export type MissoesProgresso = {
   m1: boolean;
@@ -36,6 +37,9 @@ export type MissoesProgresso = {
   // Inclui os RASCUNHO disparados pelo facilitador. Banner/badge usa essa
   // contagem pra alertar o DPO em qualquer página do dashboard.
   incidentesEmAberto: number;
+  // Modalidade C — Onda 2: quando a turma está em Modo Cards, a sidebar mostra
+  // o item "Atividades ao vivo" pro participante (toques leves no celular).
+  modoCards: boolean;
 };
 
 const EMPTY: MissoesProgresso = {
@@ -46,6 +50,7 @@ const EMPTY: MissoesProgresso = {
   pri: false,
   dsrSurpresaPendentes: 0,
   incidentesEmAberto: 0,
+  modoCards: false,
 };
 
 export async function getMissoesProgresso(): Promise<MissoesProgresso> {
@@ -53,7 +58,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
   const companyId = session?.user?.companyId;
   if (!companyId) return EMPTY;
 
-  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, operadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes, priDoc] = await Promise.all([
+  const [invs, qtdRiscosAprovados, qtdGap, qtdAcoes, qtdRipdsAprovados, operadores, qtdDsr, qtdDsrSurpresaPendentes, aviso, incidentes, priDoc, modoCards] = await Promise.all([
     prisma.dataInventory.findMany({ where: { companyId }, select: { status: true } }),
     prisma.processRisk.count({ where: { companyId, status: "APROVADO" } }),
     prisma.gapAnswer.count({ where: { companyId } }),
@@ -77,6 +82,7 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
       where: { companyId, slug: "pri-resposta-incidentes" },
       select: { status: true },
     }),
+    turmaEmModoCards(companyId),
   ]);
 
   return {
@@ -97,5 +103,6 @@ export async function getMissoesProgresso(): Promise<MissoesProgresso> {
     pri: priDoc?.status === "PUBLICADO",
     dsrSurpresaPendentes: qtdDsrSurpresaPendentes,
     incidentesEmAberto: incidentes.filter((i) => i.status !== "ENCERRADO").length,
+    modoCards,
   };
 }
