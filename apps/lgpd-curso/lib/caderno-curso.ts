@@ -2148,52 +2148,9 @@ function h3Cartilha(texto: string): Paragraph {
   });
 }
 
-// Cria um GrupoCadernoData mockado, com TODOS os campos vazios — força os
-// renders existentes a caírem sempre no fallback "modelo de referência".
-function mockGrupoData(opts: CartilhaOpts): GrupoCadernoData {
-  const orgao = opts.tipoOrgao === "CM" ? "CM" : "PM";
-  const nome = opts.nomeInstituicao?.trim() || "Sua Instituição";
-  return {
-    grupo: {
-      id: "cartilha",
-      numero: 0,
-      orgao,
-      turma: { nome: "Cartilha Institucional", cidade: "(sua cidade)" },
-      company: {
-        id: "cartilha",
-        name: nome,
-        cnpj: null,
-        orgao,
-        cidade: null,
-        dpoName: null,
-        dpoEmail: null,
-        dpoTelefone: null,
-        dpoEndereco: null,
-        dpoSubstitutoNome: null,
-        dpoSubstitutoEmail: null,
-        dpoSubstitutoTelefone: null,
-        dpoJustificativaEscolha: null,
-        setoresDiscutidos: null,
-        priorizacaoProcessos: null,
-        termometroInicio: null,
-        termometroFim: null,
-        cartaAltaGestao: null,
-        users: [],
-        inventories: [],
-        risks: [],
-        gapAnswers: [],
-        actions: [],
-        ripds: [],
-        operators: [],
-        dsrRequests: [],
-        policies: [],
-        incidents: [],
-        priMembros: [],
-        priRaci: [],
-      },
-    },
-  };
-}
+// (mockGrupoData foi removido — as fases da Cartilha agora têm funções
+// dedicadas que NÃO reusam renderFaseN do Caderno. Ver renderFase*Cartilha
+// mais abaixo no arquivo.)
 
 // ─── Capa + Apresentação ────────────────────────────────────────────────────
 
@@ -2623,32 +2580,471 @@ function encerramentoCartilha(): (Paragraph | Table)[] {
   ];
 }
 
+// ─── Renders dedicados das 8 fases pra Cartilha ────────────────────────────
+//
+// Funções específicas pra o modo Cartilha. NÃO reusam renderFaseN do Caderno
+// porque aquelas funções têm linguagem de RELATÓRIO ("✅ O que vocês fizeram",
+// score "50/100 — Maturidade em Desenvolvimento", "Encarregado ainda não
+// designado"). A Cartilha é GUIA — apresenta modelos como referência
+// institucional positiva, sem framework de diagnóstico.
+
+function tituloModelos(): Paragraph {
+  return h2Cartilha("📐 Modelos de referência");
+}
+
+function tituloComoAplicar(): Paragraph {
+  return h2Cartilha("🎯 Como aplicar na sua Instituição");
+}
+
+function renderFasePreliminarCartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase Preliminar — Sensibilização e Engajamento"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  out.push(...renderDescricaoBlocos(CONTEUDO_PRELIMINAR));
+
+  out.push(tituloModelos());
+
+  // Termômetro Institucional — apresentar como FERRAMENTA, sem score
+  out.push(h3Cartilha("Termômetro Institucional — ferramenta de auto-diagnóstico"));
+  out.push(
+    p(
+      "Ferramenta para a equipe medir, em 5 dimensões, a maturidade percebida da Instituição em relação à LGPD. Aplicar no início do trabalho de adequação (linha de base) e repetir periodicamente (semestral / anual) pra evidenciar evolução. Cada dimensão tem 4 níveis qualitativos.",
+    ),
+  );
+  out.push(p("As 5 dimensões do Termômetro:", { bold: true, color: COR_CARTILHA_ACCENT }));
+  for (const dim of DIMENSOES_TERMOMETRO) {
+    out.push(p(`${dim.emoji} ${dim.titulo}`, { bold: true }));
+    out.push(p(dim.hint, { italics: true, size: 20 }));
+  }
+  out.push(p("Os 4 níveis qualitativos (em todas as dimensões):", { bold: true, color: COR_CARTILHA_ACCENT }));
+  out.push(bullet("Inicial — quase nada estruturado"));
+  out.push(bullet("Em desenvolvimento — pontos de partida identificados, prática inconsistente"));
+  out.push(bullet("Estabelecido — práticas mínimas adotadas e respeitadas"));
+  out.push(bullet("Avançado — cultura consolidada, equipe capacitada, ferramentas implantadas"));
+
+  // Carta para a Alta Gestão — apresentar como ESTRUTURA, com texto modelo
+  out.push(h3Cartilha("Carta para a Alta Gestão — estrutura recomendada"));
+  out.push(
+    p(
+      "Documento institucional curto apresentado ao dirigente máximo no início do trabalho de adequação. Tem 5 campos principais. Os textos abaixo são apenas EXEMPLOS — adaptar à realidade do órgão.",
+    ),
+  );
+  out.push(
+    tabelaCampos([
+      ["1. Destinatário", "Identificação formal do dirigente máximo (Prefeito(a), Presidente, Reitor(a), conforme órgão)"],
+      ["2. Justificativa legal", "Síntese das obrigações decorrentes da LGPD aplicáveis ao órgão — citação dos artigos relevantes (1º, 23-32, 41)"],
+      ["3. Riscos de não-cumprimento", "Sanções administrativas, responsabilização civil em incidentes, repercussão midiática, apontamentos do TC e MP"],
+      ["4. Pedido concreto", "Designação formal do Encarregado · Constituição do Comitê · Alocação de recursos · Inclusão na agenda estratégica"],
+      ["5. Assinatura", "Responsável pela condução do trabalho (Encarregado, ou líder técnico-jurídico, na fase pré-designação)"],
+    ]),
+  );
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.PRELIMINAR) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase1Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 1 — Designação do Encarregado (DPO)"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  out.push(...renderDescricaoBlocos(CONTEUDO_FASE_1));
+
+  out.push(tituloModelos());
+  out.push(h3Cartilha("Ato de Designação — estrutura típica"));
+  out.push(
+    p(
+      "O Ato de Designação é o documento formal que cumpre o Art. 41 da LGPD. Estrutura típica de Portaria/Decreto em órgão público brasileiro:",
+    ),
+  );
+  out.push(
+    tabelaCampos([
+      ["Cabeçalho", "ATO DE DESIGNAÇÃO Nº MM/AAAA — (Designação do Encarregado pelo Tratamento de Dados Pessoais)"],
+      ["Ementa", "Designa o Encarregado em cumprimento ao Art. 41 da Lei nº 13.709/2018"],
+      ["Considerandos", "(a) Lei nº 13.709/2018 · (b) Resolução CD/ANPD nº 18/2024 · (c) necessidade de canal formal com ANPD e titulares"],
+      ["Art. 1º", "Designa fulano(a) como Encarregado(a) — Parágrafo único: contatos (e-mail, telefone, endereço)"],
+      ["Art. 2º", "Justificativa da escolha — perfil técnico-jurídico, autonomia, acesso à alta administração"],
+      ["Art. 3º", "Atribuições conforme Art. 41 §2º da LGPD"],
+      ["Art. 4º", "Vigência — entra em vigor na publicação"],
+      ["Assinatura", "Autoridade máxima do órgão + ciência do designado(a)"],
+    ]),
+  );
+  out.push(h3Cartilha("Critérios da Resolução CD/ANPD nº 18/2024"),);
+  out.push(bullet("Perfil técnico-jurídico compatível — não exige formação em Direito, exige domínio prático de LGPD"));
+  out.push(bullet("Autonomia funcional — proteção contra retaliação por decisões técnicas"));
+  out.push(bullet("Ausência de conflito de interesse — não deve ser auditado pela própria função"));
+  out.push(bullet("Acesso direto à alta administração — sem intermediação burocrática"));
+  out.push(bullet("Encarregado Substituto — recomendado pra continuidade em férias/afastamentos"));
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_1) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase2Cartilha(orgao: "PM" | "CM"): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 2 — Diagnóstico Inicial"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  out.push(...renderDescricaoBlocos(CONTEUDO_FASE_2));
+
+  out.push(tituloModelos());
+
+  out.push(h3Cartilha("Levantamento de setores — exemplo ilustrativo"));
+  out.push(
+    p(
+      "Lista típica de setores que tratam dados pessoais em um órgão municipal. Adaptar à estrutura específica da Instituição:",
+    ),
+  );
+  const setoresExemplo = [
+    "Recursos Humanos — folha de pagamento, contratação, processos seletivos",
+    "Atendimento ao Cidadão / Ouvidoria — manifestações, denúncias, reclamações",
+    "Tributário — cadastro fiscal de contribuintes, IPTU/ISS",
+    "Saúde — prontuários eletrônicos, agendamentos, programas de saúde",
+    "Educação — matrículas, registros escolares, dados de responsáveis",
+    "Assistência Social — cadastro de famílias, programas sociais",
+    "Tecnologia da Informação — gestão de acessos, logs, sistemas",
+    "Comunicação — mailing institucional, redes sociais, transmissões",
+  ];
+  for (const s of setoresExemplo) out.push(bullet(s));
+
+  out.push(h3Cartilha("Matriz de Priorização — Resolução CD/ANPD nº 2/2022"));
+  out.push(
+    p(
+      "Critérios pra priorizar quais processos entram primeiro no Inventário detalhado da Fase 3. Cada critério pontua em 3 níveis (1/2/3). Score final 0-18: 0-6 BAIXA, 7-12 MÉDIA, 13-18 ALTA prioridade.",
+    ),
+  );
+  const linhasCriterios: Array<[string, string]> = CRITERIOS_PRIORIZACAO.map((c) => [
+    `${c.emoji} ${c.titulo}`,
+    c.hint,
+  ]);
+  out.push(tabelaCampos(linhasCriterios));
+
+  out.push(h3Cartilha("Roadmap de 90 dias — exemplo gerado automaticamente"));
+  out.push(
+    p(
+      "Cronograma sugerido pra os 90 dias seguintes ao início do trabalho — distribui as 7 Fases do PGP em 13 marcos semanais. Modelo abaixo serve como referência; adaptar prazos à capacidade operacional da Instituição.",
+    ),
+  );
+  const marcos = gerarRoadmap90Dias(orgao);
+  out.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: "94A3B8" },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: "94A3B8" },
+        left: { style: BorderStyle.SINGLE, size: 4, color: "94A3B8" },
+        right: { style: BorderStyle.SINGLE, size: 4, color: "94A3B8" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "CBD5E1" },
+        insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "CBD5E1" },
+      },
+      rows: [
+        new TableRow({
+          tableHeader: true,
+          children: [cellHeader("Sem.", 8), cellHeader("Fase", 18), cellHeader("Atividade-chave", 44), cellHeader("Entrega", 30)],
+        }),
+        ...marcos.map((m) =>
+          new TableRow({
+            children: [
+              cellTexto(String(m.semana), AlignmentType.CENTER),
+              cellTexto(m.fase),
+              cellTexto(m.titulo),
+              cellTexto(m.entrega),
+            ],
+          }),
+        ),
+      ],
+    }),
+  );
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_2) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase3Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 3 — Mapeamento e Análise de Riscos"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  const conteudo = getConteudoFase("fase-3");
+  if (conteudo) {
+    out.push(...renderDescricaoBlocos(conteudo.descricao));
+    out.push(h3Cartilha("Como proceder"));
+    out.push(...renderDescricaoBlocos(conteudo.comoProc));
+  }
+
+  out.push(tituloModelos());
+
+  out.push(h3Cartilha("Inventário — 2 processos modelo"));
+  out.push(
+    p(
+      "Dois exemplos completos de processo no Inventário, com os 9 campos preenchidos. Use como referência da granularidade esperada na hora de mapear processos da sua Instituição:",
+    ),
+  );
+  for (const m of MODELO_INVENTARIO_PROCESSOS) {
+    out.push(h3Cartilha(`Exemplo: ${m.nome}`));
+    out.push(
+      tabelaCampos([
+        ["Setor", m.setor],
+        ["Finalidade", m.finalidade],
+        ["Base legal", m.baseLegal],
+        ["Tipos de dados", m.tiposDados],
+        ["Dados sensíveis", m.dadosSensiveis ? "Sim" : "Não"],
+        ["Retenção", m.retencao],
+        ["Compartilhamento", m.compartilhamento],
+        ["Medidas de segurança", m.medidasSeguranca],
+      ]),
+    );
+  }
+
+  out.push(h3Cartilha("Análise de Riscos — 2 riscos modelo (matriz P × I)"));
+  out.push(
+    p(
+      "Dois exemplos de risco mapeado pra os processos modelo acima, com severidade (Probabilidade × Impacto) e plano de mitigação:",
+    ),
+  );
+  for (const m of MODELO_RISCOS) {
+    out.push(h3Cartilha(`Exemplo: ${m.riscoTitulo}`));
+    out.push(
+      tabelaCampos([
+        ["Categoria", m.categoria],
+        ["Severidade", formatarSeveridade(m.severityLevel)],
+        ["Descrição", m.descricao],
+        ["Plano de mitigação", m.mitigationPlan],
+      ]),
+    );
+  }
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_3) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase4Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 4 — Análise de Conformidade (GAP Analysis)"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  const conteudo = getConteudoFase("fase-4");
+  if (conteudo) {
+    out.push(...renderDescricaoBlocos(conteudo.descricao));
+    out.push(h3Cartilha("Como proceder"));
+    out.push(...renderDescricaoBlocos(conteudo.comoProc));
+  }
+
+  out.push(tituloModelos());
+  out.push(h3Cartilha("Aplicação do GAP — 3 controles modelo"));
+  out.push(
+    p(
+      "Para cada controle do catálogo GAP, a Instituição se classifica em ADERENTE / PARCIAL / NÃO ADERENTE com justificativa. Exemplos:",
+    ),
+  );
+  for (const m of MODELO_GAP_RESPOSTAS) {
+    const controle = getControleById(m.controleId);
+    out.push(h3Cartilha(controle?.texto || `Controle ${m.controleId}`));
+    out.push(
+      tabelaCampos([
+        ["Área", controle?.area || "—"],
+        ["Classificação", traduzirResposta(m.resposta)],
+        ["Justificativa", m.justificativa],
+      ]),
+    );
+  }
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_4) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase5Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 5 — Programa de Governança em Privacidade"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  const conteudo = getConteudoFase("fase-5");
+  if (conteudo) {
+    out.push(...renderDescricaoBlocos(conteudo.descricao));
+    out.push(h3Cartilha("Como proceder"));
+    out.push(...renderDescricaoBlocos(conteudo.comoProc));
+  }
+
+  out.push(tituloModelos());
+  out.push(h3Cartilha("Plano de Ação — 3 ações modelo"));
+  out.push(
+    p(
+      "Cada controle GAP não-aderente e cada risco alto deve virar uma ação no Plano com responsável, prazo e prioridade. Exemplos:",
+    ),
+  );
+  const hoje = new Date();
+  out.push(
+    ...renderTabelaAcoes(
+      MODELO_ACOES_PLANO.map((a) => {
+        const prazoDate = new Date(hoje);
+        prazoDate.setDate(prazoDate.getDate() + a.prazoSemanas * 7);
+        return {
+          acao: a.acao,
+          responsavel: a.responsavel,
+          prazo: prazoDate.toLocaleDateString("pt-BR"),
+          prioridade: a.prioridade,
+          status: "Aberta",
+          origem: a.origem,
+        };
+      }),
+    ),
+  );
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_5) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase6Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 6 — Execução (Instrumentos)"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  const conteudo = getConteudoFase("fase-6");
+  if (conteudo) {
+    out.push(...renderDescricaoBlocos(conteudo.descricao));
+    out.push(h3Cartilha("Como proceder"));
+    out.push(...renderDescricaoBlocos(conteudo.comoProc));
+  }
+
+  out.push(tituloModelos());
+
+  out.push(h3Cartilha("RIPD — estrutura completa em 8 seções"));
+  out.push(
+    p(
+      "Relatório de Impacto à Proteção de Dados (Art. 38 LGPD). Obrigatório pros processos de alto risco. Estrutura recomendada pela ANPD:",
+    ),
+  );
+  out.push(p(`Processo do exemplo: ${MODELO_RIPD.inventoryRef}`, { italics: true, color: "64748B" }));
+  for (const s of MODELO_RIPD.secoes) {
+    out.push(p(`${s.numero}. ${s.titulo}`, { bold: true, color: COR_CARTILHA_ACCENT }));
+    out.push(p(s.conteudo));
+  }
+
+  out.push(h3Cartilha("Operadores — exemplo de cadastro"));
+  out.push(
+    p(
+      "Todos os terceiros que tratam dados pessoais em nome do controlador (operadores) devem ser cadastrados com contratos contendo as cláusulas LGPD do Art. 39. Exemplo:",
+    ),
+  );
+  for (const m of MODELO_OPERADORES) {
+    out.push(h3Cartilha(`Exemplo: ${m.nome}`));
+    out.push(
+      tabelaCampos([
+        ["CNPJ", m.cnpj],
+        ["Serviço prestado", m.servico],
+        ["Papel", m.papel],
+        ["Contrato nº", m.contrato.numero],
+        ["Objeto", m.contrato.objeto],
+        ["Cláusulas LGPD", m.contrato.clausulasLgpd ? "Sim" : "Não"],
+        ["Nível de risco", m.contrato.nivelRisco],
+      ]),
+    );
+  }
+
+  out.push(h3Cartilha("Canal DSR — exemplo de solicitação atendida"));
+  out.push(
+    p(
+      "Toda Instituição precisa de canal funcional pra exercício de Direitos do Titular (Art. 18 LGPD). Resposta em até 15 dias úteis (Art. 19 II). Exemplo de registro:",
+    ),
+  );
+  for (const m of MODELO_DSR) {
+    out.push(h3Cartilha(`Exemplo: ${m.tipoSolicitacao} — ${m.titularNome}`));
+    out.push(
+      tabelaCampos([
+        ["Contato do titular", m.titularContato],
+        ["Status", traduzirStatus(m.status)],
+        ["Descrição", m.descricao],
+        ["Resposta", m.respostaTexto],
+      ]),
+    );
+  }
+
+  out.push(h3Cartilha("Aviso de Privacidade — conteúdo recomendado"));
+  out.push(p(MODELO_AVISO_PRIVACIDADE_RESUMO));
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_6) out.push(bullet(passo));
+  return out;
+}
+
+function renderFase7Cartilha(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Cartilha("Fase 7 — Monitoramento e Resposta a Incidentes"));
+  out.push(h2Cartilha("📚 Conteúdo institucional"));
+  const conteudo = getConteudoFase("fase-7");
+  if (conteudo) {
+    out.push(...renderDescricaoBlocos(conteudo.descricao));
+    out.push(h3Cartilha("Como proceder"));
+    out.push(...renderDescricaoBlocos(conteudo.comoProc));
+  }
+
+  out.push(tituloModelos());
+
+  out.push(h3Cartilha("Registro de incidente — exemplo"));
+  out.push(
+    p(
+      "Estrutura típica de registro de incidente conforme Art. 48 LGPD + Resolução CD/ANPD nº 15/2024:",
+    ),
+  );
+  out.push(
+    tabelaCampos([
+      ["Título do incidente", MODELO_INCIDENTE.titulo],
+      ["Severidade", MODELO_INCIDENTE.severidade],
+      ["Status (encerrado)", traduzirStatus(MODELO_INCIDENTE.status)],
+      ["Comunicado à ANPD", MODELO_INCIDENTE.comunicadoAnpd ? "Sim — em até 3 dias úteis" : "Não"],
+      ["Comunicado aos titulares", MODELO_INCIDENTE.comunicadoTitular ? "Sim — em até 7 dias úteis (severidade ALTA/CRÍTICA)" : "Não"],
+      ["Descrição", MODELO_INCIDENTE.descricao],
+      [
+        "Medidas de mitigação aplicadas",
+        MODELO_INCIDENTE.formularioAnpd.medidasMitigacao.map((m: string) => `• ${m}`).join("\n"),
+      ],
+    ]),
+  );
+
+  out.push(h3Cartilha("Plano de Resposta a Incidentes (PRI) — estrutura recomendada"));
+  out.push(
+    p(
+      "Documento institucional que define a equipe responsável (ETIR) e a matriz de responsabilidades por etapa NIST (Detectar / Conter / Erradicar / Recuperar / Lições aprendidas). Tem que estar pronto ANTES do incidente acontecer.",
+    ),
+  );
+  out.push(p("Equipe de Tratamento de Incidentes — composição típica:", { bold: true, color: COR_CARTILHA_ACCENT }));
+  for (const m of MODELO_PRI_EQUIPE) {
+    out.push(bullet(`${m.papel} — função: ${m.cobertura}. Contato 24h obrigatório (preferencialmente celular institucional)`));
+  }
+  out.push(p("Matriz RACI por etapa NIST — distribuição típica:", { bold: true, color: COR_CARTILHA_ACCENT }));
+  out.push(...renderTabelaRaci(MODELO_PRI_RACI));
+
+  out.push(tituloComoAplicar());
+  for (const passo of PROXIMOS_PASSOS_POR_FASE.FASE_7) out.push(bullet(passo));
+  return out;
+}
+
 // ─── Função principal ───────────────────────────────────────────────────────
 
 export function gerarCartilhaInstitucional(opts: CartilhaOpts = {}): (Paragraph | Table)[] {
-  const mock = mockGrupoData(opts);
+  const orgao = opts.tipoOrgao === "CM" ? "CM" : "PM";
   return [
     ...capaCartilha(opts),
     ...apresentacaoCartilha(),
     ...renderGlossario(),
     ...renderBaseLegal(),
-    // 8 fases — reusa renders existentes, força modelos via mock
-    ...renderFasePreliminar(mock),
-    ...renderFase1(mock),
-    ...renderFase2(mock),
+    // 8 fases — funções dedicadas (sem linguagem de relatório)
+    ...renderFasePreliminarCartilha(),
+    ...renderFase1Cartilha(),
+    ...renderFase2Cartilha(orgao),
     // Carta de Serviços encaixa lógicamente após a Fase 2
     ...renderCartaServicos(),
-    ...renderFase3(mock),
-    ...renderFase4(mock),
-    ...renderFase5(mock),
+    ...renderFase3Cartilha(),
+    ...renderFase4Cartilha(),
+    ...renderFase5Cartilha(),
     // Política PGP encaixa antes da Fase 6 (documento-mater do programa)
     ...renderModeloPoliticaPGP(),
-    ...renderFase6(mock),
+    ...renderFase6Cartilha(),
     // Cláusulas + Retenção + Consentimento são instrumentos da Fase 6
     ...renderModeloClausulasLGPD(),
     ...renderModeloPoliticaRetencao(),
     ...renderModeloConsentimento(),
-    ...renderFase7(mock),
+    ...renderFase7Cartilha(),
     // Comunicação ANPD é da Fase 7
     ...renderModeloComunicacaoAnpd(),
     // Capítulos transversais
