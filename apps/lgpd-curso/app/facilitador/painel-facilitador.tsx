@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Zap, Award, Pause, Play, RotateCcw, ChevronRight,
   Bell, BellOff, Volume2, VolumeX, LifeBuoy, Check, X,
-  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen, FileText, Search,
+  BarChart3, HandHelping, Mail, Bug, UserCircle2, BookOpen, FileText, Search, Table2,
 } from "lucide-react";
 import Link from "next/link";
 import { SETORES_APOIO } from "@/lib/setores-apoio";
@@ -467,6 +467,20 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
                   rel="noreferrer"
                 >
                   <FileText className="h-3.5 w-3.5" /> Pacote Modelos
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                title="Baixar Planilha do PGP — workbook Excel com 13 abas interdependentes pra a Instituição preencher (scores e vínculos automáticos)"
+              >
+                <a
+                  href="/api/curso/planilha-pgp/xlsx"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Table2 className="h-3.5 w-3.5" /> Planilha PGP
                 </a>
               </Button>
             </>

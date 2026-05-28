@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Download, FileText } from "lucide-react";
+import { BookOpen, Download, FileText, Table2 } from "lucide-react";
 import { BibliotecaFlipbook } from "@/components/biblioteca-flipbook";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +89,42 @@ export default function ConteudosDidaticosPage() {
               >
                 <Download className="h-4 w-4" />
                 Baixar Pacote de Modelos (DOCX)
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Planilha do PGP — workbook Excel interdependente (5ª peça). Cor âmbar/laranja
+          pra diferenciar de Cartilha (roxo) e Pacote (teal). */}
+      <div className="mt-6 rounded-lg border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+            <Table2 className="h-6 w-6 text-amber-700" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-amber-900">Planilha do PGP</h2>
+            <p className="mb-1 text-sm text-amber-700 italic">
+              Workbook Excel com 13 abas que se conectam automaticamente
+            </p>
+            <p className="text-sm text-gray-700 mt-2">
+              Ferramenta de trabalho pra implementar o PGP na sua Instituição com dados reais. As abas conversam entre
+              si: você preenche o Inventário, escolhe o processo na aba Riscos por uma lista, e a severidade é calculada
+              sozinha. O score de priorização, o % de conformidade do GAP, os prazos de DSR (15 dias úteis) e de
+              incidentes (3 e 7 dias úteis) e o score de maturidade no Painel são todos automáticos.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 italic">
+              📌 Funciona offline — nada é enviado pra lugar nenhum. As células amarelas são pra preencher; as cinzas são
+              calculadas (não edite). A aba &ldquo;Exemplo&rdquo; mostra um caso fictício completo pra referência.
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/api/curso/planilha-pgp/xlsx"
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-600 hover:bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                Baixar Planilha do PGP (XLSX)
               </Link>
             </div>
           </div>
