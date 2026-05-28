@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -180,6 +180,7 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     titulo: "Encerramento",
     itens: [
       { href: "/facilitador/lia-modelos",  label: "LIA — Modelos (debrief)",   icon: Scale },
+      { href: "/facilitador/forum",        label: "Fórum da turma",            icon: MessagesSquare },
     ],
   },
 ];
@@ -308,6 +309,23 @@ export function Sidebar() {
               >
                 <LayoutDashboard className="h-4 w-4 shrink-0" />
                 <span className="flex-1">Início</span>
+              </Link>
+
+              {/* Fórum da turma — canal de dúvidas/ajuda mútua pós-curso.
+                  Sempre visível pro participante; o facilitador modera pela
+                  própria página em /facilitador/forum. */}
+              <Link
+                href="/dashboard/forum"
+                onClick={closeMobile}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-indigo-400",
+                  pathname.startsWith("/dashboard/forum")
+                    ? "bg-brand-50 text-brand-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100",
+                )}
+              >
+                <MessagesSquare className="h-4 w-4 shrink-0 text-indigo-500" />
+                <span className="flex-1 text-[13px] leading-tight">💬 Fórum da turma</span>
               </Link>
 
               {/* Modalidade C — Onda 2: Atividades ao vivo. Só aparece quando a
