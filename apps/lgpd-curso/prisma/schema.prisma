@@ -136,6 +136,13 @@ model CursoTurma {
   // Curso fictício, senha compartilhada de propósito — não é segredo.
   // Backfill automático via lib/coluna-senha-turma.ts.
   senhaExibicao String?
+  // Modo Cards (Modalidade C) — quando true, as fases de produção de
+  // instrumento ficam VISÍVEIS porém em modo leitura (fieldset disabled) pra
+  // TODOS os participantes (DPO incluído): eles veem a jornada mas a produção
+  // é nos cards físicos. Atividades leves (Termômetro/Quiz/Caça) seguem ativas.
+  // Só o facilitador (ADMIN) liga/desliga, no Painel. Backfill em
+  // lib/coluna-modo-cards.ts.
+  modoCards     Boolean   @default(false)
   // Pacote customizado de controles GAP — array de IDs do catálogo
   // (lib/gap-catalogo.ts). Vazio = usa PACOTE_DEFAULT. Permite ao facilitador
   // adaptar o GAP ao perfil do grupo (técnicos / jurídicos / gestão).

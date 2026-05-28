@@ -5,15 +5,16 @@ import { PriSecao } from "./pri-secao";
 import { listIncidentes, contarInventariosAprovados } from "./actions";
 import { listarPri } from "./pri-actions";
 import { getSession } from "@/lib/auth-server";
-import { podeEditarFaseAvancada } from "@/lib/curso-permissoes";
+import { podeEditarFaseAvancada, podeEditarAgora } from "@/lib/curso-permissoes";
 import { ModoObservadorBanner } from "@/components/modo-observador-banner";
+import { ModoCardsBanner } from "@/components/modo-cards-banner";
 import { FaseReadOnlyWrapper } from "@/components/fase-readonly-wrapper";
 
 export const dynamic = "force-dynamic";
 
 export default async function IncidentesPage() {
   const session = await getSession();
-  const podeEditar = podeEditarFaseAvancada(session?.user?.role);
+  const { podeEditar, modoCards } = await podeEditarAgora(session?.user?.companyId, podeEditarFaseAvancada(session?.user?.role));
   const [items, qtdInventariosAprovados, pri] = await Promise.all([
     listIncidentes(),
     contarInventariosAprovados(),
@@ -27,7 +28,7 @@ export default async function IncidentesPage() {
         descricao="O incidente vai acontecer — pergunta é se vocês estarão prontos. Registre, classifique a severidade, comunique ANPD e titulares no prazo da Res. CD/ANPD nº 15/2024."
       />
       <BaseLegalCard faseKey="incidentes" />
-      {!podeEditar && <ModoObservadorBanner />}
+      {modoCards ? <ModoCardsBanner /> : !podeEditar && <ModoObservadorBanner />}
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
         {/* PRI — Plano de Resposta a Incidentes (preparação ANTES) */}
         <PriSecao

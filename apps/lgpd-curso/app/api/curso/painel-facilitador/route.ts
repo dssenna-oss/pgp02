@@ -10,6 +10,7 @@ import { resumoPontuacao } from "@/lib/dsr-game";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 import { ensureColunaLastSeenAt } from "@/lib/coluna-user-last-seen";
 import { ensureColunaOlhoClinico } from "@/lib/coluna-olho-clinico";
+import { ensureColunaModoCards } from "@/lib/coluna-modo-cards";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
   await ensureColunasControleTurma();
   await ensureColunaLastSeenAt();
   await ensureColunaOlhoClinico();
+  await ensureColunaModoCards();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },
@@ -328,6 +330,7 @@ export async function GET(req: NextRequest) {
       cidade: turma.cidade,
       pacoteGapCustomizado,
       pacoteGapTamanho: pacoteGapCustomizado ? turma.gapPacote.length : 10,
+      modoCards: (turma as any).modoCards === true,
     },
     grupos: result,
     geradoEm: new Date().toISOString(),
