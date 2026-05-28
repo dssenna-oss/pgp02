@@ -195,6 +195,30 @@ model QuizResponse {
   @@map("quiz_responses")
 }
 
+// Modalidade C — Onda 2 ("Modo Atividade"). Resposta de UM participante logado
+// (crachá: papel + grupo) a UMA atividade leve (lib/atividades-c.ts). Diferente
+// do Quiz (anônimo por dispositivo), aqui a resposta é atrelada ao usuário, ao
+// grupo (companyId) e à turma — o painel agrega por turma e dá pra ver por
+// grupo. UNIQUE(userId, atividadeId) + upsert: cada pessoa tem 1 resposta por
+// atividade (reenviar sobrescreve). Backfill em lib/colunas-atividades-c.ts.
+//   resposta: opcoes  → { escolhas: { [itemId]: opcaoId } }
+//             ordenar → { ordem: [itemId, ...] }
+model CursoAtividadeResposta {
+  id          String   @id @default(cuid())
+  turmaId     String
+  companyId   String // grupo do participante
+  userId      String
+  papel       String? // DPO | SAUDE | RH | TI | COMUNICACAO — pra recortar no painel
+  atividadeId String // id da atividade em lib/atividades-c.ts
+  resposta    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, atividadeId])
+  @@index([turmaId, atividadeId])
+  @@map("curso_atividade_respostas")
+}
+
 model CursoGrupo {
   id        String     @id @default(cuid())
   turmaId   String
