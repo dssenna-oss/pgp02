@@ -455,6 +455,20 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
                   <BookOpen className="h-3.5 w-3.5" /> Cartilha PGP
                 </a>
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                asChild
+                title="Baixar Pacote de Modelos — 20 templates editáveis em DOCX único pra a Instituição preencher (placeholders em vermelho + exemplos)"
+              >
+                <a
+                  href="/api/curso/pacote-modelos/docx"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <FileText className="h-3.5 w-3.5" /> Pacote Modelos
+                </a>
+              </Button>
             </>
           );
         })()}
