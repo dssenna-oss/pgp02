@@ -161,6 +161,7 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     // imprimível que o facilitador prepara antes do curso. Abre o DOCX em nova aba.
     titulo: "Modalidade C (kit imprimível)",
     itens: [
+      { href: "/api/curso/modalidade-c/docx?doc=guia",    label: "Guia de Decisão (A/B/C)", icon: Flag, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=roteiro", label: "Roteiro do Facilitador", icon: BookOpen, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=cards",   label: "Kit de Cards",           icon: LayoutGrid, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=colas",   label: "Colas de Referência",    icon: FileText, externalNewTab: true },

@@ -29,6 +29,7 @@ import {
   COLA_PRIORIZACAO,
   ROTEIRO,
   NOTA_DESIGN,
+  GUIA_DECISAO,
   type Card,
 } from "./modalidade-c-conteudo";
 
@@ -193,6 +194,68 @@ function linhaRoteiro(rotulo: string, valor: string): TableRow {
       new TableCell({ width: { size: 74, type: WidthType.PERCENTAGE }, margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: valor, size: 20 })] })] }),
     ],
   });
+}
+
+// =============================================================================
+// 1b. GUIA DE DECISÃO RÁPIDA — qual modalidade usar (decisão na sala)
+// =============================================================================
+export function gerarGuiaDecisao(): Document {
+  const children: (Paragraph | Table)[] = [];
+  children.push(
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 2000, after: 200 }, children: [new TextRun({ text: "GUIA DE DECISÃO RÁPIDA", bold: true, size: 44, color: COR_TITULO })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 160 }, children: [new TextRun({ text: "Qual modalidade usar? (decisão NA SALA, em 15 min)", italics: true, size: 26, color: "475569" })] }),
+    new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 800 }, children: [new TextRun({ text: "Curso prático de LGPD — Modalidades A · B · C", size: 22, color: "64748B" })] }),
+  );
+
+  children.push(h1("Princípio", false));
+  children.push(
+    new Paragraph({
+      shading: { type: ShadingType.CLEAR, fill: "EEF2FF" },
+      spacing: { before: 120, after: 240 },
+      children: [new TextRun({ text: GUIA_DECISAO.principio, size: 22, color: COR_TITULO })],
+    }),
+  );
+
+  children.push(h2(GUIA_DECISAO.checklist.titulo));
+  for (const passo of GUIA_DECISAO.checklist.passos) children.push(p(passo, { spacingAfter: 100 }));
+
+  children.push(h2("Cenários → modalidade"));
+  children.push(
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: bordaFina(),
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({ width: { size: 55, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.CLEAR, fill: COR_TITULO }, margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "O que a sala oferece", bold: true, color: "FFFFFF", size: 20 })] })] }),
+            new TableCell({ width: { size: 45, type: WidthType.PERCENTAGE }, shading: { type: ShadingType.CLEAR, fill: COR_TITULO }, margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: "Modalidade", bold: true, color: "FFFFFF", size: 20 })] })] }),
+          ],
+        }),
+        ...GUIA_DECISAO.cenarios.map(([cond, mod]) =>
+          new TableRow({
+            children: [
+              new TableCell({ margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: cond, size: 20 })] })] }),
+              new TableCell({ margins: { top: 80, bottom: 80, left: 120, right: 120 }, children: [new Paragraph({ children: [new TextRun({ text: mod, bold: true, size: 20, color: COR_ACCENT })] })] }),
+            ],
+          }),
+        ),
+      ],
+    }),
+  );
+
+  children.push(h2("O que NÃO fazer"));
+  for (const item of GUIA_DECISAO.naoFaca) children.push(p(`✗ ${item}`, { spacingAfter: 100, color: "991B1B" }));
+
+  children.push(h2("Regra de ouro"));
+  children.push(
+    new Paragraph({
+      shading: { type: ShadingType.CLEAR, fill: "FEF3C7" },
+      spacing: { before: 120, after: 240 },
+      children: [new TextRun({ text: GUIA_DECISAO.regraOuro, size: 22, color: "92400E", bold: true })],
+    }),
+  );
+
+  return docBase("Guia de Decisão Rápida — Modalidade", children);
 }
 
 // =============================================================================
