@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Download } from "lucide-react";
+import { BookOpen, Download, FileText } from "lucide-react";
 import { BibliotecaFlipbook } from "@/components/biblioteca-flipbook";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +52,43 @@ export default function ConteudosDidaticosPage() {
               >
                 <Download className="h-4 w-4" />
                 Baixar Cartilha do PGP (DOCX)
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pacote de Modelos — 20 templates editáveis (complementa a Cartilha
+          que é descritiva). Cor teal pra diferenciar visualmente. */}
+      <div className="mt-6 rounded-lg border-2 border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-teal-100">
+            <FileText className="h-6 w-6 text-teal-700" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold text-teal-900">Pacote de Modelos do PGP</h2>
+            <p className="mb-1 text-sm text-teal-700 italic">
+              20 templates editáveis pra a sua Instituição preencher
+            </p>
+            <p className="text-sm text-gray-700 mt-2">
+              Documento Word com 20 modelos editáveis dos principais instrumentos do PGP — Ato de Designação do
+              Encarregado, Carta para a Alta Gestão, Roadmap 90 dias, Aviso de Privacidade, Documento do PRI,
+              Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento, Comunicação
+              à ANPD, Comunicação aos Titulares, Termômetro Institucional, Matriz de Priorização, Fichas de Processo /
+              Risco / Operador / DSR, GAP, Plano de Ação e RIPD.
+            </p>
+            <p className="text-xs text-gray-500 mt-2 italic">
+              📌 Cada modelo tem campos marcados em vermelho ([NOME DA INSTITUIÇÃO], [DATA] etc.) pra você localizar com Ctrl+F e
+              substituir. Caixas amarelas com exemplos preenchidos ajudam a entender como adaptar.
+            </p>
+            <div className="mt-4">
+              <Link
+                href="/api/curso/pacote-modelos/docx"
+                target="_blank"
+                className="inline-flex items-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                Baixar Pacote de Modelos (DOCX)
               </Link>
             </div>
           </div>
