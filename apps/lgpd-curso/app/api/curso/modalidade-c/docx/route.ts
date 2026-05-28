@@ -14,6 +14,7 @@ import {
   gerarRoteiroFacilitadorC,
   gerarKitCards,
   gerarColasReferencia,
+  gerarGuiaDecisao,
 } from "@/lib/modalidade-c-docx";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,9 @@ export async function GET(req: NextRequest) {
   } else if (doc === "colas") {
     documento = gerarColasReferencia();
     nomeArquivo = "Modalidade_C_Colas_de_Referencia.docx";
+  } else if (doc === "guia") {
+    documento = gerarGuiaDecisao();
+    nomeArquivo = "Guia_de_Decisao_de_Modalidade.docx";
   } else {
     // default: roteiro
     documento = gerarRoteiroFacilitadorC();

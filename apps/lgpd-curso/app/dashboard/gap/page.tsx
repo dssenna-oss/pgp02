@@ -8,15 +8,16 @@ import { FASES_ORDEM, PACOTE_DEFAULT_IDS, type ControleCatalogo, type FaseGap } 
 import { requireCompany } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { Flag } from "lucide-react";
-import { podeEditarFaseAvancada } from "@/lib/curso-permissoes";
+import { podeEditarFaseAvancada, podeEditarAgora } from "@/lib/curso-permissoes";
 import { ModoObservadorBanner } from "@/components/modo-observador-banner";
+import { ModoCardsBanner } from "@/components/modo-cards-banner";
 import { FaseReadOnlyWrapper } from "@/components/fase-readonly-wrapper";
 
 export const dynamic = "force-dynamic";
 
 export default async function GapPage() {
   const { companyId, session } = await requireCompany();
-  const podeEditar = podeEditarFaseAvancada(session.user.role);
+  const { podeEditar, modoCards } = await podeEditarAgora(companyId, podeEditarFaseAvancada(session.user.role));
   const [answers, pacote, grupoComTurma] = await Promise.all([
     listAnswers(),
     getPacoteAtivo(companyId),
@@ -66,7 +67,7 @@ export default async function GapPage() {
 
       <BaseLegalCard faseKey="gap" />
 
-      {!podeEditar && <ModoObservadorBanner />}
+      {modoCards ? <ModoCardsBanner /> : !podeEditar && <ModoObservadorBanner />}
 
       <FaseReadOnlyWrapper podeEditar={podeEditar}>
       <GapContextoBanner />

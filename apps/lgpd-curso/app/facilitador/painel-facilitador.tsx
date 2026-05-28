@@ -17,7 +17,7 @@ import { CentralSos, type SosItem } from "./central-sos";
 import { ResumoTurmaDialog } from "./resumo-turma";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
-type TurmaDetalhe = Turma & { pacoteGapCustomizado?: boolean; pacoteGapTamanho?: number };
+type TurmaDetalhe = Turma & { pacoteGapCustomizado?: boolean; pacoteGapTamanho?: number; modoCards?: boolean };
 type PhaseSkipItem = {
   id: string;
   faseTentada: string;
@@ -159,6 +159,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
   const [grupos, setGrupos] = useState<Grupo[]>([]);
   const [turmaDetalhe, setTurmaDetalhe] = useState<TurmaDetalhe | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [alterandoModoCards, setAlterandoModoCards] = useState(false);
   const [dispatchingPM, setDispatchingPM] = useState(false);
   const [dispatchingCM, setDispatchingCM] = useState(false);
   const [dispatchingDsrPM, setDispatchingDsrPM] = useState(false);
@@ -239,6 +240,30 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turmaId, pollingActive]);
+
+  async function toggleModoCards() {
+    if (!turmaDetalhe) return;
+    const novo = !turmaDetalhe.modoCards;
+    setAlterandoModoCards(true);
+    try {
+      const res = await fetch("/api/curso/modo-cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ turmaId: turmaDetalhe.id, ativo: novo }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Erro ao alterar Modo Cards");
+        return;
+      }
+      setTurmaDetalhe((t) => (t ? { ...t, modoCards: novo } : t));
+      toast.success(novo ? "🃏 Modo Cards LIGADO — fases em modo leitura" : "Modo Cards desligado — edição liberada");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao alterar Modo Cards");
+    } finally {
+      setAlterandoModoCards(false);
+    }
+  }
 
   function ativarSom() {
     if (somAtivo) {
@@ -521,6 +546,33 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
           >
             Editar pacote →
           </a>
+        </div>
+      )}
+
+      {/* Modo Cards (Modalidade C) — quando ON, as fases de produção ficam em
+          modo leitura pra todos os participantes (atividade nos cards físicos).
+          Só o facilitador controla, aqui. */}
+      {turmaDetalhe && (
+        <div className={`mb-4 text-xs px-3 py-2 rounded border flex items-center justify-between gap-2 ${
+          turmaDetalhe.modoCards
+            ? "bg-indigo-50 border-indigo-300 text-indigo-900"
+            : "bg-gray-50 border-gray-200 text-gray-700"
+        }`}>
+          <span>
+            🃏 <strong>Modo Cards (Modalidade C)</strong>:{" "}
+            {turmaDetalhe.modoCards
+              ? <>LIGADO — fases de produção em modo leitura (produção nos cards físicos). Termômetro/Quiz/Caça seguem ativos.</>
+              : <>desligado — participantes editam os instrumentos no app normalmente (Modalidade A).</>}
+          </span>
+          <button
+            onClick={toggleModoCards}
+            disabled={alterandoModoCards}
+            className={`shrink-0 rounded px-3 py-1 text-[11px] font-semibold text-white disabled:opacity-50 ${
+              turmaDetalhe.modoCards ? "bg-gray-600 hover:bg-gray-700" : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
+          >
+            {turmaDetalhe.modoCards ? "Desligar" : "Ligar Modo Cards"}
+          </button>
         </div>
       )}
 

@@ -136,6 +136,19 @@ export type Deck = {
 };
 
 export const DECKS: Deck[] = [
+  // ─── FASE PRELIMINAR — Discussão da Carta pra Alta Gestão ────────────────
+  {
+    fase: "Fase Preliminar — Sensibilização e Engajamento",
+    atividade: "Discussão rápida: Carta para a Alta Gestão (~10 min)",
+    instrucao:
+      "NÃO precisam escrever o documento — o modelo completo está no Pacote de Modelos (Modelo 02) pra vocês adaptarem e entregarem no órgão. Aqui é só DISCUSSÃO: respondam as 3 perguntas dos cards pensando na realidade da SUA Instituição e compartilhem 1 resposta com a turma. Objetivo: perceber que sem o apoio da Alta Gestão, o PGP não anda.",
+    cards: [
+      { titulo: "💬 O pedido", conteudo: "Se vocês entregassem uma Carta ao(à) Prefeito(a)/Presidente do seu órgão HOJE, qual seria o PEDIDO concreto? (designar o Encarregado? orçamento? constituir o Comitê? incluir LGPD na agenda de gestão?)", tag: "discussao" },
+      { titulo: "💬 O risco", conteudo: "Qual é o MAIOR risco de o seu órgão NÃO se adequar à LGPD? (sanção da ANPD? incidente com dados de cidadãos? dano à imagem? apontamento do Tribunal de Contas / Ministério Público?)", tag: "discussao" },
+      { titulo: "💬 O argumento", conteudo: "Qual argumento convenceria a SUA Alta Gestão a priorizar isso? (responsabilização do gestor? exemplo de outro órgão multado? exigência em auditoria? confiança do cidadão?)", tag: "discussao" },
+      { titulo: "📌 Pra levar", conteudo: "O modelo COMPLETO da Carta (5 campos com texto-base pra adaptar) está no Pacote de Modelos — Modelo 02. Levem pra escrever no órgão com calma.", tag: "referencia" },
+    ],
+  },
   // ─── FASE 1 — Montar o Ato de Designação ─────────────────────────────────
   {
     fase: "Fase 1 — Designação do Encarregado",
@@ -327,10 +340,10 @@ export type MomentoRoteiro = {
 
 export const ROTEIRO: MomentoRoteiro[] = [
   {
-    dia: 1, numero: 1, titulo: "Abertura + Formação de grupos", duracao: "30 min", meio: "📺 + presencial",
-    oQueFacilitadorFaz: "Apresenta o curso e a dinâmica da Modalidade C. Forma grupos de 5 e distribui os crachás de papel. Explica a REGRA DE REPOSIÇÃO: se um papel faltar, outra pessoa do grupo assume a ficha — nada trava.",
-    oQueParticipantesFazem: "Sentam em grupos, pegam os crachás, se apresentam pelos papéis.",
-    material: "Crachás (5 papéis) · plaquinha colorida do grupo",
+    dia: 1, numero: 1, titulo: "Abertura + Checagem de infraestrutura + Formação de grupos", duracao: "35 min", meio: "📺 + presencial",
+    oQueFacilitadorFaz: "CHECAGEM (5 min, use o Guia de Decisão Rápida): tem projetor? maioria com notebook? Wi-Fi testado em 2-3 celulares? → decide A, B ou C. NA DÚVIDA, C. Depois apresenta o curso e a dinâmica escolhida. Forma grupos de 5 e distribui os crachás. Explica a REGRA DE REPOSIÇÃO: se um papel faltar, outra pessoa do grupo assume a ficha — nada trava.",
+    oQueParticipantesFazem: "Confirmam o que trouxeram (notebook? celular com internet?). Sentam em grupos, pegam os crachás, se apresentam pelos papéis.",
+    material: "Guia de Decisão Rápida · Crachás (5 papéis) · plaquinha colorida do grupo",
   },
   {
     dia: 1, numero: 2, titulo: "Quiz Diagnóstico", duracao: "20 min", meio: "📱 celular",
@@ -345,10 +358,10 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "App (Termômetro)",
   },
   {
-    dia: 1, numero: 4, titulo: "Fase Preliminar — Sensibilização", duracao: "30 min", meio: "📺 telão",
-    oQueFacilitadorFaz: "Apresenta os slides: por que LGPD importa no setor público, riscos de não fazer, o papel da Alta Gestão.",
-    oQueParticipantesFazem: "Assistem e discutem em grupo a pergunta-disparo do facilitador.",
-    material: "Slides (telão)",
+    dia: 1, numero: 4, titulo: "Fase Preliminar — Sensibilização + Carta à Alta Gestão", duracao: "40 min", meio: "📺 telão + 🃏 cards",
+    oQueFacilitadorFaz: "Apresenta os slides (por que LGPD importa no setor público, riscos de não fazer, papel da Alta Gestão). Depois distribui o deck da Preliminar e conduz a DISCUSSÃO RÁPIDA da Carta (~10 min): cada grupo debate as 3 perguntas e compartilha 1 resposta com a turma. NÃO produzem o documento — ele vai no Pacote pra levar.",
+    oQueParticipantesFazem: "Assistem a sensibilização. Discutem em grupo: qual o PEDIDO à Alta Gestão? qual o maior RISCO de não fazer? qual ARGUMENTO convence a gestão? Compartilham 1 resposta.",
+    material: "Slides (telão) · deck Fase Preliminar (3 cards de discussão + card 'pra levar')",
   },
   {
     dia: 1, numero: 5, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
@@ -417,6 +430,41 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "Os 5 documentos institucionais (já no app) · Certificados",
   },
 ];
+
+// =============================================================================
+// GUIA DE DECISÃO RÁPIDA — qual modalidade usar (decisão NA SALA)
+// =============================================================================
+// O facilitador não sabe antes qual modalidade vai dar — decide nos primeiros
+// minutos na sala. Princípio: C é o piso seguro (sempre preparado); A é upgrade
+// condicional. Na dúvida, C.
+
+export const GUIA_DECISAO = {
+  titulo: "Guia de Decisão Rápida — Qual modalidade usar?",
+  principio:
+    "Você nem sempre sabe antes qual modalidade vai dar (depende do que a sala oferece no dia). Por isso: PREPARE-SE SEMPRE PRA MODALIDADE C (leve o kit impresso). A Modalidade C funciona em QUALQUER cenário. A Modalidade A é um 'upgrade' que só vale quando a infraestrutura permite. Regra de ouro: na dúvida, C.",
+  checklist: {
+    titulo: "Checklist dos primeiros 15 minutos na sala",
+    passos: [
+      "1. Tem projetor/telão funcionando? → NÃO: considere Modalidade B (100% offline, placar manual). SIM: siga (A ou C).",
+      "2. A MAIORIA dos participantes trouxe notebook/tablet? → NÃO: Modalidade C. SIM: siga.",
+      "3. Tem Wi-Fi confiável pra todos (TESTE abrindo o app em 2-3 celulares)? → NÃO: Modalidade C. SIM: Modalidade A é possível.",
+      "4. Ainda em dúvida? → Modalidade C. Ela nunca deixa você na mão.",
+    ],
+  },
+  cenarios: [
+    ["Projetor + notebook/tablet por grupo + Wi-Fi confiável", "Modalidade A (digital completo no app)"],
+    ["Projetor + só celular + internet instável", "Modalidade C (telão + cards físicos + celular leve)"],
+    ["Sem projetor e sem internet", "Modalidade B (100% impresso, placar manual)"],
+    ["Sala mista (alguns com notebook, outros não)", "Modalidade C pra TODOS — nunca misture digitação com cards no mesmo grupo"],
+  ],
+  naoFaca: [
+    "NÃO comece em A e migre pra C no meio do curso (ex: Wi-Fi caiu). Decida na ABERTURA, antes de iniciar as fases.",
+    "NÃO misture: se uns digitam no app e outros usam cards, o trabalho em grupo quebra. Padronize a sala inteira.",
+    "NÃO deixe de imprimir o kit da Mod. C 'porque provavelmente vai dar A'. O kit impresso é o seu seguro — leve sempre.",
+  ],
+  regraOuro:
+    "Prepare-se sempre pra C. Suba pra A só com CERTEZA de que a sala inteira tem infraestrutura. Decida na abertura, em 15 min. Os 5 documentos institucionais e o Telão servem às 3 modalidades — você nunca perde esse material.",
+};
 
 // Resumo das decisões de design (pra constar no roteiro)
 export const NOTA_DESIGN =
