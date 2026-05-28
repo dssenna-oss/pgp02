@@ -12,6 +12,7 @@ import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
+import { ensureColunaForumAberto } from "@/lib/coluna-forum-aberto";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -73,6 +74,7 @@ export const authOptions: NextAuthOptions = {
         // existam antes de qualquer query que selecione todas as colunas de
         // curso_turmas.
         await ensureColunasControleTurma();
+        await ensureColunaForumAberto();
 
         // Janela de acesso da turma — participantes só entram entre a data
         // inicial e a final definidas pelo facilitador. O facilitador (ADMIN)
@@ -81,7 +83,9 @@ export const authOptions: NextAuthOptions = {
           const grupo = await prisma.cursoGrupo.findUnique({
             where: { companyId: user.companyId },
             select: {
-              turma: { select: { acessoInicio: true, acessoFim: true } },
+              turma: {
+                select: { acessoInicio: true, acessoFim: true, forumAberto: true },
+              },
             },
           });
           const turma = grupo?.turma;
@@ -94,7 +98,10 @@ export const authOptions: NextAuthOptions = {
                 `O acesso a esta turma abre em ${fmt(turma.acessoInicio)}. Volte nessa data para entrar.`,
               );
             }
-            if (turma.acessoFim && agora > turma.acessoFim) {
+            // Fórum aberto = suporte pós-curso: ignora a data limite (acessoFim)
+            // e deixa o participante entrar pra usar o fórum. A data inicial
+            // (acessoInicio) continua valendo. Facilitador arquiva quando quiser.
+            if (turma.acessoFim && agora > turma.acessoFim && !turma.forumAberto) {
               throw new Error(
                 `O período de acesso a esta turma encerrou em ${fmt(turma.acessoFim)}. Procure o facilitador.`,
               );
