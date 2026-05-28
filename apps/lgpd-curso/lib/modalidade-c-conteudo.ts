@@ -136,6 +136,19 @@ export type Deck = {
 };
 
 export const DECKS: Deck[] = [
+  // ─── FASE PRELIMINAR — Discussão da Carta pra Alta Gestão ────────────────
+  {
+    fase: "Fase Preliminar — Sensibilização e Engajamento",
+    atividade: "Discussão rápida: Carta para a Alta Gestão (~10 min)",
+    instrucao:
+      "NÃO precisam escrever o documento — o modelo completo está no Pacote de Modelos (Modelo 02) pra vocês adaptarem e entregarem no órgão. Aqui é só DISCUSSÃO: respondam as 3 perguntas dos cards pensando na realidade da SUA Instituição e compartilhem 1 resposta com a turma. Objetivo: perceber que sem o apoio da Alta Gestão, o PGP não anda.",
+    cards: [
+      { titulo: "💬 O pedido", conteudo: "Se vocês entregassem uma Carta ao(à) Prefeito(a)/Presidente do seu órgão HOJE, qual seria o PEDIDO concreto? (designar o Encarregado? orçamento? constituir o Comitê? incluir LGPD na agenda de gestão?)", tag: "discussao" },
+      { titulo: "💬 O risco", conteudo: "Qual é o MAIOR risco de o seu órgão NÃO se adequar à LGPD? (sanção da ANPD? incidente com dados de cidadãos? dano à imagem? apontamento do Tribunal de Contas / Ministério Público?)", tag: "discussao" },
+      { titulo: "💬 O argumento", conteudo: "Qual argumento convenceria a SUA Alta Gestão a priorizar isso? (responsabilização do gestor? exemplo de outro órgão multado? exigência em auditoria? confiança do cidadão?)", tag: "discussao" },
+      { titulo: "📌 Pra levar", conteudo: "O modelo COMPLETO da Carta (5 campos com texto-base pra adaptar) está no Pacote de Modelos — Modelo 02. Levem pra escrever no órgão com calma.", tag: "referencia" },
+    ],
+  },
   // ─── FASE 1 — Montar o Ato de Designação ─────────────────────────────────
   {
     fase: "Fase 1 — Designação do Encarregado",
@@ -345,10 +358,10 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "App (Termômetro)",
   },
   {
-    dia: 1, numero: 4, titulo: "Fase Preliminar — Sensibilização", duracao: "30 min", meio: "📺 telão",
-    oQueFacilitadorFaz: "Apresenta os slides: por que LGPD importa no setor público, riscos de não fazer, o papel da Alta Gestão.",
-    oQueParticipantesFazem: "Assistem e discutem em grupo a pergunta-disparo do facilitador.",
-    material: "Slides (telão)",
+    dia: 1, numero: 4, titulo: "Fase Preliminar — Sensibilização + Carta à Alta Gestão", duracao: "40 min", meio: "📺 telão + 🃏 cards",
+    oQueFacilitadorFaz: "Apresenta os slides (por que LGPD importa no setor público, riscos de não fazer, papel da Alta Gestão). Depois distribui o deck da Preliminar e conduz a DISCUSSÃO RÁPIDA da Carta (~10 min): cada grupo debate as 3 perguntas e compartilha 1 resposta com a turma. NÃO produzem o documento — ele vai no Pacote pra levar.",
+    oQueParticipantesFazem: "Assistem a sensibilização. Discutem em grupo: qual o PEDIDO à Alta Gestão? qual o maior RISCO de não fazer? qual ARGUMENTO convence a gestão? Compartilham 1 resposta.",
+    material: "Slides (telão) · deck Fase Preliminar (3 cards de discussão + card 'pra levar')",
   },
   {
     dia: 1, numero: 5, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
