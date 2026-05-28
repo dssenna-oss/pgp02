@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -154,6 +154,16 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     itens: [
       { href: "/admin/criar-turma",        label: "Controle de turma",         icon: Settings },
       { href: "/admin/pacote-gap",         label: "Pacote GAP por turma",      icon: ClipboardCheck },
+    ],
+  },
+  {
+    // Modalidade C (híbrida: telão + cards físicos + celular leve) — material
+    // imprimível que o facilitador prepara antes do curso. Abre o DOCX em nova aba.
+    titulo: "Modalidade C (kit imprimível)",
+    itens: [
+      { href: "/api/curso/modalidade-c/docx?doc=roteiro", label: "Roteiro do Facilitador", icon: BookOpen, externalNewTab: true },
+      { href: "/api/curso/modalidade-c/docx?doc=cards",   label: "Kit de Cards",           icon: LayoutGrid, externalNewTab: true },
+      { href: "/api/curso/modalidade-c/docx?doc=colas",   label: "Colas de Referência",    icon: FileText, externalNewTab: true },
     ],
   },
   {
