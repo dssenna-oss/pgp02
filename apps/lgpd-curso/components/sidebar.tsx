@@ -592,6 +592,21 @@ export function Sidebar() {
                 <History className="h-4 w-4 shrink-0 text-gray-500" />
                 <span className="flex-1 text-[13px] leading-tight">📜 Histórico da LGPD</span>
               </Link>
+              {/* Estrutura da LGPD — apresentações HTML standalone, artigo por
+                  artigo. Página-índice nativa (não é faixa de slides). */}
+              <Link
+                href="/dashboard/estrutura-lgpd"
+                onClick={closeMobile}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
+                  pathname === "/dashboard/estrutura-lgpd"
+                    ? "bg-brand-50 text-brand-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100",
+                )}
+              >
+                <BookOpen className="h-4 w-4 shrink-0 text-gray-500" />
+                <span className="flex-1 text-[13px] leading-tight">📖 Estrutura da LGPD</span>
+              </Link>
               {SLIDES_FASES.map((f) => {
                 const href = `/dashboard/${f.slug}`;
                 const active = pathname === href;

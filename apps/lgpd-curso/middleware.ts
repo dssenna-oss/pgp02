@@ -26,6 +26,7 @@ const DPO_ONLY_DASHBOARD_PATHS = [
 const ADMIN_DASHBOARD_PERMITIDO = [
   "/dashboard/conteudos-didaticos",
   "/dashboard/historico-lgpd",
+  "/dashboard/estrutura-lgpd",
   "/dashboard/fase-preliminar",
   "/dashboard/fase-1",
   "/dashboard/fase-2",
