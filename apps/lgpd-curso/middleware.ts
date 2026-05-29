@@ -25,6 +25,7 @@ const DPO_ONLY_DASHBOARD_PATHS = [
 // "/dashboard/fase-preliminar/termometro", "/dashboard/fase-preliminar/carta-alta-gestao", etc.
 const ADMIN_DASHBOARD_PERMITIDO = [
   "/dashboard/conteudos-didaticos",
+  "/dashboard/historico-lgpd",
   "/dashboard/fase-preliminar",
   "/dashboard/fase-1",
   "/dashboard/fase-2",
