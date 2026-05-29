@@ -50,7 +50,7 @@ export function HistoricoEmbed() {
       <iframe
         src={ARQUIVO}
         title={TITULO}
-        className="h-[calc(100vh-12rem)] min-h-[600px] w-full rounded-lg border border-gray-200 bg-white shadow-sm"
+        className="h-[calc(100vh-7rem)] min-h-[720px] w-full rounded-lg border border-gray-200 bg-white shadow-sm"
         allowFullScreen
       />
 
