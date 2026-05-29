@@ -14,6 +14,15 @@ export type MarcoHistorico = {
 // ───────── Evolução mundial da privacidade e proteção de dados ─────────
 export const MARCOS_MUNDO: MarcoHistorico[] = [
   {
+    ano: "1890",
+    titulo: '"The Right to Privacy" (O Direito à Privacidade)',
+    local: "EUA · Harvard Law Review",
+    descricao:
+      "Os advogados Samuel Warren e Louis Brandeis publicam o artigo que cunha a ideia do " +
+      "'direito de ser deixado em paz', diante das invasões da imprensa da época. É considerado " +
+      "o marco que faz a privacidade nascer como conceito jurídico.",
+  },
+  {
     ano: "1948",
     titulo: "Declaração Universal dos Direitos Humanos",
     local: "ONU",
@@ -50,6 +59,15 @@ export const MARCOS_MUNDO: MarcoHistorico[] = [
     local: "União Europeia",
     descricao:
       "A Europa cria regras comuns pra todos os seus países. Vira referência mundial e abre caminho pro GDPR, 20 anos depois.",
+  },
+  {
+    ano: "2018",
+    titulo: "Escândalo Facebook–Cambridge Analytica",
+    local: "EUA / Reino Unido",
+    descricao:
+      "Vem à tona que dados de até 87 milhões de usuários do Facebook foram coletados sem " +
+      "consentimento e usados pra influenciar eleições. O caso vira símbolo mundial do perigo do " +
+      "uso indevido de dados pessoais e acelera a pressão por leis mais duras — inclusive no Brasil.",
   },
   {
     ano: "2018",
