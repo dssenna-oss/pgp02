@@ -73,4 +73,13 @@ export const MODULOS_ESTRUTURA: ModuloEstrutura[] = [
       "ANPD (Autoridade Nacional de Proteção de Dados) e as disposições finais da lei.",
     arquivo: "/estrutura-lgpd/artigos-51-65.html",
   },
+  {
+    slug: "simulado-15-questoes",
+    titulo: "Simulado — 15 questões",
+    intervalo: "Simulado",
+    descricao:
+      "Teste rápido com 15 questões pra fixar o que você aprendeu sobre a LGPD e conferir, na " +
+      "prática, se os conceitos pegaram. Ótimo pra fazer depois de percorrer os módulos acima.",
+    arquivo: "/estrutura-lgpd/simulado-15-questoes.html",
+  },
 ];
