@@ -21,6 +21,14 @@ export default function ConteudosDidaticosPage() {
         url="https://heyzine.com/shelf/trilha_lgpd_descomplicada.html"
       />
 
+      <div className="mt-6">
+        <BibliotecaFlipbook
+          titulo="LGPD artigo por artigo (e-books)"
+          descricao="Coleção de e-books folheáveis que percorrem a Lei 13.709/2018 artigo por artigo, em linguagem simples. Ótimo pra aprofundar depois do curso. Abre em tela cheia; dá pra folhear no celular."
+          url="https://heyzine.com/shelf/b96e0786a2.html"
+        />
+      </div>
+
       {/* Cartilha do PGP — guia genérico de implementação da LGPD em Instituições
           Públicas. Independente do trabalho do grupo no curso — pra cada
           participante levar pra Instituição. */}
