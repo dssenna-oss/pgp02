@@ -60,3 +60,51 @@ export async function excluirInventario(id: string) {
   revalidatePath("/dashboard/inventario");
   return { ok: true };
 }
+
+// --- Sugestões da Carta de Serviços → Inventário ---
+export type SugestaoInput = {
+  nome: string;
+  finalidade?: string;
+  baseLegal?: string;
+  compartilhamento?: string;
+  publicoAlvo?: string; // data_subjects juntados
+  sourceUrl?: string;
+};
+
+const norm = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Cria registros no Inventário a partir das sugestões selecionadas, pulando
+ *  os que já existem (match por nome normalizado). Retorna quantos entraram. */
+export async function adicionarSugestoes(sugestoes: SugestaoInput[]) {
+  await requireSession();
+  if (!sugestoes?.length) return { ok: true, criados: 0 };
+
+  const existentes = await prisma.dataInventory.findMany({ select: { nome: true } });
+  const jaTem = new Set(existentes.map((e) => norm(e.nome)));
+
+  const max = await prisma.dataInventory.aggregate({ _max: { ordem: true } });
+  let ordem = (max._max.ordem ?? 0) + 1;
+
+  const novos = sugestoes
+    .filter((s) => s.nome?.trim() && !jaTem.has(norm(s.nome)))
+    .map((s) => ({
+      nome: s.nome.trim(),
+      finalidade: s.finalidade?.trim() || null,
+      baseLegal: s.baseLegal?.trim() || null,
+      compartilhamento: s.compartilhamento?.trim() || null,
+      observacoes:
+        `Sugerido da Carta de Serviços via IA.` +
+        (s.publicoAlvo ? ` Público-alvo: ${s.publicoAlvo}.` : "") +
+        (s.sourceUrl ? ` Fonte: ${s.sourceUrl}` : ""),
+      dadosSensiveis: false,
+      prioritario: false,
+      status: "PRELIMINAR",
+      ordem: ordem++,
+    }));
+
+  if (novos.length) await prisma.dataInventory.createMany({ data: novos });
+
+  revalidatePath("/dashboard/inventario");
+  return { ok: true, criados: novos.length };
+}

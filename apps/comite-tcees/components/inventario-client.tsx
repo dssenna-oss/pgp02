@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, Pencil, Trash2, X, ShieldAlert } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ShieldAlert, Sparkles, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusInventario, STATUS_INVENTARIO, HIPOTESE_MACRO } from "@/lib/comite-ui";
-import { salvarInventario, excluirInventario, type InventarioInput } from "@/app/dashboard/inventario/actions";
+import { salvarInventario, excluirInventario, adicionarSugestoes, type InventarioInput, type SugestaoInput } from "@/app/dashboard/inventario/actions";
 
 export type InventarioDTO = {
   id: string;
@@ -34,6 +34,7 @@ const VAZIO = (): InventarioDTO => ({
 export function InventarioClient({ processos }: { processos: InventarioDTO[] }) {
   const router = useRouter();
   const [editando, setEditando] = useState<InventarioDTO | null>(null);
+  const [sugerindo, setSugerindo] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | "prioritarios" | "sensiveis">("todos");
 
   const visiveis = processos.filter((p) =>
@@ -65,9 +66,14 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           🗂️ {processos.length} processos · {prioritarios} prioritários · {sensiveis} com dados sensíveis
         </div>
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Novo processo
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setSugerindo(true)} className="inline-flex items-center gap-2 border border-brand-200 bg-brand-50 text-brand-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-100">
+            <Sparkles className="w-4 h-4" /> Sugerir da Carta de Serviços
+          </button>
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Novo processo
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
@@ -111,7 +117,189 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
       </div>
 
       {editando && <InventarioModal processo={editando} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); router.refresh(); }} />}
+      {sugerindo && <SugerirModal onClose={() => setSugerindo(false)} onSaved={() => { setSugerindo(false); router.refresh(); }} />}
     </>
+  );
+}
+
+// ===================== Sugerir da Carta de Serviços (IA) =====================
+type ServicoSugerido = {
+  id: string;
+  name: string;
+  description: string;
+  classification: "SUGERIDO" | "TALVEZ" | "NAO";
+  classificationReason: string;
+  category: string | null;
+  sourceUrl: string;
+  prefill: {
+    process_name?: string;
+    process_purpose?: string;
+    data_subjects?: string[];
+    legalBasis?: string;
+    share_targets?: string[];
+    share_with_whom?: string;
+  };
+  alreadyMapped?: { inventoryId: string };
+};
+
+const CLASS_BADGE: Record<string, { label: string; variant: "green" | "amber" | "gray" }> = {
+  SUGERIDO: { label: "trata dados pessoais", variant: "green" },
+  TALVEZ: { label: "talvez", variant: "amber" },
+  NAO: { label: "sem dados pessoais", variant: "gray" },
+};
+
+function SugerirModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [url, setUrl] = useState("https://www.tcees.tc.br/");
+  const [fase, setFase] = useState<"input" | "carregando" | "resultado">("input");
+  const [servicos, setServicos] = useState<ServicoSugerido[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [erro, setErro] = useState<string | null>(null);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [salvando, setSalvando] = useState(false);
+
+  async function buscar() {
+    if (!/^https?:\/\//.test(url.trim())) return toast.error("Informe uma URL válida (com https://).");
+    setFase("carregando");
+    setErro(null);
+    try {
+      const res = await fetch("/api/inventario/sugerir-da-carta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "Falha na busca");
+      const svcs: ServicoSugerido[] = data.services ?? [];
+      setServicos(svcs);
+      setWarnings(data.warnings ?? []);
+      setErro(data.blockingError ?? null);
+      // pré-seleciona os SUGERIDO ainda não mapeados
+      setSel(new Set(svcs.filter((s) => s.classification === "SUGERIDO" && !s.alreadyMapped).map((s) => s.id)));
+      setFase("resultado");
+    } catch (e: any) {
+      setErro(e?.message ?? "Erro inesperado");
+      setFase("resultado");
+    }
+  }
+
+  function toggle(id: string) {
+    setSel((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }
+
+  async function adicionar() {
+    const escolhidos = servicos.filter((s) => sel.has(s.id) && !s.alreadyMapped);
+    if (!escolhidos.length) return toast.error("Selecione ao menos um processo.");
+    setSalvando(true);
+    const payload: SugestaoInput[] = escolhidos.map((s) => ({
+      nome: s.prefill.process_name || s.name,
+      finalidade: s.prefill.process_purpose,
+      baseLegal: s.prefill.legalBasis,
+      compartilhamento: s.prefill.share_with_whom || (s.prefill.share_targets ?? []).join("; "),
+      publicoAlvo: (s.prefill.data_subjects ?? []).join(", "),
+      sourceUrl: s.sourceUrl,
+    }));
+    try {
+      const r = await adicionarSugestoes(payload);
+      toast.success(`${r.criados} processo(s) adicionado(s) ao Inventário`);
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível adicionar");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const selecionaveis = servicos.filter((s) => !s.alreadyMapped);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-auto bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b">
+          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-brand-600" /> Sugerir processos da Carta de Serviços</h2>
+          <button onClick={onClose} aria-label="Fechar" className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-5">
+          <p className="text-[12.5px] text-gray-600 mb-3">
+            Informe o link da Carta de Serviços (ou outra página de serviços) do TCEES. A IA lê a página e suas sub-páginas e sugere processos que tratam dados pessoais — você revisa e escolhe quais entram no Inventário.
+          </p>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 px-3 py-2 border rounded-md text-sm outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://www.tcees.tc.br/carta-de-servicos/"
+              disabled={fase === "carregando"}
+            />
+            <button onClick={buscar} disabled={fase === "carregando"} className="bg-brand-600 text-white rounded-md px-4 py-2 text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 whitespace-nowrap">
+              {fase === "carregando" ? "Lendo…" : "Buscar processos"}
+            </button>
+          </div>
+
+          {fase === "carregando" && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 mt-4">
+              <Loader2 className="w-4 h-4 animate-spin" /> Lendo a página e analisando com IA — isso pode levar até ~40 segundos…
+            </div>
+          )}
+
+          {fase === "resultado" && (
+            <div className="mt-4">
+              {erro && <div className="bg-red-50 border border-red-200 text-red-800 rounded-md px-3 py-2 text-[12.5px] mb-3">{erro}</div>}
+              {warnings.map((w, i) => (
+                <div key={i} className="bg-amber-50 border border-amber-200 text-amber-800 rounded-md px-3 py-1.5 text-[11.5px] mb-1.5">{w}</div>
+              ))}
+
+              {selecionaveis.length > 0 && (
+                <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold mt-2 mb-2">
+                  {servicos.length} processos encontrados · {sel.size} selecionado(s)
+                </div>
+              )}
+
+              <div className="space-y-2 max-h-[42vh] overflow-auto pr-1">
+                {servicos.map((s) => {
+                  const cb = CLASS_BADGE[s.classification];
+                  const mapped = !!s.alreadyMapped;
+                  return (
+                    <label key={s.id} className={`flex gap-2.5 items-start border rounded-lg px-3 py-2.5 ${mapped ? "bg-gray-50 opacity-70" : "bg-white cursor-pointer hover:bg-gray-50"}`}>
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 w-4 h-4 accent-brand-600"
+                        checked={mapped || sel.has(s.id)}
+                        disabled={mapped}
+                        onChange={() => toggle(s.id)}
+                      />
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                          {s.prefill.process_name || s.name}
+                          <Badge variant={cb.variant}>{cb.label}</Badge>
+                          {s.category && <Badge variant="blue">{s.category}</Badge>}
+                          {mapped && <Badge variant="gray">já no Inventário</Badge>}
+                        </div>
+                        {s.classificationReason && <div className="text-[11.5px] text-gray-500 mt-0.5">{s.classificationReason}</div>}
+                      </div>
+                    </label>
+                  );
+                })}
+                {servicos.length === 0 && !erro && <div className="text-sm text-gray-500 py-3">Nenhum processo encontrado nessa página.</div>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 px-5 py-3.5 border-t bg-gray-50 rounded-b-xl">
+          <button onClick={onClose} className="text-sm border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2 hover:bg-gray-50">Fechar</button>
+          {fase === "resultado" && selecionaveis.length > 0 && (
+            <button onClick={adicionar} disabled={salvando || sel.size === 0} className="text-sm bg-brand-600 text-white rounded-md px-4 py-2 font-semibold hover:bg-brand-700 disabled:opacity-60">
+              {salvando ? "Adicionando…" : `Adicionar ${sel.size} ao Inventário`}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
