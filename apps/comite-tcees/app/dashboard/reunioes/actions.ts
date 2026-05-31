@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
+import { emailNovaReuniao, emailPautaAprovada } from "@/lib/comite-emails";
 
 export type ReuniaoInput = {
   id?: string;
@@ -58,7 +59,7 @@ export async function salvarReuniao(input: ReuniaoInput) {
     await prisma.reuniao.update({ where: { id: input.id }, data: dados });
   } else {
     await prisma.reuniao.create({ data: { ...dados, ordem: 0 } });
-    // Comunicar aos membros: nova reunião agendada (aviso no app; e-mail virá depois).
+    // Comunicar aos membros: nova reunião agendada (aviso no app + e-mail).
     if (dados.status === "AGENDADA") {
       await prisma.notificacao.create({
         data: {
@@ -67,6 +68,13 @@ export async function salvarReuniao(input: ReuniaoInput) {
           descricao: `${dataBR(dataDate)}${dados.hora ? ` · ${dados.hora}` : ""}${dados.local ? ` · ${dados.local}` : ""} — confirme sua presença.`,
           href: "/dashboard/reunioes",
         },
+      });
+      await emailNovaReuniao({
+        titulo: dados.titulo,
+        dataBR: dataBR(dataDate),
+        hora: dados.hora,
+        local: dados.local,
+        pauta: dados.pauta,
       });
     }
   }
@@ -97,6 +105,11 @@ export async function aprovarPauta(id: string) {
         : `Reunião de ${dataBR(reuniao.data)}.`,
       href: "/dashboard/reunioes",
     },
+  });
+  await emailPautaAprovada({
+    titulo: reuniao.titulo,
+    dataBR: dataBR(reuniao.data),
+    pauta: reuniao.pauta,
   });
 
   revalidatePath("/dashboard/reunioes");
