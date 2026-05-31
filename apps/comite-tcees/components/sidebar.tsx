@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
   Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
-  ListChecks, FileCheck2, Activity,
+  ListChecks, FileCheck2, Activity, Stethoscope,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -57,6 +57,7 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           Programa — Fases do PGP
         </div>
         {[
+          { href: "/dashboard/diagnostico", icon: Stethoscope, label: "Diagnóstico", fase: "Fase 2" },
           { href: "/dashboard/inventario", icon: Boxes, label: "Inventário", fase: "Fase 3" },
           { href: "/dashboard/riscos", icon: ShieldAlert, label: "Análise de Riscos", fase: "Fase 3" },
           { href: "/dashboard/gap", icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },

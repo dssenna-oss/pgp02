@@ -14,6 +14,7 @@
 import { prisma } from "@/lib/prisma";
 import { scoreGeral, type RespostaMap } from "@/lib/gap-score";
 import { INSTRUMENTO_PRONTO } from "@/lib/comite-ui";
+import { calcularDiagnostico } from "@/lib/diagnostico";
 
 export type IndicadorAuto = { valor: string; fonte: string; href: string };
 export type IndicadoresAutoMap = Record<string, IndicadorAuto>;
@@ -94,6 +95,9 @@ export async function calcularIndicadoresAuto(): Promise<IndicadoresAutoMap> {
 
   const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : "—");
 
+  // I2 — Score de Diagnóstico de Privacidade (Fase 2)
+  const diag = await calcularDiagnostico();
+
   const map: IndicadoresAutoMap = {
     A1: { valor: `${pgpAprovados}/3`, fonte: "Documentos homologados", href: "/dashboard/documentos" },
     A4: { valor: String(normasHomologadas), fonte: "Normas internas homologadas", href: "/dashboard/documentos" },
@@ -105,6 +109,7 @@ export async function calcularIndicadoresAuto(): Promise<IndicadoresAutoMap> {
     B8: { valor: simNao(riscosCount > 0), fonte: `${riscosCount} riscos mapeados`, href: "/dashboard/riscos" },
     C1: { valor: simNao(instrumentoPronto(instrumentos, "aviso de privacidade")), fonte: "Central de Instrumentos", href: "/dashboard/execucao" },
     C2: { valor: simNao(instrumentoPronto(instrumentos, "cookies")), fonte: "Central de Instrumentos", href: "/dashboard/execucao" },
+    I2: { valor: String(diag.overall), fonte: `Diagnóstico de Privacidade — ${diag.nivel.label}`, href: "/dashboard/diagnostico" },
     E2: { valor: String(dsrTotal), fonte: "Solicitações de titulares registradas", href: "/dashboard/execucao/dsr" },
     E3: { valor: tempoMedioDsr == null ? "—" : `${tempoMedioDsr} dias`, fonte: "Tempo médio de resposta ao titular", href: "/dashboard/execucao/dsr" },
     E5: { valor: String(incidentesTotal), fonte: "Incidentes registrados", href: "/dashboard/incidentes" },
