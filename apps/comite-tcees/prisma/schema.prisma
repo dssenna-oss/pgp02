@@ -141,7 +141,8 @@ model Reuniao {
   presentes     Int? // participantes presentes
   totalConvocados Int?
   status        String   @default("AGENDADA") // AGENDADA | REALIZADA
-  ataUrl        String?
+  ataRegistrada Boolean  @default(false) // marcador: ata foi registrada?
+  ataUrl        String? // link opcional para o documento da ata
   ordem         Int      @default(0)
   createdAt     DateTime @default(now())
 

@@ -139,14 +139,14 @@ const ENTREGAS: EntregaSeed[] = [
 // ---------------------------------------------------------------------------
 const REUNIOES = [
   {
-    titulo: "Reunião ordinária do Comitê", data: d(2026, 6, 19), hora: "14h", local: "Sala do Pleno",
-    pauta: "Aprovação da minuta de ato de consulta prévia obrigatória; status da adequação dos contratos críticos (IPAJM e videomonitoramento); definição de responsáveis pelo refazimento do Inventário.",
+    titulo: "Reunião ordinária do Comitê", data: d(2026, 6, 1), hora: "14h", local: "Sala do Pleno",
+    pauta: "Continuação da 1ª reunião sob nova Presidência do Comitê.",
     decisoes: null, totalConvocados: 15, presentes: null, status: "AGENDADA", ordem: 1,
   },
   {
     titulo: "1ª reunião sob a nova presidência", data: d(2026, 5, 11), hora: null, local: null,
     pauta: "Apresentação do Coordenador ao Presidente; diagnóstico do estado atual da adequação; definição das prioridades do biênio.",
-    decisoes: "Priorizar a homologação dos 3 documentos (PGP v1.0, PRI, Política Interna); propor ato normativo de consulta prévia obrigatória; protocolar o Plano de Trabalho na SEGOV até 26/05.",
+    decisoes: "Priorizar a homologação dos 3 documentos (PGP v1.0, PRI, Política Interna); propor ato normativo de consulta prévia obrigatória; protocolar o Plano de Trabalho na SEGOV.",
     totalConvocados: 15, presentes: 12, status: "REALIZADA", ataUrl: null, ordem: 2,
   },
 ];
