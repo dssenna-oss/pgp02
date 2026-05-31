@@ -2,24 +2,31 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { RelatorioBtn } from "@/components/relatorio-btn";
 import { IndicadoresClient, type IndicadorDTO } from "@/components/indicadores-client";
+import { calcularIndicadoresAuto } from "@/lib/indicadores-auto";
 
 export const dynamic = "force-dynamic";
 
 export default async function IndicadoresPage() {
-  const indicadores = await prisma.indicador.findMany({ orderBy: { ordem: "asc" } });
+  const [indicadores, auto] = await Promise.all([
+    prisma.indicador.findMany({ orderBy: { ordem: "asc" } }),
+    calcularIndicadoresAuto(),
+  ]);
 
-  const acha = (cod: string) => indicadores.find((i) => i.codigo === cod)?.valorAtual ?? "—";
+  // Valor exibido: o automático (quando existir) tem precedência sobre o manual.
+  const valor = (cod: string) =>
+    auto[cod]?.valor ?? indicadores.find((i) => i.codigo === cod)?.valorAtual ?? "—";
   const kpis = [
-    { lbl: "Docs do PGP aprovados (A1)", val: acha("A1") },
-    { lbl: "Processos inventariados (B2)", val: acha("B2") },
-    { lbl: "Contratos c/ cláusula LGPD (C4)", val: acha("C4") },
-    { lbl: "UGs capacitadas via Enfoc (D6)", val: acha("D6") },
+    { lbl: "Docs do PGP aprovados (A1)", val: valor("A1") },
+    { lbl: "Reuniões realizadas (A8)", val: valor("A8") },
+    { lbl: "Aderência GAP (B7)", val: valor("B7") },
+    { lbl: "Incidentes tratados (E5)", val: valor("E5") },
   ];
 
   const dtos: IndicadorDTO[] = indicadores.map((i) => ({
     id: i.id, codigo: i.codigo, eixoCodigo: i.eixoCodigo, descricao: i.descricao,
     tipo: i.tipo, unidade: i.unidade, meta2026: i.meta2026, meta2027: i.meta2027,
     valorAtual: i.valorAtual, status: i.status,
+    auto: auto[i.codigo] ?? null,
   }));
 
   return (
@@ -42,9 +49,10 @@ export default async function IndicadoresPage() {
 
       <IndicadoresClient indicadores={dtos} />
 
-      <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-3.5 py-3 text-[12.5px] flex gap-2 mt-5">
-        💡 Na Etapa 3, parte destes indicadores passará a se preencher sozinha (puxando das ferramentas das Fases).
-        Até lá, atualize o "valor atual" manualmente aqui.
+      <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg px-3.5 py-3 text-[12.5px] flex gap-2 mt-5">
+        ⚙ Indicadores marcados com <b>auto</b> se preenchem sozinhos a partir das ferramentas das Fases
+        (Inventário, GAP, Riscos, Consultas, Reuniões, Documentos, Instrumentos, Incidentes) — clique no valor
+        para abrir a fonte. Os demais você atualiza manualmente pelo lápis. O Relatório Anual já usa esses valores.
       </div>
     </>
   );

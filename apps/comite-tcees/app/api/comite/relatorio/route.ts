@@ -5,6 +5,7 @@ import {
 } from "docx";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/auth-server";
+import { calcularIndicadoresAuto } from "@/lib/indicadores-auto";
 
 export const maxDuration = 60;
 
@@ -54,12 +55,13 @@ export async function GET() {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const [comite, eixos, entregas, marcos, indicadores] = await Promise.all([
+  const [comite, eixos, entregas, marcos, indicadores, auto] = await Promise.all([
     prisma.comite.findFirst(),
     prisma.eixo.findMany({ orderBy: { ordem: "asc" } }),
     prisma.entrega.findMany({ orderBy: { ordem: "asc" } }),
     prisma.marco.findMany({ orderBy: { ordem: "asc" } }),
     prisma.indicador.findMany({ orderBy: { ordem: "asc" } }),
+    calcularIndicadoresAuto(),
   ]);
 
   const total = entregas.length;
@@ -129,9 +131,18 @@ export async function GET() {
 
   children.push(h("4. Quadro de indicadores de monitoramento", HeadingLevel.HEADING_1));
   children.push(
+    p(
+      "Valores marcados com (auto) são apurados automaticamente a partir das ferramentas das Fases do PGP; os demais são informados pelo Comitê.",
+    ),
+  );
+  children.push(
     tabela(
       ["Cód.", "Indicador", "Meta 2026", "Meta 2027", "Atual"],
-      indicadores.map((i) => [i.codigo, i.descricao, i.meta2026 ?? "—", i.meta2027 ?? "—", i.valorAtual ?? "—"]),
+      indicadores.map((i) => {
+        const a = auto[i.codigo];
+        const atual = a ? `${a.valor} (auto)` : i.valorAtual ?? "—";
+        return [i.codigo, i.descricao, i.meta2026 ?? "—", i.meta2027 ?? "—", atual];
+      }),
       [8, 50, 16, 16, 10],
     ),
   );

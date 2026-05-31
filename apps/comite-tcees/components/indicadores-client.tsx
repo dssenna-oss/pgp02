@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
@@ -19,6 +20,8 @@ export type IndicadorDTO = {
   meta2027: string | null;
   valorAtual: string | null;
   status: string;
+  /** Etapa 3: valor calculado ao vivo das ferramentas das Fases (substitui o manual). */
+  auto?: { valor: string; fonte: string; href: string } | null;
 };
 
 const GRUPOS = ["A", "B", "C", "D", "E", "IMPACTO"];
@@ -73,7 +76,16 @@ export function IndicadoresClient({ indicadores }: { indicadores: IndicadorDTO[]
                         <td className="px-3 py-2.5 text-[12.5px] text-gray-800 min-w-[200px]">{i.descricao}</td>
                         <td className="px-3 py-2.5 text-[12px] text-gray-600 whitespace-nowrap">{i.meta2026 ?? "—"}</td>
                         <td className="px-3 py-2.5 text-[12px] text-gray-600 whitespace-nowrap">{i.meta2027 ?? "—"}</td>
-                        <td className="px-3 py-2.5 text-[12.5px] font-semibold text-gray-900 whitespace-nowrap">{i.valorAtual ?? "—"}</td>
+                        <td className="px-3 py-2.5 text-[12.5px] font-semibold text-gray-900 whitespace-nowrap">
+                          {i.auto ? (
+                            <Link href={i.auto.href} title={`Calculado automaticamente: ${i.auto.fonte}`} className="inline-flex items-center gap-1.5 group">
+                              <span>{i.auto.valor}</span>
+                              <span className="text-[9px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded group-hover:bg-emerald-200">⚙ auto</span>
+                            </Link>
+                          ) : (
+                            i.valorAtual ?? "—"
+                          )}
+                        </td>
                         <td className="px-3 py-2.5"><Badge variant={st.variant}>{st.label}</Badge></td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
                           <div className="flex gap-1.5">
