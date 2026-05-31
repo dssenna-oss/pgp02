@@ -87,6 +87,25 @@ export const TRIMESTRES: { id: string; label: string; sub: string }[] = [
   { id: "Q4-2027", label: "Q4 2027", sub: "Outubro–Dezembro · Encerramento do biênio" },
 ];
 
+// --- Status do INVENTÁRIO (Fase 3) ---
+export const STATUS_INVENTARIO: Record<string, { label: string; variant: BadgeVariant }> = {
+  PRELIMINAR: { label: "preliminar", variant: "amber" },
+  EM_REVISAO: { label: "em revisão", variant: "blue" },
+  CONCLUIDO: { label: "concluído", variant: "green" },
+};
+
+export function statusInventario(s: string) {
+  return STATUS_INVENTARIO[s] ?? { label: s, variant: "gray" as BadgeVariant };
+}
+
+// Hipóteses macro de tratamento (Seção 7.3 do Plano)
+export const HIPOTESE_MACRO: Record<string, string> = {
+  I: "Ações de controle externo",
+  II: "Serviços à sociedade",
+  III: "Ações de capacitação",
+  IV: "Ações administrativas internas",
+};
+
 export const MESES_PT = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",

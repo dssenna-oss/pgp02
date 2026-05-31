@@ -247,6 +247,38 @@ const INDICADORES: IndSeed[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// FASE 3 — INVENTÁRIO: 12 processos prioritários (Seção 7.4 do Plano)
+// Base legal por hipótese macro (Seção 7.3).
+// ---------------------------------------------------------------------------
+const BL: Record<string, string> = {
+  I: "Art. 7º, III c/c art. 23, I, da LGPD; art. 71 c/c art. 75 da CF",
+  II: "Art. 7º, III c/c art. 23, I, da LGPD; Lei nº 12.527/2011 (LAI)",
+  III: "Art. 7º, II e III c/c art. 23, I, da LGPD",
+  IV: "Art. 7º, III, V e VI c/c art. 23, I, da LGPD",
+};
+const INVENTARIO = [
+  { nome: "Sistema de acesso identificado", unidadeGestora: "SGTI", hipoteseMacro: "IV", dadosSensiveis: false },
+  { nome: 'Sistema "Conta pra Gente"', unidadeGestora: "SGTI / SECOM", hipoteseMacro: "II", dadosSensiveis: false },
+  { nome: "SGP RH — Folha de Pagamento", unidadeGestora: "SEGAFI", hipoteseMacro: "IV", dadosSensiveis: true },
+  { nome: "SGP RH — Benefícios", unidadeGestora: "SEGAFI", hipoteseMacro: "IV", dadosSensiveis: true },
+  { nome: "Sistema ECP — Escola de Contas Públicas", unidadeGestora: "ECP", hipoteseMacro: "III", dadosSensiveis: false },
+  { nome: "Módulos do Sistema e-TCEES", unidadeGestora: "SGTI / SEGEX", hipoteseMacro: "I", dadosSensiveis: false },
+  { nome: "Diário Oficial", unidadeGestora: "SECOM", hipoteseMacro: "II", dadosSensiveis: false },
+  { nome: "Sistema CidadES (atos de pessoal e folha dos jurisdicionados)", unidadeGestora: "SEGEX", hipoteseMacro: "I", dadosSensiveis: true },
+  { nome: "MPC-ES — Denúncias e cobranças", unidadeGestora: "MPC junto ao TCEES", hipoteseMacro: "I", dadosSensiveis: true },
+  { nome: "NCD / Protocolo", unidadeGestora: "SEGAFI / SGTI", hipoteseMacro: "IV", dadosSensiveis: false },
+  { nome: "SGS — Secretaria Geral das Sessões", unidadeGestora: "SGS", hipoteseMacro: "I", dadosSensiveis: false },
+  { nome: "Sistema de Videomonitoramento", unidadeGestora: "SEGAFI / SGTI", hipoteseMacro: "IV", dadosSensiveis: true },
+].map((p, i) => ({
+  ...p,
+  baseLegal: BL[p.hipoteseMacro] ?? null,
+  prioritario: true,
+  status: "PRELIMINAR",
+  observacoes: "Inventário inicial (2021); refazimento sob metodologia atualizada previsto para Q3/2026.",
+  ordem: i,
+}));
+
+// ---------------------------------------------------------------------------
 // NOTIFICAÇÕES (estado de exemplo coerente com o Plano)
 // ---------------------------------------------------------------------------
 const NOTIFICACOES = [
@@ -303,6 +335,7 @@ async function main() {
     prisma.documento.deleteMany(),
     prisma.indicador.deleteMany(),
     prisma.notificacao.deleteMany(),
+    prisma.dataInventory.deleteMany(),
   ]);
 
   await prisma.eixo.createMany({ data: EIXOS });
@@ -314,11 +347,13 @@ async function main() {
   await prisma.documento.createMany({ data: DOCUMENTOS as any });
   await prisma.indicador.createMany({ data: INDICADORES.map((x, i) => ({ ...x, ordem: i })) });
   await prisma.notificacao.createMany({ data: NOTIFICACOES });
+  await prisma.dataInventory.createMany({ data: INVENTARIO });
 
   console.log(`✅ Seed concluído:
    ${EIXOS.length} eixos · ${MEMBROS.length} membros · ${ENTREGAS.length} entregas
    ${MARCOS.length} marcos · ${REUNIOES.length} reuniões · ${CONSULTAS.length} consultas
    ${DOCUMENTOS.length} documentos · ${INDICADORES.length} indicadores · ${NOTIFICACOES.length} notificações
+   ${INVENTARIO.length} processos no Inventário (prioritários)
    Login inicial: coordenador@tcees.tc.br / comite2026`);
 }
 

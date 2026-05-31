@@ -209,6 +209,32 @@ model Indicador {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 3 — INVENTÁRIO DE DADOS PESSOAIS (mono-instituição; adaptado do lgpd-curso)
+// -----------------------------------------------------------------------------
+
+model DataInventory {
+  id               String   @id @default(cuid())
+  nome             String // nome do processo/serviço/sistema
+  unidadeGestora   String? // SGTI, SEGAFI, SEGEX...
+  hipoteseMacro    String? // "I" | "II" | "III" | "IV" (Seção 7.3 do Plano)
+  finalidade       String?
+  baseLegal        String?
+  tiposDados       String? // texto livre / JSON
+  dadosSensiveis   Boolean  @default(false)
+  retencao         String?
+  compartilhamento String?
+  medidasSeguranca String?
+  prioritario      Boolean  @default(false) // um dos 12 processos prioritários
+  status           String   @default("PRELIMINAR") // PRELIMINAR | EM_REVISAO | CONCLUIDO
+  observacoes      String?
+  ordem            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("data_inventories")
+}
+
+// -----------------------------------------------------------------------------
 // NOTIFICAÇÕES
 // -----------------------------------------------------------------------------
 

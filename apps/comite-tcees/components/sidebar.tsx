@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
-  Scale, Bell, TrendingUp, Menu, X, Flag, Award,
+  Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
+  FileCheck2, AlertTriangle, Award,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -53,14 +54,36 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
         })}
 
         <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-          Programa (em breve)
+          Programa — Fases do PGP
         </div>
-        <span className="flex items-center gap-2.5 px-2.5 py-2.5 text-[13.5px] text-slate-500 cursor-default">
-          <Flag className="w-[18px] h-[18px] shrink-0" /> Fases 1–7 do PGP
-        </span>
-        <span className="flex items-center gap-2.5 px-2.5 py-2.5 text-[13.5px] text-slate-500 cursor-default">
-          <Award className="w-[18px] h-[18px] shrink-0" /> Painel de Maturidade
-        </span>
+        {(() => {
+          const href = "/dashboard/inventario";
+          const active = pathname.startsWith(href);
+          return (
+            <Link
+              href={href}
+              onClick={onNav}
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13.5px] mb-0.5 transition-colors",
+                active ? "bg-brand-500 text-white font-semibold" : "text-slate-300 hover:bg-white/10 hover:text-white",
+              )}
+            >
+              <Boxes className="w-[18px] h-[18px] shrink-0" /> Inventário <span className="text-[10px] text-slate-400 font-normal">· Fase 3</span>
+            </Link>
+          );
+        })()}
+        {[
+          { icon: ShieldAlert, label: "Riscos", fase: "Fase 5" },
+          { icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },
+          { icon: FileCheck2, label: "Instrumentos", fase: "Fase 6" },
+          { icon: AlertTriangle, label: "Incidentes", fase: "Fase 7" },
+          { icon: Award, label: "Painel de Maturidade", fase: "" },
+        ].map(({ icon: Icon, label, fase }) => (
+          <span key={label} className="flex items-center gap-2.5 px-2.5 py-2.5 text-[13.5px] text-slate-500 cursor-default">
+            <Icon className="w-[18px] h-[18px] shrink-0" /> {label}
+            <span className="text-[10px] text-slate-600 ml-auto">em breve</span>
+          </span>
+        ))}
       </nav>
       <div className="px-4 py-3 text-[11px] text-slate-500 border-t border-white/10">
         Biênio 2026-2027 · Portaria 22/2026
