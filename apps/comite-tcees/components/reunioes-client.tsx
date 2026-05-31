@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import { Plus, Pencil, Trash2, X, CheckCircle2, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { salvarReuniao, excluirReuniao, type ReuniaoInput } from "@/app/dashboard/reunioes/actions";
+import { salvarReuniao, excluirReuniao, aprovarPauta, type ReuniaoInput } from "@/app/dashboard/reunioes/actions";
 
 export type ReuniaoDTO = {
   id: string;
@@ -19,6 +19,7 @@ export type ReuniaoDTO = {
   presentes: number | null;
   totalConvocados: number | null;
   status: string;
+  pautaAprovada: boolean;
   ataRegistrada: boolean;
   ataUrl: string | null;
 };
@@ -26,7 +27,7 @@ export type ReuniaoDTO = {
 const VAZIA = (): ReuniaoDTO => ({
   id: "", titulo: "", dataISO: "", dataBR: "", hora: "", local: "", pauta: "",
   decisoes: "", presentes: null, totalConvocados: null, status: "AGENDADA",
-  ataRegistrada: false, ataUrl: "",
+  pautaAprovada: false, ataRegistrada: false, ataUrl: "",
 });
 
 export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
@@ -84,7 +85,34 @@ export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
                   </button>
                 </div>
               </div>
-              {r.pauta && <p className="text-[12.5px] text-gray-700 mt-1.5"><b>Pauta:</b> {r.pauta}</p>}
+              {r.pauta && (
+                <div className="mt-1.5">
+                  <p className="text-[12.5px] text-gray-700"><b>Pauta:</b> {r.pauta}</p>
+                  <div className="mt-1.5">
+                    {r.pautaAprovada ? (
+                      <span className="inline-flex items-center gap-1 text-[11.5px] font-bold text-emerald-700">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Pauta aprovada
+                      </span>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          const t = toast.loading("Aprovando pauta…");
+                          try {
+                            await aprovarPauta(r.id);
+                            toast.success("Pauta aprovada — membros avisados", { id: t });
+                            router.refresh();
+                          } catch {
+                            toast.error("Não foi possível aprovar", { id: t });
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-700 border border-emerald-200 bg-emerald-50 rounded-md px-2.5 py-1 hover:bg-emerald-100"
+                      >
+                        <Check className="w-3.5 h-3.5" /> Aprovar pauta
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
               {r.decisoes && <p className="text-[12.5px] text-gray-700 mt-1.5"><b>Principais decisões:</b> {r.decisoes}</p>}
               <div className="text-[11.5px] text-gray-500 mt-2 flex gap-3.5 flex-wrap">
                 {r.local && <span><b className="text-gray-700">Local:</b> {r.local}{r.hora ? ` · ${r.hora}` : ""}</span>}

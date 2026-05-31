@@ -25,6 +25,10 @@ function parseIntOrNull(v?: string): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
+function dataBR(d: Date): string {
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 export async function salvarReuniao(input: ReuniaoInput) {
   // Qualquer membro logado pode criar/editar (decisão: acesso aberto).
   await requireSession();
@@ -54,10 +58,49 @@ export async function salvarReuniao(input: ReuniaoInput) {
     await prisma.reuniao.update({ where: { id: input.id }, data: dados });
   } else {
     await prisma.reuniao.create({ data: { ...dados, ordem: 0 } });
+    // Comunicar aos membros: nova reunião agendada (aviso no app; e-mail virá depois).
+    if (dados.status === "AGENDADA") {
+      await prisma.notificacao.create({
+        data: {
+          tipo: "REUNIAO",
+          titulo: `Nova reunião agendada: ${dados.titulo}`,
+          descricao: `${dataBR(dataDate)}${dados.hora ? ` · ${dados.hora}` : ""}${dados.local ? ` · ${dados.local}` : ""} — confirme sua presença.`,
+          href: "/dashboard/reunioes",
+        },
+      });
+    }
   }
 
   revalidatePath("/dashboard/reunioes");
   revalidatePath("/dashboard/calendario");
+  revalidatePath("/dashboard/notificacoes");
+  return { ok: true };
+}
+
+/** Marca a pauta como aprovada e comunica os membros (aviso no app). */
+export async function aprovarPauta(id: string) {
+  await requireSession();
+  const reuniao = await prisma.reuniao.findUnique({
+    where: { id },
+    select: { titulo: true, pauta: true, data: true, pautaAprovada: true },
+  });
+  if (!reuniao) throw new Error("Reunião não encontrada.");
+  if (reuniao.pautaAprovada) return { ok: true }; // já aprovada — evita aviso duplicado
+
+  await prisma.reuniao.update({ where: { id }, data: { pautaAprovada: true } });
+  await prisma.notificacao.create({
+    data: {
+      tipo: "PAUTA",
+      titulo: `Pauta aprovada: ${reuniao.titulo}`,
+      descricao: reuniao.pauta
+        ? reuniao.pauta.slice(0, 140)
+        : `Reunião de ${dataBR(reuniao.data)}.`,
+      href: "/dashboard/reunioes",
+    },
+  });
+
+  revalidatePath("/dashboard/reunioes");
+  revalidatePath("/dashboard/notificacoes");
   return { ok: true };
 }
 

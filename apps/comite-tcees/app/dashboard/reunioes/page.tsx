@@ -24,6 +24,7 @@ export default async function ReunioesPage() {
     presentes: r.presentes,
     totalConvocados: r.totalConvocados,
     status: r.status,
+    pautaAprovada: r.pautaAprovada,
     ataRegistrada: r.ataRegistrada,
     ataUrl: r.ataUrl,
   }));

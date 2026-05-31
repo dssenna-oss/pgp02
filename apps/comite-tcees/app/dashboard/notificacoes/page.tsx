@@ -9,6 +9,7 @@ const ICONE: Record<string, { emoji: string; bg: string }> = {
   ATRASO: { emoji: "⏰", bg: "bg-red-100" },
   DOCUMENTO: { emoji: "📄", bg: "bg-amber-100" },
   REUNIAO: { emoji: "📅", bg: "bg-brand-50" },
+  PAUTA: { emoji: "📋", bg: "bg-emerald-100" },
   PRAZO: { emoji: "⏳", bg: "bg-brand-50" },
   CONSULTA: { emoji: "⚖️", bg: "bg-slate-100" },
   MARCO: { emoji: "✅", bg: "bg-emerald-100" },
