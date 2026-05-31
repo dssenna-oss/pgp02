@@ -443,6 +443,49 @@ model MonitoringCheck {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 7 — Auditoria Interna do PGP (agenda + achados + plano de ação)
+// -----------------------------------------------------------------------------
+
+model Auditoria {
+  id            String    @id @default(cuid())
+  titulo        String
+  escopo        String?
+  responsavel   String?
+  dataPrevista  DateTime?
+  dataRealizada DateTime?
+  status        String    @default("PLANEJADA") // PLANEJADA | EM_ANDAMENTO | CONCLUIDA
+  observacoes   String?   @db.Text
+  ordem         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  achados AuditoriaAchado[]
+
+  @@index([status])
+  @@map("auditorias")
+}
+
+model AuditoriaAchado {
+  id          String    @id @default(cuid())
+  auditoriaId String
+  auditoria   Auditoria @relation(fields: [auditoriaId], references: [id], onDelete: Cascade)
+
+  descricao       String   @db.Text
+  severidade      String   @default("MEDIA") // BAIXA | MEDIA | ALTA
+  naoConformidade Boolean  @default(true)
+  recomendacao    String?  @db.Text
+  planoAcao       String?  @db.Text
+  prazo           DateTime?
+  status          String   @default("ABERTO") // ABERTO | EM_TRATAMENTO | RESOLVIDO
+  ordem           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([auditoriaId])
+  @@map("auditoria_achados")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
 

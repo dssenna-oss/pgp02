@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
   Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
-  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo,
+  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo, FileSearch,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -86,6 +86,7 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           { href: "/dashboard/incidentes", icon: Activity, label: "Monitoramento", fase: "Fase 7" },
           { href: "/dashboard/autoavaliacao", icon: Gauge, label: "Autoavaliação TCU", fase: "Fase 7" },
           { href: "/dashboard/checklist-monitoramento", icon: ListTodo, label: "Checklist Monitoramento", fase: "Fase 7" },
+          { href: "/dashboard/auditoria", icon: FileSearch, label: "Auditoria Interna", fase: "Fase 7" },
         ].map(({ href, icon: Icon, label, fase }) => {
           const active = pathname.startsWith(href);
           return (
