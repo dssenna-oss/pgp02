@@ -11,16 +11,18 @@ export default async function PlanoPage() {
       <PageHeader
         emoji="🗓️"
         title="Plano de Trabalho"
-        lead="Cronograma do biênio em 8 trimestres × 5 eixos. Cada entrega tem responsável, prazo e status."
+        lead="Cronograma do biênio em 8 trimestres × 5 eixos. Adicione e edite entregas pelo botão ao lado — mudar o status atualiza o painel."
       />
       <PlanoBoard
         entregas={entregas.map((e) => ({
           id: e.id,
           titulo: e.titulo,
+          descricao: e.descricao,
           eixoCodigo: e.eixoCodigo,
           trimestre: e.trimestre,
           responsavel: e.responsavel,
           prazoTexto: e.prazoTexto,
+          prazoISO: e.prazoData ? new Date(e.prazoData).toISOString().slice(0, 10) : null,
           status: e.status,
         }))}
       />
