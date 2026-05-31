@@ -418,6 +418,22 @@ model DataSubjectRequest {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 7 — Autoavaliação TCU (iadLGPD, Acórdão 1.384/2022). Guarda só as
+// respostas que o Comitê definiu manualmente; o resto é auto/ao vivo.
+// -----------------------------------------------------------------------------
+
+model TcuAnswer {
+  id           String   @id @default(cuid())
+  questionCode String   @unique // "2.1".."10.5" (42 questões do indicador)
+  resposta     String // SIM | PARCIAL | NAO | NA
+  observacao   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("tcu_answers")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
 
