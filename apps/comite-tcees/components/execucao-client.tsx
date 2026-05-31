@@ -88,6 +88,9 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
         <a href="/dashboard/execucao/clausulas" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
           <FileText className="w-4 h-4" /> Cláusulas
         </a>
+        <a href="/dashboard/execucao/dsr" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
+          <FileText className="w-4 h-4" /> Direitos do Titular
+        </a>
         <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
           <Plus className="w-4 h-4" /> Novo instrumento
         </button>
@@ -149,6 +152,11 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
                     {it.nome.includes("Cláusula") && (
                       <a href="/dashboard/execucao/clausulas" className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-600 hover:text-brand-700">
                         <FileText className="w-3.5 h-3.5" /> Gerar cláusulas (DOCX)
+                      </a>
+                    )}
+                    {(it.nome.includes("Direitos do Titular") || it.nome.includes("Requisições")) && (
+                      <a href="/dashboard/execucao/dsr" className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-600 hover:text-brand-700">
+                        <FileText className="w-3.5 h-3.5" /> Abrir painel de Direitos do Titular
                       </a>
                     )}
                   </div>

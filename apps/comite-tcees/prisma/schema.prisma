@@ -381,6 +381,43 @@ model RipdVersion {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 6 — DSR (Direitos do Titular) · PAINEL INTERNO do Encarregado
+// Intake é externo (rito oficial: Ouvidoria → Acesso Identificado/NCD →
+// e-tcees). Aqui o Encarregado REGISTRA o pedido recebido pra controlar o
+// prazo de 15 dias, status e gerar o DOCX de resposta.
+// -----------------------------------------------------------------------------
+
+model DataSubjectRequest {
+  id             String   @id @default(cuid())
+  protocolNumber String // protocolo do rito oficial (e-tcees/Ouvidoria), digitado
+  origin         String   @default("ouvidoria") // ouvidoria | acesso_identificado | ncd | outro
+
+  titularName     String
+  titularCategory String   @default("cidadao")
+  requestedRights String[] // códigos art. 18: ["I","II",...]
+  detailedRequest String?  @db.Text
+
+  receivedAt DateTime // início da contagem das 15 dias
+  dueDate    DateTime // receivedAt + 15 dias
+
+  status String @default("RECEBIDA") // RECEBIDA | EM_ANALISE | AGUARDANDO_TITULAR | RESPONDIDA | INDEFERIDA
+
+  decision        String? // DEFERIDO | DEFERIDO_PARCIAL | INDEFERIDO
+  responseText    String?  @db.Text
+  responseActions String?  @db.Text
+  responseDate    DateTime?
+  respondedBy     String? // nome/e-mail (sem FK)
+
+  instrumentoId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("data_subject_requests")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
 

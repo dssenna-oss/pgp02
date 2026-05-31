@@ -43,6 +43,8 @@ export async function calcularIndicadoresAuto(): Promise<IndicadoresAutoMap> {
     instrumentos,
     incidentesTotal,
     incidentesAnpd,
+    dsrTotal,
+    dsrRespondidos,
   ] = await Promise.all([
     prisma.consultaPrevia.count({ where: { status: "RESPONDIDA" } }),
     prisma.reuniao.count({ where: { status: "REALIZADA" } }),
@@ -54,7 +56,22 @@ export async function calcularIndicadoresAuto(): Promise<IndicadoresAutoMap> {
     prisma.instrumento.findMany({ select: { nome: true, status: true } }),
     prisma.incident.count(),
     prisma.incident.count({ where: { comunicadoAnpd: true } }),
+    prisma.dataSubjectRequest.count(),
+    prisma.dataSubjectRequest.findMany({
+      where: { responseDate: { not: null } },
+      select: { receivedAt: true, responseDate: true },
+    }),
   ]);
+
+  // E3: tempo médio (dias) entre recebimento e resposta dos pedidos atendidos.
+  const tempoMedioDsr = dsrRespondidos.length
+    ? Math.round(
+        dsrRespondidos.reduce(
+          (acc, d) => acc + (d.responseDate!.getTime() - d.receivedAt.getTime()) / 86400000,
+          0,
+        ) / dsrRespondidos.length,
+      )
+    : null;
 
   // GAP: % de aderência sobre os controles avaliados (exclui NA).
   const respostas: RespostaMap = {};
@@ -88,6 +105,8 @@ export async function calcularIndicadoresAuto(): Promise<IndicadoresAutoMap> {
     B8: { valor: simNao(riscosCount > 0), fonte: `${riscosCount} riscos mapeados`, href: "/dashboard/riscos" },
     C1: { valor: simNao(instrumentoPronto(instrumentos, "aviso de privacidade")), fonte: "Central de Instrumentos", href: "/dashboard/execucao" },
     C2: { valor: simNao(instrumentoPronto(instrumentos, "cookies")), fonte: "Central de Instrumentos", href: "/dashboard/execucao" },
+    E2: { valor: String(dsrTotal), fonte: "Solicitações de titulares registradas", href: "/dashboard/execucao/dsr" },
+    E3: { valor: tempoMedioDsr == null ? "—" : `${tempoMedioDsr} dias`, fonte: "Tempo médio de resposta ao titular", href: "/dashboard/execucao/dsr" },
     E5: { valor: String(incidentesTotal), fonte: "Incidentes registrados", href: "/dashboard/incidentes" },
     E6: { valor: String(incidentesAnpd), fonte: "Incidentes comunicados à ANPD", href: "/dashboard/incidentes" },
   };
