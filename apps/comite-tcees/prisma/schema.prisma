@@ -255,6 +255,24 @@ model ProcessRisk {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 4 — GAP ANALYSIS (catálogo de 119 controles vive em lib/gap-catalog.ts)
+// -----------------------------------------------------------------------------
+
+model GapAnswer {
+  id            String   @id @default(cuid())
+  controlCode   String   @unique // "001".."119" (ref. ao GAP_CONTROLS)
+  cenarioAtual  String? // situação atual descrita
+  mapeamento    String? // NAO_INICIADO | EM_ANDAMENTO | FINALIZADO
+  aderencia     String? // ADERENTE | PARCIAL | NAO_ADERENTE | NA
+  pontoMelhoria String? // o que precisa melhorar
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("gap_answers")
+}
+
+// -----------------------------------------------------------------------------
 // NOTIFICAÇÕES
 // -----------------------------------------------------------------------------
 
