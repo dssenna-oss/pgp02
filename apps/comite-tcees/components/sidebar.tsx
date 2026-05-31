@@ -62,6 +62,7 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           { href: "/dashboard/gap", icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },
           { href: "/dashboard/plano-acao", icon: ListChecks, label: "Plano de Ação", fase: "Fase 5" },
           { href: "/dashboard/execucao", icon: FileCheck2, label: "Execução", fase: "Fase 6" },
+          { href: "/dashboard/incidentes", icon: Activity, label: "Monitoramento", fase: "Fase 7" },
         ].map(({ href, icon: Icon, label, fase }) => {
           const active = pathname.startsWith(href);
           return (
@@ -78,15 +79,6 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
             </Link>
           );
         })}
-        {[
-          { icon: Activity, label: "Monitoramento", fase: "Fase 7" },
-        ].map(({ icon: Icon, label, fase }) => (
-          <span key={label} className="flex items-center gap-2.5 px-2.5 py-2.5 text-[13.5px] text-slate-500 cursor-default">
-            <Icon className="w-[18px] h-[18px] shrink-0" /> {label}
-            <span className="text-[10px] text-slate-400 font-normal">· {fase}</span>
-            <span className="text-[10px] text-slate-600 ml-auto">em breve</span>
-          </span>
-        ))}
       </nav>
       <div className="px-4 py-3 text-[11px] text-slate-500 border-t border-white/10">
         Biênio 2026-2027 · Portaria 22/2026

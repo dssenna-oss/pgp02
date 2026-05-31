@@ -319,6 +319,29 @@ model GapAnswer {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 7 — MONITORAMENTO · Incidentes de Segurança (72h ANPD — Res. 15/2024)
+// -----------------------------------------------------------------------------
+
+model Incident {
+  id                String    @id @default(cuid())
+  titulo            String
+  descricao         String?
+  severidade        String    @default("MEDIA") // BAIXA | MEDIA | ALTA | CRITICA
+  status            String    @default("EM_ANALISE") // RASCUNHO | EM_ANALISE | ENCERRADO
+  ocorridoEm        DateTime?
+  detectadoEm       DateTime? // marca o início da contagem das 72h p/ ANPD
+  comunicadoAnpd    Boolean   @default(false)
+  comunicadoTitular Boolean   @default(false)
+  naturezaDados     String? // que dados foram afetados
+  medidasMitigacao  String? // o que foi feito
+  ordem             Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("incidents")
+}
+
+// -----------------------------------------------------------------------------
 // NOTIFICAÇÕES
 // -----------------------------------------------------------------------------
 

@@ -167,6 +167,20 @@ export const GRUPO_INSTRUMENTO: Record<string, { nome: string; emoji: string; de
 // status que contam como "pronto" no progresso
 export const INSTRUMENTO_PRONTO = new Set(["APROVADO", "PUBLICADO"]);
 
+// --- Incidentes (Fase 7) ---
+export const SEVERIDADE_INCIDENTE: Record<string, { label: string; variant: BadgeVariant }> = {
+  BAIXA: { label: "baixa", variant: "gray" },
+  MEDIA: { label: "média", variant: "amber" },
+  ALTA: { label: "alta", variant: "red" },
+  CRITICA: { label: "crítica", variant: "red" },
+};
+export const STATUS_INCIDENTE: Record<string, { label: string; variant: BadgeVariant }> = {
+  RASCUNHO: { label: "rascunho", variant: "gray" },
+  EM_ANALISE: { label: "em análise", variant: "amber" },
+  ENCERRADO: { label: "encerrado", variant: "green" },
+};
+export const PRAZO_ANPD_HORAS = 72;
+
 export const MESES_PT = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",
