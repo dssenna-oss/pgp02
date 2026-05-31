@@ -1,0 +1,224 @@
+// =============================================================================
+// Comitê LGPD — TCEES (mono-instituição)
+// Schema do módulo "Comitê & Plano de Trabalho" + autenticação simples.
+// Sem multi-tenant / papéis de curso. Outra instituição = nova cópia do app.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// -----------------------------------------------------------------------------
+// AUTENTICAÇÃO
+// -----------------------------------------------------------------------------
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String // bcrypt hash
+  role      String   @default("MEMBRO") // ADMIN | COORDENADOR | MEMBRO
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+// -----------------------------------------------------------------------------
+// IDENTIDADE DO COMITÊ (linha única de configuração da instituição)
+// -----------------------------------------------------------------------------
+
+model Comite {
+  id            String  @id @default(cuid())
+  instituicao   String // "Tribunal de Contas do Estado do Espírito Santo — TCEES"
+  sigla         String // "TCEES"
+  nomeComite    String // "Comitê Executivo de Proteção de Dados Pessoais"
+  bienio        String // "2026-2027"
+  cnpj          String?
+  sede          String?
+  portal        String?
+  canalEncarregado String?
+  vinculoSegov  String? // texto do vínculo institucional
+  marcoMae      String? // descrição do marco-mãe
+  marcoMaePrazo DateTime?
+  updatedAt     DateTime @updatedAt
+
+  @@map("comite")
+}
+
+// -----------------------------------------------------------------------------
+// EIXOS DO CRONOGRAMA (A–E) — tabela de apoio
+// -----------------------------------------------------------------------------
+
+model Eixo {
+  id        String  @id @default(cuid())
+  codigo    String  @unique // "A" | "B" | "C" | "D" | "E"
+  nome      String // "Governança / Homologação"
+  descricao String?
+  ordem     Int     @default(0)
+
+  @@map("eixos")
+}
+
+// -----------------------------------------------------------------------------
+// MEMBROS DO COMITÊ
+// -----------------------------------------------------------------------------
+
+model Membro {
+  id        String  @id @default(cuid())
+  nome      String
+  funcao    String // "Presidente" | "Coordenador" | "Encarregado titular" | "Encarregado substituto" | "Membro"
+  cargo     String? // "Conselheiro do TCEES"
+  unidade   String? // "SEGAFI" | "SEGEX" ...
+  matricula String?
+  inciso    String? // "I, a" — referência à Portaria
+  email     String?
+  ordem     Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("membros")
+}
+
+// -----------------------------------------------------------------------------
+// ENTREGAS DO PLANO DE TRABALHO (cronograma 8 trimestres × 5 eixos)
+// -----------------------------------------------------------------------------
+
+model Entrega {
+  id            String    @id @default(cuid())
+  titulo        String
+  descricao     String?
+  eixoCodigo    String // "A".."E"
+  trimestre     String // "Q2-2026" .. "Q4-2027"
+  responsavel   String?
+  prazoTexto    String? // "30/06/2026" ou "Q3/2026"
+  prazoData     DateTime? // quando há data exata (alimenta o calendário)
+  status        String    @default("A_INICIAR") // CONCLUIDO | EM_ANDAMENTO | A_INICIAR | ATRASADO
+  ferramentaHref String? // link para o módulo que executa a entrega (Etapa 3)
+  ordem         Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  @@index([eixoCodigo])
+  @@index([trimestre])
+  @@map("entregas")
+}
+
+// -----------------------------------------------------------------------------
+// MARCOS CRÍTICOS DO BIÊNIO
+// -----------------------------------------------------------------------------
+
+model Marco {
+  id          String   @id @default(cuid())
+  data        DateTime
+  descricao   String
+  eixoCodigos String // "A" ou "A,B,C,D,E" (marco-mãe)
+  tipo        String   @default("NORMAL") // NORMAL | MAE
+  status      String   @default("A_INICIAR") // CONCLUIDO | EM_ANDAMENTO | A_INICIAR | CRITICO
+  ordem       Int      @default(0)
+
+  @@map("marcos")
+}
+
+// -----------------------------------------------------------------------------
+// REUNIÕES & ATAS
+// -----------------------------------------------------------------------------
+
+model Reuniao {
+  id            String   @id @default(cuid())
+  titulo        String
+  data          DateTime
+  hora          String?
+  local         String?
+  pauta         String?
+  decisoes      String? // texto livre das decisões
+  presentes     Int? // participantes presentes
+  totalConvocados Int?
+  status        String   @default("AGENDADA") // AGENDADA | REALIZADA
+  ataUrl        String?
+  ordem         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@map("reunioes")
+}
+
+// -----------------------------------------------------------------------------
+// CONSULTA PRÉVIA AO COMITÊ
+// -----------------------------------------------------------------------------
+
+model ConsultaPrevia {
+  id          String    @id @default(cuid())
+  titulo      String
+  area        String?
+  descricao   String?
+  parecerCju  String? // "favorável" | texto
+  status      String    @default("EM_ANALISE") // RESPONDIDA | EM_ANALISE | PENDENCIA
+  abertaEm    DateTime?
+  respondidaEm DateTime?
+  ordem       Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@map("consultas_previas")
+}
+
+// -----------------------------------------------------------------------------
+// DOCUMENTOS DO COMITÊ
+// -----------------------------------------------------------------------------
+
+model Documento {
+  id           String    @id @default(cuid())
+  nome         String
+  tipo         String? // "Instrumento mater" | "Política" | "Norma interna" | "Ata de reunião" ...
+  versao       String?
+  status       String    @default("A_ELABORAR") // A_ELABORAR | ELABORADO | PENDENTE_APROVACAO | HOMOLOGADO | REGISTRADA
+  atualizadoEm String? // texto livre ("25/06/2024", "2024", "—")
+  arquivoUrl   String?
+  ordem        Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@map("documentos")
+}
+
+// -----------------------------------------------------------------------------
+// INDICADORES DE MONITORAMENTO (Seção 9 do Plano)
+// -----------------------------------------------------------------------------
+
+model Indicador {
+  id         String  @id @default(cuid())
+  codigo     String  @unique // "A1".."E10", "I1".."I5"
+  eixoCodigo String // "A".."E" ou "IMPACTO"
+  descricao  String
+  tipo       String // "Estrutural" | "Processual" | "Resultado" | "Impacto"
+  unidade    String?
+  meta2026   String?
+  meta2027   String?
+  valorAtual String? // "0/3", "—", "12/115" ...
+  status     String  @default("A_INICIAR") // CONCLUIDO | EM_ANDAMENTO | EM_RISCO | ATRASADO | A_INICIAR
+  ordem      Int     @default(0)
+
+  @@index([eixoCodigo])
+  @@map("indicadores")
+}
+
+// -----------------------------------------------------------------------------
+// NOTIFICAÇÕES
+// -----------------------------------------------------------------------------
+
+model Notificacao {
+  id        String   @id @default(cuid())
+  tipo      String // "ATRASO" | "DOCUMENTO" | "REUNIAO" | "PRAZO" | "CONSULTA" | "MARCO"
+  titulo    String
+  descricao String?
+  eixoCodigo String?
+  href      String?
+  lida      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notificacoes")
+}

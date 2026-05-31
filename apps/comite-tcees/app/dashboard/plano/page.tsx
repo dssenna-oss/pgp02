@@ -1,0 +1,29 @@
+import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/page-header";
+import { PlanoBoard } from "@/components/plano-board";
+
+export const dynamic = "force-dynamic";
+
+export default async function PlanoPage() {
+  const entregas = await prisma.entrega.findMany({ orderBy: { ordem: "asc" } });
+  return (
+    <>
+      <PageHeader
+        emoji="🗓️"
+        title="Plano de Trabalho"
+        lead="Cronograma do biênio em 8 trimestres × 5 eixos. Cada entrega tem responsável, prazo e status."
+      />
+      <PlanoBoard
+        entregas={entregas.map((e) => ({
+          id: e.id,
+          titulo: e.titulo,
+          eixoCodigo: e.eixoCodigo,
+          trimestre: e.trimestre,
+          responsavel: e.responsavel,
+          prazoTexto: e.prazoTexto,
+          status: e.status,
+        }))}
+      />
+    </>
+  );
+}

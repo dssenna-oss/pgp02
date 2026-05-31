@@ -1,0 +1,93 @@
+// Rótulos, cores e helpers de apresentação do módulo do Comitê.
+// Centraliza os mapeamentos status→badge e eixo→cor usados nas 9 telas.
+
+export type BadgeVariant = "green" | "amber" | "red" | "gray" | "blue" | "indigo";
+
+// --- Status de ENTREGAS / MARCOS ---
+export const STATUS_ENTREGA: Record<string, { label: string; variant: BadgeVariant }> = {
+  CONCLUIDO: { label: "✓ concluído", variant: "green" },
+  EM_ANDAMENTO: { label: "em andamento", variant: "amber" },
+  A_INICIAR: { label: "a iniciar", variant: "gray" },
+  ATRASADO: { label: "atrasado", variant: "red" },
+  CRITICO: { label: "crítico", variant: "amber" },
+};
+
+export function statusEntrega(s: string) {
+  return STATUS_ENTREGA[s] ?? { label: s, variant: "gray" as BadgeVariant };
+}
+
+// --- Status de INDICADORES ---
+export const STATUS_INDICADOR: Record<string, { label: string; variant: BadgeVariant }> = {
+  CONCLUIDO: { label: "atingido", variant: "green" },
+  EM_ANDAMENTO: { label: "em andamento", variant: "amber" },
+  EM_RISCO: { label: "em risco", variant: "amber" },
+  ATRASADO: { label: "atrasado", variant: "red" },
+  A_INICIAR: { label: "a iniciar", variant: "gray" },
+};
+
+export function statusIndicador(s: string) {
+  return STATUS_INDICADOR[s] ?? { label: s, variant: "gray" as BadgeVariant };
+}
+
+// --- Status de DOCUMENTOS ---
+export const STATUS_DOC: Record<string, { label: string; variant: BadgeVariant }> = {
+  A_ELABORAR: { label: "a elaborar", variant: "gray" },
+  ELABORADO: { label: "elaborado", variant: "blue" },
+  PENDENTE_APROVACAO: { label: "pendente de aprovação", variant: "amber" },
+  HOMOLOGADO: { label: "homologado", variant: "green" },
+  REGISTRADA: { label: "registrada", variant: "green" },
+};
+
+export function statusDoc(s: string) {
+  return STATUS_DOC[s] ?? { label: s, variant: "gray" as BadgeVariant };
+}
+
+// --- Status de CONSULTA PRÉVIA ---
+export const STATUS_CONSULTA: Record<string, { label: string; variant: BadgeVariant; border: string }> = {
+  RESPONDIDA: { label: "respondida", variant: "green", border: "border-l-emerald-500" },
+  EM_ANALISE: { label: "em análise", variant: "amber", border: "border-l-amber-500" },
+  PENDENCIA: { label: "pendência de área", variant: "red", border: "border-l-red-500" },
+};
+
+export function statusConsulta(s: string) {
+  return STATUS_CONSULTA[s] ?? { label: s, variant: "gray" as BadgeVariant, border: "border-l-gray-300" };
+}
+
+// --- Cores dos EIXOS (chip/tag) — espelham o mockup ---
+export const EIXO_TAG: Record<string, string> = {
+  A: "bg-violet-100 text-violet-800",
+  B: "bg-blue-100 text-blue-800",
+  C: "bg-emerald-100 text-emerald-800",
+  D: "bg-rose-100 text-rose-800",
+  E: "bg-yellow-100 text-yellow-800",
+  IMPACTO: "bg-slate-200 text-slate-700",
+};
+
+// Barra de progresso por eixo (cor sólida)
+export const EIXO_BAR: Record<string, string> = {
+  A: "bg-violet-500",
+  B: "bg-blue-500",
+  C: "bg-emerald-500",
+  D: "bg-rose-500",
+  E: "bg-yellow-500",
+};
+
+export function eixoTag(codigo: string) {
+  return EIXO_TAG[codigo] ?? "bg-gray-100 text-gray-700";
+}
+
+// Trimestres do biênio, em ordem cronológica + rótulo legível.
+export const TRIMESTRES: { id: string; label: string; sub: string }[] = [
+  { id: "Q2-2026", label: "Q2 2026", sub: "Maio–Junho · Consolidação inicial" },
+  { id: "Q3-2026", label: "Q3 2026", sub: "Julho–Setembro · Consolidação técnica" },
+  { id: "Q4-2026", label: "Q4 2026", sub: "Outubro–Dezembro · Entrega do marco-mãe" },
+  { id: "Q1-2027", label: "Q1 2027", sub: "Janeiro–Março · Consolidação operacional" },
+  { id: "Q2-2027", label: "Q2 2027", sub: "Abril–Junho" },
+  { id: "Q3-2027", label: "Q3 2027", sub: "Julho–Setembro · Auditoria" },
+  { id: "Q4-2027", label: "Q4 2027", sub: "Outubro–Dezembro · Encerramento do biênio" },
+];
+
+export const MESES_PT = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+];
