@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { PlanoBoard } from "@/components/plano-board";
+import { ferramentaDaEntrega } from "@/lib/entrega-ferramenta";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function PlanoPage() {
           prazoTexto: e.prazoTexto,
           prazoISO: e.prazoData ? new Date(e.prazoData).toISOString().slice(0, 10) : null,
           status: e.status,
+          ferramenta: ferramentaDaEntrega(e.titulo),
         }))}
       />
     </>
