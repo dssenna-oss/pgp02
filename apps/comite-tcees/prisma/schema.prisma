@@ -279,6 +279,56 @@ model Instrumento {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 6 — EDITOR DE POLÍTICAS (markdown + versões + URL pública)
+// Mono-instituição: sem companyId. Conteúdo dos instrumentos tipo documento.
+// -----------------------------------------------------------------------------
+
+model Policy {
+  id    String @id @default(cuid())
+  // Tipo do template inicial / tela pública. Ex.: AVISO_PRIVACIDADE_EXTERNO,
+  // POLITICA_COOKIES, POLITICA_RETENCAO, NORMA_PRIVACIDADE, OUTRA...
+  type  String
+  title String
+  slug  String @unique // usado na URL pública /p/<slug>
+
+  status String @default("RASCUNHO") // RASCUNHO | PUBLICADA | ARQUIVADA
+
+  currentContent   String  @db.Text // rascunho em markdown (sempre editável)
+  publishedContent String? @db.Text // snapshot publicado (vai pra URL pública)
+  currentVersion   Int     @default(0)
+
+  publishedAt   DateTime?
+  publishedBy   String? // nome/e-mail de quem publicou (sem FK)
+  // vínculo opcional ao item da Central de Instrumentos que esta política realiza
+  instrumentoId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions PolicyVersion[]
+
+  @@index([type])
+  @@index([status])
+  @@map("policies")
+}
+
+model PolicyVersion {
+  id       String @id @default(cuid())
+  policyId String
+  policy   Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  version     Int
+  content     String  @db.Text // markdown congelado
+  changeLog   String?
+  publishedAt DateTime @default(now())
+  publishedBy String?
+
+  @@unique([policyId, version])
+  @@index([policyId, publishedAt])
+  @@map("policy_versions")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
 

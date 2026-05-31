@@ -3,27 +3,55 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, Pencil, Trash2, X, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, X, ExternalLink, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusInstrumento, STATUS_INSTRUMENTO, GRUPO_INSTRUMENTO, INSTRUMENTO_PRONTO } from "@/lib/comite-ui";
 import { dataBR } from "@/lib/utils";
 import { salvarInstrumento, excluirInstrumento, type InstrumentoInput } from "@/app/dashboard/execucao/actions";
+import { abrirPolicyDoInstrumento } from "@/app/dashboard/execucao/politicas/actions";
 
 export type InstrumentoDTO = {
   id: string; nome: string; grupo: string; tipo: string | null; baseLegal: string | null;
   obrigatorio: boolean; status: string; responsavel: string | null;
   prazoISO: string | null; prazoBR: string | null; conteudoUrl: string | null; descricao: string | null;
+  /** Fase 6: este instrumento é um documento de texto editável no editor de Políticas? */
+  policyEditavel: boolean;
+  /** id da política já vinculada (null = ainda não criada). */
+  policyId: string | null;
 };
 
 const GRUPOS = ["PUBLICO", "INTERNO", "OPERADORES_TITULAR"];
 const VAZIO = (grupo = "INTERNO"): InstrumentoDTO => ({
   id: "", nome: "", grupo, tipo: "", baseLegal: "", obrigatorio: false, status: "A_ELABORAR",
   responsavel: "", prazoISO: "", prazoBR: null, conteudoUrl: "", descricao: "",
+  policyEditavel: false, policyId: null,
 });
 
 export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[] }) {
   const router = useRouter();
   const [editando, setEditando] = useState<InstrumentoDTO | null>(null);
+  const [abrindo, setAbrindo] = useState<string | null>(null);
+
+  async function abrirEditor(it: InstrumentoDTO) {
+    if (it.policyId) {
+      router.push(`/dashboard/execucao/politicas/${it.policyId}`);
+      return;
+    }
+    setAbrindo(it.id);
+    try {
+      const r = await abrirPolicyDoInstrumento(it.id);
+      if ("erro" in r) {
+        toast.error(r.erro);
+        setAbrindo(null);
+        return;
+      }
+      toast.success("Documento criado a partir do modelo");
+      router.push(`/dashboard/execucao/politicas/${r.id}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Não foi possível abrir o editor");
+      setAbrindo(null);
+    }
+  }
 
   const prontos = instrumentos.filter((i) => INSTRUMENTO_PRONTO.has(i.status)).length;
   const obrigatorios = instrumentos.filter((i) => i.obrigatorio).length;
@@ -50,7 +78,10 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
         <div className="bg-white border rounded-xl p-4"><div className="text-xs text-gray-500 font-semibold">Total de instrumentos</div><div className="text-2xl font-extrabold text-gray-900 mt-1">{instrumentos.length}</div><div className="text-[11px] text-gray-500 mt-1">nos 3 grupos</div></div>
       </div>
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end gap-2 mb-4">
+        <a href="/dashboard/execucao/politicas" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
+          <FileText className="w-4 h-4" /> Políticas e Documentos
+        </a>
         <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
           <Plus className="w-4 h-4" /> Novo instrumento
         </button>
@@ -94,6 +125,16 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
                         {it.responsavel && <span>👤 {it.responsavel}</span>}{it.responsavel && it.prazoBR ? " · " : ""}{it.prazoBR && <span>📅 {it.prazoBR}</span>}
                       </div>
                     )}
+                    {it.policyEditavel && (
+                      <button
+                        onClick={() => abrirEditor(it)}
+                        disabled={abrindo === it.id}
+                        className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-600 hover:text-brand-700 disabled:opacity-50"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        {abrindo === it.id ? "Abrindo…" : it.policyId ? "Abrir editor de conteúdo" : "Redigir documento (do modelo)"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -103,7 +144,7 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
       })}
 
       <div className="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-3.5 py-3 text-[12.5px] flex gap-2">
-        💡 Esta Central rastreia a produção dos instrumentos da Fase 6. Em refinamentos futuros, cada instrumento poderá ganhar editor próprio (RIPD por seções, políticas com gerador de DOCX, URL pública para os documentos externos).
+        💡 Instrumentos que são <b>documentos de texto</b> (Aviso de Privacidade, Cookies, PSI, Retenção, Política Interna…) têm o botão <b>Redigir documento</b>: o editor abre a partir de um modelo pronto, com versões, exportação DOCX e página pública. RIPD, Cláusulas de Operadores e DSR ganham editores próprios em seguida.
       </div>
 
       {editando && <InstrumentoModal instrumento={editando} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); router.refresh(); }} />}
