@@ -94,11 +94,14 @@ export async function importarDosRiscos() {
     .filter((r) => !refs.has(r.id))
     .map((r) => {
       const nv = nivelRisco(r.probabilidade, r.impacto);
+      const tratamento = r.recomendacao?.trim() || `Tratar risco: ${r.descricao}`;
       return {
         origem: "RISCO",
         origemRef: r.id,
-        acao: r.recomendacao?.trim() || `Tratar risco: ${r.descricao}`,
-        descricao: `${r.inventory.nome} — ${r.descricao}`,
+        // Prefixa com o nome do processo pra cada ação ser distinguível
+        // (vários riscos podem ter a mesma recomendação genérica).
+        acao: `${r.inventory.nome} — ${tratamento}`,
+        descricao: r.descricao,
         prioridade: nv.nivel === "ALTO" ? "ALTA" : nv.nivel === "MEDIO" ? "MEDIA" : "BAIXA",
         status: "A_FAZER",
         ordem: ++max,
