@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { nivelRisco, PI_LABEL, STATUS_RISCO } from "@/lib/comite-ui";
+import { RISCOS_CATALOG, descricaoDoRisco, recomendacaoDoRisco, type RiskCode } from "@/lib/riscos-catalog";
 import { salvarRisco, excluirRisco, type RiscoInput } from "@/app/dashboard/riscos/actions";
 
 export type RiscoDTO = {
@@ -231,6 +232,22 @@ function RiscoModal({ risco, processos, onClose, onSaved }: { risco: Partial<Ris
               <option value="">Selecione…</option>
               {processos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
+          </div>
+          <div>
+            <label className={labelCls}>Sugerir do catálogo LGPD <span className="font-normal text-gray-400">(preenche descrição + recomendação)</span></label>
+            <select
+              className={inputCls}
+              defaultValue=""
+              onChange={(e) => {
+                const code = e.target.value as RiskCode;
+                if (!code) return;
+                setForm((f) => ({ ...f, descricao: descricaoDoRisco(code), recomendacao: recomendacaoDoRisco(code) }));
+              }}
+            >
+              <option value="">— escolher um tipo de risco… —</option>
+              {RISCOS_CATALOG.map((r) => <option key={r.code} value={r.code}>{r.shortLabel}</option>)}
+            </select>
+            <p className="text-[10.5px] text-gray-400 mt-1">Baseado nos 13 riscos típicos da metodologia LGPD (com fundamento legal). Você pode editar o texto depois.</p>
           </div>
           <div>
             <label className={labelCls}>Risco / ameaça *</label>
