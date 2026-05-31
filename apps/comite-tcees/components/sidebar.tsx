@@ -56,11 +56,14 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
         <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
           Programa — Fases do PGP
         </div>
-        {(() => {
-          const href = "/dashboard/inventario";
+        {[
+          { href: "/dashboard/inventario", icon: Boxes, label: "Inventário", fase: "Fase 3" },
+          { href: "/dashboard/riscos", icon: ShieldAlert, label: "Análise de Riscos", fase: "Fase 3" },
+        ].map(({ href, icon: Icon, label, fase }) => {
           const active = pathname.startsWith(href);
           return (
             <Link
+              key={href}
               href={href}
               onClick={onNav}
               className={cn(
@@ -68,12 +71,11 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
                 active ? "bg-brand-500 text-white font-semibold" : "text-slate-300 hover:bg-white/10 hover:text-white",
               )}
             >
-              <Boxes className="w-[18px] h-[18px] shrink-0" /> Inventário <span className="text-[10px] text-slate-400 font-normal">· Fase 3</span>
+              <Icon className="w-[18px] h-[18px] shrink-0" /> {label} <span className={cn("text-[10px] font-normal", active ? "text-blue-100" : "text-slate-400")}>· {fase}</span>
             </Link>
           );
-        })()}
+        })}
         {[
-          { icon: ShieldAlert, label: "Análise de Riscos", fase: "Fase 3" },
           { icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },
           { icon: ListChecks, label: "Plano de Ação", fase: "Fase 5" },
           { icon: FileCheck2, label: "Execução", fase: "Fase 6" },

@@ -106,6 +106,30 @@ export const HIPOTESE_MACRO: Record<string, string> = {
   IV: "Ações administrativas internas",
 };
 
+// --- Análise de Riscos (matriz P×I) ---
+export const PI_LABEL: Record<number, string> = { 1: "Baixa", 2: "Média", 3: "Alta" };
+
+/** Nível de risco a partir de Probabilidade × Impacto (produto na matriz 3×3). */
+export function nivelRisco(prob: number, impacto: number): {
+  produto: number;
+  nivel: "BAIXO" | "MEDIO" | "ALTO";
+  label: string;
+  variant: BadgeVariant;
+  /** cor sólida para célula da matriz / radar */
+  cor: string;
+} {
+  const produto = prob * impacto;
+  if (produto <= 2) return { produto, nivel: "BAIXO", label: "Baixo", variant: "green", cor: "#16a34a" };
+  if (produto <= 4) return { produto, nivel: "MEDIO", label: "Médio", variant: "amber", cor: "#d97706" };
+  return { produto, nivel: "ALTO", label: "Alto", variant: "red", cor: "#dc2626" };
+}
+
+export const STATUS_RISCO: Record<string, { label: string; variant: BadgeVariant }> = {
+  ABERTO: { label: "aberto", variant: "amber" },
+  TRATADO: { label: "tratado", variant: "green" },
+  ACEITO: { label: "risco aceito", variant: "gray" },
+};
+
 export const MESES_PT = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",

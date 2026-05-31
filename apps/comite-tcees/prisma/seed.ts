@@ -335,6 +335,7 @@ async function main() {
     prisma.documento.deleteMany(),
     prisma.indicador.deleteMany(),
     prisma.notificacao.deleteMany(),
+    prisma.processRisk.deleteMany(),
     prisma.dataInventory.deleteMany(),
   ]);
 
@@ -349,11 +350,26 @@ async function main() {
   await prisma.notificacao.createMany({ data: NOTIFICACOES });
   await prisma.dataInventory.createMany({ data: INVENTARIO });
 
+  // Análise de Riscos — 1 risco inicial por processo prioritário (avaliação
+  // preliminar; impacto maior quando há dados sensíveis). O Comitê refina.
+  const invs = await prisma.dataInventory.findMany({ where: { prioritario: true } });
+  await prisma.processRisk.createMany({
+    data: invs.map((inv, i) => ({
+      inventoryId: inv.id,
+      descricao: "Acesso indevido ou vazamento de dados pessoais (avaliação preliminar — refinar)",
+      probabilidade: 2,
+      impacto: inv.dadosSensiveis ? 3 : 2,
+      recomendacao: "Reforçar controle de acesso por perfil, logs de auditoria (art. 46 LGPD) e elaborar RIPD do processo.",
+      status: "ABERTO",
+      ordem: i,
+    })),
+  });
+
   console.log(`✅ Seed concluído:
    ${EIXOS.length} eixos · ${MEMBROS.length} membros · ${ENTREGAS.length} entregas
    ${MARCOS.length} marcos · ${REUNIOES.length} reuniões · ${CONSULTAS.length} consultas
    ${DOCUMENTOS.length} documentos · ${INDICADORES.length} indicadores · ${NOTIFICACOES.length} notificações
-   ${INVENTARIO.length} processos no Inventário (prioritários)
+   ${INVENTARIO.length} processos no Inventário · ${invs.length} riscos iniciais
    Login inicial: coordenador@tcees.tc.br / comite2026`);
 }
 

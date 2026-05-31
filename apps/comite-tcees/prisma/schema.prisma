@@ -231,7 +231,27 @@ model DataInventory {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  riscos ProcessRisk[]
+
   @@map("data_inventories")
+}
+
+// Fase 3 — Análise de Riscos (matriz Probabilidade × Impacto por processo)
+model ProcessRisk {
+  id            String        @id @default(cuid())
+  inventoryId   String
+  inventory     DataInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  descricao     String // ameaça / risco identificado
+  probabilidade Int           @default(2) // 1=Baixa, 2=Média, 3=Alta
+  impacto       Int           @default(2) // 1=Baixo, 2=Médio, 3=Alto
+  recomendacao  String?
+  status        String        @default("ABERTO") // ABERTO | TRATADO | ACEITO
+  ordem         Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([inventoryId])
+  @@map("process_risks")
 }
 
 // -----------------------------------------------------------------------------
