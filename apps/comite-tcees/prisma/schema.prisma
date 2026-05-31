@@ -433,6 +433,15 @@ model TcuAnswer {
   @@map("tcu_answers")
 }
 
+// Checklist operacional de monitoramento (Fase 7) — presença = item concluído.
+model MonitoringCheck {
+  id        String   @id @default(cuid())
+  itemId    String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("monitoring_checks")
+}
+
 // -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
