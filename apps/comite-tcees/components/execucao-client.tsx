@@ -78,9 +78,12 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
         <div className="bg-white border rounded-xl p-4"><div className="text-xs text-gray-500 font-semibold">Total de instrumentos</div><div className="text-2xl font-extrabold text-gray-900 mt-1">{instrumentos.length}</div><div className="text-[11px] text-gray-500 mt-1">nos 3 grupos</div></div>
       </div>
 
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex justify-end gap-2 mb-4 flex-wrap">
         <a href="/dashboard/execucao/politicas" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
           <FileText className="w-4 h-4" /> Políticas e Documentos
+        </a>
+        <a href="/dashboard/execucao/ripd" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
+          <FileText className="w-4 h-4" /> RIPD
         </a>
         <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
           <Plus className="w-4 h-4" /> Novo instrumento
@@ -134,6 +137,11 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
                         <FileText className="w-3.5 h-3.5" />
                         {abrindo === it.id ? "Abrindo…" : it.policyId ? "Abrir editor de conteúdo" : "Redigir documento (do modelo)"}
                       </button>
+                    )}
+                    {it.nome.includes("RIPD") && (
+                      <a href="/dashboard/execucao/ripd" className="mt-2.5 inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-600 hover:text-brand-700">
+                        <FileText className="w-3.5 h-3.5" /> Abrir editor de RIPDs
+                      </a>
                     )}
                   </div>
                 );
