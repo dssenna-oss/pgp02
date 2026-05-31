@@ -232,6 +232,7 @@ model DataInventory {
   updatedAt        DateTime @updatedAt
 
   riscos ProcessRisk[]
+  ripds  Ripd[]
 
   @@map("data_inventories")
 }
@@ -326,6 +327,57 @@ model PolicyVersion {
   @@unique([policyId, version])
   @@index([policyId, publishedAt])
   @@map("policy_versions")
+}
+
+// -----------------------------------------------------------------------------
+// FASE 6 — RIPD (Relatório de Impacto à Proteção de Dados — Res. CD/ANPD 2/2022)
+// 8 seções em JSON; pré-popula de Inventário + Riscos. Mono: sem companyId.
+// -----------------------------------------------------------------------------
+
+model Ripd {
+  id          String         @id @default(cuid())
+  inventoryId String? // processo do Inventário origem (RIPDs avulsos permitidos)
+  inventory   DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+
+  title  String
+  status String @default("RASCUNHO") // RASCUNHO | EM_REVISAO | APROVADO | ARQUIVADO
+
+  data          Json // conteúdo das 8 seções (RipdData em lib/ripd-helpers.ts)
+  rejectionNote String? @db.Text
+
+  approvedBy String? // nome/e-mail de quem aprovou (sem FK)
+  approvedAt DateTime?
+
+  // versionamento (snapshot a cada aprovação)
+  publishedContent    Json?
+  publishedAt         DateTime?
+  publishedVersionNum Int?
+  versions            RipdVersion[]
+
+  instrumentoId String? // vínculo opcional ao item da Central
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([inventoryId])
+  @@map("ripds")
+}
+
+model RipdVersion {
+  id     String @id @default(cuid())
+  ripdId String
+  ripd   Ripd   @relation(fields: [ripdId], references: [id], onDelete: Cascade)
+
+  version    Int
+  content    Json
+  changeLog  String?  @db.Text
+  approvedAt DateTime @default(now())
+  approvedBy String?
+
+  @@unique([ripdId, version])
+  @@index([ripdId, approvedAt])
+  @@map("ripd_versions")
 }
 
 // -----------------------------------------------------------------------------
