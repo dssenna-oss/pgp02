@@ -255,6 +255,28 @@ model ProcessRisk {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
+// -----------------------------------------------------------------------------
+
+model ActionPlan {
+  id          String    @id @default(cuid())
+  origem      String    @default("MANUAL") // GAP | RISCO | PLANO | MANUAL
+  origemRef   String? // controlCode do GAP, id do risco, etc. (dedup)
+  acao        String
+  descricao   String?
+  responsavel String?
+  prazo       DateTime?
+  prioridade  String    @default("MEDIA") // BAIXA | MEDIA | ALTA
+  status      String    @default("A_FAZER") // A_FAZER | EM_ANDAMENTO | CONCLUIDA
+  ordem       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([origem, origemRef])
+  @@map("action_plans")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 4 — GAP ANALYSIS (catálogo de 119 controles vive em lib/gap-catalog.ts)
 // -----------------------------------------------------------------------------
 

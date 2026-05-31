@@ -130,6 +130,24 @@ export const STATUS_RISCO: Record<string, { label: string; variant: BadgeVariant
   ACEITO: { label: "risco aceito", variant: "gray" },
 };
 
+// --- Plano de Ação (Fase 5) ---
+export const STATUS_ACAO: Record<string, { label: string; variant: BadgeVariant }> = {
+  A_FAZER: { label: "a fazer", variant: "gray" },
+  EM_ANDAMENTO: { label: "em andamento", variant: "amber" },
+  CONCLUIDA: { label: "concluída", variant: "green" },
+};
+export const PRIORIDADE_ACAO: Record<string, { label: string; variant: BadgeVariant }> = {
+  ALTA: { label: "alta", variant: "red" },
+  MEDIA: { label: "média", variant: "amber" },
+  BAIXA: { label: "baixa", variant: "gray" },
+};
+export const ORIGEM_ACAO: Record<string, { label: string; variant: BadgeVariant }> = {
+  GAP: { label: "GAP", variant: "indigo" },
+  RISCO: { label: "Risco", variant: "red" },
+  PLANO: { label: "Plano de Trabalho", variant: "blue" },
+  MANUAL: { label: "Manual", variant: "gray" },
+};
+
 export const MESES_PT = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",
