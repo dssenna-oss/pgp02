@@ -279,6 +279,31 @@ const INVENTARIO = [
 }));
 
 // ---------------------------------------------------------------------------
+// FASE 6 — CENTRAL DE INSTRUMENTOS (lista canônica da jornada LGPD)
+// ---------------------------------------------------------------------------
+const INSTRUMENTOS = [
+  // PÚBLICOS
+  { nome: "Aviso de Privacidade institucional", grupo: "PUBLICO", tipo: "Aviso", baseLegal: "Art. 9º c/c art. 23 da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "Política de Privacidade", grupo: "PUBLICO", tipo: "Política", baseLegal: "Art. 6º, VI (transparência)", obrigatorio: false, status: "A_ELABORAR" },
+  { nome: "Política de Cookies", grupo: "PUBLICO", tipo: "Política", baseLegal: "Art. 8º; orientação ANPD", obrigatorio: false, status: "A_ELABORAR" },
+  { nome: "Termos de Uso (sistemas e serviços digitais)", grupo: "PUBLICO", tipo: "Termo", baseLegal: "Marco Civil da Internet + CDC", obrigatorio: false, status: "A_ELABORAR" },
+  // INTERNOS
+  { nome: "Política do PGP (documento mater)", grupo: "INTERNO", tipo: "Política", baseLegal: "Art. 50 da LGPD", obrigatorio: false, status: "PENDENTE_APROVACAO" },
+  { nome: "Política Interna de Proteção de Dados", grupo: "INTERNO", tipo: "Política", baseLegal: "Art. 50 da LGPD", obrigatorio: false, status: "PENDENTE_APROVACAO" },
+  { nome: "Política de Segurança da Informação (PSI)", grupo: "INTERNO", tipo: "Política", baseLegal: "Art. 46 da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "Política de Retenção e Descarte (temporalidade)", grupo: "INTERNO", tipo: "Política", baseLegal: "Arts. 15-16 e 37 da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "RIPD — Relatório de Impacto (modelo + processos críticos)", grupo: "INTERNO", tipo: "RIPD", baseLegal: "Arts. 38 e 32; Res. CD/ANPD 2/2022", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "LIA — Avaliação de Legítimo Interesse", grupo: "INTERNO", tipo: "Avaliação", baseLegal: "Art. 7º, IX c/c art. 10 (uso restrito no setor público)", obrigatorio: false, status: "A_ELABORAR" },
+  { nome: "Termo de Confidencialidade (servidores e terceirizados)", grupo: "INTERNO", tipo: "Termo", baseLegal: "Arts. 46-47 da LGPD", obrigatorio: false, status: "A_ELABORAR" },
+  // OPERADORES & TITULAR
+  { nome: "Cláusulas-padrão LGPD para Operadores", grupo: "OPERADORES_TITULAR", tipo: "Cláusula", baseLegal: "Art. 39 da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "Gestão de Operadores/Terceiros (registro + due diligence)", grupo: "OPERADORES_TITULAR", tipo: "Procedimento", baseLegal: "Art. 39 c/c art. 23 da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "Procedimento de Direitos do Titular (canal + fluxo)", grupo: "OPERADORES_TITULAR", tipo: "Procedimento", baseLegal: "Arts. 17-22 e 41 da LGPD", obrigatorio: true, status: "EM_ELABORACAO" },
+  { nome: "Registro das Requisições de Titulares (DSR)", grupo: "OPERADORES_TITULAR", tipo: "Registro", baseLegal: "Art. 18, §1º da LGPD", obrigatorio: true, status: "A_ELABORAR" },
+  { nome: "Termo de Consentimento do Titular", grupo: "OPERADORES_TITULAR", tipo: "Termo", baseLegal: "Art. 8º da LGPD", obrigatorio: false, status: "A_ELABORAR" },
+].map((x, i) => ({ ...x, ordem: i }));
+
+// ---------------------------------------------------------------------------
 // NOTIFICAÇÕES (estado de exemplo coerente com o Plano)
 // ---------------------------------------------------------------------------
 const NOTIFICACOES = [
@@ -337,6 +362,7 @@ async function main() {
     prisma.notificacao.deleteMany(),
     prisma.processRisk.deleteMany(),
     prisma.dataInventory.deleteMany(),
+    prisma.instrumento.deleteMany(),
   ]);
 
   await prisma.eixo.createMany({ data: EIXOS });
@@ -349,6 +375,7 @@ async function main() {
   await prisma.indicador.createMany({ data: INDICADORES.map((x, i) => ({ ...x, ordem: i })) });
   await prisma.notificacao.createMany({ data: NOTIFICACOES });
   await prisma.dataInventory.createMany({ data: INVENTARIO });
+  await prisma.instrumento.createMany({ data: INSTRUMENTOS });
 
   // Análise de Riscos — 1 risco inicial por processo prioritário (avaliação
   // preliminar; impacto maior quando há dados sensíveis). O Comitê refina.
@@ -370,6 +397,7 @@ async function main() {
    ${MARCOS.length} marcos · ${REUNIOES.length} reuniões · ${CONSULTAS.length} consultas
    ${DOCUMENTOS.length} documentos · ${INDICADORES.length} indicadores · ${NOTIFICACOES.length} notificações
    ${INVENTARIO.length} processos no Inventário · ${invs.length} riscos iniciais
+   ${INSTRUMENTOS.length} instrumentos na Central (Fase 6)
    Login inicial: coordenador@tcees.tc.br / comite2026`);
 }
 

@@ -255,6 +255,30 @@ model ProcessRisk {
 }
 
 // -----------------------------------------------------------------------------
+// FASE 6 — EXECUÇÃO · Central de Instrumentos (documentos da jornada LGPD)
+// -----------------------------------------------------------------------------
+
+model Instrumento {
+  id          String    @id @default(cuid())
+  nome        String
+  grupo       String // PUBLICO | INTERNO | OPERADORES_TITULAR
+  tipo        String? // Política | Aviso | RIPD | Cláusula | Procedimento | Termo...
+  baseLegal   String?
+  obrigatorio Boolean   @default(false) // obrigatório vs recomendado/condicional
+  status      String    @default("A_ELABORAR") // A_ELABORAR | EM_ELABORACAO | PENDENTE_APROVACAO | APROVADO | PUBLICADO
+  responsavel String?
+  prazo       DateTime?
+  conteudoUrl String? // link / anexo do documento
+  descricao   String?
+  ordem       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([grupo])
+  @@map("instrumentos")
+}
+
+// -----------------------------------------------------------------------------
 // FASE 5 — PLANO DE AÇÃO E ADEQUAÇÃO
 // -----------------------------------------------------------------------------
 

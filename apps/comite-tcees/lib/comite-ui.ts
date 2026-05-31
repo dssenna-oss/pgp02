@@ -148,6 +148,25 @@ export const ORIGEM_ACAO: Record<string, { label: string; variant: BadgeVariant 
   MANUAL: { label: "Manual", variant: "gray" },
 };
 
+// --- Central de Instrumentos (Fase 6) ---
+export const STATUS_INSTRUMENTO: Record<string, { label: string; variant: BadgeVariant }> = {
+  A_ELABORAR: { label: "a elaborar", variant: "gray" },
+  EM_ELABORACAO: { label: "em elaboração", variant: "blue" },
+  PENDENTE_APROVACAO: { label: "pendente de aprovação", variant: "amber" },
+  APROVADO: { label: "aprovado", variant: "green" },
+  PUBLICADO: { label: "publicado", variant: "green" },
+};
+export function statusInstrumento(s: string) {
+  return STATUS_INSTRUMENTO[s] ?? { label: s, variant: "gray" as BadgeVariant };
+}
+export const GRUPO_INSTRUMENTO: Record<string, { nome: string; emoji: string; desc: string }> = {
+  PUBLICO: { nome: "Documentos públicos", emoji: "🌐", desc: "Publicados no portal — informam o titular e a sociedade" },
+  INTERNO: { nome: "Instrumentos internos", emoji: "🏛️", desc: "Políticas, RIPD, LIA e termos de uso interno" },
+  OPERADORES_TITULAR: { nome: "Operadores & Direitos do Titular", emoji: "🤝", desc: "Cláusulas para terceiros e atendimento aos direitos" },
+};
+// status que contam como "pronto" no progresso
+export const INSTRUMENTO_PRONTO = new Set(["APROVADO", "PUBLICADO"]);
+
 export const MESES_PT = [
   "jan", "fev", "mar", "abr", "mai", "jun",
   "jul", "ago", "set", "out", "nov", "dez",

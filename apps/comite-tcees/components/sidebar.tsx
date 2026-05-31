@@ -61,6 +61,7 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           { href: "/dashboard/riscos", icon: ShieldAlert, label: "Análise de Riscos", fase: "Fase 3" },
           { href: "/dashboard/gap", icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },
           { href: "/dashboard/plano-acao", icon: ListChecks, label: "Plano de Ação", fase: "Fase 5" },
+          { href: "/dashboard/execucao", icon: FileCheck2, label: "Execução", fase: "Fase 6" },
         ].map(({ href, icon: Icon, label, fase }) => {
           const active = pathname.startsWith(href);
           return (
@@ -78,7 +79,6 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           );
         })}
         {[
-          { icon: FileCheck2, label: "Execução", fase: "Fase 6" },
           { icon: Activity, label: "Monitoramento", fase: "Fase 7" },
         ].map(({ icon: Icon, label, fase }) => (
           <span key={label} className="flex items-center gap-2.5 px-2.5 py-2.5 text-[13.5px] text-slate-500 cursor-default">
