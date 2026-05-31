@@ -37,12 +37,14 @@ export function Topbar({
             </span>
           )}
         </Link>
-        <span className="hidden sm:inline text-[12.5px] text-gray-600">
-          {userName} · <b>{ROLE_LABEL[role] ?? role}</b>
-        </span>
-        <span className="w-9 h-9 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-[13px]">
-          {iniciais(userName)}
-        </span>
+        <Link href="/dashboard/conta" title="Minha conta (trocar senha)" className="flex items-center gap-3 hover:opacity-80">
+          <span className="hidden sm:inline text-[12.5px] text-gray-600">
+            {userName} · <b>{ROLE_LABEL[role] ?? role}</b>
+          </span>
+          <span className="w-9 h-9 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-[13px]">
+            {iniciais(userName)}
+          </span>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           title="Sair"

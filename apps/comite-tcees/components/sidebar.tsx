@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
   Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
-  ListChecks, FileCheck2, Activity, Stethoscope,
+  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,9 @@ const LINKS = [
 ];
 
 function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const podeGerenciarAcessos = role === "ADMIN" || role === "COORDENADOR";
   return (
     <>
       <div className="px-4 py-4 border-b border-white/10">
@@ -52,6 +56,22 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
             </Link>
           );
         })}
+
+        {podeGerenciarAcessos && (
+          <Link
+            href="/dashboard/usuarios"
+            onClick={onNav}
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13.5px] mb-0.5 transition-colors",
+              pathname.startsWith("/dashboard/usuarios")
+                ? "bg-brand-500 text-white font-semibold"
+                : "text-slate-300 hover:bg-white/10 hover:text-white",
+            )}
+          >
+            <KeyRound className="w-[18px] h-[18px] shrink-0" />
+            Acessos ao app
+          </Link>
+        )}
 
         <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
           Programa — Fases do PGP
