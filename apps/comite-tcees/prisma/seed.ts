@@ -259,7 +259,7 @@ const BL: Record<string, string> = {
 type RopaCampos = { categoriasTitulares: string; fonteDados: string; destinatariosInternos: string; criterioDescarte: string; transfInternacional?: string };
 const ROPA: Record<string, RopaCampos> = {
   "Sistema de acesso identificado": { categoriasTitulares: "Servidores, estagiários, terceirizados e visitantes", fonteDados: "Coleta direta do titular (cadastro de acesso)", destinatariosInternos: "SGTI", criterioDescarte: "Eliminação após o término do vínculo, conforme tabela de temporalidade" },
-  'Sistema "Conta pra Gente"': { categoriasTitulares: "Cidadãos e jurisdicionados (manifestantes da Ouvidoria)", fonteDados: "Coleta direta do titular (manifestação)", destinatariosInternos: "Ouvidoria, SECOM, SGTI", criterioDescarte: "Guarda conforme tabela de temporalidade da Ouvidoria" },
+  'Sistema "Conta pra Gente"': { categoriasTitulares: "Cidadãos e jurisdicionados (manifestantes da Ouvidoria)", fonteDados: "Coleta direta do titular (manifestação)", destinatariosInternos: "Ouvidoria, SGTI", criterioDescarte: "Guarda conforme tabela de temporalidade da Ouvidoria" },
   "SGP RH — Folha de Pagamento": { categoriasTitulares: "Servidores ativos, inativos e pensionistas", fonteDados: "Coleta direta + sistema SGP RH", destinatariosInternos: "SEGAFI, SGTI", criterioDescarte: "Guarda permanente (atos de pessoal — tabela de temporalidade)" },
   "SGP RH — Benefícios": { categoriasTitulares: "Servidores e dependentes", fonteDados: "Coleta direta do titular + documentos comprobatórios", destinatariosInternos: "SEGAFI", criterioDescarte: "Guarda permanente / conforme natureza do benefício" },
   "Sistema ECP — Escola de Contas Públicas": { categoriasTitulares: "Alunos, instrutores e servidores em capacitação", fonteDados: "Coleta direta (inscrição) + integrações internas", destinatariosInternos: "ECP", criterioDescarte: "Guarda conforme tabela de temporalidade da ECP" },
@@ -274,7 +274,7 @@ const ROPA: Record<string, RopaCampos> = {
 
 const INVENTARIO = [
   { nome: "Sistema de acesso identificado", unidadeGestora: "SGTI", hipoteseMacro: "IV", dadosSensiveis: false },
-  { nome: 'Sistema "Conta pra Gente"', unidadeGestora: "SGTI / SECOM", hipoteseMacro: "II", dadosSensiveis: false },
+  { nome: 'Sistema "Conta pra Gente"', unidadeGestora: "Ouvidoria / SGTI", hipoteseMacro: "II", dadosSensiveis: false },
   { nome: "SGP RH — Folha de Pagamento", unidadeGestora: "SEGAFI", hipoteseMacro: "IV", dadosSensiveis: true },
   { nome: "SGP RH — Benefícios", unidadeGestora: "SEGAFI", hipoteseMacro: "IV", dadosSensiveis: true },
   { nome: "Sistema ECP — Escola de Contas Públicas", unidadeGestora: "ECP", hipoteseMacro: "III", dadosSensiveis: false },
