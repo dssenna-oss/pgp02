@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
+import { membroDoLogin } from "@/lib/membro-do-login";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 
@@ -11,6 +12,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session?.user) redirect("/login");
 
   const unread = await prisma.notificacao.count({ where: { lida: false } }).catch(() => 0);
+
+  // Foto do membro logado (para o avatar do topo). Por e-mail ou nome.
+  const membro = await membroDoLogin(
+    { email: session.user.email, name: session.user.name },
+    { avatarUrl: true },
+  ).catch(() => null);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -38,7 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex flex-1 min-h-0">
         <Sidebar />
         <div className="flex-1 min-w-0 flex flex-col">
-          <Topbar userName={session.user.name} role={session.user.role} unread={unread} />
+          <Topbar userName={session.user.name} role={session.user.role} unread={unread} avatarUrl={membro?.avatarUrl ?? null} />
           <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-amber-200 text-amber-800 text-[12.5px] px-6 py-2.5 flex gap-2 items-center">
             ⚠️
             <span>

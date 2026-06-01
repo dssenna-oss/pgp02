@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { Bell, LogOut } from "lucide-react";
-import { iniciais } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 
 const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Administrador",
@@ -15,10 +15,12 @@ export function Topbar({
   userName,
   role,
   unread,
+  avatarUrl,
 }: {
   userName: string;
   role: string;
   unread: number;
+  avatarUrl?: string | null;
 }) {
   return (
     <div className="bg-white border-b sticky top-0 z-10 px-6 py-3 flex items-center justify-between gap-4">
@@ -42,9 +44,7 @@ export function Topbar({
           <span className="hidden sm:inline text-[12.5px] text-gray-600">
             {userName} · <b>{ROLE_LABEL[role] ?? role}</b>
           </span>
-          <span className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-[13px]">
-            {iniciais(userName)}
-          </span>
+          <Avatar nome={userName} avatarUrl={avatarUrl} size={36} />
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
