@@ -62,7 +62,60 @@ export function IndicadoresClient({ indicadores }: { indicadores: IndicadorDTO[]
         return (
           <div key={g} className="mt-6">
             <h2 className="text-sm font-extrabold text-gray-900 mb-3">{EIXO_NOME[g]}</h2>
-            <div className="overflow-x-auto bg-white border rounded-xl">
+
+            {/* MOBILE: cartões empilhados */}
+            <div className="sm:hidden space-y-2.5">
+              {doGrupo.map((i) => {
+                const st = statusIndicador(i.status);
+                return (
+                  <div key={i.id} className="bg-white border rounded-xl p-3.5">
+                    <div className="flex items-start gap-2">
+                      <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded shrink-0 mt-0.5 ${eixoTag(g)}`}>{i.codigo}</span>
+                      <span className="text-[13px] text-gray-800 flex-1 min-w-0">{i.descricao}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+                      <div className="bg-slate-50 rounded-md py-1.5">
+                        <div className="text-[9.5px] uppercase tracking-wide text-gray-400 font-bold">Meta 26</div>
+                        <div className="text-[12px] font-semibold text-gray-700 mt-0.5">{i.meta2026 ?? "—"}</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-md py-1.5">
+                        <div className="text-[9.5px] uppercase tracking-wide text-gray-400 font-bold">Meta 27</div>
+                        <div className="text-[12px] font-semibold text-gray-700 mt-0.5">{i.meta2027 ?? "—"}</div>
+                      </div>
+                      <div className="bg-slate-50 rounded-md py-1.5">
+                        <div className="text-[9.5px] uppercase tracking-wide text-gray-400 font-bold">Atual</div>
+                        <div className="text-[12px] font-bold text-gray-900 mt-0.5">
+                          {i.auto ? (
+                            <Link href={i.auto.href} title={`Calculado automaticamente: ${i.auto.fonte}`} className="inline-flex items-center gap-1">
+                              <span>{i.auto.valor}</span><span className="text-[8px]">⚙</span>
+                            </Link>
+                          ) : (i.valorAtual ?? "—")}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-2.5">
+                      <Badge variant={st.variant}>{st.label}</Badge>
+                      {podeEditar && (
+                        <div className="flex gap-3">
+                          <button onClick={() => setEditando(i)} title="Editar" className="text-gray-400 hover:text-brand-600"><Pencil className="w-[18px] h-[18px]" /></button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Excluir o indicador ${i.codigo}?`)) return;
+                              const t = toast.loading("Excluindo…");
+                              try { await excluirIndicador(i.id); toast.success("Indicador excluído", { id: t }); router.refresh(); }
+                              catch { toast.error("Não foi possível excluir", { id: t }); }
+                            }}
+                            title="Excluir" className="text-gray-400 hover:text-red-600"><Trash2 className="w-[18px] h-[18px]" /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* DESKTOP: tabela */}
+            <div className="hidden sm:block overflow-x-auto bg-white border rounded-xl">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-50">
