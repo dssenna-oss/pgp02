@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireSession, requireAdmin } from "@/lib/auth-server";
+import { membroDoLogin } from "@/lib/membro-do-login";
 import { revalidatePath } from "next/cache";
 
 const ROLES = ["ADMIN", "COORDENADOR", "MEMBRO"];
@@ -117,11 +118,10 @@ export async function atualizarMinhaFoto(
     if (dataUrl.length > 160_000) return { erro: "Imagem muito grande. Tente uma foto menor." };
   }
 
-  const email = session.user.email?.toLowerCase() ?? "";
-  const membro = await prisma.membro.findFirst({
-    where: { OR: [{ email: { equals: email, mode: "insensitive" } }, { emailInterno: { equals: email, mode: "insensitive" } }] },
-    select: { id: true },
-  });
+  const membro = await membroDoLogin(
+    { email: session.user.email, name: session.user.name },
+    {},
+  );
   if (!membro) return { erro: "Seu login não está vinculado a um membro do Comitê. Procure a Coordenação." };
 
   await prisma.membro.update({ where: { id: membro.id }, data: { avatarUrl: dataUrl } });

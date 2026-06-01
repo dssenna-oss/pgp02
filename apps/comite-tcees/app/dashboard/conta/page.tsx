@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
+import { membroDoLogin } from "@/lib/membro-do-login";
 import { PageHeader } from "@/components/page-header";
 import { ContaClient } from "@/components/conta-client";
 import { FotoPerfilClient } from "@/components/foto-perfil-client";
@@ -8,16 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ContaPage() {
   const session = await requireSession();
-  const email = session.user?.email?.toLowerCase() ?? "";
 
-  // Casa o login com o registro de Membro (pelo e-mail oficial ou interno)
+  // Casa o login com o registro de Membro (por e-mail; fallback por nome)
   // para mostrar/editar a foto de perfil.
-  const membro = email
-    ? await prisma.membro.findFirst({
-        where: { OR: [{ email: { equals: email, mode: "insensitive" } }, { emailInterno: { equals: email, mode: "insensitive" } }] },
-        select: { nome: true, avatarUrl: true },
-      })
-    : null;
+  const membro = await membroDoLogin(
+    { email: session.user?.email, name: session.user?.name },
+    { nome: true, avatarUrl: true },
+  );
 
   return (
     <>
