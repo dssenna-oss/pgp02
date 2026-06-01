@@ -117,15 +117,21 @@ export function AuditoriaClient({ auditorias }: { auditorias: AuditoriaDTO[] }) 
                         const sev = SEV[f.severidade] ?? SEV.MEDIA;
                         return (
                           <div key={f.id} className="border rounded-lg px-3 py-2 bg-slate-50">
-                            <div className="flex items-start gap-2 flex-wrap">
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${sev.cls}`}>{sev.label}</span>
-                              {f.naoConformidade && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-50 text-red-700 border-red-200">não conformidade</span>}
-                              <span className="text-[12.5px] text-gray-800 flex-1 min-w-[150px]">{f.descricao}</span>
-                              <select value={f.status} onChange={(e) => mudarStatusAchado(f, e.target.value)} className="text-[11px] border rounded px-1.5 py-0.5 outline-none">
-                                {Object.entries(ST_ACHADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                              </select>
-                              <button onClick={() => setEditAchado(f)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
-                              <button onClick={async () => { if (!confirm("Excluir este achado?")) return; try { await excluirAchado(f.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+                              {/* Badges + descrição (largura total no mobile) */}
+                              <div className="flex items-start gap-2 flex-wrap flex-1 min-w-0">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${sev.cls}`}>{sev.label}</span>
+                                {f.naoConformidade && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-red-50 text-red-700 border-red-200">não conformidade</span>}
+                                <span className="text-[12.5px] text-gray-800 min-w-0">{f.descricao}</span>
+                              </div>
+                              {/* Controles: status + ações (linha própria no mobile) */}
+                              <div className="flex items-center gap-2 shrink-0">
+                                <select value={f.status} onChange={(e) => mudarStatusAchado(f, e.target.value)} className="text-[11px] border rounded px-1.5 py-0.5 outline-none">
+                                  {Object.entries(ST_ACHADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                                </select>
+                                <button onClick={() => setEditAchado(f)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
+                                <button onClick={async () => { if (!confirm("Excluir este achado?")) return; try { await excluirAchado(f.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </div>
                             </div>
                             {f.recomendacao && <div className="text-[11.5px] text-gray-600 mt-1"><b>Recomendação:</b> {f.recomendacao}</div>}
                             {f.planoAcao && <div className="text-[11.5px] text-gray-600 mt-0.5"><b>Plano de ação:</b> {f.planoAcao}{f.prazoISO ? ` · prazo ${dataBR(new Date(f.prazoISO))}` : ""}</div>}

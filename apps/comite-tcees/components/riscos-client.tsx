@@ -128,27 +128,33 @@ export function RiscosClient({ processos }: { processos: ProcessoComRiscos[] }) 
                   const nv = nivelRisco(r.probabilidade, r.impacto);
                   const st = STATUS_RISCO[r.status] ?? STATUS_RISCO.ABERTO;
                   return (
-                    <div key={r.id} className="flex items-center gap-3 border rounded-lg px-3 py-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: nv.cor }} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[12.5px] text-gray-900">{r.descricao}</div>
-                        <div className="text-[11px] text-gray-500 mt-0.5">
-                          Prob.: {PI_LABEL[r.probabilidade]} · Impacto: {PI_LABEL[r.impacto]}
-                          {r.recomendacao ? ` · ${r.recomendacao}` : ""}
+                    <div key={r.id} className="border rounded-lg px-3 py-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      {/* Descrição (largura total no mobile) */}
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ background: nv.cor }} />
+                        <div className="min-w-0">
+                          <div className="text-[12.5px] text-gray-900">{r.descricao}</div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">
+                            Prob.: {PI_LABEL[r.probabilidade]} · Impacto: {PI_LABEL[r.impacto]}
+                            {r.recomendacao ? ` · ${r.recomendacao}` : ""}
+                          </div>
                         </div>
                       </div>
-                      <Badge variant={nv.variant}>{nv.label}</Badge>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                      <div className="flex gap-1.5 shrink-0">
-                        <button onClick={() => setEditando(r)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                        <button
-                          onClick={async () => {
-                            if (!confirm("Excluir este risco?")) return;
-                            const t = toast.loading("Excluindo…");
-                            try { await excluirRisco(r.id); toast.success("Risco excluído", { id: t }); router.refresh(); }
-                            catch { toast.error("Não foi possível excluir", { id: t }); }
-                          }}
-                          title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                      {/* Controles: tags + ações (linha própria no mobile, com leve recuo p/ alinhar sob o texto) */}
+                      <div className="flex items-center gap-2 shrink-0 pl-[18px] sm:pl-0">
+                        <Badge variant={nv.variant}>{nv.label}</Badge>
+                        <Badge variant={st.variant}>{st.label}</Badge>
+                        <div className="flex gap-1.5 shrink-0 ml-auto sm:ml-0">
+                          <button onClick={() => setEditando(r)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Excluir este risco?")) return;
+                              const t = toast.loading("Excluindo…");
+                              try { await excluirRisco(r.id); toast.success("Risco excluído", { id: t }); router.refresh(); }
+                              catch { toast.error("Não foi possível excluir", { id: t }); }
+                            }}
+                            title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                        </div>
                       </div>
                     </div>
                   );

@@ -89,13 +89,19 @@ export function AutoavaliacaoClient({ diag }: { diag: TcuDiagnostico }) {
         const acima = d.valor >= d.media;
         return (
           <div key={d.key} className="bg-white border rounded-xl overflow-hidden">
-            <button onClick={() => setAberta(aberto ? null : d.key)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 text-left">
-              <span className="text-[10px] font-bold uppercase bg-slate-100 text-slate-500 rounded px-1.5 py-0.5">{d.perspectiva === 1 ? "Estruturação" : "Controles"}</span>
-              <span className="font-semibold text-gray-900 text-[14px] flex-1">{d.nome}</span>
-              <span className="text-[12px] text-gray-500">{d.respondidas}/{d.total}</span>
-              <span className={`text-[14px] font-extrabold tabular-nums ${acima ? "text-emerald-600" : "text-amber-600"}`}>{fmt(d.valor)}</span>
-              <span className="text-[11px] text-gray-400">méd {fmt(d.media)}</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${aberto ? "rotate-180" : ""}`} />
+            <button onClick={() => setAberta(aberto ? null : d.key)} className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 hover:bg-slate-50 text-left">
+              {/* Esquerda: badge (oculto no mobile) + nome (cede espaço) */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="hidden sm:inline-block text-[10px] font-bold uppercase bg-slate-100 text-slate-500 rounded px-1.5 py-0.5 shrink-0">{d.perspectiva === 1 ? "Estruturação" : "Controles"}</span>
+                <span className="font-semibold text-gray-900 text-[13.5px] sm:text-[14px] min-w-0">{d.nome}</span>
+              </div>
+              {/* Direita: números compactos, protegidos contra corte */}
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <span className="text-[11.5px] sm:text-[12px] text-gray-500 tabular-nums whitespace-nowrap">{d.respondidas}/{d.total}</span>
+                <span className={`text-[13.5px] sm:text-[14px] font-extrabold tabular-nums ${acima ? "text-emerald-600" : "text-amber-600"}`}>{fmt(d.valor)}</span>
+                <span className="text-[10px] sm:text-[11px] text-gray-400 whitespace-nowrap">méd {fmt(d.media)}</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${aberto ? "rotate-180" : ""}`} />
+              </div>
             </button>
 
             {aberto && (
