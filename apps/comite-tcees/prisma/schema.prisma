@@ -90,6 +90,27 @@ model Membro {
 }
 
 // -----------------------------------------------------------------------------
+// COMUNICAÇÃO — Notícias, materiais educativos e artigos do Comitê
+// -----------------------------------------------------------------------------
+
+model Article {
+  id          String   @id @default(cuid())
+  titulo      String
+  tipo        String   @default("NOTICIA") // NOTICIA | EDUCATIVO | ARTIGO
+  resumo      String? // chamada curta exibida na lista
+  conteudo    String   @default("") // markdown
+  capaUrl     String? // imagem de capa (data URL base64, opcional)
+  autor       String? // nome de quem publicou
+  status      String   @default("RASCUNHO") // RASCUNHO | PUBLICADO
+  publicadoEm DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@map("articles")
+}
+
+// -----------------------------------------------------------------------------
 // ENTREGAS DO PLANO DE TRABALHO (cronograma 8 trimestres × 5 eixos)
 // -----------------------------------------------------------------------------
 

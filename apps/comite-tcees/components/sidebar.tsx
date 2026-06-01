@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
   Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
-  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo, FileSearch,
+  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo, FileSearch, Newspaper,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,23 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
             Acessos ao app
           </Link>
         )}
+
+        <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-100">
+          Comunicação
+        </div>
+        <Link
+          href="/dashboard/noticias"
+          onClick={onNav}
+          className={cn(
+            "flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg text-[13.5px] mb-0.5 transition-colors",
+            pathname.startsWith("/dashboard/noticias")
+              ? "bg-navy text-white font-semibold shadow-sm"
+              : "text-slate-100 hover:bg-white/10 hover:text-white",
+          )}
+        >
+          <Newspaper className="w-[18px] h-[18px] shrink-0" />
+          Notícias &amp; Artigos
+        </Link>
 
         <div className="px-2.5 pt-4 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-100">
           Programa — Fases do PGP
