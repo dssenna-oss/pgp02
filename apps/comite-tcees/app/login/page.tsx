@@ -30,8 +30,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-navy">
-      <div className="w-full max-w-sm bg-white border rounded-xl shadow-lg p-6">
+    <div className="relative min-h-screen flex items-center justify-center px-4 bg-navy overflow-hidden">
+      {/* Fundo institucional: foto da fachada do TCE-ES + camada azul */}
+      <div
+        className="absolute inset-0 bg-cover"
+        style={{ backgroundImage: "url('/tcees-fachada.jpg')", backgroundPosition: "center 35%" }}
+        aria-hidden
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(135deg, rgba(13,27,75,0.92) 0%, rgba(28,85,152,0.78) 55%, rgba(28,85,152,0.55) 100%)" }}
+        aria-hidden
+      />
+
+      <div className="relative z-10 w-full max-w-sm bg-white border rounded-xl shadow-2xl p-6">
         <div className="flex justify-center mb-5">
           <Brand />
         </div>
