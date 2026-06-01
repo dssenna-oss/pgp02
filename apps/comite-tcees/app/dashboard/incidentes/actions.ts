@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type IncidenteInput = {
@@ -28,7 +28,7 @@ function parseDT(v?: string): Date | null {
 }
 
 export async function salvarIncidente(input: IncidenteInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.titulo?.trim()) throw new Error("Informe um título para o incidente.");
 
   const dados = {
@@ -55,7 +55,7 @@ export async function salvarIncidente(input: IncidenteInput) {
 }
 
 export async function excluirIncidente(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.incident.delete({ where: { id } });
   revalidatePath("/dashboard/incidentes");
   return { ok: true };

@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusConsulta, STATUS_CONSULTA } from "@/lib/comite-ui";
 import { salvarConsulta, excluirConsulta, type ConsultaInput } from "@/app/dashboard/consultas/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type ConsultaDTO = {
   id: string;
@@ -28,6 +29,7 @@ const VAZIA = (): ConsultaDTO => ({
 
 export function ConsultasClient({ consultas }: { consultas: ConsultaDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<ConsultaDTO | null>(null);
   const pendentes = consultas.filter((c) => c.status !== "RESPONDIDA").length;
 
@@ -37,9 +39,11 @@ export function ConsultasClient({ consultas }: { consultas: ConsultaDTO[] }) {
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📝 {consultas.length} consultas · {pendentes} pendente(s)
         </div>
-        <button onClick={() => setEditando(VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Nova consulta
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando(VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Nova consulta
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -51,15 +55,19 @@ export function ConsultasClient({ consultas }: { consultas: ConsultaDTO[] }) {
                 <div className="text-sm font-bold text-gray-900">{c.titulo}</div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant={st.variant}>{st.label}</Badge>
-                  <button onClick={() => setEditando(c)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm(`Excluir a consulta "${c.titulo}"?`)) return;
-                      const t = toast.loading("Excluindo…");
-                      try { await excluirConsulta(c.id); toast.success("Consulta excluída", { id: t }); router.refresh(); }
-                      catch { toast.error("Não foi possível excluir", { id: t }); }
-                    }}
-                    title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                  {podeEditar && (
+                    <>
+                      <button onClick={() => setEditando(c)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Excluir a consulta "${c.titulo}"?`)) return;
+                          const t = toast.loading("Excluindo…");
+                          try { await excluirConsulta(c.id); toast.success("Consulta excluída", { id: t }); router.refresh(); }
+                          catch { toast.error("Não foi possível excluir", { id: t }); }
+                        }}
+                        title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </>
+                  )}
                 </div>
               </div>
               {c.descricao && <p className="text-[12.5px] text-gray-700 mt-1.5">{c.descricao}</p>}

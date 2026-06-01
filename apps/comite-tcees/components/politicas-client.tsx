@@ -12,6 +12,7 @@ import {
   policyStatusBadgeClass,
 } from "@/lib/policies-helpers";
 import { criarPolicy, excluirPolicy } from "@/app/dashboard/execucao/politicas/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type PolicyListDTO = {
   id: string;
@@ -39,6 +40,7 @@ const TIPOS_CRIAVEIS = [
 
 export function PoliticasClient({ policies }: { policies: PolicyListDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [criando, setCriando] = useState(false);
 
   return (
@@ -47,12 +49,14 @@ export function PoliticasClient({ policies }: { policies: PolicyListDTO[] }) {
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📄 {policies.length} documento(s) · {policies.filter((p) => p.status === "PUBLICADA").length} publicado(s)
         </div>
-        <button
-          onClick={() => setCriando(true)}
-          className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
-        >
-          <Plus className="w-4 h-4" /> Nova política
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setCriando(true)}
+            className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          >
+            <Plus className="w-4 h-4" /> Nova política
+          </button>
+        )}
       </div>
 
       {policies.length === 0 ? (
@@ -78,31 +82,35 @@ export function PoliticasClient({ policies }: { policies: PolicyListDTO[] }) {
                 {policyStatusLabel(p.status)}
               </span>
               <div className="flex gap-1.5 shrink-0">
-                <Link href={`/dashboard/execucao/politicas/${p.id}`} title="Editar" className="text-gray-300 hover:text-brand-600">
-                  <Pencil className="w-4 h-4" />
-                </Link>
+                {podeEditar && (
+                  <Link href={`/dashboard/execucao/politicas/${p.id}`} title="Editar" className="text-gray-300 hover:text-brand-600">
+                    <Pencil className="w-4 h-4" />
+                  </Link>
+                )}
                 {p.status === "PUBLICADA" && (
                   <Link href={`/p/${p.slug}`} target="_blank" title="Ver público" className="text-gray-300 hover:text-emerald-600">
                     <ExternalLink className="w-4 h-4" />
                   </Link>
                 )}
-                <button
-                  onClick={async () => {
-                    if (!confirm(`Excluir "${p.title}"? Esta ação não pode ser desfeita.`)) return;
-                    const t = toast.loading("Excluindo…");
-                    try {
-                      await excluirPolicy(p.id);
-                      toast.success("Excluída", { id: t });
-                      router.refresh();
-                    } catch {
-                      toast.error("Não foi possível excluir", { id: t });
-                    }
-                  }}
-                  title="Excluir"
-                  className="text-gray-300 hover:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {podeEditar && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Excluir "${p.title}"? Esta ação não pode ser desfeita.`)) return;
+                      const t = toast.loading("Excluindo…");
+                      try {
+                        await excluirPolicy(p.id);
+                        toast.success("Excluída", { id: t });
+                        router.refresh();
+                      } catch {
+                        toast.error("Não foi possível excluir", { id: t });
+                      }
+                    }}
+                    title="Excluir"
+                    className="text-gray-300 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type InventarioInput = {
@@ -24,7 +24,7 @@ export type InventarioInput = {
 const STATUS_VALIDOS = ["PRELIMINAR", "EM_REVISAO", "CONCLUIDO"];
 
 export async function salvarInventario(input: InventarioInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.nome?.trim()) throw new Error("O nome do processo é obrigatório.");
 
   const dados = {
@@ -55,7 +55,7 @@ export async function salvarInventario(input: InventarioInput) {
 }
 
 export async function excluirInventario(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.dataInventory.delete({ where: { id } });
   revalidatePath("/dashboard/inventario");
   return { ok: true };
@@ -77,7 +77,7 @@ const norm = (s: string) =>
 /** Cria registros no Inventário a partir das sugestões selecionadas, pulando
  *  os que já existem (match por nome normalizado). Retorna quantos entraram. */
 export async function adicionarSugestoes(sugestoes: SugestaoInput[]) {
-  await requireSession();
+  await requireEditor();
   if (!sugestoes?.length) return { ok: true, criados: 0 };
 
   const existentes = await prisma.dataInventory.findMany({ select: { nome: true } });

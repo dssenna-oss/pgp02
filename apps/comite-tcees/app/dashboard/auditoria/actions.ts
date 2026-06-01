@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 function dataOuNull(d?: string): Date | null {
@@ -21,7 +21,7 @@ export type AuditoriaInput = {
 };
 
 export async function salvarAuditoria(input: AuditoriaInput): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   if (!input.titulo?.trim()) throw new Error("Informe o título da auditoria.");
   const dados = {
     titulo: input.titulo.trim(),
@@ -39,7 +39,7 @@ export async function salvarAuditoria(input: AuditoriaInput): Promise<{ ok: true
 }
 
 export async function excluirAuditoria(id: string): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   await prisma.auditoria.delete({ where: { id } });
   revalidatePath("/dashboard/auditoria");
   return { ok: true };
@@ -58,7 +58,7 @@ export type AchadoInput = {
 };
 
 export async function salvarAchado(input: AchadoInput): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   if (!input.descricao?.trim()) throw new Error("Descreva o achado.");
   const dados = {
     descricao: input.descricao.trim(),
@@ -76,7 +76,7 @@ export async function salvarAchado(input: AchadoInput): Promise<{ ok: true }> {
 }
 
 export async function excluirAchado(id: string): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   await prisma.auditoriaAchado.delete({ where: { id } });
   revalidatePath("/dashboard/auditoria");
   return { ok: true };

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type RiscoInput = {
@@ -18,7 +18,7 @@ const clamp = (n: number) => (n >= 1 && n <= 3 ? Math.round(n) : 2);
 const STATUS_VALIDOS = ["ABERTO", "TRATADO", "ACEITO"];
 
 export async function salvarRisco(input: RiscoInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.inventoryId) throw new Error("Processo do Inventário não informado.");
   if (!input.descricao?.trim()) throw new Error("Descreva o risco/ameaça.");
 
@@ -43,7 +43,7 @@ export async function salvarRisco(input: RiscoInput) {
 }
 
 export async function excluirRisco(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.processRisk.delete({ where: { id } });
   revalidatePath("/dashboard/riscos");
   return { ok: true };

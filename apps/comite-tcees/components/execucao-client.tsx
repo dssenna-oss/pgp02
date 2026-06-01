@@ -9,6 +9,7 @@ import { statusInstrumento, STATUS_INSTRUMENTO, GRUPO_INSTRUMENTO, INSTRUMENTO_P
 import { dataBR } from "@/lib/utils";
 import { salvarInstrumento, excluirInstrumento, type InstrumentoInput } from "@/app/dashboard/execucao/actions";
 import { abrirPolicyDoInstrumento } from "@/app/dashboard/execucao/politicas/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type InstrumentoDTO = {
   id: string; nome: string; grupo: string; tipo: string | null; baseLegal: string | null;
@@ -29,6 +30,7 @@ const VAZIO = (grupo = "INTERNO"): InstrumentoDTO => ({
 
 export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<InstrumentoDTO | null>(null);
   const [abrindo, setAbrindo] = useState<string | null>(null);
 
@@ -91,9 +93,11 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
         <a href="/dashboard/execucao/dsr" className="inline-flex items-center gap-2 border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-gray-50">
           <FileText className="w-4 h-4" /> Direitos do Titular
         </a>
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Novo instrumento
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Novo instrumento
+          </button>
+        )}
       </div>
 
       {GRUPOS.map((g) => {
@@ -116,17 +120,21 @@ export function ExecucaoClient({ instrumentos }: { instrumentos: InstrumentoDTO[
                       <div className="text-[13px] font-bold text-gray-900 flex items-center gap-1.5">
                         {it.conteudoUrl ? <a href={it.conteudoUrl} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline inline-flex items-center gap-1">{it.nome} <ExternalLink className="w-3 h-3" /></a> : it.nome}
                       </div>
-                      <div className="flex gap-1.5 shrink-0">
-                        <button onClick={() => setEditando(it)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={async () => { if (!confirm(`Excluir "${it.nome}"?`)) return; const t = toast.loading("Excluindo…"); try { await excluirInstrumento(it.id); toast.success("Excluído", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                      </div>
+                      {podeEditar && (
+                        <div className="flex gap-1.5 shrink-0">
+                          <button onClick={() => setEditando(it)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                          <button onClick={async () => { if (!confirm(`Excluir "${it.nome}"?`)) return; const t = toast.loading("Excluindo…"); try { await excluirInstrumento(it.id); toast.success("Excluído", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                       {it.obrigatorio ? <Badge variant="red">obrigatório</Badge> : <Badge variant="gray">recomendado</Badge>}
                       {it.tipo && <Badge variant="blue">{it.tipo}</Badge>}
-                      <select value={it.status} onChange={(e) => mudarStatus(it, e.target.value)} className="ml-auto text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
-                        {Object.entries(STATUS_INSTRUMENTO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                      </select>
+                      {podeEditar && (
+                        <select value={it.status} onChange={(e) => mudarStatus(it, e.target.value)} className="ml-auto text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
+                          {Object.entries(STATUS_INSTRUMENTO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      )}
                     </div>
                     {it.baseLegal && <div className="text-[11px] text-gray-500 mt-1.5"><b className="text-gray-600">Base legal:</b> {it.baseLegal}</div>}
                     {(it.responsavel || it.prazoBR) && (

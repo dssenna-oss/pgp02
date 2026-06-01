@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, X, AlertTriangle, Clock, CheckCircle2, TrendingUp
 import { Badge } from "@/components/ui/badge";
 import { SEVERIDADE_INCIDENTE, STATUS_INCIDENTE, PRAZO_ANPD_HORAS } from "@/lib/comite-ui";
 import { salvarIncidente, excluirIncidente } from "@/app/dashboard/incidentes/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type IncidenteDTO = {
   id: string; titulo: string; descricao: string | null; severidade: string; status: string;
@@ -35,6 +36,7 @@ const VAZIO = (): IncidenteDTO => ({
 
 export function IncidentesClient({ incidentes }: { incidentes: IncidenteDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<IncidenteDTO | null>(null);
 
   const emAnalise = incidentes.filter((i) => i.status === "EM_ANALISE").length;
@@ -62,9 +64,11 @@ export function IncidentesClient({ incidentes }: { incidentes: IncidenteDTO[] })
 
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">🚨 Registro de incidentes de segurança · prazo ANPD de 72h (Res. CD/ANPD 15/2024)</div>
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-red-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-red-700">
-          <Plus className="w-4 h-4" /> Registrar incidente
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-red-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-red-700">
+            <Plus className="w-4 h-4" /> Registrar incidente
+          </button>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3 items-start">
@@ -77,10 +81,12 @@ export function IncidentesClient({ incidentes }: { incidentes: IncidenteDTO[] })
               <div key={i.id} className={`bg-white border rounded-xl px-4 py-3 ${prazo?.vencido ? "border-l-4 border-l-red-500" : ""}`}>
                 <div className="flex justify-between gap-2 items-start">
                   <div className="text-[13.5px] font-bold text-gray-900">{i.titulo}</div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => setEditando(i)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={async () => { if (!confirm("Excluir este incidente?")) return; const t = toast.loading("Excluindo…"); try { await excluirIncidente(i.id); toast.success("Excluído", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+                  {podeEditar && (
+                    <div className="flex gap-1.5 shrink-0">
+                      <button onClick={() => setEditando(i)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={async () => { if (!confirm("Excluir este incidente?")) return; const t = toast.loading("Excluindo…"); try { await excluirIncidente(i.id); toast.success("Excluído", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  )}
                 </div>
                 {i.descricao && <p className="text-[12px] text-gray-600 mt-1">{i.descricao}</p>}
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">

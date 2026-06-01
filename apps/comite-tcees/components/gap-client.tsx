@@ -7,6 +7,7 @@ import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { GAP_DOMAINS } from "@/lib/gap-catalog";
 import { scorePorDominio, scoreGeral, type RespostaMap } from "@/lib/gap-score";
 import { salvarGap } from "@/app/dashboard/gap/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 type Resposta = { aderencia?: string | null; cenarioAtual?: string | null; pontoMelhoria?: string | null };
 
@@ -26,6 +27,7 @@ function scoreColor(score: number | null) {
 
 export function GapClient({ respostasIniciais }: { respostasIniciais: Record<string, Resposta> }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [respostas, setRespostas] = useState<Record<string, Resposta>>(respostasIniciais);
   const [abertos, setAbertos] = useState<Set<string>>(new Set());
   const [detalhe, setDetalhe] = useState<Set<string>>(new Set());
@@ -110,7 +112,8 @@ export function GapClient({ respostasIniciais }: { respostasIniciais: Record<str
                                   <button
                                     key={a.v}
                                     onClick={() => salvar(c.code, { aderencia: sel ? null : a.v })}
-                                    className={`text-[11.5px] font-semibold border rounded-full px-2.5 py-1 transition-colors ${sel ? a.on : `bg-white ${a.off}`}`}
+                                    disabled={!podeEditar}
+                                    className={`text-[11.5px] font-semibold border rounded-full px-2.5 py-1 transition-colors ${sel ? a.on : `bg-white ${a.off}`} ${podeEditar ? "" : "cursor-default opacity-90"}`}
                                   >
                                     {a.label}
                                   </button>
@@ -127,11 +130,11 @@ export function GapClient({ respostasIniciais }: { respostasIniciais: Record<str
                                 {c.article && <div className="text-[11px] text-gray-500"><b>Base legal:</b> {c.article.slice(0, 300)}{c.article.length > 300 ? "…" : ""}</div>}
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-600">Cenário atual</label>
-                                  <textarea defaultValue={r.cenarioAtual ?? ""} onBlur={(e) => { if (e.target.value !== (r.cenarioAtual ?? "")) salvar(c.code, { cenarioAtual: e.target.value }); }} rows={2} className="w-full mt-1 px-2.5 py-1.5 border rounded-md text-[12px] outline-none focus:ring-2 focus:ring-brand-500" placeholder="Como está hoje na instituição…" />
+                                  <textarea defaultValue={r.cenarioAtual ?? ""} onBlur={(e) => { if (e.target.value !== (r.cenarioAtual ?? "")) salvar(c.code, { cenarioAtual: e.target.value }); }} disabled={!podeEditar} rows={2} className="w-full mt-1 px-2.5 py-1.5 border rounded-md text-[12px] outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100 disabled:text-gray-500" placeholder="Como está hoje na instituição…" />
                                 </div>
                                 <div>
                                   <label className="text-[11px] font-semibold text-gray-600">Ponto de melhoria</label>
-                                  <textarea defaultValue={r.pontoMelhoria ?? ""} onBlur={(e) => { if (e.target.value !== (r.pontoMelhoria ?? "")) salvar(c.code, { pontoMelhoria: e.target.value }); }} rows={2} className="w-full mt-1 px-2.5 py-1.5 border rounded-md text-[12px] outline-none focus:ring-2 focus:ring-brand-500" placeholder="O que precisa ser feito…" />
+                                  <textarea defaultValue={r.pontoMelhoria ?? ""} onBlur={(e) => { if (e.target.value !== (r.pontoMelhoria ?? "")) salvar(c.code, { pontoMelhoria: e.target.value }); }} disabled={!podeEditar} rows={2} className="w-full mt-1 px-2.5 py-1.5 border rounded-md text-[12px] outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-slate-100 disabled:text-gray-500" placeholder="O que precisa ser feito…" />
                                 </div>
                               </div>
                             )}

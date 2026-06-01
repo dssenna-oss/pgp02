@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { emailNovaReuniao, emailPautaAprovada } from "@/lib/comite-emails";
 
@@ -32,7 +32,7 @@ function dataBR(d: Date): string {
 
 export async function salvarReuniao(input: ReuniaoInput) {
   // Qualquer membro logado pode criar/editar (decisão: acesso aberto).
-  await requireSession();
+  await requireEditor();
 
   if (!input.titulo?.trim()) throw new Error("O título é obrigatório.");
   if (!input.data) throw new Error("A data é obrigatória.");
@@ -87,7 +87,7 @@ export async function salvarReuniao(input: ReuniaoInput) {
 
 /** Marca a pauta como aprovada e comunica os membros (aviso no app). */
 export async function aprovarPauta(id: string) {
-  await requireSession();
+  await requireEditor();
   const reuniao = await prisma.reuniao.findUnique({
     where: { id },
     select: { titulo: true, pauta: true, data: true, pautaAprovada: true },
@@ -118,7 +118,7 @@ export async function aprovarPauta(id: string) {
 }
 
 export async function excluirReuniao(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.reuniao.delete({ where: { id } });
   revalidatePath("/dashboard/reunioes");
   revalidatePath("/dashboard/calendario");

@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { iniciais } from "@/lib/utils";
 import { salvarMembro, excluirMembro, type MembroInput } from "@/app/dashboard/membros/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type MembroDTO = {
   id: string;
@@ -27,6 +28,7 @@ const FUNCOES = ["Presidente", "Coordenador", "Encarregado titular", "Encarregad
 
 export function MembrosClient({ membros }: { membros: MembroDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<MembroDTO | null>(null);
   const unidades = new Set(membros.map((m) => m.unidade).filter(Boolean));
 
@@ -36,12 +38,14 @@ export function MembrosClient({ membros }: { membros: MembroDTO[] }) {
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           👤 {membros.length} integrantes · {unidades.size} unidades representadas
         </div>
-        <button
-          onClick={() => setEditando(VAZIO())}
-          className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
-        >
-          <Plus className="w-4 h-4" /> Adicionar membro
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setEditando(VAZIO())}
+            className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          >
+            <Plus className="w-4 h-4" /> Adicionar membro
+          </button>
+        )}
       </div>
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,28 +65,30 @@ export function MembrosClient({ membros }: { membros: MembroDTO[] }) {
               {m.email && <div className="text-[11px] text-gray-400 mt-0.5 truncate">{m.email}</div>}
               {m.emailInterno && <div className="text-[11px] text-gray-400 truncate" title="E-mail para comunicações internas do Comitê">↳ interno: {m.emailInterno}</div>}
             </div>
-            <div className="flex flex-col gap-1.5 shrink-0">
-              <button onClick={() => setEditando(m)} title="Editar" className="text-gray-300 hover:text-brand-600">
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button
-                onClick={async () => {
-                  if (!confirm(`Remover ${m.nome} do Comitê?`)) return;
-                  const t = toast.loading("Removendo…");
-                  try {
-                    await excluirMembro(m.id);
-                    toast.success("Membro removido", { id: t });
-                    router.refresh();
-                  } catch {
-                    toast.error("Não foi possível remover", { id: t });
-                  }
-                }}
-                title="Remover"
-                className="text-gray-300 hover:text-red-600"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
+            {podeEditar && (
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <button onClick={() => setEditando(m)} title="Editar" className="text-gray-300 hover:text-brand-600">
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!confirm(`Remover ${m.nome} do Comitê?`)) return;
+                    const t = toast.loading("Removendo…");
+                    try {
+                      await excluirMembro(m.id);
+                      toast.success("Membro removido", { id: t });
+                      router.refresh();
+                    } catch {
+                      toast.error("Não foi possível remover", { id: t });
+                    }
+                  }}
+                  title="Remover"
+                  className="text-gray-300 hover:text-red-600"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

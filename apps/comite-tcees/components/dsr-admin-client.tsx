@@ -10,6 +10,7 @@ import {
   daysUntilDue, deadlineUrgency,
 } from "@/lib/dsr-helpers";
 import { salvarDsr, responderDsr, mudarStatusDsr, excluirDsr, type DsrInput } from "@/app/dashboard/execucao/dsr/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type DsrDTO = {
   id: string;
@@ -42,6 +43,7 @@ const VAZIO = (): DsrDTO => ({
 
 export function DsrAdminClient({ pedidos }: { pedidos: DsrDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<DsrDTO | null>(null);
   const [respondendo, setRespondendo] = useState<DsrDTO | null>(null);
 
@@ -59,9 +61,11 @@ export function DsrAdminClient({ pedidos }: { pedidos: DsrDTO[] }) {
 
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">📋 Pedidos recebidos pelo rito oficial (registro do Encarregado)</div>
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Registrar pedido
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Registrar pedido
+          </button>
+        )}
       </div>
 
       {pedidos.length === 0 ? (
@@ -92,23 +96,31 @@ export function DsrAdminClient({ pedidos }: { pedidos: DsrDTO[] }) {
                   </span>
                 </div>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  <select
-                    value={p.status}
-                    onChange={async (e) => { try { await mudarStatusDsr(p.id, e.target.value); router.refresh(); } catch { toast.error("Falhou"); } }}
-                    className="text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    {Object.entries(DSR_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                  </select>
-                  <button onClick={() => setRespondendo(p)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-600 hover:text-brand-700">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Responder
-                  </button>
+                  {podeEditar && (
+                    <>
+                      <select
+                        value={p.status}
+                        onChange={async (e) => { try { await mudarStatusDsr(p.id, e.target.value); router.refresh(); } catch { toast.error("Falhou"); } }}
+                        className="text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500"
+                      >
+                        {Object.entries(DSR_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
+                      <button onClick={() => setRespondendo(p)} className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand-600 hover:text-brand-700">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Responder
+                      </button>
+                    </>
+                  )}
                   <a href={`/api/dsr/${p.id}/docx`} className="inline-flex items-center gap-1 text-[12px] font-semibold text-gray-600 hover:text-brand-700">
                     <FileDown className="w-3.5 h-3.5" /> DOCX
                   </a>
-                  <button onClick={() => setEditando(p)} title="Editar" className="ml-auto text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                  <button
-                    onClick={async () => { if (!confirm(`Excluir o registro ${p.protocolNumber}?`)) return; try { await excluirDsr(p.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }}
-                    title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                  {podeEditar && (
+                    <>
+                      <button onClick={() => setEditando(p)} title="Editar" className="ml-auto text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button
+                        onClick={async () => { if (!confirm(`Excluir o registro ${p.protocolNumber}?`)) return; try { await excluirDsr(p.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }}
+                        title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </>
+                  )}
                 </div>
               </div>
             );

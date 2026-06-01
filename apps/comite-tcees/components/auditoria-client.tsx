@@ -10,6 +10,7 @@ import {
   salvarAuditoria, excluirAuditoria, salvarAchado, excluirAchado,
   type AuditoriaInput, type AchadoInput,
 } from "@/app/dashboard/auditoria/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type AchadoDTO = {
   id: string; auditoriaId: string; descricao: string; severidade: string;
@@ -45,6 +46,7 @@ const AUD_VAZIA = (): AuditoriaDTO => ({ id: "", titulo: "", escopo: "", respons
 
 export function AuditoriaClient({ auditorias }: { auditorias: AuditoriaDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editAud, setEditAud] = useState<AuditoriaDTO | null>(null);
   const [editAchado, setEditAchado] = useState<Partial<AchadoDTO> | null>(null);
 
@@ -70,7 +72,9 @@ export function AuditoriaClient({ auditorias }: { auditorias: AuditoriaDTO[] }) 
         <div className="bg-white border rounded-xl p-4"><div className="text-xs text-gray-500 font-semibold">Auditorias</div><div className="text-2xl font-extrabold text-gray-900 mt-1">{auditorias.length}</div></div>
         <div className="bg-white border rounded-xl p-4"><div className="text-xs text-gray-500 font-semibold">Concluídas</div><div className="text-2xl font-extrabold text-gray-900 mt-1">{concluidas}</div></div>
         <div className="bg-white border rounded-xl p-4 border-l-4 border-l-red-400"><div className="text-xs text-gray-500 font-semibold">Achados em aberto</div><div className="text-2xl font-extrabold text-red-600 mt-1">{achadosAbertos}</div></div>
-        <div className="bg-white border rounded-xl p-4 flex items-center"><button onClick={() => setEditAud(AUD_VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-brand-700"><Plus className="w-4 h-4" /> Nova auditoria</button></div>
+        {podeEditar && (
+          <div className="bg-white border rounded-xl p-4 flex items-center"><button onClick={() => setEditAud(AUD_VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-3 py-2 text-sm font-semibold hover:bg-brand-700"><Plus className="w-4 h-4" /> Nova auditoria</button></div>
+        )}
       </div>
 
       {auditorias.length === 0 ? (
@@ -93,20 +97,24 @@ export function AuditoriaClient({ auditorias }: { auditorias: AuditoriaDTO[] }) 
                     </div>
                     {a.escopo && <div className="text-[12px] text-gray-600 mt-1.5">{a.escopo}</div>}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <select value={a.status} onChange={(e) => mudarStatusAud(a, e.target.value)} className="text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
-                      {Object.entries(ST_AUD).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                    </select>
-                    <button onClick={() => setEditAud(a)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={async () => { if (!confirm(`Excluir a auditoria "${a.titulo}" e seus achados?`)) return; try { await excluirAuditoria(a.id); toast.success("Excluída"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+                  {podeEditar && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <select value={a.status} onChange={(e) => mudarStatusAud(a, e.target.value)} className="text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
+                        {Object.entries(ST_AUD).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      </select>
+                      <button onClick={() => setEditAud(a)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={async () => { if (!confirm(`Excluir a auditoria "${a.titulo}" e seus achados?`)) return; try { await excluirAuditoria(a.id); toast.success("Excluída"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Achados */}
                 <div className="mt-3 border-t pt-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[11px] uppercase tracking-wide text-gray-500 font-bold flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Achados · {a.achados.length}</span>
-                    <button onClick={() => setEditAchado({ auditoriaId: a.id, severidade: "MEDIA", naoConformidade: true, status: "ABERTO" })} className="text-[12px] font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Novo achado</button>
+                    {podeEditar && (
+                      <button onClick={() => setEditAchado({ auditoriaId: a.id, severidade: "MEDIA", naoConformidade: true, status: "ABERTO" })} className="text-[12px] font-semibold text-brand-600 hover:text-brand-700 inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Novo achado</button>
+                    )}
                   </div>
                   {a.achados.length === 0 ? (
                     <p className="text-[12px] text-gray-400">Nenhum achado registrado.</p>
@@ -125,13 +133,15 @@ export function AuditoriaClient({ auditorias }: { auditorias: AuditoriaDTO[] }) 
                                 <span className="text-[12.5px] text-gray-800 min-w-0">{f.descricao}</span>
                               </div>
                               {/* Controles: status + ações (linha própria no mobile) */}
-                              <div className="flex items-center gap-2 shrink-0">
-                                <select value={f.status} onChange={(e) => mudarStatusAchado(f, e.target.value)} className="text-[11px] border rounded px-1.5 py-0.5 outline-none">
-                                  {Object.entries(ST_ACHADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                                </select>
-                                <button onClick={() => setEditAchado(f)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
-                                <button onClick={async () => { if (!confirm("Excluir este achado?")) return; try { await excluirAchado(f.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
-                              </div>
+                              {podeEditar && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <select value={f.status} onChange={(e) => mudarStatusAchado(f, e.target.value)} className="text-[11px] border rounded px-1.5 py-0.5 outline-none">
+                                    {Object.entries(ST_ACHADO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                                  </select>
+                                  <button onClick={() => setEditAchado(f)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-3.5 h-3.5" /></button>
+                                  <button onClick={async () => { if (!confirm("Excluir este achado?")) return; try { await excluirAchado(f.id); toast.success("Excluído"); router.refresh(); } catch { toast.error("Falhou"); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
+                                </div>
+                              )}
                             </div>
                             {f.recomendacao && <div className="text-[11.5px] text-gray-600 mt-1"><b>Recomendação:</b> {f.recomendacao}</div>}
                             {f.planoAcao && <div className="text-[11.5px] text-gray-600 mt-0.5"><b>Plano de ação:</b> {f.planoAcao}{f.prazoISO ? ` · prazo ${dataBR(new Date(f.prazoISO))}` : ""}</div>}

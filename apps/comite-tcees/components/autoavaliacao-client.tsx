@@ -10,6 +10,7 @@ import { ChevronDown, RotateCcw, Sparkles } from "lucide-react";
 import type { TcuDiagnostico } from "@/lib/tcu-diagnostico";
 import { RESPOSTA_LABEL } from "@/lib/tcu-catalog";
 import { responderTcu, redefinirTcu } from "@/app/dashboard/autoavaliacao/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 const fmt = (n: number) => n.toFixed(2).replace(".", ",");
 
@@ -22,6 +23,7 @@ const ATIVO_CLS: Record<string, string> = {
 
 export function AutoavaliacaoClient({ diag }: { diag: TcuDiagnostico }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [aberta, setAberta] = useState<string | null>(diag.dimensoes[0]?.key ?? null);
 
   const radarData = diag.dimensoes.map((d) => ({
@@ -133,15 +135,16 @@ export function AutoavaliacaoClient({ diag }: { diag: TcuDiagnostico }) {
                             <button
                               key={op}
                               onClick={() => responder(q.code, op)}
+                              disabled={!podeEditar}
                               className={`text-[11.5px] font-semibold rounded-full px-2.5 py-1 border transition-colors ${
                                 ativo ? ATIVO_CLS[op] : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                              }`}
+                              } ${podeEditar ? "" : "cursor-default opacity-90"}`}
                             >
                               {RESPOSTA_LABEL[op as keyof typeof RESPOSTA_LABEL]}
                             </button>
                           );
                         })}
-                        {q.origem === "manual" && q.autoFonte && (
+                        {podeEditar && q.origem === "manual" && q.autoFonte && (
                           <button onClick={() => redefinir(q.code)} title="Voltar ao automático" className="inline-flex items-center gap-1 text-[11px] text-gray-400 hover:text-brand-600 ml-1">
                             <RotateCcw className="w-3 h-3" /> auto
                           </button>

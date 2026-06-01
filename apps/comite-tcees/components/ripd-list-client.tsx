@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X, FileText } from "lucide-react";
 import { ripdStatusLabel, ripdStatusBadgeClass } from "@/lib/ripd-helpers";
 import { criarRipd, excluirRipd } from "@/app/dashboard/execucao/ripd/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type RipdListDTO = {
   id: string;
@@ -27,6 +28,7 @@ export function RipdListClient({
   inventario: InventoryOption[];
 }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [criando, setCriando] = useState(false);
 
   return (
@@ -35,9 +37,11 @@ export function RipdListClient({
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📋 {ripds.length} RIPD(s) · {ripds.filter((r) => r.status === "APROVADO").length} aprovado(s)
         </div>
-        <button onClick={() => setCriando(true)} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Novo RIPD
-        </button>
+        {podeEditar && (
+          <button onClick={() => setCriando(true)} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Novo RIPD
+          </button>
+        )}
       </div>
 
       {ripds.length === 0 ? (
@@ -62,29 +66,33 @@ export function RipdListClient({
                 {ripdStatusLabel(r.status)}
               </span>
               <div className="flex gap-1.5 shrink-0">
-                <Link href={`/dashboard/execucao/ripd/${r.id}`} title="Editar" className="text-gray-300 hover:text-brand-600">
-                  <Pencil className="w-4 h-4" />
-                </Link>
+                {podeEditar && (
+                  <Link href={`/dashboard/execucao/ripd/${r.id}`} title="Editar" className="text-gray-300 hover:text-brand-600">
+                    <Pencil className="w-4 h-4" />
+                  </Link>
+                )}
                 <a href={`/api/ripd/${r.id}/docx`} title="Baixar DOCX" className="text-gray-300 hover:text-brand-600">
                   <FileText className="w-4 h-4" />
                 </a>
-                <button
-                  onClick={async () => {
-                    if (!confirm(`Excluir "${r.title}"?`)) return;
-                    const t = toast.loading("Excluindo…");
-                    try {
-                      await excluirRipd(r.id);
-                      toast.success("Excluído", { id: t });
-                      router.refresh();
-                    } catch {
-                      toast.error("Não foi possível excluir", { id: t });
-                    }
-                  }}
-                  title="Excluir"
-                  className="text-gray-300 hover:text-red-600"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {podeEditar && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Excluir "${r.title}"?`)) return;
+                      const t = toast.loading("Excluindo…");
+                      try {
+                        await excluirRipd(r.id);
+                        toast.success("Excluído", { id: t });
+                        router.refresh();
+                      } catch {
+                        toast.error("Não foi possível excluir", { id: t });
+                      }
+                    }}
+                    title="Excluir"
+                    className="text-gray-300 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

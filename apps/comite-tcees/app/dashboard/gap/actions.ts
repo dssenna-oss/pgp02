@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type GapInput = {
@@ -15,7 +15,7 @@ export type GapInput = {
 const ADER_VALIDA = ["ADERENTE", "PARCIAL", "NAO_ADERENTE", "NA"];
 
 export async function salvarGap(input: GapInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.controlCode) throw new Error("Controle não informado.");
 
   const data = {

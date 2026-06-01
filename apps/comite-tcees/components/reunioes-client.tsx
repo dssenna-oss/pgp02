@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X, CheckCircle2, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { salvarReuniao, excluirReuniao, aprovarPauta, type ReuniaoInput } from "@/app/dashboard/reunioes/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type ReuniaoDTO = {
   id: string;
@@ -32,6 +33,7 @@ const VAZIA = (): ReuniaoDTO => ({
 
 export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<ReuniaoDTO | null>(null);
   const proxima = reunioes.find((r) => r.status === "AGENDADA");
 
@@ -41,12 +43,14 @@ export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           🗂️ {reunioes.length} reuniões registradas{proxima ? ` · próxima ${proxima.dataBR}` : ""}
         </div>
-        <button
-          onClick={() => setEditando(VAZIA())}
-          className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
-        >
-          <Plus className="w-4 h-4" /> Agendar reunião
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setEditando(VAZIA())}
+            className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          >
+            <Plus className="w-4 h-4" /> Agendar reunião
+          </button>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -63,26 +67,30 @@ export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
                   <Badge variant={agendada ? "indigo" : "green"}>
                     {agendada ? "agendada" : "realizada"} · {r.dataBR}
                   </Badge>
-                  <button onClick={() => setEditando(r)} title="Editar" className="text-gray-400 hover:text-brand-600">
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm(`Excluir a reunião "${r.titulo}"? Esta ação não pode ser desfeita.`)) return;
-                      const t = toast.loading("Excluindo…");
-                      try {
-                        await excluirReuniao(r.id);
-                        toast.success("Reunião excluída", { id: t });
-                        router.refresh();
-                      } catch {
-                        toast.error("Não foi possível excluir", { id: t });
-                      }
-                    }}
-                    title="Excluir"
-                    className="text-gray-400 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {podeEditar && (
+                    <>
+                      <button onClick={() => setEditando(r)} title="Editar" className="text-gray-400 hover:text-brand-600">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Excluir a reunião "${r.titulo}"? Esta ação não pode ser desfeita.`)) return;
+                          const t = toast.loading("Excluindo…");
+                          try {
+                            await excluirReuniao(r.id);
+                            toast.success("Reunião excluída", { id: t });
+                            router.refresh();
+                          } catch {
+                            toast.error("Não foi possível excluir", { id: t });
+                          }
+                        }}
+                        title="Excluir"
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               {r.pauta && (
@@ -93,7 +101,7 @@ export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
                       <span className="inline-flex items-center gap-1 text-[11.5px] font-bold text-emerald-700">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Pauta aprovada
                       </span>
-                    ) : (
+                    ) : podeEditar ? (
                       <button
                         onClick={async () => {
                           const t = toast.loading("Aprovando pauta…");
@@ -109,7 +117,7 @@ export function ReunioesClient({ reunioes }: { reunioes: ReuniaoDTO[] }) {
                       >
                         <Check className="w-3.5 h-3.5" /> Aprovar pauta
                       </button>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )}

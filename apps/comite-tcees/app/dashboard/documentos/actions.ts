@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type DocumentoInput = {
@@ -17,7 +17,7 @@ export type DocumentoInput = {
 const STATUS_VALIDOS = ["A_ELABORAR", "ELABORADO", "PENDENTE_APROVACAO", "HOMOLOGADO", "REGISTRADA"];
 
 export async function salvarDocumento(input: DocumentoInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.nome?.trim()) throw new Error("O nome do documento é obrigatório.");
 
   const dados = {
@@ -41,7 +41,7 @@ export async function salvarDocumento(input: DocumentoInput) {
 }
 
 export async function excluirDocumento(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.documento.delete({ where: { id } });
   revalidatePath("/dashboard/documentos");
   return { ok: true };

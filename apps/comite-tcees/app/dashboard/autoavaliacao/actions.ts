@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 const VALIDAS = ["SIM", "PARCIAL", "NAO", "NA"];
@@ -12,7 +12,7 @@ export async function responderTcu(input: {
   resposta: string;
   observacao?: string;
 }): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   if (!VALIDAS.includes(input.resposta)) throw new Error("Resposta inválida.");
   await prisma.tcuAnswer.upsert({
     where: { questionCode: input.questionCode },
@@ -26,7 +26,7 @@ export async function responderTcu(input: {
 
 /** Remove a resposta manual → volta ao valor automático (ou pendente). */
 export async function redefinirTcu(questionCode: string): Promise<{ ok: true }> {
-  await requireSession();
+  await requireEditor();
   await prisma.tcuAnswer.deleteMany({ where: { questionCode } });
   revalidatePath("/dashboard/autoavaliacao");
   revalidatePath("/dashboard/indicadores");

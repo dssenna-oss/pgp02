@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type IndicadorInput = {
@@ -20,7 +20,7 @@ export type IndicadorInput = {
 const STATUS_VALIDOS = ["CONCLUIDO", "EM_ANDAMENTO", "EM_RISCO", "ATRASADO", "A_INICIAR"];
 
 export async function salvarIndicador(input: IndicadorInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.codigo?.trim()) throw new Error("O código é obrigatório.");
   if (!input.descricao?.trim()) throw new Error("A descrição é obrigatória.");
 
@@ -53,7 +53,7 @@ export async function salvarIndicador(input: IndicadorInput) {
 }
 
 export async function excluirIndicador(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.indicador.delete({ where: { id } });
   revalidatePath("/dashboard/indicadores");
   return { ok: true };

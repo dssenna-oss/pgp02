@@ -1,12 +1,12 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 /** Alterna um item do checklist (marca/desmarca). Presença = concluído. */
 export async function alternarItem(itemId: string): Promise<{ ok: true; done: boolean }> {
-  await requireSession();
+  await requireEditor();
   const existe = await prisma.monitoringCheck.findUnique({ where: { itemId }, select: { id: true } });
   if (existe) {
     await prisma.monitoringCheck.delete({ where: { itemId } });

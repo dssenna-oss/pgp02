@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X, ShieldAlert, Sparkles, Loader2 } from "lucide-
 import { Badge } from "@/components/ui/badge";
 import { statusInventario, STATUS_INVENTARIO, HIPOTESE_MACRO } from "@/lib/comite-ui";
 import { salvarInventario, excluirInventario, adicionarSugestoes, type InventarioInput, type SugestaoInput } from "@/app/dashboard/inventario/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type InventarioDTO = {
   id: string;
@@ -33,6 +34,7 @@ const VAZIO = (): InventarioDTO => ({
 
 export function InventarioClient({ processos }: { processos: InventarioDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<InventarioDTO | null>(null);
   const [sugerindo, setSugerindo] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | "prioritarios" | "sensiveis">("todos");
@@ -66,14 +68,16 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           🗂️ {processos.length} processos · {prioritarios} prioritários · {sensiveis} com dados sensíveis
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setSugerindo(true)} className="inline-flex items-center gap-2 border border-brand-200 bg-brand-50 text-brand-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-100">
-            <Sparkles className="w-4 h-4" /> Sugerir da Carta de Serviços
-          </button>
-          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-            <Plus className="w-4 h-4" /> Novo processo
-          </button>
-        </div>
+        {podeEditar && (
+          <div className="flex gap-2">
+            <button onClick={() => setSugerindo(true)} className="inline-flex items-center gap-2 border border-brand-200 bg-brand-50 text-brand-700 rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-100">
+              <Sparkles className="w-4 h-4" /> Sugerir da Carta de Serviços
+            </button>
+            <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+              <Plus className="w-4 h-4" /> Novo processo
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
@@ -83,17 +87,19 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
             <div key={p.id} className="bg-white border rounded-xl p-4">
               <div className="flex justify-between gap-2 items-start">
                 <div className="text-[13.5px] font-bold text-gray-900">{p.nome}</div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button onClick={() => setEditando(p)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                  <button
-                    onClick={async () => {
-                      if (!confirm(`Excluir o processo "${p.nome}" do Inventário?`)) return;
-                      const t = toast.loading("Excluindo…");
-                      try { await excluirInventario(p.id); toast.success("Processo excluído", { id: t }); router.refresh(); }
-                      catch { toast.error("Não foi possível excluir", { id: t }); }
-                    }}
-                    title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                </div>
+                {podeEditar && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => setEditando(p)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Excluir o processo "${p.nome}" do Inventário?`)) return;
+                        const t = toast.loading("Excluindo…");
+                        try { await excluirInventario(p.id); toast.success("Processo excluído", { id: t }); router.refresh(); }
+                        catch { toast.error("Não foi possível excluir", { id: t }); }
+                      }}
+                      title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <Badge variant={st.variant}>{st.label}</Badge>

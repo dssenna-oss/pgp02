@@ -6,9 +6,11 @@ import toast from "react-hot-toast";
 import { Check } from "lucide-react";
 import { MONITORAMENTO_CHECKLIST, CHECKLIST_TOTAL } from "@/lib/monitoramento-checklist";
 import { alternarItem } from "@/app/dashboard/checklist-monitoramento/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export function ChecklistMonitoramentoClient({ feitos }: { feitos: string[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [done, setDone] = useState<Set<string>>(new Set(feitos));
   const [salvando, setSalvando] = useState<string | null>(null);
 
@@ -61,8 +63,8 @@ export function ChecklistMonitoramentoClient({ feitos }: { feitos: string[] }) {
                     <button
                       key={item.id}
                       onClick={() => toggle(item.id)}
-                      disabled={salvando === item.id}
-                      className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-slate-50 disabled:opacity-60"
+                      disabled={!podeEditar || salvando === item.id}
+                      className={`w-full flex items-start gap-3 px-4 py-2.5 text-left disabled:opacity-60 ${podeEditar ? "hover:bg-slate-50" : "cursor-default disabled:opacity-100"}`}
                     >
                       <span className={`mt-0.5 w-5 h-5 shrink-0 rounded border flex items-center justify-center ${checked ? "bg-emerald-500 border-emerald-500" : "border-gray-300 bg-white"}`}>
                         {checked && <Check className="w-3.5 h-3.5 text-white" />}

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { GAP_CONTROLS } from "@/lib/gap-catalog";
 import { nivelRisco } from "@/lib/comite-ui";
@@ -21,7 +21,7 @@ const PRIO = ["BAIXA", "MEDIA", "ALTA"];
 const STATUS = ["A_FAZER", "EM_ANDAMENTO", "CONCLUIDA"];
 
 export async function salvarAcao(input: AcaoInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.acao?.trim()) throw new Error("Descreva a ação.");
   const dados = {
     acao: input.acao.trim(),
@@ -43,7 +43,7 @@ export async function salvarAcao(input: AcaoInput) {
 }
 
 export async function excluirAcao(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.actionPlan.delete({ where: { id } });
   revalidatePath("/dashboard/plano-acao");
   return { ok: true };
@@ -51,7 +51,7 @@ export async function excluirAcao(id: string) {
 
 /** Importa lacunas do GAP: controles Não aderente / Parcial viram ações. Idempotente. */
 export async function importarDoGap() {
-  await requireSession();
+  await requireEditor();
   const [answers, jaImportadas] = await Promise.all([
     prisma.gapAnswer.findMany({ where: { aderencia: { in: ["NAO_ADERENTE", "PARCIAL"] } } }),
     prisma.actionPlan.findMany({ where: { origem: "GAP" }, select: { origemRef: true } }),
@@ -82,7 +82,7 @@ export async function importarDoGap() {
 
 /** Importa recomendações da Análise de Riscos (riscos não tratados). Idempotente. */
 export async function importarDosRiscos() {
-  await requireSession();
+  await requireEditor();
   const [riscos, jaImportadas] = await Promise.all([
     prisma.processRisk.findMany({ where: { status: { not: "TRATADO" } }, include: { inventory: { select: { nome: true } } } }),
     prisma.actionPlan.findMany({ where: { origem: "RISCO" }, select: { origemRef: true } }),

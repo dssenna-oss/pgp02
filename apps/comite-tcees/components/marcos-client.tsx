@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusEntrega, eixoTag } from "@/lib/comite-ui";
 import { salvarMarco, excluirMarco, type MarcoInput } from "@/app/dashboard/marcos/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type MarcoDTO = {
   id: string;
@@ -28,15 +29,18 @@ const STATUS_MARCO: Record<string, string> = {
 
 export function MarcosClient({ marcos }: { marcos: MarcoDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<MarcoDTO | null>(null);
 
   return (
     <>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-extrabold text-gray-900 flex items-center gap-2">📌 Marcos críticos do biênio</h2>
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-700 border border-brand-100 bg-brand-50 rounded-md px-2.5 py-1 hover:bg-brand-100">
-          <Plus className="w-3.5 h-3.5" /> Novo marco
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-700 border border-brand-100 bg-brand-50 rounded-md px-2.5 py-1 hover:bg-brand-100">
+            <Plus className="w-3.5 h-3.5" /> Novo marco
+          </button>
+        )}
       </div>
       <div className="bg-white border rounded-xl p-5">
         <ol className="relative ml-2 pl-6 border-l-2 border-slate-200 space-y-4">
@@ -60,17 +64,19 @@ export function MarcosClient({ marcos }: { marcos: MarcoDTO[] }) {
                       ))}
                     </div>
                   </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => setEditando(m)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Excluir o marco "${m.descricao.slice(0, 40)}…"?`)) return;
-                        const t = toast.loading("Excluindo…");
-                        try { await excluirMarco(m.id); toast.success("Marco excluído", { id: t }); router.refresh(); }
-                        catch { toast.error("Não foi possível excluir", { id: t }); }
-                      }}
-                      title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+                  {podeEditar && (
+                    <div className="flex gap-1.5 shrink-0">
+                      <button onClick={() => setEditando(m)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Excluir o marco "${m.descricao.slice(0, 40)}…"?`)) return;
+                          const t = toast.loading("Excluindo…");
+                          try { await excluirMarco(m.id); toast.success("Marco excluído", { id: t }); router.refresh(); }
+                          catch { toast.error("Não foi possível excluir", { id: t }); }
+                        }}
+                        title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  )}
                 </div>
               </li>
             );

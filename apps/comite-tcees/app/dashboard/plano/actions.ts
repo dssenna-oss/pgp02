@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type EntregaInput = {
@@ -19,7 +19,7 @@ export type EntregaInput = {
 const STATUS_VALIDOS = ["A_INICIAR", "EM_ANDAMENTO", "CONCLUIDO", "ATRASADO"];
 
 export async function salvarEntrega(input: EntregaInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.titulo?.trim()) throw new Error("O título é obrigatório.");
   if (!input.eixoCodigo) throw new Error("O eixo é obrigatório.");
   if (!input.trimestre) throw new Error("O trimestre é obrigatório.");
@@ -50,7 +50,7 @@ export async function salvarEntrega(input: EntregaInput) {
 }
 
 export async function excluirEntrega(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.entrega.delete({ where: { id } });
   revalidatePath("/dashboard/plano");
   revalidatePath("/dashboard");

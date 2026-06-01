@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type InstrumentoInput = {
@@ -22,7 +22,7 @@ const GRUPOS = ["PUBLICO", "INTERNO", "OPERADORES_TITULAR"];
 const STATUS = ["A_ELABORAR", "EM_ELABORACAO", "PENDENTE_APROVACAO", "APROVADO", "PUBLICADO"];
 
 export async function salvarInstrumento(input: InstrumentoInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.nome?.trim()) throw new Error("O nome do instrumento é obrigatório.");
 
   const dados = {
@@ -49,7 +49,7 @@ export async function salvarInstrumento(input: InstrumentoInput) {
 }
 
 export async function excluirInstrumento(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.instrumento.delete({ where: { id } });
   revalidatePath("/dashboard/execucao");
   return { ok: true };

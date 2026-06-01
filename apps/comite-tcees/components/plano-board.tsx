@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, X, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusEntrega, eixoTag, TRIMESTRES, STATUS_ENTREGA } from "@/lib/comite-ui";
 import { salvarEntrega, excluirEntrega, type EntregaInput } from "@/app/dashboard/plano/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type EntregaDTO = {
   id: string;
@@ -46,6 +47,7 @@ const VAZIA = (): EntregaDTO => ({
 
 export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [filtro, setFiltro] = useState("all");
   const [editando, setEditando] = useState<EntregaDTO | null>(null);
 
@@ -73,12 +75,14 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📋 {entregas.length} entregas · {concluidas} concluídas · {atrasadas} atrasadas
         </div>
-        <button
-          onClick={() => setEditando(VAZIA())}
-          className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
-        >
-          <Plus className="w-4 h-4" /> Nova entrega
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setEditando(VAZIA())}
+            className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          >
+            <Plus className="w-4 h-4" /> Nova entrega
+          </button>
+        )}
       </div>
 
       {TRIMESTRES.map((q) => {
@@ -113,28 +117,30 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
                       </div>
                     </div>
                     <Badge variant={st.variant}>{st.label}</Badge>
-                    <div className="flex gap-1.5 shrink-0">
-                      <button onClick={() => setEditando(e)} title="Editar" className="text-gray-300 hover:text-brand-600">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`Excluir a entrega "${e.titulo}"?`)) return;
-                          const t = toast.loading("Excluindo…");
-                          try {
-                            await excluirEntrega(e.id);
-                            toast.success("Entrega excluída", { id: t });
-                            router.refresh();
-                          } catch {
-                            toast.error("Não foi possível excluir", { id: t });
-                          }
-                        }}
-                        title="Excluir"
-                        className="text-gray-300 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {podeEditar && (
+                      <div className="flex gap-1.5 shrink-0">
+                        <button onClick={() => setEditando(e)} title="Editar" className="text-gray-300 hover:text-brand-600">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Excluir a entrega "${e.titulo}"?`)) return;
+                            const t = toast.loading("Excluindo…");
+                            try {
+                              await excluirEntrega(e.id);
+                              toast.success("Entrega excluída", { id: t });
+                              router.refresh();
+                            } catch {
+                              toast.error("Não foi possível excluir", { id: t });
+                            }
+                          }}
+                          title="Excluir"
+                          className="text-gray-300 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

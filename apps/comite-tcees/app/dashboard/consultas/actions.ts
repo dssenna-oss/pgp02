@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type ConsultaInput = {
@@ -22,7 +22,7 @@ function parseDate(v?: string): Date | null {
 }
 
 export async function salvarConsulta(input: ConsultaInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.titulo?.trim()) throw new Error("O título é obrigatório.");
 
   const dados = {
@@ -47,7 +47,7 @@ export async function salvarConsulta(input: ConsultaInput) {
 }
 
 export async function excluirConsulta(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.consultaPrevia.delete({ where: { id } });
   revalidatePath("/dashboard/consultas");
   return { ok: true };

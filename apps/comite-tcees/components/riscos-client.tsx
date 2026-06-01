@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { nivelRisco, PI_LABEL, STATUS_RISCO } from "@/lib/comite-ui";
 import { RISCOS_CATALOG, descricaoDoRisco, recomendacaoDoRisco, type RiskCode } from "@/lib/riscos-catalog";
 import { salvarRisco, excluirRisco, type RiscoInput } from "@/app/dashboard/riscos/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type RiscoDTO = {
   id: string;
@@ -33,6 +34,7 @@ const shortNome = (n: string) => (n.length > 22 ? n.slice(0, 20) + "…" : n);
 
 export function RiscosClient({ processos }: { processos: ProcessoComRiscos[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<Partial<RiscoDTO> | null>(null);
 
   const todosRiscos = processos.flatMap((p) => p.riscos);
@@ -60,9 +62,11 @@ export function RiscosClient({ processos }: { processos: ProcessoComRiscos[] }) 
           <span className="text-amber-700"> {cont.MEDIO} médio</span> ·
           <span className="text-emerald-700"> {cont.BAIXO} baixo</span>
         </div>
-        <button onClick={() => setEditando({ probabilidade: 2, impacto: 2, status: "ABERTO" })} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Avaliar risco
-        </button>
+        {podeEditar && (
+          <button onClick={() => setEditando({ probabilidade: 2, impacto: 2, status: "ABERTO" })} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Avaliar risco
+          </button>
+        )}
       </div>
 
       {/* Matriz + Radar */}
@@ -116,9 +120,11 @@ export function RiscosClient({ processos }: { processos: ProcessoComRiscos[] }) 
                 {p.dadosSensiveis && <Badge variant="red"><ShieldAlert className="w-3 h-3" /> sensíveis</Badge>}
                 {p.prioritario && <Badge variant="indigo">prioritário</Badge>}
               </div>
-              <button onClick={() => setEditando({ inventoryId: p.id, probabilidade: 2, impacto: 2, status: "ABERTO" })} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-700 border border-brand-100 bg-brand-50 rounded-md px-2.5 py-1 hover:bg-brand-100 shrink-0">
-                <Plus className="w-3.5 h-3.5" /> Avaliar risco
-              </button>
+              {podeEditar && (
+                <button onClick={() => setEditando({ inventoryId: p.id, probabilidade: 2, impacto: 2, status: "ABERTO" })} className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-brand-700 border border-brand-100 bg-brand-50 rounded-md px-2.5 py-1 hover:bg-brand-100 shrink-0">
+                  <Plus className="w-3.5 h-3.5" /> Avaliar risco
+                </button>
+              )}
             </div>
             {p.riscos.length === 0 ? (
               <div className="text-[12px] text-gray-400 mt-2">Nenhum risco avaliado para este processo.</div>
@@ -144,17 +150,19 @@ export function RiscosClient({ processos }: { processos: ProcessoComRiscos[] }) 
                       <div className="flex items-center gap-2 shrink-0 pl-[18px] sm:pl-0">
                         <Badge variant={nv.variant}>{nv.label}</Badge>
                         <Badge variant={st.variant}>{st.label}</Badge>
-                        <div className="flex gap-1.5 shrink-0 ml-auto sm:ml-0">
-                          <button onClick={() => setEditando(r)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm("Excluir este risco?")) return;
-                              const t = toast.loading("Excluindo…");
-                              try { await excluirRisco(r.id); toast.success("Risco excluído", { id: t }); router.refresh(); }
-                              catch { toast.error("Não foi possível excluir", { id: t }); }
-                            }}
-                            title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                        </div>
+                        {podeEditar && (
+                          <div className="flex gap-1.5 shrink-0 ml-auto sm:ml-0">
+                            <button onClick={() => setEditando(r)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Excluir este risco?")) return;
+                                const t = toast.loading("Excluindo…");
+                                try { await excluirRisco(r.id); toast.success("Risco excluído", { id: t }); router.refresh(); }
+                                catch { toast.error("Não foi possível excluir", { id: t }); }
+                              }}
+                              title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type MarcoInput = {
@@ -16,7 +16,7 @@ export type MarcoInput = {
 const STATUS_VALIDOS = ["A_INICIAR", "EM_ANDAMENTO", "CONCLUIDO", "CRITICO"];
 
 export async function salvarMarco(input: MarcoInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.data) throw new Error("A data é obrigatória.");
   if (!input.descricao?.trim()) throw new Error("A descrição é obrigatória.");
 
@@ -41,7 +41,7 @@ export async function salvarMarco(input: MarcoInput) {
 }
 
 export async function excluirMarco(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.marco.delete({ where: { id } });
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/calendario");

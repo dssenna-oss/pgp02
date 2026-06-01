@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth-server";
+import { requireEditor } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type MembroInput = {
@@ -17,7 +17,7 @@ export type MembroInput = {
 };
 
 export async function salvarMembro(input: MembroInput) {
-  await requireSession();
+  await requireEditor();
   if (!input.nome?.trim()) throw new Error("O nome é obrigatório.");
   if (!input.funcao?.trim()) throw new Error("A função é obrigatória.");
 
@@ -45,7 +45,7 @@ export async function salvarMembro(input: MembroInput) {
 }
 
 export async function excluirMembro(id: string) {
-  await requireSession();
+  await requireEditor();
   await prisma.membro.delete({ where: { id } });
   revalidatePath("/dashboard/membros");
   return { ok: true };

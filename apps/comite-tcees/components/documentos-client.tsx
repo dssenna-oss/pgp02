@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusDoc, STATUS_DOC } from "@/lib/comite-ui";
 import { salvarDocumento, excluirDocumento, type DocumentoInput } from "@/app/dashboard/documentos/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type DocumentoDTO = {
   id: string;
@@ -24,6 +25,7 @@ const VAZIO = (): DocumentoDTO => ({
 
 export function DocumentosClient({ documentos }: { documentos: DocumentoDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<DocumentoDTO | null>(null);
 
   return (
@@ -32,12 +34,14 @@ export function DocumentosClient({ documentos }: { documentos: DocumentoDTO[] })
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📄 Status: a elaborar → elaborado → pendente de aprovação → homologado
         </div>
-        <button
-          onClick={() => setEditando(VAZIO())}
-          className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
-        >
-          <Plus className="w-4 h-4" /> Enviar documento
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => setEditando(VAZIO())}
+            className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700"
+          >
+            <Plus className="w-4 h-4" /> Enviar documento
+          </button>
+        )}
       </div>
 
       <div className="overflow-x-auto bg-white border rounded-xl">
@@ -66,28 +70,30 @@ export function DocumentosClient({ documentos }: { documentos: DocumentoDTO[] })
                   <td className="px-3.5 py-3"><Badge variant={st.variant}>{st.label}</Badge></td>
                   <td className="px-3.5 py-3 text-[13px] text-gray-600">{d.atualizadoEm ?? "—"}</td>
                   <td className="px-3.5 py-3 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <button onClick={() => setEditando(d)} title="Editar" className="text-gray-300 hover:text-brand-600">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm(`Excluir o documento "${d.nome}"?`)) return;
-                          const t = toast.loading("Excluindo…");
-                          try {
-                            await excluirDocumento(d.id);
-                            toast.success("Documento excluído", { id: t });
-                            router.refresh();
-                          } catch {
-                            toast.error("Não foi possível excluir", { id: t });
-                          }
-                        }}
-                        title="Excluir"
-                        className="text-gray-300 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                    {podeEditar && (
+                      <div className="flex gap-2">
+                        <button onClick={() => setEditando(d)} title="Editar" className="text-gray-300 hover:text-brand-600">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Excluir o documento "${d.nome}"?`)) return;
+                            const t = toast.loading("Excluindo…");
+                            try {
+                              await excluirDocumento(d.id);
+                              toast.success("Documento excluído", { id: t });
+                              router.refresh();
+                            } catch {
+                              toast.error("Não foi possível excluir", { id: t });
+                            }
+                          }}
+                          title="Excluir"
+                          className="text-gray-300 hover:text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );

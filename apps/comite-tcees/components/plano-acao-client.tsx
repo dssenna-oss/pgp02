@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X, Download, CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { STATUS_ACAO, PRIORIDADE_ACAO, ORIGEM_ACAO, eixoTag } from "@/lib/comite-ui";
 import { salvarAcao, excluirAcao, importarDoGap, importarDosRiscos, type AcaoInput } from "@/app/dashboard/plano-acao/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type AcaoDTO = {
   id: string; acao: string; descricao: string | null; origem: string;
@@ -19,6 +20,7 @@ const VAZIA = (): AcaoDTO => ({ id: "", acao: "", descricao: "", origem: "MANUAL
 
 export function PlanoAcaoClient({ acoes, entregas }: { acoes: AcaoDTO[]; entregas: EntregaCalDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<AcaoDTO | null>(null);
   const [filtro, setFiltro] = useState("TODAS");
   const [importando, setImportando] = useState(false);
@@ -64,17 +66,19 @@ export function PlanoAcaoClient({ acoes, entregas }: { acoes: AcaoDTO[]; entrega
           {chip("EM_ANDAMENTO", `Em andamento (${cont.EM_ANDAMENTO})`)}
           {chip("CONCLUIDA", `Concluídas (${cont.CONCLUIDA})`)}
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => importar(importarDoGap, "GAP")} disabled={importando} className="inline-flex items-center gap-2 border border-indigo-200 bg-indigo-50 text-indigo-700 rounded-md px-3 py-2.5 text-sm font-semibold hover:bg-indigo-100 disabled:opacity-60">
-            <Download className="w-4 h-4" /> Importar do GAP
-          </button>
-          <button onClick={() => importar(importarDosRiscos, "Riscos")} disabled={importando} className="inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-700 rounded-md px-3 py-2.5 text-sm font-semibold hover:bg-red-100 disabled:opacity-60">
-            <Download className="w-4 h-4" /> Importar dos Riscos
-          </button>
-          <button onClick={() => setEditando(VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-            <Plus className="w-4 h-4" /> Nova ação
-          </button>
-        </div>
+        {podeEditar && (
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => importar(importarDoGap, "GAP")} disabled={importando} className="inline-flex items-center gap-2 border border-indigo-200 bg-indigo-50 text-indigo-700 rounded-md px-3 py-2.5 text-sm font-semibold hover:bg-indigo-100 disabled:opacity-60">
+              <Download className="w-4 h-4" /> Importar do GAP
+            </button>
+            <button onClick={() => importar(importarDosRiscos, "Riscos")} disabled={importando} className="inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-700 rounded-md px-3 py-2.5 text-sm font-semibold hover:bg-red-100 disabled:opacity-60">
+              <Download className="w-4 h-4" /> Importar dos Riscos
+            </button>
+            <button onClick={() => setEditando(VAZIA())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+              <Plus className="w-4 h-4" /> Nova ação
+            </button>
+          </div>
+        )}
       </div>
 
       {cont.ATRASADAS > 0 && (
@@ -95,19 +99,23 @@ export function PlanoAcaoClient({ acoes, entregas }: { acoes: AcaoDTO[]; entrega
               <div key={a.id} className="bg-white border rounded-xl px-4 py-3">
                 <div className="flex justify-between gap-2 items-start">
                   <div className="text-[13px] font-semibold text-gray-900">{a.acao}</div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => setEditando(a)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={async () => { if (!confirm("Excluir esta ação?")) return; const t = toast.loading("Excluindo…"); try { await excluirAcao(a.id); toast.success("Excluída", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                  </div>
+                  {podeEditar && (
+                    <div className="flex gap-1.5 shrink-0">
+                      <button onClick={() => setEditando(a)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={async () => { if (!confirm("Excluir esta ação?")) return; const t = toast.loading("Excluindo…"); try { await excluirAcao(a.id); toast.success("Excluída", { id: t }); router.refresh(); } catch { toast.error("Falhou", { id: t }); } }} title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                   <Badge variant={og.variant}>{og.label}</Badge>
                   <Badge variant={pr.variant}>prioridade {pr.label}</Badge>
                   {a.responsavel && <span className="text-[11.5px] text-gray-500">👤 {a.responsavel}</span>}
                   {a.prazoBR && <span className={`text-[11.5px] ${atrasada ? "text-red-600 font-semibold" : "text-gray-500"}`}>📅 {a.prazoBR}</span>}
-                  <select value={a.status} onChange={(e) => mudarStatus(a, e.target.value)} className="ml-auto text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
-                    {Object.entries(STATUS_ACAO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                  </select>
+                  {podeEditar && (
+                    <select value={a.status} onChange={(e) => mudarStatus(a, e.target.value)} className="ml-auto text-[11.5px] border rounded-md px-2 py-1 outline-none focus:ring-2 focus:ring-brand-500">
+                      {Object.entries(STATUS_ACAO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
             );

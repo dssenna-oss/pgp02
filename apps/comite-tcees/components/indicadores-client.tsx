@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { statusIndicador, eixoTag, STATUS_INDICADOR } from "@/lib/comite-ui";
 import { salvarIndicador, excluirIndicador, type IndicadorInput } from "@/app/dashboard/indicadores/actions";
+import { usePodeEditar } from "@/lib/use-pode-editar";
 
 export type IndicadorDTO = {
   id: string;
@@ -42,15 +43,18 @@ const VAZIO = (): IndicadorDTO => ({
 
 export function IndicadoresClient({ indicadores }: { indicadores: IndicadorDTO[] }) {
   const router = useRouter();
+  const podeEditar = usePodeEditar();
   const [editando, setEditando] = useState<IndicadorDTO | null>(null);
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-          <Plus className="w-4 h-4" /> Novo indicador
-        </button>
-      </div>
+      {podeEditar && (
+        <div className="flex justify-end mb-4">
+          <button onClick={() => setEditando(VAZIO())} className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+            <Plus className="w-4 h-4" /> Novo indicador
+          </button>
+        </div>
+      )}
 
       {GRUPOS.map((g) => {
         const doGrupo = indicadores.filter((i) => i.eixoCodigo === g);
@@ -88,17 +92,19 @@ export function IndicadoresClient({ indicadores }: { indicadores: IndicadorDTO[]
                         </td>
                         <td className="px-3 py-2.5"><Badge variant={st.variant}>{st.label}</Badge></td>
                         <td className="px-3 py-2.5 whitespace-nowrap">
-                          <div className="flex gap-1.5">
-                            <button onClick={() => setEditando(i)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm(`Excluir o indicador ${i.codigo}?`)) return;
-                                const t = toast.loading("Excluindo…");
-                                try { await excluirIndicador(i.id); toast.success("Indicador excluído", { id: t }); router.refresh(); }
-                                catch { toast.error("Não foi possível excluir", { id: t }); }
-                              }}
-                              title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
-                          </div>
+                          {podeEditar && (
+                            <div className="flex gap-1.5">
+                              <button onClick={() => setEditando(i)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Excluir o indicador ${i.codigo}?`)) return;
+                                  const t = toast.loading("Excluindo…");
+                                  try { await excluirIndicador(i.id); toast.success("Indicador excluído", { id: t }); router.refresh(); }
+                                  catch { toast.error("Não foi possível excluir", { id: t }); }
+                                }}
+                                title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
