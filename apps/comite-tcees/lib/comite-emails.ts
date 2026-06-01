@@ -16,11 +16,14 @@ const APP_URL = process.env.NEXTAUTH_URL || "https://comite-tcees.vercel.app";
 async function membrosComEmail(): Promise<Array<{ email: string; name: string }>> {
   const membros = await prisma.membro.findMany({
     where: { email: { not: null } },
-    select: { nome: true, email: true },
+    select: { nome: true, email: true, emailInterno: true },
   });
+  // Comunicação interna do Comitê prefere o emailInterno quando houver
+  // (ex.: o Encarregado recebe nos avisos no e-mail pessoal, não na caixa
+  // funcional pública). Sem emailInterno, cai no email oficial.
   return membros
-    .filter((m) => m.email && m.email.includes("@"))
-    .map((m) => ({ email: m.email as string, name: m.nome }));
+    .map((m) => ({ email: (m.emailInterno || m.email) as string, name: m.nome }))
+    .filter((m) => m.email && m.email.includes("@"));
 }
 
 /** Layout HTML mínimo compartilhado (navy do Comitê). */

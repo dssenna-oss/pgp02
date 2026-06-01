@@ -50,7 +50,7 @@ export default async function VisaoGeral() {
       <div className="grid gap-3.5 grid-cols-2 lg:grid-cols-4">
         <div className="bg-white border rounded-xl p-4 border-l-4 border-l-brand-500">
           <div className="text-xs text-gray-500 font-semibold">Execução do Plano</div>
-          <div className="text-3xl font-extrabold text-gray-900 mt-1">{execPct}%</div>
+          <div className="text-3xl font-extrabold text-brand-700 mt-1">{execPct}%</div>
           <div className="h-2 rounded-full bg-slate-100 mt-2 overflow-hidden">
             <span className="block h-full bg-brand-500 rounded-full" style={{ width: `${execPct}%` }} />
           </div>

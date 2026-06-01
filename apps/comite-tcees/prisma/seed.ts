@@ -28,21 +28,21 @@ const EIXOS = [
 // MEMBROS (Seção 1.5)
 // ---------------------------------------------------------------------------
 const MEMBROS = [
-  { nome: "Rodrigo Coelho do Carmo", funcao: "Presidente", cargo: "Conselheiro do TCEES", unidade: "Presidência do Comitê", ordem: 1 },
-  { nome: "Durval Senna da Silva", funcao: "Coordenador", cargo: "Auditor de Controle Externo", unidade: "Ouvidoria", matricula: "202.694", inciso: "VI", ordem: 2 },
-  { nome: "Anderson Gomes Barbosa", funcao: "Encarregado titular", cargo: "Encarregado (DPO) — art. 41 LGPD", unidade: "SEGAFI", matricula: "203.604", inciso: "I, a", email: "encarregado@tcees.tc.br", ordem: 3 },
-  { nome: "Marcos Rogério Bozzi da Luz", funcao: "Encarregado substituto", unidade: "SEGAFI", matricula: "203.611", inciso: "I, b", ordem: 4 },
-  { nome: "Pedro da Paiva Brito Filho", funcao: "Membro", unidade: "SEGAFI", matricula: "203.613", inciso: "I, c", ordem: 5 },
-  { nome: "Bruno Fardin Faé", funcao: "Membro", unidade: "SEGEX", matricula: "203.537", inciso: "II, a", ordem: 6 },
-  { nome: "Jackson Camatta", funcao: "Membro", unidade: "SEGEX", matricula: "203.034", inciso: "II, b", ordem: 7 },
-  { nome: "Régis Vicentini Silotti", funcao: "Membro", unidade: "SEGEX", matricula: "203.204", inciso: "II, c", ordem: 8 },
-  { nome: "Rogerio Oliveira de Jesus", funcao: "Membro", unidade: "SEGEX", matricula: "202.571", inciso: "II, d", ordem: 9 },
-  { nome: "Pedro Alberto Busatto Broseghini", funcao: "Membro", unidade: "SGTI", matricula: "203.522", inciso: "III", ordem: 10 },
-  { nome: "Claudia Duarte Ribeiro", funcao: "Membro", unidade: "SGS", matricula: "203.130", inciso: "IV", ordem: 11 },
-  { nome: "Rodrigo Lamari da Costa Pereira", funcao: "Membro", unidade: "Corregedoria", matricula: "203.186", inciso: "V", ordem: 12 },
-  { nome: "Bianca Tristão Sandri", funcao: "Membro", unidade: "ECP", matricula: "202.946", inciso: "VII", ordem: 13 },
-  { nome: "Walter Júnior Cabral de Lima", funcao: "Membro", unidade: "MPC junto ao TCEES", matricula: "203.771", inciso: "VIII", ordem: 14 },
-  { nome: "Eliane Cabrini Ramalho", funcao: "Membro", unidade: "Designação da Presidência", matricula: "204.227", inciso: "IX", ordem: 15 },
+  { nome: "Rodrigo Coelho do Carmo", funcao: "Presidente", cargo: "Conselheiro do TCEES", unidade: "Presidência do Comitê", email: "rodrigo.carmo@tcees.tc.br", ordem: 1 },
+  { nome: "Durval Senna da Silva", funcao: "Coordenador", cargo: "Auditor de Controle Externo", unidade: "Ouvidoria", matricula: "202.694", inciso: "VI", email: "durval.senna@tcees.tc.br", ordem: 2 },
+  { nome: "Anderson Gomes Barbosa", funcao: "Encarregado titular", cargo: "Encarregado (DPO) — art. 41 LGPD", unidade: "SEGAFI", matricula: "203.604", inciso: "I, a", email: "encarregado@tcees.tc.br", emailInterno: "anderson.barbosa@tcees.tc.br", ordem: 3 },
+  { nome: "Marcos Rogério Bozzi da Luz", funcao: "Encarregado substituto", unidade: "SEGAFI", matricula: "203.611", inciso: "I, b", email: "marcos.bozzi@tcees.tc.br", ordem: 4 },
+  { nome: "Pedro da Paiva Brito Filho", funcao: "Membro", unidade: "SEGAFI", matricula: "203.613", inciso: "I, c", email: "pedro.brito@tcees.tc.br", ordem: 5 },
+  { nome: "Bruno Fardin Faé", funcao: "Membro", unidade: "SEGEX", matricula: "203.537", inciso: "II, a", email: "bruno.fae@tcees.tc.br", ordem: 6 },
+  { nome: "Jackson Camatta", funcao: "Membro", unidade: "SEGEX", matricula: "203.034", inciso: "II, b", email: "jackson.camatta@tcees.tc.br", ordem: 7 },
+  { nome: "Régis Vicentini Silotti", funcao: "Membro", unidade: "SEGEX", matricula: "203.204", inciso: "II, c", email: "regis.silotti@tcees.tc.br", ordem: 8 },
+  { nome: "Rogerio Oliveira de Jesus", funcao: "Membro", unidade: "SEGEX", matricula: "202.571", inciso: "II, d", email: "rogerio.jesus@tcees.tc.br", ordem: 9 },
+  { nome: "Pedro Alberto Busatto Broseghini", funcao: "Membro", unidade: "SGTI", matricula: "203.522", inciso: "III", email: "pedro.broseghini@tcees.tc.br", ordem: 10 },
+  { nome: "Claudia Duarte Ribeiro", funcao: "Membro", unidade: "SGS", matricula: "203.130", inciso: "IV", email: "claudia.ribeiro@tcees.tc.br", ordem: 11 },
+  { nome: "Rodrigo Lamari da Costa Pereira", funcao: "Membro", unidade: "Corregedoria", matricula: "203.186", inciso: "V", email: "rodrigo.pereira@tcees.tc.br", ordem: 12 },
+  { nome: "Bianca Tristão Sandri", funcao: "Membro", unidade: "ECP", matricula: "202.946", inciso: "VII", email: "bianca.sandri@tcees.tc.br", ordem: 13 },
+  { nome: "Walter Júnior Cabral de Lima", funcao: "Membro", unidade: "MPC junto ao TCEES", matricula: "203.771", inciso: "VIII", email: "walter.lima@tcees.tc.br", ordem: 14 },
+  { nome: "Eliane Cabrini Ramalho", funcao: "Membro", unidade: "Designação da Presidência", matricula: "204.227", inciso: "IX", email: "eliane.ramalho@tcees.tc.br", ordem: 15 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -348,6 +348,26 @@ async function main() {
     update: {},
     create: { email: "admin@tcees.tc.br", name: "Administrador", password: senhaHash, role: "ADMIN" },
   });
+
+  // Login individual para cada membro com e-mail (senha inicial comum; troca no 1º acesso).
+  // Papel: Presidência / Coordenação / Encarregado titular (DPO) = COORDENADOR; demais = MEMBRO.
+  // O login usa o e-mail pessoal (emailInterno quando houver — caso do Encarregado,
+  // cujo "email" é a caixa pública do DPO).
+  for (const m of MEMBROS) {
+    const mm = m as { nome: string; funcao: string; email?: string; emailInterno?: string };
+    const loginEmail = (mm.emailInterno || mm.email || "").toLowerCase();
+    if (!loginEmail.includes("@")) continue;
+    const f = mm.funcao.toLowerCase();
+    const role =
+      f.includes("coordenador") || f.includes("presidente") || f.includes("encarregado titular")
+        ? "COORDENADOR"
+        : "MEMBRO";
+    await prisma.user.upsert({
+      where: { email: loginEmail },
+      update: {},
+      create: { email: loginEmail, name: mm.nome, password: senhaHash, role },
+    });
+  }
 
   // Tabelas do módulo — limpa e recarrega (idempotente)
   await prisma.$transaction([

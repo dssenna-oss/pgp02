@@ -13,6 +13,7 @@ export type MembroInput = {
   matricula?: string;
   inciso?: string;
   email?: string;
+  emailInterno?: string;
 };
 
 export async function salvarMembro(input: MembroInput) {
@@ -28,6 +29,7 @@ export async function salvarMembro(input: MembroInput) {
     matricula: input.matricula?.trim() || null,
     inciso: input.inciso?.trim() || null,
     email: input.email?.trim() || null,
+    emailInterno: input.emailInterno?.trim() || null,
   };
 
   if (input.id) {

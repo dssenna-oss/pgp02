@@ -16,6 +16,7 @@ export default async function MembrosPage() {
     matricula: m.matricula,
     inciso: m.inciso,
     email: m.email,
+    emailInterno: m.emailInterno,
   }));
 
   return (

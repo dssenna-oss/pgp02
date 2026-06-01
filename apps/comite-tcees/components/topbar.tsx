@@ -22,13 +22,14 @@ export function Topbar({
 }) {
   return (
     <div className="bg-white border-b sticky top-0 z-10 px-6 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2.5 pl-10 lg:pl-0">
+      {/* No mobile a caixa some (o banner acima já mostra o nome do Tribunal); reservamos o espaço do botão ☰ */}
+      <div className="hidden sm:flex items-center gap-2.5 pl-10 lg:pl-0">
         <span className="text-[11px] uppercase tracking-wide text-gray-500">Instituição</span>
         <span className="text-[13px] font-semibold text-gray-900 border rounded-lg px-3 py-1.5 bg-white">
           Tribunal de Contas do ES (TCEES)
         </span>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 ml-auto">
         <Link href="/dashboard/notificacoes" className="relative" title="Notificações">
           <Bell className="w-[18px] h-[18px] text-gray-600" />
           {unread > 0 && (
@@ -41,7 +42,7 @@ export function Topbar({
           <span className="hidden sm:inline text-[12.5px] text-gray-600">
             {userName} · <b>{ROLE_LABEL[role] ?? role}</b>
           </span>
-          <span className="w-9 h-9 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-[13px]">
+          <span className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-[13px]">
             {iniciais(userName)}
           </span>
         </Link>

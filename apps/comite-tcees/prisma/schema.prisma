@@ -80,7 +80,8 @@ model Membro {
   unidade   String? // "SEGAFI" | "SEGEX" ...
   matricula String?
   inciso    String? // "I, a" — referência à Portaria
-  email     String?
+  email     String? // contato oficial / externo (a página pública do DPO usa este)
+  emailInterno String? // e-mail p/ comunicações internas do Comitê (sobrepõe o email nos avisos)
   ordem     Int     @default(0)
   createdAt DateTime @default(now())
 

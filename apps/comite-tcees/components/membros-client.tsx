@@ -16,10 +16,11 @@ export type MembroDTO = {
   matricula: string | null;
   inciso: string | null;
   email: string | null;
+  emailInterno: string | null;
 };
 
 const VAZIO = (): MembroDTO => ({
-  id: "", nome: "", funcao: "Membro", cargo: "", unidade: "", matricula: "", inciso: "", email: "",
+  id: "", nome: "", funcao: "Membro", cargo: "", unidade: "", matricula: "", inciso: "", email: "", emailInterno: "",
 });
 
 const FUNCOES = ["Presidente", "Coordenador", "Encarregado titular", "Encarregado substituto", "Membro"];
@@ -58,6 +59,7 @@ export function MembrosClient({ membros }: { membros: MembroDTO[] }) {
                 {m.matricula ? ` · mat. ${m.matricula}` : ""}
               </div>
               {m.email && <div className="text-[11px] text-gray-400 mt-0.5 truncate">{m.email}</div>}
+              {m.emailInterno && <div className="text-[11px] text-gray-400 truncate" title="E-mail para comunicações internas do Comitê">↳ interno: {m.emailInterno}</div>}
             </div>
             <div className="flex flex-col gap-1.5 shrink-0">
               <button onClick={() => setEditando(m)} title="Editar" className="text-gray-300 hover:text-brand-600">
@@ -113,6 +115,7 @@ function MembroModal({ membro, onClose, onSaved }: { membro: MembroDTO; onClose:
       matricula: form.matricula ?? "",
       inciso: form.inciso ?? "",
       email: form.email ?? "",
+      emailInterno: form.emailInterno ?? "",
     };
     try {
       await salvarMembro(input);
@@ -173,8 +176,14 @@ function MembroModal({ membro, onClose, onSaved }: { membro: MembroDTO; onClose:
           </div>
 
           <div>
-            <label className={labelCls}>E-mail</label>
+            <label className={labelCls}>E-mail (contato oficial / externo)</label>
             <input type="email" className={inputCls} value={form.email ?? ""} onChange={(e) => set("email", e.target.value)} placeholder="email@tcees.tc.br" />
+          </div>
+
+          <div>
+            <label className={labelCls}>E-mail interno (comunicações do Comitê)</label>
+            <input type="email" className={inputCls} value={form.emailInterno ?? ""} onChange={(e) => set("emailInterno", e.target.value)} placeholder="Opcional — só se for diferente do oficial" />
+            <p className="text-[11px] text-gray-400 mt-1">Se preenchido, os avisos do Comitê (reunião, pauta) vão para cá em vez do e-mail oficial. Útil para o Encarregado, cujo e-mail oficial é a caixa pública do DPO.</p>
           </div>
         </div>
 
