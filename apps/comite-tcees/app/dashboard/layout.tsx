@@ -46,7 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               Executivo de Proteção de Dados Pessoais — Portaria Normativa nº 22/2026.
             </span>
           </div>
-          <main className="px-6 py-6 pb-16 w-full max-w-[1180px]">{children}</main>
+          <main className="px-6 py-6 pb-16 w-full max-w-[1600px]">{children}</main>
         </div>
       </div>
     </div>
