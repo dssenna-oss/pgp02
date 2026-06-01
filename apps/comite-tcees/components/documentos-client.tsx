@@ -44,7 +44,53 @@ export function DocumentosClient({ documentos }: { documentos: DocumentoDTO[] })
         )}
       </div>
 
-      <div className="overflow-x-auto bg-white border rounded-xl">
+      {/* MOBILE: cartões empilhados */}
+      <div className="sm:hidden space-y-2.5">
+        {documentos.map((d) => {
+          const st = statusDoc(d.status);
+          return (
+            <div key={d.id} className="bg-white border rounded-xl p-3.5">
+              <div className="text-[13.5px] font-semibold text-gray-900">
+                {d.arquivoUrl ? (
+                  <a href={d.arquivoUrl} target="_blank" rel="noreferrer" className="text-brand-700 hover:underline">📎 {d.nome}</a>
+                ) : d.nome}
+              </div>
+              <div className="text-[11.5px] text-gray-500 mt-1">
+                {[d.tipo, d.versao].filter(Boolean).join(" · ") || "—"}
+                {d.atualizadoEm ? ` · atualizado ${d.atualizadoEm}` : ""}
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-2.5">
+                <Badge variant={st.variant}>{st.label}</Badge>
+                {podeEditar && (
+                  <div className="flex gap-3">
+                    <button onClick={() => setEditando(d)} title="Editar" className="text-gray-400 hover:text-brand-600">
+                      <Pencil className="w-[18px] h-[18px]" />
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`Excluir o documento "${d.nome}"?`)) return;
+                        const t = toast.loading("Excluindo…");
+                        try { await excluirDocumento(d.id); toast.success("Documento excluído", { id: t }); router.refresh(); }
+                        catch { toast.error("Não foi possível excluir", { id: t }); }
+                      }}
+                      title="Excluir"
+                      className="text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 className="w-[18px] h-[18px]" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {documentos.length === 0 && (
+          <div className="bg-white border rounded-xl p-6 text-center text-sm text-gray-500">Nenhum documento cadastrado.</div>
+        )}
+      </div>
+
+      {/* DESKTOP: tabela */}
+      <div className="hidden sm:block overflow-x-auto bg-white border rounded-xl">
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-50">
