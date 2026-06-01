@@ -229,6 +229,12 @@ model DataInventory {
   prioritario      Boolean  @default(false) // um dos 12 processos prioritários
   status           String   @default("PRELIMINAR") // PRELIMINAR | EM_REVISAO | CONCLUIDO
   observacoes      String?
+  // --- Campos para o ROPA (Art. 37 / template ANPD) ---
+  categoriasTitulares String? // servidores, jurisdicionados, cidadãos, terceirizados…
+  fonteDados          String? // coleta direta do titular, sistemas públicos, terceiros, integrações
+  destinatariosInternos String? // unidades/áreas internas que acessam
+  transfInternacional String? // país de destino + salvaguarda (vazio = não há)
+  criterioDescarte    String? // como os dados são eliminados ao fim do prazo
   ordem            Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

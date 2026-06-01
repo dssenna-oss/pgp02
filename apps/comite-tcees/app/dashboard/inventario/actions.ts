@@ -19,6 +19,11 @@ export type InventarioInput = {
   prioritario?: boolean;
   status: string;
   observacoes?: string;
+  categoriasTitulares?: string;
+  fonteDados?: string;
+  destinatariosInternos?: string;
+  transfInternacional?: string;
+  criterioDescarte?: string;
 };
 
 const STATUS_VALIDOS = ["PRELIMINAR", "EM_REVISAO", "CONCLUIDO"];
@@ -41,6 +46,11 @@ export async function salvarInventario(input: InventarioInput) {
     prioritario: !!input.prioritario,
     status: STATUS_VALIDOS.includes(input.status) ? input.status : "PRELIMINAR",
     observacoes: input.observacoes?.trim() || null,
+    categoriasTitulares: input.categoriasTitulares?.trim() || null,
+    fonteDados: input.fonteDados?.trim() || null,
+    destinatariosInternos: input.destinatariosInternos?.trim() || null,
+    transfInternacional: input.transfInternacional?.trim() || null,
+    criterioDescarte: input.criterioDescarte?.trim() || null,
   };
 
   if (input.id) {

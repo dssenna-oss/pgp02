@@ -80,6 +80,7 @@ function NavContent({ pathname, onNav }: { pathname: string; onNav?: () => void 
           { href: "/dashboard/diagnostico", icon: Stethoscope, label: "Diagnóstico", fase: "Fase 2" },
           { href: "/dashboard/inventario", icon: Boxes, label: "Inventário", fase: "Fase 3" },
           { href: "/dashboard/riscos", icon: ShieldAlert, label: "Análise de Riscos", fase: "Fase 3" },
+          { href: "/dashboard/ropa", icon: FileText, label: "ROPA · Art. 37", fase: "Fase 3" },
           { href: "/dashboard/gap", icon: ClipboardCheck, label: "GAP Analysis", fase: "Fase 4" },
           { href: "/dashboard/plano-acao", icon: ListChecks, label: "Plano de Ação", fase: "Fase 5" },
           { href: "/dashboard/execucao", icon: FileCheck2, label: "Execução", fase: "Fase 6" },

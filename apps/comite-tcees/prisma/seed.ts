@@ -254,6 +254,24 @@ const BL: Record<string, string> = {
   III: "Art. 7º, II e III c/c art. 23, I, da LGPD",
   IV: "Art. 7º, III, V e VI c/c art. 23, I, da LGPD",
 };
+// Campos do ROPA (Art. 37) por processo — valores institucionais de referência
+// (o Comitê refina). Critério de descarte segue a tabela de temporalidade do TCEES.
+type RopaCampos = { categoriasTitulares: string; fonteDados: string; destinatariosInternos: string; criterioDescarte: string; transfInternacional?: string };
+const ROPA: Record<string, RopaCampos> = {
+  "Sistema de acesso identificado": { categoriasTitulares: "Servidores, estagiários, terceirizados e visitantes", fonteDados: "Coleta direta do titular (cadastro de acesso)", destinatariosInternos: "SGTI", criterioDescarte: "Eliminação após o término do vínculo, conforme tabela de temporalidade" },
+  'Sistema "Conta pra Gente"': { categoriasTitulares: "Cidadãos e jurisdicionados (manifestantes da Ouvidoria)", fonteDados: "Coleta direta do titular (manifestação)", destinatariosInternos: "Ouvidoria, SECOM, SGTI", criterioDescarte: "Guarda conforme tabela de temporalidade da Ouvidoria" },
+  "SGP RH — Folha de Pagamento": { categoriasTitulares: "Servidores ativos, inativos e pensionistas", fonteDados: "Coleta direta + sistema SGP RH", destinatariosInternos: "SEGAFI, SGTI", criterioDescarte: "Guarda permanente (atos de pessoal — tabela de temporalidade)" },
+  "SGP RH — Benefícios": { categoriasTitulares: "Servidores e dependentes", fonteDados: "Coleta direta do titular + documentos comprobatórios", destinatariosInternos: "SEGAFI", criterioDescarte: "Guarda permanente / conforme natureza do benefício" },
+  "Sistema ECP — Escola de Contas Públicas": { categoriasTitulares: "Alunos, instrutores e servidores em capacitação", fonteDados: "Coleta direta (inscrição) + integrações internas", destinatariosInternos: "ECP", criterioDescarte: "Guarda conforme tabela de temporalidade da ECP" },
+  "Módulos do Sistema e-TCEES": { categoriasTitulares: "Servidores, jurisdicionados e partes processuais", fonteDados: "Coleta direta + processos de controle externo", destinatariosInternos: "SGTI, SEGEX", criterioDescarte: "Guarda permanente (processos de controle externo)" },
+  "Diário Oficial": { categoriasTitulares: "Servidores e cidadãos citados em atos oficiais", fonteDados: "Atos administrativos internos", destinatariosInternos: "SECOM", criterioDescarte: "Publicação permanente (caráter de publicidade oficial)" },
+  "Sistema CidadES (atos de pessoal e folha dos jurisdicionados)": { categoriasTitulares: "Servidores dos entes jurisdicionados", fonteDados: "Remessa eletrônica dos jurisdicionados", destinatariosInternos: "SEGEX", criterioDescarte: "Guarda permanente (fiscalização)" },
+  "MPC-ES — Denúncias e cobranças": { categoriasTitulares: "Denunciantes, denunciados e responsáveis", fonteDados: "Coleta direta (denúncia) + processos", destinatariosInternos: "MPC junto ao TCEES", criterioDescarte: "Guarda permanente (processos do MPC)" },
+  "NCD / Protocolo": { categoriasTitulares: "Cidadãos, servidores e fornecedores", fonteDados: "Coleta direta (protocolo de documentos)", destinatariosInternos: "SEGAFI, SGTI", criterioDescarte: "Conforme tabela de temporalidade do protocolo" },
+  "SGS — Secretaria Geral das Sessões": { categoriasTitulares: "Conselheiros, servidores e partes processuais", fonteDados: "Processos e pautas das sessões", destinatariosInternos: "SGS", criterioDescarte: "Guarda permanente (atas e decisões)" },
+  "Sistema de Videomonitoramento": { categoriasTitulares: "Servidores, terceirizados e visitantes", fonteDados: "Captação por câmeras nas dependências do TCEES", destinatariosInternos: "SEGAFI, SGTI", criterioDescarte: "Sobrescrita automática das imagens conforme política de retenção" },
+};
+
 const INVENTARIO = [
   { nome: "Sistema de acesso identificado", unidadeGestora: "SGTI", hipoteseMacro: "IV", dadosSensiveis: false },
   { nome: 'Sistema "Conta pra Gente"', unidadeGestora: "SGTI / SECOM", hipoteseMacro: "II", dadosSensiveis: false },
@@ -274,6 +292,12 @@ const INVENTARIO = [
   status: "PRELIMINAR",
   observacoes: "Inventário inicial (2021); refazimento sob metodologia atualizada previsto para Q3/2026.",
   ordem: i,
+  // campos do ROPA (Art. 37) — referência institucional
+  categoriasTitulares: ROPA[p.nome]?.categoriasTitulares ?? null,
+  fonteDados: ROPA[p.nome]?.fonteDados ?? null,
+  destinatariosInternos: ROPA[p.nome]?.destinatariosInternos ?? null,
+  criterioDescarte: ROPA[p.nome]?.criterioDescarte ?? null,
+  transfInternacional: ROPA[p.nome]?.transfInternacional ?? null,
 }));
 
 // ---------------------------------------------------------------------------

@@ -22,6 +22,11 @@ export default async function InventarioPage() {
     prioritario: p.prioritario,
     status: p.status,
     observacoes: p.observacoes,
+    categoriasTitulares: p.categoriasTitulares,
+    fonteDados: p.fonteDados,
+    destinatariosInternos: p.destinatariosInternos,
+    transfInternacional: p.transfInternacional,
+    criterioDescarte: p.criterioDescarte,
   }));
 
   return (

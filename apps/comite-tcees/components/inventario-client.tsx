@@ -24,12 +24,19 @@ export type InventarioDTO = {
   prioritario: boolean;
   status: string;
   observacoes: string | null;
+  // campos do ROPA (Art. 37 / template ANPD)
+  categoriasTitulares: string | null;
+  fonteDados: string | null;
+  destinatariosInternos: string | null;
+  transfInternacional: string | null;
+  criterioDescarte: string | null;
 };
 
 const VAZIO = (): InventarioDTO => ({
   id: "", nome: "", unidadeGestora: "", hipoteseMacro: "IV", finalidade: "", baseLegal: "",
   tiposDados: "", dadosSensiveis: false, retencao: "", compartilhamento: "", medidasSeguranca: "",
   prioritario: false, status: "PRELIMINAR", observacoes: "",
+  categoriasTitulares: "", fonteDados: "", destinatariosInternos: "", transfInternacional: "", criterioDescarte: "",
 });
 
 export function InventarioClient({ processos }: { processos: InventarioDTO[] }) {
@@ -325,6 +332,9 @@ function InventarioModal({ processo, onClose, onSaved }: { processo: InventarioD
       tiposDados: form.tiposDados ?? "", dadosSensiveis: form.dadosSensiveis, retencao: form.retencao ?? "",
       compartilhamento: form.compartilhamento ?? "", medidasSeguranca: form.medidasSeguranca ?? "",
       prioritario: form.prioritario, status: form.status, observacoes: form.observacoes ?? "",
+      categoriasTitulares: form.categoriasTitulares ?? "", fonteDados: form.fonteDados ?? "",
+      destinatariosInternos: form.destinatariosInternos ?? "", transfInternacional: form.transfInternacional ?? "",
+      criterioDescarte: form.criterioDescarte ?? "",
     };
     try { await salvarInventario(input); toast.success(ehNovo ? "Processo adicionado" : "Processo atualizado"); onSaved(); }
     catch (e: any) { toast.error(e?.message ?? "Não foi possível salvar"); }
@@ -405,6 +415,37 @@ function InventarioModal({ processo, onClose, onSaved }: { processo: InventarioD
             <label className={labelCls}>Observações</label>
             <textarea className={inputCls} rows={2} value={form.observacoes ?? ""} onChange={(e) => set("observacoes", e.target.value)} />
           </div>
+
+          {/* Detalhes para o ROPA (Art. 37 / template ANPD) — recolhível */}
+          <details className="border rounded-md bg-slate-50/60">
+            <summary className="cursor-pointer select-none px-3 py-2.5 text-[13px] font-semibold text-gray-700 flex items-center gap-2">
+              📋 Detalhes para o ROPA <span className="text-[11px] font-normal text-gray-400">(Art. 37 — completam o registro formal)</span>
+            </summary>
+            <div className="px-3 pb-3.5 space-y-3.5">
+              <div>
+                <label className={labelCls}>Categorias de titulares</label>
+                <input className={inputCls} value={form.categoriasTitulares ?? ""} onChange={(e) => set("categoriasTitulares", e.target.value)} placeholder="Ex.: servidores, jurisdicionados, cidadãos, terceirizados" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Fonte dos dados</label>
+                  <input className={inputCls} value={form.fonteDados ?? ""} onChange={(e) => set("fonteDados", e.target.value)} placeholder="Ex.: coleta direta, sistemas públicos" />
+                </div>
+                <div>
+                  <label className={labelCls}>Destinatários internos</label>
+                  <input className={inputCls} value={form.destinatariosInternos ?? ""} onChange={(e) => set("destinatariosInternos", e.target.value)} placeholder="Ex.: SEGAFI, SGTI" />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Transferência internacional <span className="font-normal text-gray-400">(país + salvaguarda; vazio = não há)</span></label>
+                <input className={inputCls} value={form.transfInternacional ?? ""} onChange={(e) => set("transfInternacional", e.target.value)} placeholder="Ex.: EUA — cláusulas-padrão contratuais" />
+              </div>
+              <div>
+                <label className={labelCls}>Critério de descarte</label>
+                <input className={inputCls} value={form.criterioDescarte ?? ""} onChange={(e) => set("criterioDescarte", e.target.value)} placeholder="Ex.: eliminação definitiva / anonimização ao fim do prazo" />
+              </div>
+            </div>
+          </details>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3.5 border-t bg-gray-50 rounded-b-xl">
           <button onClick={onClose} className="text-sm border border-gray-300 bg-white text-gray-700 rounded-md px-4 py-2 hover:bg-gray-50">Cancelar</button>
