@@ -4,7 +4,7 @@ import { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { marked } from "marked";
-import { Plus, Pencil, Trash2, X, Eye, UploadCloud, Send, Undo2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Eye, UploadCloud, Send, Undo2, FileText, Link as LinkIcon, ExternalLink, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { tipoArtigo, statusArtigo, TIPOS_ARTIGO } from "@/lib/articles";
 import { usePodeEditar } from "@/lib/use-pode-editar";
@@ -19,14 +19,20 @@ export type ArticleDTO = {
   resumo: string | null;
   conteudo: string;
   capaUrl: string | null;
+  anexoTipo: string | null; // "PDF" | "URL" | null
+  anexoUrl: string | null;
+  anexoNome: string | null;
   autor: string | null;
   status: string;
   publicadoEmBR: string | null;
 };
 
 const VAZIO = (): ArticleDTO => ({
-  id: "", titulo: "", tipo: "NOTICIA", resumo: "", conteudo: "", capaUrl: null, autor: null, status: "RASCUNHO", publicadoEmBR: null,
+  id: "", titulo: "", tipo: "NOTICIA", resumo: "", conteudo: "", capaUrl: null,
+  anexoTipo: null, anexoUrl: null, anexoNome: null, autor: null, status: "RASCUNHO", publicadoEmBR: null,
 });
+
+const MAX_PDF_BYTES = 3_800_000; // ~3,8 MB de arquivo (base64 cabe sob bodySizeLimit 5mb)
 
 export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
   const router = useRouter();
@@ -78,9 +84,11 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
                   <div className="w-full h-32 bg-gradient-to-br from-brand-50 to-slate-100 flex items-center justify-center text-4xl">{ti.emoji}</div>
                 )}
                 <div className="p-3.5 flex-1 flex flex-col">
-                  <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                     <Badge variant={ti.variant}>{ti.emoji} {ti.label}</Badge>
                     {a.status !== "PUBLICADO" && <Badge variant={st.variant}>{st.label}</Badge>}
+                    {a.anexoTipo === "PDF" && <span className="text-[10px] font-bold text-red-600 inline-flex items-center gap-0.5"><FileText className="w-3 h-3" /> PDF</span>}
+                    {a.anexoTipo === "URL" && <span className="text-[10px] font-bold text-brand-600 inline-flex items-center gap-0.5"><LinkIcon className="w-3 h-3" /> link</span>}
                   </div>
                   <div className="text-[14px] font-bold text-gray-900 leading-snug">{a.titulo}</div>
                   {a.resumo && <p className="text-[12px] text-gray-500 mt-1 line-clamp-2">{a.resumo}</p>}
@@ -133,9 +141,12 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
 function LeituraModal({ artigo, onClose }: { artigo: ArticleDTO; onClose: () => void }) {
   const ti = tipoArtigo(artigo.tipo);
   const html = useMemo(() => marked.parse(artigo.conteudo || "") as string, [artigo.conteudo]);
+  const temTexto = artigo.conteudo.trim().length > 0;
+  const temPdf = artigo.anexoTipo === "PDF" && !!artigo.anexoUrl;
+  const temLink = artigo.anexoTipo === "URL" && !!artigo.anexoUrl;
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-auto bg-black/50" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl my-8" onClick={(e) => e.stopPropagation()}>
+      <div className={`bg-white rounded-xl shadow-xl w-full my-8 ${temPdf ? "max-w-4xl" : "max-w-2xl"}`} onClick={(e) => e.stopPropagation()}>
         {artigo.capaUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={artigo.capaUrl} alt="" className="w-full h-48 object-cover rounded-t-xl bg-slate-100" />
@@ -148,10 +159,30 @@ function LeituraModal({ artigo, onClose }: { artigo: ArticleDTO; onClose: () => 
           </div>
           <button onClick={onClose} aria-label="Fechar" className="text-gray-400 hover:text-gray-700 shrink-0"><X className="w-5 h-5" /></button>
         </div>
-        <div className="px-6 py-5">
-          {artigo.conteudo.trim()
-            ? <article className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-brand-700" dangerouslySetInnerHTML={{ __html: html }} />
-            : <p className="text-sm text-gray-400 italic">Sem conteúdo.</p>}
+        <div className="px-6 py-5 space-y-4">
+          {temTexto && (
+            <article className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-brand-700" dangerouslySetInnerHTML={{ __html: html }} />
+          )}
+
+          {/* Anexo PDF — exibido na tela */}
+          {temPdf && (
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="text-[12px] text-gray-500 inline-flex items-center gap-1.5"><FileText className="w-4 h-4 text-red-600" /> {artigo.anexoNome ?? "Documento PDF"}</div>
+                <a href={artigo.anexoUrl!} download={artigo.anexoNome ?? "documento.pdf"} className="text-[12px] font-semibold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" /> Baixar</a>
+              </div>
+              <iframe src={artigo.anexoUrl!} title={artigo.anexoNome ?? "PDF"} className="w-full h-[70vh] border rounded-md bg-slate-100" />
+            </div>
+          )}
+
+          {/* Anexo link externo */}
+          {temLink && (
+            <a href={artigo.anexoUrl!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+              <ExternalLink className="w-4 h-4" /> {artigo.anexoNome?.trim() || "Acessar link"}
+            </a>
+          )}
+
+          {!temTexto && !temPdf && !temLink && <p className="text-sm text-gray-400 italic">Sem conteúdo.</p>}
         </div>
       </div>
     </div>
@@ -163,6 +194,7 @@ function EdicaoModal({ artigo, onClose, onSaved }: { artigo: ArticleDTO; onClose
   const [form, setForm] = useState<ArticleDTO>(artigo);
   const [salvando, setSalvando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
   const previewHtml = useMemo(() => marked.parse(form.conteudo || "") as string, [form.conteudo]);
 
   function set<K extends keyof ArticleDTO>(k: K, v: ArticleDTO[K]) { setForm((f) => ({ ...f, [k]: v })); }
@@ -191,12 +223,26 @@ function EdicaoModal({ artigo, onClose, onSaved }: { artigo: ArticleDTO; onClose
     reader.readAsDataURL(file);
   }
 
+  function escolherPdf(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return;
+    if (file.type !== "application/pdf") return toast.error("Selecione um arquivo PDF.");
+    if (file.size > MAX_PDF_BYTES) return toast.error("PDF muito grande (máx. ~3,8 MB). Para arquivos maiores, use um link externo.");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((f) => ({ ...f, anexoTipo: "PDF", anexoUrl: reader.result as string, anexoNome: file.name }));
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function salvar(publicarDepois: boolean) {
     if (!form.titulo.trim()) return toast.error("Informe o título.");
+    if (form.anexoTipo === "URL" && !/^https?:\/\//i.test(form.anexoUrl ?? "")) return toast.error("Informe uma URL válida (http:// ou https://).");
     setSalvando(true);
     const input: ArticleInput = {
       id: form.id || undefined, titulo: form.titulo, tipo: form.tipo,
       resumo: form.resumo ?? "", conteudo: form.conteudo ?? "", capaUrl: form.capaUrl,
+      anexoTipo: form.anexoTipo, anexoUrl: form.anexoUrl, anexoNome: form.anexoNome,
     };
     try {
       const r = await salvarArtigo(input);
@@ -254,6 +300,34 @@ function EdicaoModal({ artigo, onClose, onSaved }: { artigo: ArticleDTO; onClose
               </button>
               {form.capaUrl && <button onClick={() => set("capaUrl", null)} className="text-[12px] text-gray-400 hover:text-red-600">Remover</button>}
             </div>
+          </div>
+
+          {/* Anexo: PDF (upload) ou URL externa */}
+          <div className="border rounded-md bg-slate-50/60 p-3">
+            <div className="text-[13px] font-semibold text-gray-700 mb-2">Anexo <span className="font-normal text-gray-400">(opcional — PDF para exibir na tela ou link externo)</span></div>
+            {form.anexoTipo === "PDF" ? (
+              <div className="flex items-center gap-2 text-[12.5px] bg-white border rounded-md px-3 py-2">
+                <FileText className="w-4 h-4 text-red-600 shrink-0" />
+                <span className="flex-1 truncate text-gray-700">{form.anexoNome ?? "documento.pdf"}</span>
+                <button onClick={() => setForm((f) => ({ ...f, anexoTipo: null, anexoUrl: null, anexoNome: null }))} className="text-[12px] text-gray-400 hover:text-red-600">Remover</button>
+              </div>
+            ) : form.anexoTipo === "URL" ? (
+              <div className="space-y-2">
+                <input className={inputCls} value={form.anexoUrl ?? ""} onChange={(e) => set("anexoUrl", e.target.value)} placeholder="https://… (link do PDF ou página)" />
+                <input className={inputCls} value={form.anexoNome ?? ""} onChange={(e) => set("anexoNome", e.target.value)} placeholder="Rótulo do link (ex.: Cartilha LGPD — ANPD)" />
+                <button onClick={() => setForm((f) => ({ ...f, anexoTipo: null, anexoUrl: null, anexoNome: null }))} className="text-[12px] text-gray-400 hover:text-red-600">Remover anexo</button>
+              </div>
+            ) : (
+              <div className="flex gap-2 flex-wrap">
+                <input ref={pdfRef} type="file" accept="application/pdf" onChange={escolherPdf} className="hidden" />
+                <button onClick={() => pdfRef.current?.click()} className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold border rounded-md px-3 py-2 text-gray-700 hover:bg-gray-50">
+                  <UploadCloud className="w-4 h-4" /> Enviar PDF
+                </button>
+                <button onClick={() => setForm((f) => ({ ...f, anexoTipo: "URL", anexoUrl: "", anexoNome: "" }))} className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold border rounded-md px-3 py-2 text-gray-700 hover:bg-gray-50">
+                  <LinkIcon className="w-4 h-4" /> Usar link externo
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Editor split: markdown + preview */}

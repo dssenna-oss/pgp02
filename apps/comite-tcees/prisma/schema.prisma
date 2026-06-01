@@ -100,6 +100,10 @@ model Article {
   resumo      String? // chamada curta exibida na lista
   conteudo    String   @default("") // markdown
   capaUrl     String? // imagem de capa (data URL base64, opcional)
+  // anexo opcional: PDF (data URL base64) OU link externo
+  anexoTipo   String? // "PDF" | "URL" | null
+  anexoUrl    String? // data URL do PDF (base64) ou URL externa
+  anexoNome   String? // nome do arquivo / rótulo do link
   autor       String? // nome de quem publicou
   status      String   @default("RASCUNHO") // RASCUNHO | PUBLICADO
   publicadoEm DateTime?

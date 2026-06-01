@@ -12,6 +12,9 @@ export type ArticleInput = {
   resumo?: string;
   conteudo?: string;
   capaUrl?: string | null;
+  anexoTipo?: string | null; // "PDF" | "URL" | null
+  anexoUrl?: string | null;
+  anexoNome?: string | null;
 };
 
 function validar(input: ArticleInput) {
@@ -19,6 +22,15 @@ function validar(input: ArticleInput) {
   if (input.capaUrl && input.capaUrl.length > 0) {
     if (!input.capaUrl.startsWith("data:image/")) throw new Error("Capa inválida — envie uma imagem.");
     if (input.capaUrl.length > 700_000) throw new Error("Imagem de capa muito grande.");
+  }
+  if (input.anexoTipo === "PDF") {
+    if (!input.anexoUrl?.startsWith("data:application/pdf")) throw new Error("Anexo inválido — envie um arquivo PDF.");
+    // base64 infla ~33%; limite ~4MB de arquivo ⇒ ~5.5MB de data URL (sob o bodySizeLimit de 5mb não cabe;
+    // por isso travamos no cliente em ~3,8MB de arquivo). Aqui validamos o tamanho final da string.
+    if (input.anexoUrl.length > 5_200_000) throw new Error("PDF muito grande (máx. ~3,8 MB). Use um link externo para arquivos maiores.");
+  } else if (input.anexoTipo === "URL") {
+    const u = input.anexoUrl?.trim() ?? "";
+    if (!/^https?:\/\//i.test(u)) throw new Error("Informe uma URL válida (começando com http:// ou https://).");
   }
 }
 
@@ -28,12 +40,16 @@ export async function salvarArtigo(input: ArticleInput): Promise<{ ok: true; id:
   validar(input);
   const tipo = TIPOS_ARTIGO.includes(input.tipo as (typeof TIPOS_ARTIGO)[number]) ? input.tipo : "NOTICIA";
 
+  const temAnexo = input.anexoTipo === "PDF" || input.anexoTipo === "URL";
   const dados = {
     titulo: input.titulo.trim(),
     tipo,
     resumo: input.resumo?.trim() || null,
     conteudo: input.conteudo ?? "",
     capaUrl: input.capaUrl?.trim() || null,
+    anexoTipo: temAnexo ? input.anexoTipo : null,
+    anexoUrl: temAnexo ? (input.anexoUrl?.trim() || null) : null,
+    anexoNome: temAnexo ? (input.anexoNome?.trim() || null) : null,
   };
 
   if (input.id) {
