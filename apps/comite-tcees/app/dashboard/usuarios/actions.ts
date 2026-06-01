@@ -99,3 +99,33 @@ export async function trocarMinhaSenha(input: {
   await prisma.user.update({ where: { id: session.user.id }, data: { password } });
   return { ok: true };
 }
+
+/**
+ * Qualquer usuário define/atualiza a PRÓPRIA foto de perfil.
+ * Casa o login (User) com o registro de Membro pelo e-mail (oficial ou
+ * interno). Recebe uma data URL já redimensionada no cliente. Passe
+ * `dataUrl: null` para remover a foto.
+ */
+export async function atualizarMinhaFoto(
+  dataUrl: string | null,
+): Promise<{ ok: true } | { erro: string }> {
+  const session = await requireSession();
+
+  if (dataUrl) {
+    if (!dataUrl.startsWith("data:image/")) return { erro: "Arquivo inválido. Envie uma imagem." };
+    // ~120KB de margem (a imagem já vem reduzida do cliente p/ ~200px)
+    if (dataUrl.length > 160_000) return { erro: "Imagem muito grande. Tente uma foto menor." };
+  }
+
+  const email = session.user.email?.toLowerCase() ?? "";
+  const membro = await prisma.membro.findFirst({
+    where: { OR: [{ email: { equals: email, mode: "insensitive" } }, { emailInterno: { equals: email, mode: "insensitive" } }] },
+    select: { id: true },
+  });
+  if (!membro) return { erro: "Seu login não está vinculado a um membro do Comitê. Procure a Coordenação." };
+
+  await prisma.membro.update({ where: { id: membro.id }, data: { avatarUrl: dataUrl } });
+  revalidatePath("/dashboard/membros");
+  revalidatePath("/dashboard/conta");
+  return { ok: true };
+}

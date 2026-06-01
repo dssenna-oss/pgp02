@@ -82,6 +82,7 @@ model Membro {
   inciso    String? // "I, a" — referência à Portaria
   email     String? // contato oficial / externo (a página pública do DPO usa este)
   emailInterno String? // e-mail p/ comunicações internas do Comitê (sobrepõe o email nos avisos)
+  avatarUrl String? // foto do membro (data URL base64, redimensionada no cliente ~200px)
   ordem     Int     @default(0)
   createdAt DateTime @default(now())
 

@@ -21,3 +21,4 @@ prisma/*.db
 
 # SQL operacional com senha inicial — não versionar
 prisma/_prod-membros-logins.sql
+.vercel

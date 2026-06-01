@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
-import { iniciais } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 import { salvarMembro, excluirMembro, type MembroInput } from "@/app/dashboard/membros/actions";
 import { usePodeEditar } from "@/lib/use-pode-editar";
 
@@ -18,10 +18,11 @@ export type MembroDTO = {
   inciso: string | null;
   email: string | null;
   emailInterno: string | null;
+  avatarUrl: string | null;
 };
 
 const VAZIO = (): MembroDTO => ({
-  id: "", nome: "", funcao: "Membro", cargo: "", unidade: "", matricula: "", inciso: "", email: "", emailInterno: "",
+  id: "", nome: "", funcao: "Membro", cargo: "", unidade: "", matricula: "", inciso: "", email: "", emailInterno: "", avatarUrl: null,
 });
 
 const FUNCOES = ["Presidente", "Coordenador", "Encarregado titular", "Encarregado substituto", "Membro"];
@@ -51,9 +52,7 @@ export function MembrosClient({ membros }: { membros: MembroDTO[] }) {
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {membros.map((m) => (
           <div key={m.id} className="bg-white border rounded-xl p-3.5 flex gap-3 items-start group">
-            <div className="w-[42px] h-[42px] rounded-lg bg-navy text-white flex items-center justify-center font-bold text-sm shrink-0">
-              {iniciais(m.nome)}
-            </div>
+            <Avatar nome={m.nome} avatarUrl={m.avatarUrl} size={42} />
             <div className="min-w-0 flex-1">
               <div className="text-[13.5px] font-bold text-gray-900">{m.nome}</div>
               <div className="text-[12px] text-brand-600 font-semibold mt-0.5">{m.funcao}</div>

@@ -17,6 +17,7 @@ export default async function MembrosPage() {
     inciso: m.inciso,
     email: m.email,
     emailInterno: m.emailInterno,
+    avatarUrl: m.avatarUrl,
   }));
 
   return (
