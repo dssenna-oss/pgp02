@@ -54,13 +54,11 @@ const MARCOS = [
   { data: d(2026, 6, 30), descricao: "Edição de ato normativo institucionalizando consulta prévia obrigatória ao Comitê", eixoCodigos: "A", tipo: "NORMAL", status: "A_INICIAR", ordem: 3 },
   { data: d(2026, 9, 30), descricao: "Refazimento do IDP dos 12 processos prioritários sob metodologia atualizada", eixoCodigos: "B", tipo: "NORMAL", status: "A_INICIAR", ordem: 4 },
   { data: d(2026, 9, 30), descricao: "Publicação do Aviso de Privacidade institucional no portal", eixoCodigos: "C", tipo: "NORMAL", status: "A_INICIAR", ordem: 5 },
-  { data: d(2026, 11, 30), descricao: "RIPDs definitivos concluídos para os processos prioritários", eixoCodigos: "B", tipo: "NORMAL", status: "A_INICIAR", ordem: 6 },
   { data: d(2026, 12, 31), descricao: "PGP CONSOLIDADO E EM FUNCIONAMENTO — marco-mãe do biênio", eixoCodigos: "A,B,C,D,E", tipo: "MAE", status: "CRITICO", ordem: 7 },
   { data: d(2026, 12, 31), descricao: "Relatório Anual de Resultados 2026 protocolado junto à SEGOV", eixoCodigos: "A,E", tipo: "NORMAL", status: "A_INICIAR", ordem: 8 },
   { data: d(2027, 6, 30), descricao: "Inventário consolidado estendido ao universo dos processos remanescentes", eixoCodigos: "B", tipo: "NORMAL", status: "A_INICIAR", ordem: 9 },
   { data: d(2027, 6, 30), descricao: "Cláusulas LGPD em 100% dos contratos vigentes com operadores", eixoCodigos: "C", tipo: "NORMAL", status: "A_INICIAR", ordem: 10 },
   { data: d(2027, 9, 30), descricao: "1ª Auditoria Interna do PGP concluída", eixoCodigos: "E", tipo: "NORMAL", status: "A_INICIAR", ordem: 11 },
-  { data: d(2027, 11, 30), descricao: "Painel de Indicadores em operação plena", eixoCodigos: "E", tipo: "NORMAL", status: "A_INICIAR", ordem: 12 },
   { data: d(2027, 12, 31), descricao: "Relatório Final do Biênio + Plano de Trabalho 2028-2029 protocolado", eixoCodigos: "A,E", tipo: "NORMAL", status: "A_INICIAR", ordem: 13 },
 ];
 
@@ -88,7 +86,7 @@ const ENTREGAS: EntregaSeed[] = [
   { titulo: "Refazimento do Inventário (IDP) dos 12 processos prioritários", eixoCodigo: "B", trimestre: "Q3-2026", responsavel: "Encarregado + Equipe + unidades", prazoTexto: "30/09/2026", prazoData: d(2026, 9, 30), status: "A_INICIAR" },
   { titulo: "Início da extensão do Inventário aos demais processos", eixoCodigo: "B", trimestre: "Q3-2026", responsavel: "Encarregado + Equipe + unidades", prazoTexto: "Q3/2026", status: "A_INICIAR" },
   { titulo: "GAP Analysis atualizado", eixoCodigo: "B", trimestre: "Q3-2026", responsavel: "Encarregado + Equipe", prazoTexto: "Q3/2026", status: "A_INICIAR" },
-  { titulo: "Publicação do Aviso de Privacidade institucional no portal", eixoCodigo: "C", trimestre: "Q3-2026", responsavel: "Coordenação + SECOM + SGTI", prazoTexto: "30/09/2026", prazoData: d(2026, 9, 30), status: "ATRASADO" },
+  { titulo: "Publicação do Aviso de Privacidade institucional no portal", eixoCodigo: "C", trimestre: "Q3-2026", responsavel: "Coordenação + SECOM + SGTI", prazoTexto: "30/09/2026", prazoData: d(2026, 9, 30), status: "A_INICIAR" },
   { titulo: "Política de Cookies específica", eixoCodigo: "C", trimestre: "Q3-2026", responsavel: "Coordenação + SGTI", prazoTexto: "Q3/2026", status: "A_INICIAR" },
   { titulo: "Aprovação das cláusulas-padrão LGPD para inclusão em contratos", eixoCodigo: "C", trimestre: "Q3-2026", responsavel: "Coordenação + CJU", prazoTexto: "Q3/2026", status: "A_INICIAR" },
   { titulo: "Trilha formativa em LGPD integrada à ECP (carreira)", eixoCodigo: "D", trimestre: "Q3-2026", responsavel: "ECP + Coordenação", prazoTexto: "Q3/2026", status: "A_INICIAR" },
