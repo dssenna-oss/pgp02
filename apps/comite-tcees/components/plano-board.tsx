@@ -20,8 +20,11 @@ export type EntregaDTO = {
   prazoTexto: string | null;
   prazoISO: string | null;
   status: string;
+  custo?: number | null;
   ferramenta?: { href: string; label: string } | null;
 };
+
+const fmtBRL = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const EIXOS = [
   { c: "A", n: "Governança / Homologação" },
@@ -54,6 +57,7 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
   const visiveis = entregas.filter((e) => filtro === "all" || e.eixoCodigo === filtro);
   const concluidas = entregas.filter((e) => e.status === "CONCLUIDO").length;
   const atrasadas = entregas.filter((e) => e.status === "ATRASADO").length;
+  const custoTotal = entregas.reduce((s, e) => s + (e.custo ?? 0), 0);
 
   return (
     <>
@@ -74,6 +78,7 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <div className="text-[11px] uppercase tracking-wide text-gray-500 font-bold">
           📋 {entregas.length} entregas · {concluidas} concluídas · {atrasadas} atrasadas
+          {custoTotal > 0 && <> · 💰 {fmtBRL(custoTotal)} estimado</>}
         </div>
         {podeEditar && (
           <button
@@ -104,6 +109,7 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
                       <div className="text-[11.5px] text-gray-500 mt-1 flex gap-3.5 flex-wrap items-center">
                         {e.responsavel && <span><b className="text-gray-700 font-semibold">Resp.:</b> {e.responsavel}</span>}
                         {e.prazoTexto && <span><b className="text-gray-700 font-semibold">Prazo:</b> {e.prazoTexto}</span>}
+                        {e.custo != null && <span><b className="text-gray-700 font-semibold">Custo:</b> {fmtBRL(e.custo)}</span>}
                         <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded ${eixoTag(e.eixoCodigo)}`}>Eixo {e.eixoCodigo}</span>
                         {e.ferramenta && (
                           <Link
@@ -164,6 +170,7 @@ export function PlanoBoard({ entregas }: { entregas: EntregaDTO[] }) {
 function EntregaModal({ entrega, onClose, onSaved }: { entrega: EntregaDTO; onClose: () => void; onSaved: () => void }) {
   const ehNova = !entrega.id;
   const [form, setForm] = useState<EntregaDTO>(entrega);
+  const [custo, setCusto] = useState(entrega.custo != null ? String(entrega.custo).replace(".", ",") : "");
   const [salvando, setSalvando] = useState(false);
 
   function set<K extends keyof EntregaDTO>(k: K, v: EntregaDTO[K]) {
@@ -183,6 +190,7 @@ function EntregaModal({ entrega, onClose, onSaved }: { entrega: EntregaDTO; onCl
       prazoTexto: form.prazoTexto ?? "",
       prazoData: form.prazoISO ?? "",
       status: form.status,
+      custo,
     };
     try {
       await salvarEntrega(input);
@@ -247,9 +255,15 @@ function EntregaModal({ entrega, onClose, onSaved }: { entrega: EntregaDTO; onCl
             </div>
           </div>
 
-          <div>
-            <label className={labelCls}>Data exata <span className="font-normal text-gray-400">(opcional — aparece no Calendário)</span></label>
-            <input type="date" className={inputCls} value={form.prazoISO ?? ""} onChange={(e) => set("prazoISO", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Data exata <span className="font-normal text-gray-400">(opcional)</span></label>
+              <input type="date" className={inputCls} value={form.prazoISO ?? ""} onChange={(e) => set("prazoISO", e.target.value)} />
+            </div>
+            <div>
+              <label className={labelCls}>Custo estimado (R$) <span className="font-normal text-gray-400">(opcional)</span></label>
+              <input className={inputCls} value={custo} onChange={(e) => setCusto(e.target.value)} placeholder="Ex.: 1.500,00" inputMode="decimal" />
+            </div>
           </div>
 
           <div>

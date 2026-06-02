@@ -65,6 +65,14 @@ export async function salvarInventario(input: InventarioInput) {
     // "Prioritário" é decisão da Coordenação — o responsável (não-editor) não o altera.
     const data = ehEditor ? { ...base, prioritario: !!input.prioritario } : base;
     await prisma.dataInventory.update({ where: { id: input.id }, data });
+    // Ao concluir o processo, conclui automaticamente as tarefas ligadas a ele.
+    if (base.status === "CONCLUIDO") {
+      await prisma.tarefa.updateMany({
+        where: { inventoryId: input.id, status: { not: "CONCLUIDA" } },
+        data: { status: "CONCLUIDA", concluidaEm: new Date() },
+      });
+      revalidatePath("/dashboard/tarefas");
+    }
   } else {
     const max = await prisma.dataInventory.aggregate({ _max: { ordem: true } });
     await prisma.dataInventory.create({

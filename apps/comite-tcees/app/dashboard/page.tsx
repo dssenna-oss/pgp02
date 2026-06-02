@@ -1,19 +1,39 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { dataBR } from "@/lib/utils";
+import { getSession } from "@/lib/auth-server";
 import { ferramentaDaEntrega } from "@/lib/entrega-ferramenta";
 import { MarcosClient, type MarcoDTO } from "@/components/marcos-client";
+import { MinhasTarefasCard, type MinhaTarefa } from "@/components/minhas-tarefas-card";
 import { VisaoGeralCards, type EntregaDTO, type EixoResumo } from "@/components/visao-geral-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function VisaoGeral() {
-  const [entregas, marcos, eixos, comite] = await Promise.all([
+  const session = await getSession();
+  const meuId = session?.user?.id ?? "";
+  const [entregas, marcos, eixos, comite, minhasTarefas] = await Promise.all([
     prisma.entrega.findMany({ orderBy: { ordem: "asc" } }),
     prisma.marco.findMany({ orderBy: { ordem: "asc" } }),
     prisma.eixo.findMany({ orderBy: { ordem: "asc" } }),
     prisma.comite.findFirst(),
+    meuId
+      ? prisma.tarefa.findMany({
+          where: { responsavelId: meuId, status: { not: "CONCLUIDA" } },
+          orderBy: [{ prazo: "asc" }, { createdAt: "desc" }],
+          include: { inventory: { select: { id: true, nome: true } } },
+        })
+      : Promise.resolve([]),
   ]);
+
+  const minhasTarefasDtos: MinhaTarefa[] = minhasTarefas.map((t) => ({
+    id: t.id,
+    titulo: t.titulo,
+    prazoISO: t.prazo ? new Date(t.prazo).toISOString().slice(0, 10) : null,
+    status: t.status,
+    inventoryId: t.inventoryId,
+    inventoryNome: t.inventory?.nome ?? null,
+  }));
 
   const total = entregas.length;
   const concluidas = entregas.filter((e) => e.status === "CONCLUIDO").length;
@@ -59,6 +79,8 @@ export default async function VisaoGeral() {
         title="Visão geral"
         lead={`Acompanhamento do Plano de Trabalho do ${comite?.nomeComite ?? "Comitê"} — biênio ${comite?.bienio ?? "2026-2027"}.`}
       />
+
+      <MinhasTarefasCard tarefas={minhasTarefasDtos} />
 
       <VisaoGeralCards
         execPct={execPct}

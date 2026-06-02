@@ -50,11 +50,21 @@ export function TarefasClient({
   const router = useRouter();
   const [editando, setEditando] = useState<TarefaDTO | "novo" | null>(null);
   const [filtro, setFiltro] = useState<"todas" | "A_FAZER" | "EM_ANDAMENTO" | "CONCLUIDA">("todas");
+  const [filtroResp, setFiltroResp] = useState("todos");
+
+  // Responsáveis distintos (para o coordenador filtrar por pessoa).
+  const responsaveis = Array.from(new Map(tarefas.map((t) => [t.responsavelId, t.responsavelNome])))
+    .map(([id, nome]) => ({ id, nome }))
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
   const pendentes = tarefas.filter((t) => t.status !== "CONCLUIDA");
   const atrasadas = pendentes.filter((t) => prazoInfo(t.prazoISO, t.status).atrasada).length;
   const concluidas = tarefas.filter((t) => t.status === "CONCLUIDA").length;
-  const visiveis = tarefas.filter((t) => (filtro === "todas" ? true : t.status === filtro));
+  const visiveis = tarefas.filter(
+    (t) =>
+      (filtro === "todas" ? true : t.status === filtro) &&
+      (filtroResp === "todos" ? true : t.responsavelId === filtroResp),
+  );
 
   async function mudarStatus(t: TarefaDTO, novo: string) {
     if (novo === t.status) return;
@@ -112,6 +122,17 @@ export function TarefasClient({
           {chip("A_FAZER", "A fazer")}
           {chip("EM_ANDAMENTO", "Em andamento")}
           {chip("CONCLUIDA", "Concluídas")}
+          {ehEditor && responsaveis.length > 1 && (
+            <select
+              value={filtroResp}
+              onChange={(e) => setFiltroResp(e.target.value)}
+              className="text-xs font-semibold border border-gray-200 rounded-full px-3 py-1.5 bg-white text-gray-700 outline-none focus:ring-2 focus:ring-brand-500"
+              title="Filtrar por responsável"
+            >
+              <option value="todos">Todos os responsáveis</option>
+              {responsaveis.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
+            </select>
+          )}
         </div>
         {ehEditor && (
           <button

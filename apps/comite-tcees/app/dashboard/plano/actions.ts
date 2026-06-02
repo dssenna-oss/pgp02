@@ -14,7 +14,19 @@ export type EntregaInput = {
   prazoTexto?: string;
   prazoData?: string; // "YYYY-MM-DD" ou ""
   status: string;
+  custo?: string; // R$ como texto do form ("" = sem custo)
 };
+
+/** Converte texto de moeda BR/US ("1.234,56", "1234.56", "R$ 1.000") em número, ou null. */
+function parseCusto(v?: string): number | null {
+  if (v == null) return null;
+  let s = String(v).replace(/[^\d.,-]/g, "").trim();
+  if (!s) return null;
+  // Se tem vírgula, trata como separador decimal BR e remove pontos de milhar.
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+}
 
 const STATUS_VALIDOS = ["A_INICIAR", "EM_ANDAMENTO", "CONCLUIDO", "ATRASADO"];
 
@@ -33,6 +45,7 @@ export async function salvarEntrega(input: EntregaInput) {
     prazoTexto: input.prazoTexto?.trim() || null,
     prazoData: input.prazoData ? new Date(`${input.prazoData}T12:00:00`) : null,
     status: STATUS_VALIDOS.includes(input.status) ? input.status : "A_INICIAR",
+    custo: parseCusto(input.custo),
   };
 
   if (input.id) {

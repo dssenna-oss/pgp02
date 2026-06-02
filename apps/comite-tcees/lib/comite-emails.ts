@@ -130,3 +130,30 @@ export async function emailTarefaAtribuida(params: {
     tag: "comite-tarefa",
   });
 }
+
+/** E-mail: lembrete de tarefas com prazo próximo/vencido (disparado pelo cron). */
+export async function emailLembreteTarefas(params: {
+  to: { email: string; name: string };
+  itens: { titulo: string; prazoBR: string; situacao: string; vencida: boolean }[];
+}): Promise<void> {
+  if (!params.to.email || !params.to.email.includes("@") || params.itens.length === 0) return;
+
+  const href = `${APP_URL}/dashboard/tarefas`;
+  const linhas = params.itens
+    .map(
+      (i) =>
+        `<tr><td style="padding:5px 14px 5px 0;font-weight:600">${escapeHtml(i.titulo)}</td><td style="color:${i.vencida ? "#dc2626" : "#64748b"};white-space:nowrap">${escapeHtml(i.prazoBR)} · ${escapeHtml(i.situacao)}</td></tr>`,
+    )
+    .join("");
+  const corpo = `
+    <p style="font-size:15px;line-height:1.6">Você tem <strong>${params.itens.length}</strong> tarefa(s) do Comitê com prazo próximo ou vencido:</p>
+    <table style="font-size:14px;line-height:1.5;border-collapse:collapse;margin-top:6px">${linhas}</table>`;
+
+  sendEmailAsync({
+    to: [{ email: params.to.email, name: params.to.name }],
+    subject: `Lembrete: ${params.itens.length} tarefa(s) do Comitê com prazo`,
+    html: wrap("Lembrete de prazos", corpo, href, "Abrir minhas tarefas"),
+    text: `Você tem ${params.itens.length} tarefa(s) do Comitê com prazo próximo/vencido. Acesse ${href}`,
+    tag: "comite-lembrete",
+  });
+}

@@ -47,6 +47,7 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
 
   const chip = (k: string, label: string) => (
     <button
+      key={k}
       onClick={() => setFiltro(k)}
       className={`text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${
         filtro === k ? "bg-brand-600 text-white border-brand-600" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
@@ -109,6 +110,17 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
                   >
                     {a.status === "PUBLICADO" ? <><Undo2 className="w-3.5 h-3.5" /> Despublicar</> : <><Send className="w-3.5 h-3.5" /> Publicar</>}
                   </button>
+                  {a.status === "PUBLICADO" && (
+                    <a
+                      href={`/noticias/${a.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Abrir a página pública desta publicação"
+                      className="inline-flex items-center gap-1 text-[12px] font-semibold text-gray-500 hover:text-brand-700"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Página pública
+                    </a>
+                  )}
                   <div className="ml-auto flex gap-2">
                     <button onClick={() => setEditando(a)} title="Editar" className="text-gray-400 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
                     <button

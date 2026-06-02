@@ -128,6 +128,7 @@ model Entrega {
   prazoTexto    String? // "30/06/2026" ou "Q3/2026"
   prazoData     DateTime? // quando há data exata (alimenta o calendário)
   status        String    @default("A_INICIAR") // CONCLUIDO | EM_ANDAMENTO | A_INICIAR | ATRASADO
+  custo         Float? // custo estimado em R$ (Portaria 22/2026, Art. 4º §1º V)
   ferramentaHref String? // link para o módulo que executa a entrega (Etapa 3)
   ordem         Int       @default(0)
   createdAt     DateTime  @default(now())
