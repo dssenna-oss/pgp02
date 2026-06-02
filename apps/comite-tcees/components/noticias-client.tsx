@@ -4,11 +4,11 @@ import { useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { marked } from "marked";
-import { Plus, Pencil, Trash2, X, Eye, UploadCloud, Send, Undo2, FileText, Link as LinkIcon, ExternalLink, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Eye, UploadCloud, Send, Undo2, FileText, Link as LinkIcon, ExternalLink, Download, ArrowUp, ArrowDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { tipoArtigo, statusArtigo, TIPOS_ARTIGO } from "@/lib/articles";
 import { usePodeEditar } from "@/lib/use-pode-editar";
-import { salvarArtigo, alternarPublicacao, excluirArtigo, type ArticleInput } from "@/app/dashboard/noticias/actions";
+import { salvarArtigo, alternarPublicacao, excluirArtigo, trocarOrdemArtigos, type ArticleInput } from "@/app/dashboard/noticias/actions";
 
 marked.setOptions({ gfm: true, breaks: false });
 
@@ -24,12 +24,13 @@ export type ArticleDTO = {
   anexoNome: string | null;
   autor: string | null;
   status: string;
+  ordem: number;
   publicadoEmBR: string | null;
 };
 
 const VAZIO = (): ArticleDTO => ({
   id: "", titulo: "", tipo: "NOTICIA", resumo: "", conteudo: "", capaUrl: null,
-  anexoTipo: null, anexoUrl: null, anexoNome: null, autor: null, status: "RASCUNHO", publicadoEmBR: null,
+  anexoTipo: null, anexoUrl: null, anexoNome: null, autor: null, status: "RASCUNHO", ordem: 0, publicadoEmBR: null,
 });
 
 const MAX_PDF_BYTES = 3_800_000; // ~3,8 MB de arquivo (base64 cabe sob bodySizeLimit 5mb)
@@ -44,6 +45,20 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
   // Membros (só leitura) só veem publicados; editores veem tudo.
   const base = podeEditar ? artigos : artigos.filter((a) => a.status === "PUBLICADO");
   const visiveis = filtro === "todos" ? base : base.filter((a) => a.tipo === filtro);
+
+  // Reordenação manual (setas ↑↓): troca a posição com o card vizinho visível.
+  async function mover(i: number, dir: "up" | "down") {
+    const alvo = visiveis[dir === "up" ? i - 1 : i + 1];
+    if (!alvo) return;
+    const t = toast.loading("Reordenando…");
+    try {
+      await trocarOrdemArtigos(visiveis[i].id, alvo.id);
+      toast.success("Reordenado", { id: t });
+      router.refresh();
+    } catch {
+      toast.error("Não foi possível reordenar", { id: t });
+    }
+  }
 
   const chip = (k: string, label: string) => (
     <button
@@ -72,7 +87,7 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
       </div>
 
       <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {visiveis.map((a) => {
+        {visiveis.map((a, i) => {
           const ti = tipoArtigo(a.tipo);
           const st = statusArtigo(a.status);
           return (
@@ -100,6 +115,10 @@ export function NoticiasClient({ artigos }: { artigos: ArticleDTO[] }) {
               </button>
               {podeEditar && (
                 <div className="flex items-center gap-2 px-3.5 py-2 border-t bg-slate-50/60">
+                  <div className="flex items-center mr-1">
+                    <button onClick={() => mover(i, "up")} disabled={i === 0} title="Subir" className="text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-gray-400"><ArrowUp className="w-4 h-4" /></button>
+                    <button onClick={() => mover(i, "down")} disabled={i === visiveis.length - 1} title="Descer" className="text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-gray-400"><ArrowDown className="w-4 h-4" /></button>
+                  </div>
                   <button
                     onClick={async () => {
                       const t = toast.loading("…");
@@ -157,45 +176,59 @@ function LeituraModal({ artigo, onClose }: { artigo: ArticleDTO; onClose: () => 
   const temPdf = artigo.anexoTipo === "PDF" && !!artigo.anexoUrl;
   const temLink = artigo.anexoTipo === "URL" && !!artigo.anexoUrl;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-auto bg-black/50" onClick={onClose}>
-      <div className={`bg-white rounded-xl shadow-xl w-full my-8 ${temPdf ? "max-w-4xl" : "max-w-2xl"}`} onClick={(e) => e.stopPropagation()}>
-        {artigo.capaUrl && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50" onClick={onClose}>
+      <div
+        className={`bg-white rounded-xl shadow-xl w-full flex flex-col max-h-[92vh] overflow-hidden ${temPdf ? "max-w-6xl" : "max-w-2xl"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Capa só nos artigos de texto; no PDF priorizamos o documento. */}
+        {artigo.capaUrl && !temPdf && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={artigo.capaUrl} alt="" className="w-full h-48 object-cover rounded-t-xl bg-slate-100" />
+          <img src={artigo.capaUrl} alt="" className="w-full h-40 object-cover shrink-0 bg-slate-100" />
         )}
-        <div className="flex items-start justify-between gap-3 px-6 pt-5">
-          <div>
+
+        <div className="flex items-start justify-between gap-3 px-6 pt-4 pb-3 border-b shrink-0">
+          <div className="min-w-0">
             <Badge variant={ti.variant}>{ti.emoji} {ti.label}</Badge>
-            <h2 className="text-xl font-extrabold text-gray-900 mt-2">{artigo.titulo}</h2>
-            <div className="text-[12px] text-gray-400 mt-1">{artigo.autor ? `${artigo.autor} · ` : ""}{artigo.publicadoEmBR ?? "não publicado"}</div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mt-1.5 leading-tight">{artigo.titulo}</h2>
+            <div className="text-[12px] text-gray-400 mt-0.5">{artigo.autor ? `${artigo.autor} · ` : ""}{artigo.publicadoEmBR ?? "não publicado"}</div>
           </div>
           <button onClick={onClose} aria-label="Fechar" className="text-gray-400 hover:text-gray-700 shrink-0"><X className="w-5 h-5" /></button>
         </div>
-        <div className="px-6 py-5 space-y-4">
-          {temTexto && (
-            <article className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-brand-700" dangerouslySetInnerHTML={{ __html: html }} />
-          )}
 
-          {/* Anexo PDF — exibido na tela */}
-          {temPdf && (
-            <div>
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="text-[12px] text-gray-500 inline-flex items-center gap-1.5"><FileText className="w-4 h-4 text-red-600" /> {artigo.anexoNome ?? "Documento PDF"}</div>
-                <a href={artigo.anexoUrl!} download={artigo.anexoNome ?? "documento.pdf"} className="text-[12px] font-semibold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1"><Download className="w-3.5 h-3.5" /> Baixar</a>
+        {temPdf ? (
+          // PDF: ocupa a altura disponível da janela, com rolagem própria.
+          <div className="flex-1 flex flex-col min-h-0 px-6 py-4 gap-3">
+            {temTexto && (
+              <article
+                className="prose prose-sm max-w-none shrink-0 max-h-36 overflow-auto prose-headings:text-gray-900 prose-a:text-brand-700"
+                dangerouslySetInnerHTML={{ __html: html }}
+              />
+            )}
+            <div className="flex items-center justify-between gap-2 shrink-0">
+              <div className="text-[12px] text-gray-500 inline-flex items-center gap-1.5 min-w-0">
+                <FileText className="w-4 h-4 text-red-600 shrink-0" /> <span className="truncate">{artigo.anexoNome ?? "Documento PDF"}</span>
               </div>
-              <iframe src={artigo.anexoUrl!} title={artigo.anexoNome ?? "PDF"} className="w-full h-[70vh] border rounded-md bg-slate-100" />
+              <a href={artigo.anexoUrl!} download={artigo.anexoNome ?? "documento.pdf"} className="text-[12px] font-semibold text-brand-700 hover:text-brand-800 inline-flex items-center gap-1 shrink-0">
+                <Download className="w-3.5 h-3.5" /> Baixar
+              </a>
             </div>
-          )}
-
-          {/* Anexo link externo */}
-          {temLink && (
-            <a href={artigo.anexoUrl!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
-              <ExternalLink className="w-4 h-4" /> {artigo.anexoNome?.trim() || "Acessar link"}
-            </a>
-          )}
-
-          {!temTexto && !temPdf && !temLink && <p className="text-sm text-gray-400 italic">Sem conteúdo.</p>}
-        </div>
+            <iframe src={artigo.anexoUrl!} title={artigo.anexoNome ?? "PDF"} className="flex-1 min-h-0 w-full border rounded-md bg-slate-100" />
+          </div>
+        ) : (
+          // Texto / link: rola dentro da janela.
+          <div className="flex-1 overflow-auto px-6 py-5 space-y-4">
+            {temTexto && (
+              <article className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-brand-700" dangerouslySetInnerHTML={{ __html: html }} />
+            )}
+            {temLink && (
+              <a href={artigo.anexoUrl!} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 bg-brand-600 text-white rounded-md px-4 py-2.5 text-sm font-semibold hover:bg-brand-700">
+                <ExternalLink className="w-4 h-4" /> {artigo.anexoNome?.trim() || "Acessar link"}
+              </a>
+            )}
+            {!temTexto && !temLink && <p className="text-sm text-gray-400 italic">Sem conteúdo.</p>}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -58,11 +58,31 @@ export async function salvarArtigo(input: ArticleInput): Promise<{ ok: true; id:
     return { ok: true, id: a.id };
   }
   const session = await getSession();
+  // Nova publicação entra no topo (menor ordem).
+  const min = await prisma.article.aggregate({ _min: { ordem: true } });
   const a = await prisma.article.create({
-    data: { ...dados, autor: session?.user?.name ?? null },
+    data: { ...dados, autor: session?.user?.name ?? null, ordem: (min._min.ordem ?? 0) - 1 },
   });
   revalidatePath("/dashboard/noticias");
   return { ok: true, id: a.id };
+}
+
+/** Troca a posição de exibição entre dois artigos (setas ↑↓). */
+export async function trocarOrdemArtigos(idA: string, idB: string): Promise<{ ok: true }> {
+  await requireEditor();
+  const [a, b] = await Promise.all([
+    prisma.article.findUnique({ where: { id: idA }, select: { ordem: true } }),
+    prisma.article.findUnique({ where: { id: idB }, select: { ordem: true } }),
+  ]);
+  if (!a || !b) throw new Error("Publicação não encontrada.");
+  // Garante valores distintos mesmo se ambos estiverem em 0 (antes da inicialização).
+  const ordemA = a.ordem === b.ordem ? a.ordem + 1 : a.ordem;
+  await prisma.$transaction([
+    prisma.article.update({ where: { id: idA }, data: { ordem: b.ordem } }),
+    prisma.article.update({ where: { id: idB }, data: { ordem: ordemA } }),
+  ]);
+  revalidatePath("/dashboard/noticias");
+  return { ok: true };
 }
 
 /** Publica (torna visível aos membros) ou despublica (volta a rascunho). */

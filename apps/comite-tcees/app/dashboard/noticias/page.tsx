@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default async function NoticiasPage() {
   const artigos = await prisma.article.findMany({
-    orderBy: [{ status: "asc" }, { publicadoEm: "desc" }, { updatedAt: "desc" }],
+    orderBy: [{ ordem: "asc" }, { publicadoEm: "desc" }, { updatedAt: "desc" }],
   });
 
   const dtos: ArticleDTO[] = artigos.map((a) => ({
@@ -21,6 +21,7 @@ export default async function NoticiasPage() {
     anexoNome: a.anexoNome,
     autor: a.autor,
     status: a.status,
+    ordem: a.ordem,
     publicadoEmBR: a.publicadoEm ? new Date(a.publicadoEm).toLocaleDateString("pt-BR") : null,
   }));
 

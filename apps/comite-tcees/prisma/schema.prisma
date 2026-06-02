@@ -106,6 +106,7 @@ model Article {
   anexoNome   String? // nome do arquivo / rótulo do link
   autor       String? // nome de quem publicou
   status      String   @default("RASCUNHO") // RASCUNHO | PUBLICADO
+  ordem       Int      @default(0) // ordem de exibição (manual, setas ↑↓; menor = primeiro)
   publicadoEm DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
