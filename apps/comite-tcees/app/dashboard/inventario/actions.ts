@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireEditor } from "@/lib/auth-server";
+import { requireEditor, requireEditorOuResponsavel, isEditorRole } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 
 export type InventarioInput = {
@@ -29,10 +29,19 @@ export type InventarioInput = {
 const STATUS_VALIDOS = ["PRELIMINAR", "EM_REVISAO", "CONCLUIDO"];
 
 export async function salvarInventario(input: InventarioInput) {
-  await requireEditor();
   if (!input.nome?.trim()) throw new Error("O nome do processo é obrigatório.");
 
-  const dados = {
+  // Editar um processo: editor (Coordenação/Admin) OU o responsável atribuído.
+  // Criar um processo novo: somente editor.
+  let ehEditor = true;
+  if (input.id) {
+    const session = await requireEditorOuResponsavel(input.id);
+    ehEditor = isEditorRole(session.user.role);
+  } else {
+    await requireEditor();
+  }
+
+  const base = {
     nome: input.nome.trim(),
     unidadeGestora: input.unidadeGestora?.trim() || null,
     hipoteseMacro: input.hipoteseMacro?.trim() || null,
@@ -43,7 +52,6 @@ export async function salvarInventario(input: InventarioInput) {
     retencao: input.retencao?.trim() || null,
     compartilhamento: input.compartilhamento?.trim() || null,
     medidasSeguranca: input.medidasSeguranca?.trim() || null,
-    prioritario: !!input.prioritario,
     status: STATUS_VALIDOS.includes(input.status) ? input.status : "PRELIMINAR",
     observacoes: input.observacoes?.trim() || null,
     categoriasTitulares: input.categoriasTitulares?.trim() || null,
@@ -54,10 +62,14 @@ export async function salvarInventario(input: InventarioInput) {
   };
 
   if (input.id) {
-    await prisma.dataInventory.update({ where: { id: input.id }, data: dados });
+    // "Prioritário" é decisão da Coordenação — o responsável (não-editor) não o altera.
+    const data = ehEditor ? { ...base, prioritario: !!input.prioritario } : base;
+    await prisma.dataInventory.update({ where: { id: input.id }, data });
   } else {
     const max = await prisma.dataInventory.aggregate({ _max: { ordem: true } });
-    await prisma.dataInventory.create({ data: { ...dados, ordem: (max._max.ordem ?? 0) + 1 } });
+    await prisma.dataInventory.create({
+      data: { ...base, prioritario: !!input.prioritario, ordem: (max._max.ordem ?? 0) + 1 },
+    });
   }
 
   revalidatePath("/dashboard/inventario");

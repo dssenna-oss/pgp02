@@ -58,7 +58,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               👁️
               <span>
                 <b>Modo somente leitura.</b> Você pode consultar todas as informações. A edição é restrita
-                à Coordenação do Comitê e ao Encarregado (DPO).
+                à Coordenação e ao Encarregado (DPO) — <b>exceto os processos atribuídos a você em Tarefas</b>.
               </span>
             </div>
           )}

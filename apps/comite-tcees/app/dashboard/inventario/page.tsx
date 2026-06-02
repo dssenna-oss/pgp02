@@ -22,6 +22,8 @@ export default async function InventarioPage() {
     prioritario: p.prioritario,
     status: p.status,
     observacoes: p.observacoes,
+    responsavelId: p.responsavelId,
+    responsavelNome: p.responsavelNome,
     categoriasTitulares: p.categoriasTitulares,
     fonteDados: p.fonteDados,
     destinatariosInternos: p.destinatariosInternos,

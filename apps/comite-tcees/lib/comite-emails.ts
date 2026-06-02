@@ -100,3 +100,33 @@ export async function emailPautaAprovada(params: {
     tag: "comite-pauta",
   });
 }
+
+/** E-mail: nova tarefa atribuída a UM membro específico (não é broadcast). */
+export async function emailTarefaAtribuida(params: {
+  to: { email: string; name: string };
+  titulo: string;
+  prazoBR?: string | null;
+  processoNome?: string | null;
+  descricao?: string | null;
+}): Promise<void> {
+  if (!params.to.email || !params.to.email.includes("@")) return;
+
+  const href = `${APP_URL}/dashboard/tarefas`;
+  const corpo = `
+    <p style="font-size:15px;line-height:1.6">A Coordenação do Comitê atribuiu uma tarefa a você.</p>
+    <table style="font-size:14px;line-height:1.8;border-collapse:collapse">
+      <tr><td style="color:#64748b;padding-right:12px">Tarefa</td><td style="font-weight:600">${escapeHtml(params.titulo)}</td></tr>
+      ${params.processoNome ? `<tr><td style="color:#64748b;padding-right:12px">Processo</td><td>${escapeHtml(params.processoNome)}</td></tr>` : ""}
+      ${params.prazoBR ? `<tr><td style="color:#64748b;padding-right:12px">Prazo</td><td>${escapeHtml(params.prazoBR)}</td></tr>` : ""}
+    </table>
+    ${params.descricao ? `<div style="background:#f8fafc;border-left:3px solid #1e3a5f;padding:12px 16px;border-radius:4px;font-size:14px;line-height:1.6;white-space:pre-wrap;margin-top:12px">${escapeHtml(params.descricao.slice(0, 600))}</div>` : ""}
+    ${params.processoNome ? `<p style="font-size:13px;color:#64748b;margin-top:14px">No painel, você poderá editar o processo <strong>${escapeHtml(params.processoNome)}</strong> no Inventário e preencher as informações.</p>` : ""}`;
+
+  sendEmailAsync({
+    to: [{ email: params.to.email, name: params.to.name }],
+    subject: `Nova tarefa do Comitê: ${params.titulo}`,
+    html: wrap("Nova tarefa atribuída a você", corpo, href, "Abrir minhas tarefas"),
+    text: `Nova tarefa do Comitê: ${params.titulo}${params.prazoBR ? ` (prazo ${params.prazoBR})` : ""}. Acesse ${href}`,
+    tag: "comite-tarefa",
+  });
+}

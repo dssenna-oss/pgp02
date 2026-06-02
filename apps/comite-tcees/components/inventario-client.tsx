@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { Plus, Pencil, Trash2, X, ShieldAlert, Sparkles, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,8 @@ export type InventarioDTO = {
   prioritario: boolean;
   status: string;
   observacoes: string | null;
+  responsavelId: string | null;
+  responsavelNome: string | null;
   // campos do ROPA (Art. 37 / template ANPD)
   categoriasTitulares: string | null;
   fonteDados: string | null;
@@ -36,15 +39,31 @@ const VAZIO = (): InventarioDTO => ({
   id: "", nome: "", unidadeGestora: "", hipoteseMacro: "IV", finalidade: "", baseLegal: "",
   tiposDados: "", dadosSensiveis: false, retencao: "", compartilhamento: "", medidasSeguranca: "",
   prioritario: false, status: "PRELIMINAR", observacoes: "",
+  responsavelId: null, responsavelNome: null,
   categoriasTitulares: "", fonteDados: "", destinatariosInternos: "", transfInternacional: "", criterioDescarte: "",
 });
 
 export function InventarioClient({ processos }: { processos: InventarioDTO[] }) {
   const router = useRouter();
   const podeEditar = usePodeEditar();
+  const { data: session } = useSession();
+  const meuId = (session?.user as { id?: string } | undefined)?.id ?? null;
+  const searchParams = useSearchParams();
   const [editando, setEditando] = useState<InventarioDTO | null>(null);
   const [sugerindo, setSugerindo] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | "prioritarios" | "sensiveis">("todos");
+
+  // Quem pode editar ESTE processo: editor (Coordenação/Admin) OU o responsável.
+  const podeEditarProc = (p: InventarioDTO) => podeEditar || (!!meuId && p.responsavelId === meuId);
+
+  // Vindo de uma Tarefa (?abrir=<id>): abre direto o processo se o usuário puder editá-lo.
+  const abrirId = searchParams.get("abrir");
+  useEffect(() => {
+    if (!abrirId) return;
+    const p = processos.find((x) => x.id === abrirId);
+    if (p && (podeEditar || (!!meuId && p.responsavelId === meuId))) setEditando(p);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrirId, meuId, podeEditar]);
 
   const visiveis = processos.filter((p) =>
     filtro === "prioritarios" ? p.prioritario : filtro === "sensiveis" ? p.dadosSensiveis : true,
@@ -94,17 +113,19 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
             <div key={p.id} className="bg-white border rounded-xl p-4">
               <div className="flex justify-between gap-2 items-start">
                 <div className="text-[13.5px] font-bold text-gray-900">{p.nome}</div>
-                {podeEditar && (
+                {podeEditarProc(p) && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => setEditando(p)} title="Editar" className="text-gray-300 hover:text-brand-600"><Pencil className="w-4 h-4" /></button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm(`Excluir o processo "${p.nome}" do Inventário?`)) return;
-                        const t = toast.loading("Excluindo…");
-                        try { await excluirInventario(p.id); toast.success("Processo excluído", { id: t }); router.refresh(); }
-                        catch { toast.error("Não foi possível excluir", { id: t }); }
-                      }}
-                      title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    {podeEditar && (
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Excluir o processo "${p.nome}" do Inventário?`)) return;
+                          const t = toast.loading("Excluindo…");
+                          try { await excluirInventario(p.id); toast.success("Processo excluído", { id: t }); router.refresh(); }
+                          catch { toast.error("Não foi possível excluir", { id: t }); }
+                        }}
+                        title="Excluir" className="text-gray-300 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    )}
                   </div>
                 )}
               </div>
@@ -113,11 +134,13 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
                 {p.prioritario && <Badge variant="indigo">prioritário</Badge>}
                 {p.dadosSensiveis && <Badge variant="red"><ShieldAlert className="w-3 h-3" /> dados sensíveis</Badge>}
                 {p.hipoteseMacro && <Badge variant="gray">Hipótese {p.hipoteseMacro}</Badge>}
+                {!podeEditar && meuId && p.responsavelId === meuId && <Badge variant="blue">atribuído a você</Badge>}
               </div>
               <div className="text-[11.5px] text-gray-500 mt-2 space-y-0.5">
                 {p.unidadeGestora && <div><b className="text-gray-700">Unidade gestora:</b> {p.unidadeGestora}</div>}
                 {p.hipoteseMacro && <div><b className="text-gray-700">Tratamento:</b> {HIPOTESE_MACRO[p.hipoteseMacro] ?? p.hipoteseMacro}</div>}
                 {p.baseLegal && <div><b className="text-gray-700">Base legal:</b> {p.baseLegal}</div>}
+                {p.responsavelNome && <div><b className="text-gray-700">Responsável:</b> {p.responsavelNome}{meuId && p.responsavelId === meuId ? " (você)" : ""}</div>}
               </div>
             </div>
           );
@@ -129,7 +152,7 @@ export function InventarioClient({ processos }: { processos: InventarioDTO[] }) 
         O Inventário será estendido aos ~103 processos restantes até Q2/2027.
       </div>
 
-      {editando && <InventarioModal processo={editando} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); router.refresh(); }} />}
+      {editando && <InventarioModal processo={editando} ehEditor={podeEditar} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); router.refresh(); }} />}
       {sugerindo && <SugerirModal onClose={() => setSugerindo(false)} onSaved={() => { setSugerindo(false); router.refresh(); }} />}
     </>
   );
@@ -316,7 +339,7 @@ function SugerirModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   );
 }
 
-function InventarioModal({ processo, onClose, onSaved }: { processo: InventarioDTO; onClose: () => void; onSaved: () => void }) {
+function InventarioModal({ processo, ehEditor, onClose, onSaved }: { processo: InventarioDTO; ehEditor: boolean; onClose: () => void; onSaved: () => void }) {
   const ehNovo = !processo.id;
   const [form, setForm] = useState<InventarioDTO>(processo);
   const [salvando, setSalvando] = useState(false);
@@ -401,11 +424,18 @@ function InventarioModal({ processo, onClose, onSaved }: { processo: InventarioD
             <label className={labelCls}>Medidas de segurança</label>
             <textarea className={inputCls} rows={2} value={form.medidasSeguranca ?? ""} onChange={(e) => set("medidasSeguranca", e.target.value)} placeholder="Controles de acesso, criptografia, logs…" />
           </div>
+          {!ehEditor && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-900 rounded-md px-3 py-2 text-[12px]">
+              📌 Este processo foi atribuído a você. Preencha as informações e, ao terminar, marque o status como <b>Concluído</b>.
+            </div>
+          )}
           <div className="flex gap-5 pt-1">
-            <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer select-none">
-              <input type="checkbox" className="w-4 h-4 accent-brand-600" checked={form.prioritario} onChange={(e) => set("prioritario", e.target.checked)} />
-              Processo prioritário
-            </label>
+            {ehEditor && (
+              <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer select-none">
+                <input type="checkbox" className="w-4 h-4 accent-brand-600" checked={form.prioritario} onChange={(e) => set("prioritario", e.target.checked)} />
+                Processo prioritário
+              </label>
+            )}
             <label className="flex items-center gap-2 text-sm text-gray-800 cursor-pointer select-none">
               <input type="checkbox" className="w-4 h-4 accent-red-600" checked={form.dadosSensiveis} onChange={(e) => set("dadosSensiveis", e.target.checked)} />
               Trata dados sensíveis

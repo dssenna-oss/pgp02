@@ -13,6 +13,7 @@ const ICONE: Record<string, { emoji: string; bg: string }> = {
   PRAZO: { emoji: "⏳", bg: "bg-brand-50" },
   CONSULTA: { emoji: "⚖️", bg: "bg-slate-100" },
   MARCO: { emoji: "✅", bg: "bg-emerald-100" },
+  TAREFA: { emoji: "🗒️", bg: "bg-indigo-100" },
 };
 
 function tempoRelativo(d: Date): string {

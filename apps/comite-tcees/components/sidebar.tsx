@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import {
   BarChart3, Calendar, CalendarDays, Users, FileText, FolderOpen,
   Scale, Bell, TrendingUp, Menu, X, Boxes, ShieldAlert, ClipboardCheck,
-  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo, FileSearch, Newspaper,
+  ListChecks, FileCheck2, Activity, Stethoscope, KeyRound, Gauge, ListTodo, FileSearch, Newspaper, ClipboardList,
 } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,7 @@ const LINKS = [
   { href: "/dashboard/reunioes", label: "Reuniões & Atas", icon: FileText },
   { href: "/dashboard/documentos", label: "Documentos", icon: FolderOpen },
   { href: "/dashboard/consultas", label: "Consulta prévia", icon: Scale },
+  { href: "/dashboard/tarefas", label: "Tarefas", icon: ClipboardList },
   { href: "/dashboard/notificacoes", label: "Notificações", icon: Bell },
   { href: "/dashboard/indicadores", label: "Indicadores & Relatório", icon: TrendingUp },
 ];

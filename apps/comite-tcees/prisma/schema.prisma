@@ -254,6 +254,10 @@ model DataInventory {
   prioritario      Boolean  @default(false) // um dos 12 processos prioritários
   status           String   @default("PRELIMINAR") // PRELIMINAR | EM_REVISAO | CONCLUIDO
   observacoes      String?
+  // Responsável pelo preenchimento (atribuído via Tarefas). O dono pode editar
+  // este processo mesmo sendo MEMBRO (só-leitura no restante do app).
+  responsavelId    String? // User.id do membro responsável
+  responsavelNome  String? // nome do responsável (denormalizado p/ exibição)
   // --- Campos para o ROPA (Art. 37 / template ANPD) ---
   categoriasTitulares String? // servidores, jurisdicionados, cidadãos, terceirizados…
   fonteDados          String? // coleta direta do titular, sistemas públicos, terceiros, integrações
@@ -264,8 +268,9 @@ model DataInventory {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  riscos ProcessRisk[]
-  ripds  Ripd[]
+  riscos  ProcessRisk[]
+  ripds   Ripd[]
+  tarefas Tarefa[]
 
   @@map("data_inventories")
 }
@@ -596,4 +601,32 @@ model Notificacao {
   createdAt DateTime @default(now())
 
   @@map("notificacoes")
+}
+
+// -----------------------------------------------------------------------------
+// TAREFAS — o Coordenador atribui trabalho a um membro com prazo (ex.: preencher
+// o inventário de um processo). Quando a tarefa é vinculada a um processo do
+// Inventário, o responsável ganha permissão de editar AQUELE processo, mesmo
+// sendo MEMBRO (só-leitura no restante do app) — ver DataInventory.responsavelId.
+// -----------------------------------------------------------------------------
+
+model Tarefa {
+  id              String         @id @default(cuid())
+  titulo          String
+  descricao       String?
+  responsavelId   String // User.id de quem deve executar
+  responsavelNome String // nome do responsável (denormalizado p/ exibição)
+  criadoPorNome   String? // quem atribuiu (Coordenação)
+  inventoryId     String? // vínculo opcional a um processo do Inventário
+  inventory       DataInventory? @relation(fields: [inventoryId], references: [id], onDelete: SetNull)
+  prazo           DateTime?
+  prioridade      String         @default("MEDIA") // BAIXA | MEDIA | ALTA
+  status          String         @default("A_FAZER") // A_FAZER | EM_ANDAMENTO | CONCLUIDA
+  concluidaEm     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([responsavelId])
+  @@index([inventoryId])
+  @@map("tarefas")
 }
