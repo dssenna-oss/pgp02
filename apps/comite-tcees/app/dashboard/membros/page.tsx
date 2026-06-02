@@ -25,7 +25,8 @@ export default async function MembrosPage() {
       <PageHeader
         emoji="👥"
         title="Membros do Comitê"
-        lead="Composição e papéis. Adicione e edite integrantes pelo botão ao lado."
+        lead="Composição e papéis."
+        editHint="Adicione e edite integrantes pelo botão ao lado."
       />
       <MembrosClient membros={dtos} />
     </>

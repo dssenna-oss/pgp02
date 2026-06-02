@@ -34,7 +34,8 @@ export default async function ReunioesPage() {
       <PageHeader
         emoji="📝"
         title="Reuniões & Atas"
-        lead="Histórico das reuniões do colegiado — pauta, participantes, decisões e ata. Agende e edite reuniões pelo botão ao lado."
+        lead="Histórico das reuniões do colegiado — pauta, participantes, decisões e ata."
+        editHint="Agende e edite reuniões pelo botão ao lado."
       />
       <ReunioesClient reunioes={dtos} />
     </>

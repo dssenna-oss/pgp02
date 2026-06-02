@@ -1,12 +1,17 @@
+import { EditHint } from "@/components/edit-hint";
+
 export function PageHeader({
   emoji,
   title,
   lead,
+  editHint,
   action,
 }: {
   emoji?: string;
   title: string;
   lead?: string;
+  /** Trecho de ajuda mostrado só para quem pode editar (ADMIN/COORDENADOR). */
+  editHint?: string;
   action?: React.ReactNode;
 }) {
   return (
@@ -16,7 +21,12 @@ export function PageHeader({
           {emoji && <span>{emoji}</span>}
           {title}
         </h1>
-        {lead && <p className="text-gray-500 text-[13.5px] mt-1 max-w-[760px]">{lead}</p>}
+        {lead && (
+          <p className="text-gray-500 text-[13.5px] mt-1 max-w-[760px]">
+            {lead}
+            {editHint && <EditHint text={editHint} />}
+          </p>
+        )}
       </div>
       {action}
     </div>

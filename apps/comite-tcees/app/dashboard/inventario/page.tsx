@@ -34,7 +34,8 @@ export default async function InventarioPage() {
       <PageHeader
         emoji="🗂️"
         title="Inventário de Dados Pessoais"
-        lead="Fase 3 do PGP — mapeamento das atividades de tratamento de dados pessoais do TCEES. Os 12 processos prioritários já estão registrados; adicione e edite pelo botão ao lado."
+        lead="Fase 3 do PGP — mapeamento das atividades de tratamento de dados pessoais do TCEES. Os 12 processos prioritários já estão registrados."
+        editHint="Adicione e edite pelo botão ao lado."
       />
       <InventarioClient processos={dtos} />
     </>

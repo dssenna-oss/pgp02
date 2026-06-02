@@ -22,7 +22,8 @@ export default async function DocumentosPage() {
       <PageHeader
         emoji="📁"
         title="Documentos do Comitê"
-        lead="Repositório com versão e status de homologação. Adicione e edite documentos pelo botão ao lado."
+        lead="Repositório com versão e status de homologação."
+        editHint="Adicione e edite documentos pelo botão ao lado."
       />
       <DocumentosClient documentos={dtos} />
     </>

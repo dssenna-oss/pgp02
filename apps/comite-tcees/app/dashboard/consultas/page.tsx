@@ -30,7 +30,8 @@ export default async function ConsultasPage() {
       <PageHeader
         emoji="⚖️"
         title="Consulta prévia ao Comitê"
-        lead="Registro das decisões que envolvem dados pessoais submetidas ao Comitê. Adicione e edite consultas pelo botão ao lado."
+        lead="Registro das decisões que envolvem dados pessoais submetidas ao Comitê."
+        editHint="Adicione e edite consultas pelo botão ao lado."
       />
       <ConsultasClient consultas={dtos} />
     </>

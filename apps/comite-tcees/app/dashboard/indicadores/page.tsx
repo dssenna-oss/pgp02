@@ -34,7 +34,8 @@ export default async function IndicadoresPage() {
       <PageHeader
         emoji="📈"
         title="Indicadores & Relatório"
-        lead="Indicadores por eixo (A–E) + impacto. Edite o valor atual conforme o ano avança. Base do Relatório Anual (Portaria 22/2026, art. 4º §3º)."
+        lead="Indicadores por eixo (A–E) + impacto. Base do Relatório Anual (Portaria 22/2026, art. 4º §3º)."
+        editHint="Edite o valor atual conforme o ano avança."
         action={<RelatorioBtn />}
       />
 

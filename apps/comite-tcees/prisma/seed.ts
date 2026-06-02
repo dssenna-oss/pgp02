@@ -49,7 +49,7 @@ const MEMBROS = [
 // MARCOS CRÍTICOS (Seção 6.3)
 // ---------------------------------------------------------------------------
 const MARCOS = [
-  { data: d(2026, 5, 26), descricao: "Protocolo do Plano de Trabalho junto à SEGOV", eixoCodigos: "A", tipo: "NORMAL", status: "CONCLUIDO", ordem: 1 },
+  { data: d(2026, 5, 26), descricao: "Protocolo do Plano de Trabalho junto à SEGOV", eixoCodigos: "A", tipo: "NORMAL", status: "EM_ANDAMENTO", ordem: 1 },
   { data: d(2026, 6, 30), descricao: "Aprovação formal do PGP v1.0, Política Interna e PRI pela Administração Superior", eixoCodigos: "A", tipo: "NORMAL", status: "EM_ANDAMENTO", ordem: 2 },
   { data: d(2026, 6, 30), descricao: "Edição de ato normativo institucionalizando consulta prévia obrigatória ao Comitê", eixoCodigos: "A", tipo: "NORMAL", status: "A_INICIAR", ordem: 3 },
   { data: d(2026, 9, 30), descricao: "Refazimento do IDP dos 12 processos prioritários sob metodologia atualizada", eixoCodigos: "B", tipo: "NORMAL", status: "A_INICIAR", ordem: 4 },
@@ -72,8 +72,8 @@ type EntregaSeed = {
 };
 const ENTREGAS: EntregaSeed[] = [
   // Q2 2026 — maio a junho (consolidação inicial)
-  { titulo: "Protocolo do Plano de Trabalho junto à SEGOV", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "Presidência do Comitê", prazoTexto: "26/05/2026", prazoData: d(2026, 5, 26), status: "CONCLUIDO" },
-  { titulo: "Submissão do PGP v1.0, minuta da Política Interna e PRI à Administração Superior", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "Presidência + Coordenação", prazoTexto: "31/05/2026", prazoData: d(2026, 5, 31), status: "CONCLUIDO" },
+  { titulo: "Protocolo do Plano de Trabalho junto à SEGOV", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "Presidência do Comitê", prazoTexto: "26/05/2026", prazoData: d(2026, 5, 26), status: "EM_ANDAMENTO" },
+  { titulo: "Submissão do PGP v1.0, minuta da Política Interna e PRI à Administração Superior", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "Presidência + Coordenação", prazoTexto: "31/05/2026", prazoData: d(2026, 5, 31), status: "EM_ANDAMENTO" },
   { titulo: "Minuta de ato normativo de consulta prévia obrigatória", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "Coordenação + CJU", prazoTexto: "15/06/2026", prazoData: d(2026, 6, 15), status: "EM_ANDAMENTO" },
   { titulo: "Aprovação formal do PGP v1.0, Política Interna e PRI", eixoCodigo: "A", trimestre: "Q2-2026", responsavel: "CSA", prazoTexto: "30/06/2026", prazoData: d(2026, 6, 30), status: "A_INICIAR" },
   { titulo: "Diagnóstico de adequação dos contratos críticos (Convênio IPAJM e videomonitoramento)", eixoCodigo: "B", trimestre: "Q2-2026", responsavel: "Coordenação + CJU + SGTI", prazoTexto: "30/06/2026", prazoData: d(2026, 6, 30), status: "EM_ANDAMENTO" },
@@ -334,7 +334,7 @@ const NOTIFICACOES = [
   { tipo: "REUNIAO", titulo: "Reunião do Comitê em 19/06/2026", descricao: "Confirme sua presença.", href: "/dashboard/reunioes", lida: false },
   { tipo: "PRAZO", titulo: "Prazo se aproximando: minuta de ato de consulta prévia (15/06/2026)", descricao: "Eixo A", eixoCodigo: "A", href: "/dashboard/plano", lida: true },
   { tipo: "CONSULTA", titulo: "Nova consulta prévia registrada: serviço de videomonitoramento", descricao: "Em análise pelo Comitê.", href: "/dashboard/consultas", lida: true },
-  { tipo: "MARCO", titulo: "Marco concluído: Protocolo do Plano de Trabalho junto à SEGOV", descricao: "26/05/2026", href: "/dashboard/plano", lida: true },
+  { tipo: "MARCO", titulo: "Marco em andamento: Protocolo do Plano de Trabalho junto à SEGOV", descricao: "Prazo 26/05/2026", href: "/dashboard/plano", lida: true },
 ];
 
 async function main() {
