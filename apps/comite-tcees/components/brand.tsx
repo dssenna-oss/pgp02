@@ -12,14 +12,14 @@ export function Brand({ light = false }: { light?: boolean }) {
       </div>
       <div className="flex flex-col leading-tight">
         <span className={`font-extrabold text-sm ${light ? "text-white" : "text-gray-900"}`}>
-          LGPD · PGP
+          Comitê LGPD
         </span>
         <span
           className={`text-[10px] uppercase tracking-wide ${
             light ? "text-slate-300" : "text-gray-500"
           }`}
         >
-          Governança em Privacidade
+          TCE-ES · Proteção de Dados
         </span>
       </div>
     </div>
