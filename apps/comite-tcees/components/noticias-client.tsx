@@ -178,7 +178,7 @@ function LeituraModal({ artigo, onClose }: { artigo: ArticleDTO; onClose: () => 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50" onClick={onClose}>
       <div
-        className={`bg-white rounded-xl shadow-xl w-full flex flex-col max-h-[92vh] overflow-hidden ${temPdf ? "max-w-6xl" : "max-w-2xl"}`}
+        className={`bg-white rounded-xl shadow-xl w-full flex flex-col overflow-hidden ${temPdf ? "h-[92vh] max-w-5xl" : "max-h-[92vh] max-w-2xl"}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Capa só nos artigos de texto; no PDF priorizamos o documento. */}
@@ -213,7 +213,7 @@ function LeituraModal({ artigo, onClose }: { artigo: ArticleDTO; onClose: () => 
                 <Download className="w-3.5 h-3.5" /> Baixar
               </a>
             </div>
-            <iframe src={artigo.anexoUrl!} title={artigo.anexoNome ?? "PDF"} className="flex-1 min-h-0 w-full border rounded-md bg-slate-100" />
+            <iframe src={`${artigo.anexoUrl!}#view=FitH`} title={artigo.anexoNome ?? "PDF"} className="flex-1 min-h-0 w-full border rounded-md bg-slate-100" />
           </div>
         ) : (
           // Texto / link: rola dentro da janela.
