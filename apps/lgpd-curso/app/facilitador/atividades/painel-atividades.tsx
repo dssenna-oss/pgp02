@@ -10,6 +10,9 @@ import { RefreshCw, Projector, LayoutGrid, Users, FileText } from "lucide-react"
 import { Select } from "@/components/ui/select";
 import { ATIVIDADES_C, type AgregadoAtividade } from "@/lib/atividades-c";
 import { AgregadoView } from "./agregado-view";
+import { TermometroView, type GrupoTermometro } from "./termometro-view";
+
+const ATIVIDADE_TERMOMETRO_ID = "termometro";
 
 type Turma = {
   id: string;
@@ -26,29 +29,51 @@ type Dados = {
   geradoEm: string;
 };
 
+type DadosTermometro = {
+  grupos: GrupoTermometro[];
+  preenchidos: number;
+  concluidos: number;
+  total: number;
+};
+
 export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
   const inicial = turmas.find((t) => t.proximoCurso)?.id ?? turmas[0]?.id ?? "";
   const [turmaId, setTurmaId] = useState(inicial);
-  const [atividadeId, setAtividadeId] = useState(ATIVIDADES_C[0]?.id ?? "");
+  const [atividadeId, setAtividadeId] = useState(ATIVIDADE_TERMOMETRO_ID);
   const [dados, setDados] = useState<Dados | null>(null);
+  const [dadosTermometro, setDadosTermometro] = useState<DadosTermometro | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   const turmaSel = turmas.find((t) => t.id === turmaId);
+  const ehTermometro = atividadeId === ATIVIDADE_TERMOMETRO_ID;
 
   useEffect(() => {
     if (!turmaId || !atividadeId) return;
     let cancelado = false;
     setDados(null);
+    setDadosTermometro(null);
+
     async function load() {
       try {
         if (!cancelado) setCarregando(true);
-        const res = await fetch(
-          `/api/curso/atividade-c/painel?turmaId=${turmaId}&atividadeId=${atividadeId}`,
-          { cache: "no-store" },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelado) setDados(data);
+
+        if (ehTermometro) {
+          const res = await fetch(
+            `/api/curso/termometro/painel?turmaId=${turmaId}`,
+            { cache: "no-store" },
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!cancelado) setDadosTermometro(data);
+        } else {
+          const res = await fetch(
+            `/api/curso/atividade-c/painel?turmaId=${turmaId}&atividadeId=${atividadeId}`,
+            { cache: "no-store" },
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!cancelado) setDados(data);
+        }
       } catch {
       } finally {
         if (!cancelado) setCarregando(false);
@@ -60,7 +85,7 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
       cancelado = true;
       clearInterval(id);
     };
-  }, [turmaId, atividadeId]);
+  }, [turmaId, atividadeId, ehTermometro]);
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -90,6 +115,9 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Atividade</label>
           <Select value={atividadeId} onChange={(e) => setAtividadeId(e.target.value)}>
+            <option value={ATIVIDADE_TERMOMETRO_ID}>
+              🌡️ Termômetro — evolução dos grupos
+            </option>
             {ATIVIDADES_C.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.emoji} {a.titulo}
@@ -102,7 +130,13 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
       <div className="flex items-center justify-between mb-4">
         <div className="inline-flex items-center gap-1.5 text-sm text-gray-500">
           {carregando && <RefreshCw className="h-4 w-4 animate-spin" />}
-          {dados ? `${dados.agregado.respondentes} respostas` : "carregando…"}
+          {ehTermometro
+            ? dadosTermometro
+              ? `${dadosTermometro.preenchidos}/${dadosTermometro.total} grupos preencheram o início · ${dadosTermometro.concluidos} com final`
+              : "carregando…"
+            : dados
+              ? `${dados.agregado.respondentes} respostas`
+              : "carregando…"}
         </div>
         {turmaSel && (
           <div className="flex items-center gap-4">
@@ -127,9 +161,11 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
         O relatório junta o resultado de todas as atividades de celular desta turma e o guia de encerramento — sem digitação.
       </p>
 
-      {dados && <AgregadoView agregado={dados.agregado} />}
+      {ehTermometro
+        ? dadosTermometro && <TermometroView grupos={dadosTermometro.grupos} />
+        : dados && <AgregadoView agregado={dados.agregado} />}
 
-      {dados && dados.porGrupo.length > 0 && (
+      {!ehTermometro && dados && dados.porGrupo.length > 0 && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-3">
             <Users className="h-4 w-4" /> Respostas por grupo
