@@ -7,12 +7,16 @@ import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import type { AgregadoAtividade } from "@/lib/atividades-c";
 import { AgregadoView } from "../../agregado-view";
+import { TermometroView, type GrupoTermometro } from "../../termometro-view";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
 type Atividade = { id: string; titulo: string; fase: string; emoji: string; contexto?: string };
 
 export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade: Atividade }) {
+  const ehTermometro = atividade.id === "termometro";
+
   const [agregado, setAgregado] = useState<AgregadoAtividade | null>(null);
+  const [gruposTermometro, setGruposTermometro] = useState<GrupoTermometro[] | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
@@ -20,13 +24,24 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
     async function load() {
       try {
         if (!cancelado) setCarregando(true);
-        const res = await fetch(
-          `/api/curso/atividade-c/painel?turmaId=${turma.id}&atividadeId=${atividade.id}`,
-          { cache: "no-store" },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelado) setAgregado(data.agregado);
+
+        if (ehTermometro) {
+          const res = await fetch(
+            `/api/curso/termometro/painel?turmaId=${turma.id}`,
+            { cache: "no-store" },
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!cancelado) setGruposTermometro(data.grupos ?? []);
+        } else {
+          const res = await fetch(
+            `/api/curso/atividade-c/painel?turmaId=${turma.id}&atividadeId=${atividade.id}`,
+            { cache: "no-store" },
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          if (!cancelado) setAgregado(data.agregado);
+        }
       } catch {
       } finally {
         if (!cancelado) setCarregando(false);
@@ -38,7 +53,7 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
       cancelado = true;
       clearInterval(id);
     };
-  }, [turma.id, atividade.id]);
+  }, [turma.id, atividade.id, ehTermometro]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white p-8">
@@ -59,7 +74,13 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
           </p>
         </header>
 
-        {agregado ? (
+        {ehTermometro ? (
+          gruposTermometro ? (
+            <TermometroView grupos={gruposTermometro} grande />
+          ) : (
+            <p className="text-center text-gray-500 text-xl">Carregando…</p>
+          )
+        ) : agregado ? (
           <AgregadoView agregado={agregado} grande />
         ) : (
           <p className="text-center text-gray-500 text-xl">Carregando…</p>

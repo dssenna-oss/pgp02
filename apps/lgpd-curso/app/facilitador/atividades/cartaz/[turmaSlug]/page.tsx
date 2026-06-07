@@ -22,12 +22,14 @@ export default async function CartazAtividadePage({
   });
   if (!turma) notFound();
 
-  const at = (searchParams.a && getAtividadeC(searchParams.a)) || ATIVIDADES_C[0];
+  const ehTermometro = searchParams.a === "termometro";
+  const at = ehTermometro
+    ? null
+    : ((searchParams.a && getAtividadeC(searchParams.a)) || ATIVIDADES_C[0]);
 
-  return (
-    <CartazAtividade
-      turma={turma}
-      atividade={{ id: at.id, titulo: at.titulo, fase: at.fase, emoji: at.emoji, contexto: at.contexto }}
-    />
-  );
+  const atividadeProp = ehTermometro
+    ? { id: "termometro", titulo: "Termômetro — Evolução dos Grupos", fase: "Reflexão Final · Momento 13", emoji: "🌡️" }
+    : { id: at!.id, titulo: at!.titulo, fase: at!.fase, emoji: at!.emoji, contexto: at!.contexto };
+
+  return <CartazAtividade turma={turma} atividade={atividadeProp} />;
 }
