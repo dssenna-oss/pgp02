@@ -217,6 +217,35 @@ const TRILHA_31_40: AtividadeOpcoes = {
   ],
 };
 
+// Card: Artigos 41 a 50 (10 painéis). Card regenerado em SVG p/ ser 1:1 (sem as
+// duplicatas do card original e com o painel do 41 = Encarregado). Validado.
+const ARTIGOS_41_50 = [41, 42, 43, 44, 45, 46, 47, 48, 49, 50];
+const TRILHA_41_50: AtividadeOpcoes = {
+  id: "trilha-41-50",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 41 a 50",
+  contexto: "Cada painel do card descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o nº de cada painel abaixo (na mesma ordem do card). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "Notificação de Incidentes (Data Breach)", opcoes: opcoesArtigos(ARTIGOS_41_50, 48) },
+    { id: "p2", enunciado: "Escudos de Proteção (Excludentes)", opcoes: opcoesArtigos(ARTIGOS_41_50, 43) },
+    { id: "p3", enunciado: "Mapa da Governança", opcoes: opcoesArtigos(ARTIGOS_41_50, 50) },
+    { id: "p4", enunciado: "O Encarregado (DPO)", opcoes: opcoesArtigos(ARTIGOS_41_50, 41) },
+    { id: "p5", enunciado: "Muralha de Segurança", opcoes: opcoesArtigos(ARTIGOS_41_50, 46) },
+    { id: "p6", enunciado: "O Termômetro do Risco (Tratamento Irregular)", opcoes: opcoesArtigos(ARTIGOS_41_50, 44) },
+    { id: "p7", enunciado: "O Selo de Confidencialidade", opcoes: opcoesArtigos(ARTIGOS_41_50, 47) },
+    { id: "p8", enunciado: "Reparação e Solidariedade", opcoes: opcoesArtigos(ARTIGOS_41_50, 42) },
+    { id: "p9", enunciado: "Segurança na Concepção (Privacy by Design)", opcoes: opcoesArtigos(ARTIGOS_41_50, 49) },
+    { id: "p10", enunciado: "A Ponte com o Consumidor (CDC)", opcoes: opcoesArtigos(ARTIGOS_41_50, 45) },
+  ],
+};
+
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
@@ -440,6 +469,7 @@ export const ATIVIDADES_C: AtividadeC[] = [
   TRILHA_12_20,
   TRILHA_21_30,
   TRILHA_31_40,
+  TRILHA_41_50,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
