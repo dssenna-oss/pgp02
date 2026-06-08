@@ -246,6 +246,53 @@ const TRILHA_41_50: AtividadeOpcoes = {
   ],
 };
 
+// Card: Artigos 51 a 65 (11 painéis). Bloco da ANPD — vários artigos têm sufixo
+// (55-C, 55-D, 55-J, 58-A), então as opções do seletor são os artigos que de
+// fato aparecem no card (não uma faixa numérica). Gabarito fechado com o user.
+// Obs.: pelo card do user, o painel "CDC" → 64 (diálogo com outras normas) e o
+// painel "Prescrição/Defesa" → 52 (ampla defesa); ambos repetem números do bloco.
+const OPCOES_51_65: OpcaoItem[] = [
+  { id: "a51", rotulo: "Art. 51" },
+  { id: "a52", rotulo: "Art. 52" },
+  { id: "a53", rotulo: "Art. 53" },
+  { id: "a55c", rotulo: "Art. 55-C" },
+  { id: "a55d", rotulo: "Art. 55-D" },
+  { id: "a55j", rotulo: "Art. 55-J" },
+  { id: "a58a", rotulo: "Art. 58-A" },
+  { id: "a60", rotulo: "Art. 60" },
+  { id: "a64", rotulo: "Art. 64" },
+  { id: "a65", rotulo: "Art. 65" },
+];
+function opcs5165(corretoId: string): OpcaoItem[] {
+  return OPCOES_51_65.map((o) => ({ id: o.id, rotulo: o.rotulo, correta: o.id === corretoId }));
+}
+const TRILHA_51_65: AtividadeOpcoes = {
+  id: "trilha-51-65",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 51 a 65",
+  contexto: "Bloco da ANPD. Cada painel descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o artigo de cada painel abaixo (na mesma ordem do card). Atenção: aqui há artigos com letra (ex.: 55-C, 58-A). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "Conselho Diretor da ANPD (5 diretores, mandato de 4 anos)", opcoes: opcs5165("a55d") },
+    { id: "p2", enunciado: "Estrutura da Autoridade Nacional", opcoes: opcs5165("a55c") },
+    { id: "p3", enunciado: "O Menu de Sanções Administrativas", opcoes: opcs5165("a52") },
+    { id: "p4", enunciado: "Proteção de Dados como Direito do Consumidor", opcoes: opcs5165("a64") },
+    { id: "p5", enunciado: "Padrões Técnicos e Selos de Confiança", opcoes: opcs5165("a51") },
+    { id: "p6", enunciado: "O Conselho Consultivo da Sociedade (CNPD)", opcoes: opcs5165("a58a") },
+    { id: "p7", enunciado: "Atualização do Marco Civil da Internet", opcoes: opcs5165("a60") },
+    { id: "p8", enunciado: "O Relógio da Prescrição e o Direito de Defesa", opcoes: opcs5165("a52") },
+    { id: "p9", enunciado: "A Régua da Dosimetria (Critérios de Cálculo)", opcoes: opcs5165("a53") },
+    { id: "p10", enunciado: "Linha do Tempo da Vigência", opcoes: opcs5165("a65") },
+    { id: "p11", enunciado: "As Atribuições de Fiscalização e Educação", opcoes: opcs5165("a55j") },
+  ],
+};
+
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
@@ -470,6 +517,7 @@ export const ATIVIDADES_C: AtividadeC[] = [
   TRILHA_21_30,
   TRILHA_31_40,
   TRILHA_41_50,
+  TRILHA_51_65,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
