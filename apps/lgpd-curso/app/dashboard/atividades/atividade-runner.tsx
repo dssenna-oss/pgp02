@@ -120,34 +120,71 @@ export function AtividadeRunner({
       {/* ---- FORMATO OPCOES ---- */}
       {atividade.tipo === "opcoes" && (
         <ol className="space-y-4">
-          {atividade.itens.map((item, i) => (
-            <li key={item.id} className="rounded-xl border border-gray-200 bg-white p-4">
-              <p className="font-medium text-gray-900">
-                <span className="text-gray-400">{i + 1}.</span> {item.enunciado}
-              </p>
-              {item.hint && <p className="mt-1 text-sm text-gray-500">💡 {item.hint}</p>}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.opcoes.map((op) => {
-                  const sel = escolhas[item.id] === op.id;
-                  return (
-                    <button
-                      key={op.id}
-                      type="button"
-                      disabled={somenteLeitura}
-                      onClick={() => setEscolhas((p) => ({ ...p, [item.id]: op.id }))}
-                      className={`px-3 py-2 rounded-lg border text-sm transition ${
-                        sel
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-800 font-medium"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-indigo-300"
-                      } ${somenteLeitura ? "opacity-60 cursor-not-allowed" : ""}`}
-                    >
-                      {op.rotulo}
-                    </button>
-                  );
-                })}
-              </div>
-            </li>
-          ))}
+          {atividade.itens.map((item, i) => {
+            const ehSeletor = atividade.apresentacao === "seletor";
+            return (
+              <li
+                key={item.id}
+                className={`rounded-xl border border-gray-200 bg-white p-4 ${
+                  ehSeletor ? "flex items-center gap-3" : ""
+                }`}
+              >
+                <div className={ehSeletor ? "flex-1 min-w-0" : ""}>
+                  <p className="font-medium text-gray-900">
+                    <span className="text-gray-400">{i + 1}.</span> {item.enunciado}
+                  </p>
+                  {item.hint && <p className="mt-1 text-sm text-gray-500">💡 {item.hint}</p>}
+                </div>
+
+                {ehSeletor ? (
+                  // Seletor compacto: 1 número por painel (Trilha do Conhecimento)
+                  <select
+                    value={escolhas[item.id] ?? ""}
+                    disabled={somenteLeitura}
+                    onChange={(e) =>
+                      setEscolhas((p) => ({ ...p, [item.id]: e.target.value }))
+                    }
+                    className={`shrink-0 rounded-lg border px-3 py-2 text-sm font-medium ${
+                      escolhas[item.id]
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-800"
+                        : "border-gray-300 bg-white text-gray-500"
+                    } ${somenteLeitura ? "opacity-60 cursor-not-allowed" : ""}`}
+                    aria-label={`Artigo do painel: ${item.enunciado}`}
+                  >
+                    <option value="" disabled>
+                      Artigo…
+                    </option>
+                    {item.opcoes.map((op) => (
+                      <option key={op.id} value={op.id}>
+                        {op.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.opcoes.map((op) => {
+                      const sel = escolhas[item.id] === op.id;
+                      return (
+                        <button
+                          key={op.id}
+                          type="button"
+                          disabled={somenteLeitura}
+                          onClick={() => setEscolhas((p) => ({ ...p, [item.id]: op.id }))}
+                          className={`px-3 py-2 rounded-lg border text-sm transition ${
+                            sel
+                              ? "border-indigo-500 bg-indigo-50 text-indigo-800 font-medium"
+                              : "border-gray-200 bg-white text-gray-700 hover:border-indigo-300"
+                          } ${somenteLeitura ? "opacity-60 cursor-not-allowed" : ""}`}
+                        >
+                          {op.rotulo}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ol>
       )}
 
