@@ -16,7 +16,6 @@ import {
   gerarColasReferencia,
   gerarGuiaDecisao,
 } from "@/lib/modalidade-c-docx";
-import { gerarCardsSecoesLGPD } from "@/lib/cards-secoes-docx";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -40,9 +39,6 @@ export async function GET(req: NextRequest) {
   } else if (doc === "guia") {
     documento = gerarGuiaDecisao();
     nomeArquivo = "Guia_de_Decisao_de_Modalidade.docx";
-  } else if (doc === "secoes") {
-    documento = gerarCardsSecoesLGPD();
-    nomeArquivo = "Cards_7_Secoes_da_LGPD.docx";
   } else {
     // default: roteiro
     documento = gerarRoteiroFacilitadorC();

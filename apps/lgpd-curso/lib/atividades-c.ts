@@ -86,32 +86,6 @@ const COR_F2 = "border-amber-300 text-amber-700";
 const COR_F3 = "border-blue-300 text-blue-700";
 const COR_F4 = "border-amber-400 text-amber-800";
 const COR_F6 = "border-purple-300 text-purple-700";
-const COR_ESTRUTURA = "border-indigo-300 text-indigo-700";
-
-// ─── Estrutura da LGPD — Ordenar as 7 seções (ordenar) ──────────────────────
-// Jogo de memorização: os 65 artigos divididos em 7 blocos temáticos (metáforas
-// do Guia Visual). Complementa os cards físicos imprimíveis (Kit das 7 Seções).
-// A ordem do array = a ordem correta da lei (Arts. 1º → 65).
-const SECOES_LGPD: AtividadeOrdenar = {
-  id: "secoes-lgpd",
-  fase: "Estrutura da LGPD",
-  faseCor: COR_ESTRUTURA,
-  emoji: "🃏",
-  titulo: "Ordene as 7 seções da LGPD",
-  contexto: "Os 65 artigos em 7 blocos temáticos — a jornada da lei",
-  instrucao:
-    "Seu grupo recebeu 7 cards, um por bloco da LGPD. Coloque-os na ordem em que aparecem na lei (do Art. 1º ao 65). Use as setas ou arraste. O telão mostra quantos grupos acertaram a sequência.",
-  tipo: "ordenar",
-  itens: [
-    { id: "s1", rotulo: "🗺️ O Território e as Regras do Jogo", detalhe: "Arts. 1º a 6º · Objeto, fundamentos, princípios e definições" },
-    { id: "s2", rotulo: "🔑 O Pedágio e as Chaves de Acesso", detalhe: "Arts. 7º a 16 · Bases legais, consentimento e dados sensíveis" },
-    { id: "s3", rotulo: "🦸 O Herói da História", detalhe: "Arts. 17 a 22 · Os direitos do titular dos dados" },
-    { id: "s4", rotulo: "🏛️ A Casa de Vidro", detalhe: "Arts. 23 a 32 · Tratamento de dados pelo Poder Público" },
-    { id: "s5", rotulo: "🛂 O Passaporte e a Linha de Produção", detalhe: "Arts. 33 a 40 · Transferência internacional e agentes de tratamento" },
-    { id: "s6", rotulo: "🏰 O Quartel de Segurança", detalhe: "Arts. 41 a 51 · Encarregado (DPO), segurança e boas práticas" },
-    { id: "s7", rotulo: "⚖️ O Juízo Final", detalhe: "Arts. 52 a 65 · Fiscalização, sanções e disposições finais" },
-  ],
-};
 
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
@@ -332,7 +306,6 @@ const BALANCEAMENTO_F6: AtividadeOpcoes = {
 };
 
 export const ATIVIDADES_C: AtividadeC[] = [
-  SECOES_LGPD,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
