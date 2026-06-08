@@ -68,6 +68,10 @@ export type AtividadeOpcoes = Base & {
   // só no modo balanceamento: id da opção que precisa ser escolhida em TODOS
   // os itens pra dar "aprovado"
   balanceamento?: { opcaoAprovaId: string; rotuloAprovado: string; rotuloReprovado: string };
+  // forma de exibir as opções no celular: "botoes" (padrão) ou "seletor"
+  // (dropdown compacto, pra quando há muitas opções iguais por item — ex.: a
+  // Trilha do Conhecimento, onde cada painel escolhe 1 número de artigo).
+  apresentacao?: "botoes" | "seletor";
 };
 
 export type AtividadeOrdenar = Base & {
@@ -86,6 +90,48 @@ const COR_F2 = "border-amber-300 text-amber-700";
 const COR_F3 = "border-blue-300 text-blue-700";
 const COR_F4 = "border-amber-400 text-amber-800";
 const COR_F6 = "border-purple-300 text-purple-700";
+const COR_TRILHA = "border-indigo-300 text-indigo-700";
+
+// ─── Trilha do Conhecimento — Desafio dos Artigos (gabarito, seletor) ────────
+// Jogo de memorização: cada grupo recebe um CARD (imagem) com vários painéis
+// temáticos que descrevem artigos da LGPD SEM mostrar o número. O grupo descobre
+// o nº de cada painel e registra no celular (um seletor por painel). O telão
+// mostra o acerto da turma. Os cards são imagens prontas (não geramos DOCX).
+// A ordem dos painéis abaixo é a MESMA do card impresso (linha a linha).
+
+// Gera as opções de número de artigo (Art. N) pra um painel, marcando a correta.
+function opcoesArtigos(nums: number[], correto: number): OpcaoItem[] {
+  return nums.map((n) => ({ id: `a${n}`, rotulo: `Art. ${n}`, correta: n === correto }));
+}
+
+// Card de teste: Artigos 1 a 11. Cada painel → nº correto (gabarito do user).
+const ARTIGOS_1_11 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+const TRILHA_1_11: AtividadeOpcoes = {
+  id: "trilha-1-11",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 1 a 11",
+  contexto: "Cada painel do card descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o nº de cada painel abaixo (na mesma ordem do card). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "O Dicionário da Lei", opcoes: opcoesArtigos(ARTIGOS_1_11, 5) },
+    { id: "p2", enunciado: "O Escudo da Personalidade", opcoes: opcoesArtigos(ARTIGOS_1_11, 1) },
+    { id: "p3", enunciado: "As Chaves para o Tratamento", opcoes: opcoesArtigos(ARTIGOS_1_11, 7) },
+    { id: "p4", enunciado: "Onde a LGPD não Alcança", opcoes: opcoesArtigos(ARTIGOS_1_11, 4) },
+    { id: "p5", enunciado: "As Raízes da Proteção", opcoes: opcoesArtigos(ARTIGOS_1_11, 2) },
+    { id: "p6", enunciado: "Proteção Redobrada", opcoes: opcoesArtigos(ARTIGOS_1_11, 11) },
+    { id: "p7", enunciado: "O Guia da Boa-Fé", opcoes: opcoesArtigos(ARTIGOS_1_11, 6) },
+    { id: "p8", enunciado: "As Fronteiras dos Dados", opcoes: opcoesArtigos(ARTIGOS_1_11, 3) },
+    { id: "p9", enunciado: "A Vontade do Titular", opcoes: opcoesArtigos(ARTIGOS_1_11, 8) },
+    { id: "p10", enunciado: "O Equilíbrio de Interesses", opcoes: opcoesArtigos(ARTIGOS_1_11, 10) },
+    { id: "p11", enunciado: "Olhar Aberto", opcoes: opcoesArtigos(ARTIGOS_1_11, 9) },
+  ],
+};
 
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
@@ -306,6 +352,7 @@ const BALANCEAMENTO_F6: AtividadeOpcoes = {
 };
 
 export const ATIVIDADES_C: AtividadeC[] = [
+  TRILHA_1_11,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
@@ -420,6 +467,7 @@ export type AgregadoAtividade = {
   titulo: string;
   tipo: "opcoes" | "ordenar";
   modo?: ModoOpcoes;
+  apresentacao?: "botoes" | "seletor";
   respondentes: number;
   // opcoes
   itens?: ResultadoItemOpcoes[];
@@ -508,6 +556,7 @@ export function agregarAtividade(at: AtividadeC, respostas: RespostaBruta[]): Ag
     titulo: at.titulo,
     tipo: "opcoes",
     modo: at.modo,
+    apresentacao: at.apresentacao,
     respondentes,
     itens: itensRes,
   };

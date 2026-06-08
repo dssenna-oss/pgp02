@@ -130,30 +130,53 @@ export function AgregadoView({
         </p>
       )}
 
-      {/* por item */}
-      {agregado.itens?.map((item, i) => (
-        <div key={item.itemId} className={`rounded-xl border border-gray-200 bg-white ${card}`}>
-          <p className={`${grande ? "text-lg" : "text-sm"} font-medium text-gray-900 mb-2`}>
-            <span className="text-gray-400">{i + 1}.</span> {item.enunciado}
-            {typeof item.percAcerto === "number" && (
-              <span className="ml-2 text-green-600 font-semibold">{item.percAcerto}% ✓</span>
-            )}
-            {typeof item.mediaPontos === "number" && (
-              <span className="ml-2 text-amber-600 font-semibold">média {item.mediaPontos}</span>
-            )}
+      {/* por item — visão COMPACTA pra apresentação "seletor" (muitas opções):
+          uma barra de % de acerto por painel + o artigo correto, sem a
+          distribuição completa das opções (que poluiria o telão). */}
+      {agregado.apresentacao === "seletor" ? (
+        <div className={`rounded-xl border border-gray-200 bg-white ${card}`}>
+          <p className={`${grande ? "text-base" : "text-sm"} font-semibold text-gray-700 mb-3`}>
+            % que acertou cada painel
           </p>
-          {item.distribuicao.map((d) => (
-            <Barra
-              key={d.opcaoId}
-              perc={d.perc}
-              n={d.n}
-              rotulo={d.rotulo}
-              destaque={d.correta ? "certo" : "neutro"}
-              grande={grande}
-            />
-          ))}
+          {agregado.itens?.map((item, i) => {
+            const correta = item.distribuicao.find((d) => d.correta);
+            return (
+              <Barra
+                key={item.itemId}
+                perc={item.percAcerto ?? 0}
+                n={item.respondentes}
+                rotulo={`${i + 1}. ${item.enunciado}${correta ? ` → ${correta.rotulo}` : ""}`}
+                destaque="certo"
+                grande={grande}
+              />
+            );
+          })}
         </div>
-      ))}
+      ) : (
+        agregado.itens?.map((item, i) => (
+          <div key={item.itemId} className={`rounded-xl border border-gray-200 bg-white ${card}`}>
+            <p className={`${grande ? "text-lg" : "text-sm"} font-medium text-gray-900 mb-2`}>
+              <span className="text-gray-400">{i + 1}.</span> {item.enunciado}
+              {typeof item.percAcerto === "number" && (
+                <span className="ml-2 text-green-600 font-semibold">{item.percAcerto}% ✓</span>
+              )}
+              {typeof item.mediaPontos === "number" && (
+                <span className="ml-2 text-amber-600 font-semibold">média {item.mediaPontos}</span>
+              )}
+            </p>
+            {item.distribuicao.map((d) => (
+              <Barra
+                key={d.opcaoId}
+                perc={d.perc}
+                n={d.n}
+                rotulo={d.rotulo}
+                destaque={d.correta ? "certo" : "neutro"}
+                grande={grande}
+              />
+            ))}
+          </div>
+        ))
+      )}
     </div>
   );
 }
