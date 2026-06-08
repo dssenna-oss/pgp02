@@ -133,6 +133,33 @@ const TRILHA_1_11: AtividadeOpcoes = {
   ],
 };
 
+// Card: Artigos 12 a 20 (9 painéis). Gabarito do user (ordem do card, linha a linha).
+const ARTIGOS_12_20 = [12, 13, 14, 15, 16, 17, 18, 19, 20];
+const TRILHA_12_20: AtividadeOpcoes = {
+  id: "trilha-12-20",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 12 a 20",
+  contexto: "Cada painel do card descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o nº de cada painel abaixo (na mesma ordem do card). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "O Princípio da Titularidade", opcoes: opcoesArtigos(ARTIGOS_12_20, 17) },
+    { id: "p2", enunciado: "Anonimização e Reversibilidade", opcoes: opcoesArtigos(ARTIGOS_12_20, 12) },
+    { id: "p3", enunciado: "Revisão de Decisões de Algoritmos", opcoes: opcoesArtigos(ARTIGOS_12_20, 20) },
+    { id: "p4", enunciado: "O Melhor Interesse do Menor", opcoes: opcoesArtigos(ARTIGOS_12_20, 14) },
+    { id: "p5", enunciado: "Pesquisa em Saúde Pública", opcoes: opcoesArtigos(ARTIGOS_12_20, 13) },
+    { id: "p6", enunciado: "O Catálogo de Direitos", opcoes: opcoesArtigos(ARTIGOS_12_20, 18) },
+    { id: "p7", enunciado: "Hipóteses de Término do Tratamento", opcoes: opcoesArtigos(ARTIGOS_12_20, 15) },
+    { id: "p8", enunciado: "Conservação Autorizada", opcoes: opcoesArtigos(ARTIGOS_12_20, 16) },
+    { id: "p9", enunciado: "Formas e Prazos de Resposta", opcoes: opcoesArtigos(ARTIGOS_12_20, 19) },
+  ],
+};
+
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
@@ -353,6 +380,7 @@ const BALANCEAMENTO_F6: AtividadeOpcoes = {
 
 export const ATIVIDADES_C: AtividadeC[] = [
   TRILHA_1_11,
+  TRILHA_12_20,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
