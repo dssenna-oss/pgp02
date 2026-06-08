@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Layers,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -164,7 +164,6 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
       { href: "/api/curso/modalidade-c/docx?doc=guia",    label: "Guia de Decisão (A/B/C)", icon: Flag, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=roteiro", label: "Roteiro do Facilitador", icon: BookOpen, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=cards",   label: "Kit de Cards",           icon: LayoutGrid, externalNewTab: true },
-      { href: "/api/curso/modalidade-c/docx?doc=secoes",  label: "Cards das 7 Seções (LGPD)", icon: Layers, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=colas",   label: "Colas de Referência",    icon: FileText, externalNewTab: true },
     ],
   },
