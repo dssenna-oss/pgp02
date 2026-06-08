@@ -188,6 +188,35 @@ const TRILHA_21_30: AtividadeOpcoes = {
   ],
 };
 
+// Card: Artigos 31 a 40 (10 painéis). Card regenerado p/ ficar 1:1 (cada painel
+// = 1 artigo do range, sem ambiguidade). Gabarito validado contra a LGPD.
+const ARTIGOS_31_40 = [31, 32, 33, 34, 35, 36, 37, 38, 39, 40];
+const TRILHA_31_40: AtividadeOpcoes = {
+  id: "trilha-31-40",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 31 a 40",
+  contexto: "Cada painel do card descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o nº de cada painel abaixo (na mesma ordem do card). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "O Relatório de Impacto (RIPD)", opcoes: opcoesArtigos(ARTIGOS_31_40, 38) },
+    { id: "p2", enunciado: "As Portas da Transferência Internacional", opcoes: opcoesArtigos(ARTIGOS_31_40, 33) },
+    { id: "p3", enunciado: "O Diário de Bordo do Tratamento", opcoes: opcoesArtigos(ARTIGOS_31_40, 37) },
+    { id: "p4", enunciado: "O Selo de Adequação do País", opcoes: opcoesArtigos(ARTIGOS_31_40, 34) },
+    { id: "p5", enunciado: "O Operador Segue o Controlador", opcoes: opcoesArtigos(ARTIGOS_31_40, 39) },
+    { id: "p6", enunciado: "Cláusulas, BCR e Selos", opcoes: opcoesArtigos(ARTIGOS_31_40, 35) },
+    { id: "p7", enunciado: "Informe de Medidas ao Poder Público", opcoes: opcoesArtigos(ARTIGOS_31_40, 31) },
+    { id: "p8", enunciado: "Padrões de Interoperabilidade", opcoes: opcoesArtigos(ARTIGOS_31_40, 40) },
+    { id: "p9", enunciado: "Mudou a Garantia? Avise a Autoridade", opcoes: opcoesArtigos(ARTIGOS_31_40, 36) },
+    { id: "p10", enunciado: "RIPD do Poder Público", opcoes: opcoesArtigos(ARTIGOS_31_40, 32) },
+  ],
+};
+
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
@@ -410,6 +439,7 @@ export const ATIVIDADES_C: AtividadeC[] = [
   TRILHA_1_11,
   TRILHA_12_20,
   TRILHA_21_30,
+  TRILHA_31_40,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
