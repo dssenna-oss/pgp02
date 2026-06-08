@@ -160,6 +160,34 @@ const TRILHA_12_20: AtividadeOpcoes = {
   ],
 };
 
+// Card: Artigos 21 a 30 (10 painéis). Gabarito do user (ordem do card, linha a linha).
+const ARTIGOS_21_30 = [21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
+const TRILHA_21_30: AtividadeOpcoes = {
+  id: "trilha-21-30",
+  fase: "Trilha do Conhecimento",
+  faseCor: COR_TRILHA,
+  emoji: "🧭",
+  titulo: "Desafio LGPD — Artigos 21 a 30",
+  contexto: "Cada painel do card descreve um artigo, mas esconde o número.",
+  instrucao:
+    "Olhem o card impresso: cada painel descreve um artigo da LGPD sem dizer o número. Descubram qual é e escolham o nº de cada painel abaixo (na mesma ordem do card). O telão mostra quantos grupos acertaram.",
+  tipo: "opcoes",
+  modo: "gabarito",
+  apresentacao: "seletor",
+  itens: [
+    { id: "p1", enunciado: "Integração e Interoperabilidade", opcoes: opcoesArtigos(ARTIGOS_21_30, 25) },
+    { id: "p2", enunciado: "Proteção contra Retaliação", opcoes: opcoesArtigos(ARTIGOS_21_30, 21) },
+    { id: "p3", enunciado: "O Olhar da Autoridade Nacional", opcoes: opcoesArtigos(ARTIGOS_21_30, 29) },
+    { id: "p4", enunciado: "Regras de Ouro do Poder Público", opcoes: opcoesArtigos(ARTIGOS_21_30, 23) },
+    { id: "p5", enunciado: "Comunicação Público-Privado", opcoes: opcoesArtigos(ARTIGOS_21_30, 27) },
+    { id: "p6", enunciado: "Justiça Individual e Coletiva", opcoes: opcoesArtigos(ARTIGOS_21_30, 22) },
+    { id: "p7", enunciado: "Vedação de Venda de Dados", opcoes: opcoesArtigos(ARTIGOS_21_30, 26) },
+    { id: "p8", enunciado: "Livro de Registro de Operações", opcoes: opcoesArtigos(ARTIGOS_21_30, 30) },
+    { id: "p9", enunciado: "Os Dois Chapéus das Estatais", opcoes: opcoesArtigos(ARTIGOS_21_30, 24) },
+    { id: "p10", enunciado: "O Espaço Vazio (Veto)", opcoes: opcoesArtigos(ARTIGOS_21_30, 28) },
+  ],
+};
+
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
 // Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
@@ -381,6 +409,7 @@ const BALANCEAMENTO_F6: AtividadeOpcoes = {
 export const ATIVIDADES_C: AtividadeC[] = [
   TRILHA_1_11,
   TRILHA_12_20,
+  TRILHA_21_30,
   PRIORIZACAO_F2,
   CLASSIFICACAO_F3,
   ADERENCIA_F4,
