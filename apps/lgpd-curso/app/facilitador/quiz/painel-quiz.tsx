@@ -102,11 +102,16 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
   const [copiou, setCopiou] = useState(false);
   const [zerando, setZerando] = useState(false);
   const [salvandoTempo, setSalvandoTempo] = useState(false);
+  // origin só é conhecido no cliente. Computar no SSR causaria mismatch de
+  // hidratação no QR (server "/quiz/.." vs client "http://.../quiz/.."), então
+  // começa vazio e é preenchido após a montagem.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const turmaSel = turmas.find((t) => t.id === turmaId);
-  const quizUrl = turmaSel
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/quiz/${turmaSel.slug}`
-    : "";
+  const quizUrl = turmaSel ? `${origin}/quiz/${turmaSel.slug}` : "";
 
   useEffect(() => {
     if (!turmaId) return;

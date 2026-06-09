@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Compass,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -170,6 +170,7 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
   {
     titulo: "Execução",
     itens: [
+      { href: "/facilitador/conducao",     label: "🧭 Painel de Condução",     icon: Compass },
       { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",          icon: ClipboardCheck },
       { href: "/facilitador/atividades",   label: "Atividades ao vivo (C)",    icon: LayoutGrid },
       { href: "/facilitador",              label: "Painel do Facilitador",     icon: LayoutDashboard },
