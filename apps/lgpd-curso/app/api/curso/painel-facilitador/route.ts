@@ -11,6 +11,7 @@ import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 import { ensureColunaLastSeenAt } from "@/lib/coluna-user-last-seen";
 import { ensureColunaOlhoClinico } from "@/lib/coluna-olho-clinico";
 import { ensureColunaModoCards } from "@/lib/coluna-modo-cards";
+import { ensureColunaTelaoComando } from "@/lib/coluna-telao-comando";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
   await ensureColunaLastSeenAt();
   await ensureColunaOlhoClinico();
   await ensureColunaModoCards();
+  await ensureColunaTelaoComando();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },
