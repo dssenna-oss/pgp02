@@ -9,7 +9,7 @@
 // - 🚀 Abrir em popup (mesmo navegador — sobrescreve sessão do facilitador!)
 // - 📋 Copiar credenciais (formato "email · senha" pra colar onde quiser)
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import {
@@ -42,8 +42,12 @@ export function DemoMultiPerfilView({
     grupos[0]?.grupoId ?? null,
   );
   const [copiou, setCopiou] = useState<string | null>(null);
-
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  // origin só existe no cliente — montar no render causaria mismatch de
+  // hidratação. Começa vazio e é preenchido após a montagem.
+  const [baseUrl, setBaseUrl] = useState("");
+  useEffect(() => {
+    setBaseUrl(window.location.origin);
+  }, []);
   const senha = turma.senhaExibicao;
 
   function montarUrlAutoLogin(email: string): string {

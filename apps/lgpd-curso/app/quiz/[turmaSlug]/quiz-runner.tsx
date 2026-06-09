@@ -387,6 +387,15 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
   }
 
   // RUNNING
+  // Guarda defensiva: se (por uma corrida rara) a pergunta atual não existir,
+  // mostra um aviso em vez de quebrar a tela do participante no meio do quiz.
+  if (!perguntas[idx]) {
+    return (
+      <div className="rounded-lg border bg-white p-6 text-center text-gray-600">
+        Carregando a pergunta… se demorar alguns segundos, recarregue a página.
+      </div>
+    );
+  }
   const p = perguntas[idx];
   const Icone = ICONE_CATEGORIA[p.categoria];
   const cor = COR_CATEGORIA[p.categoria];
