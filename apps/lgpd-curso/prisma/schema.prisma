@@ -169,6 +169,12 @@ model CursoTurma {
   // reabrir o fórum reabre o app inteiro pra revisão. Backfill em
   // lib/coluna-forum-aberto.ts.
   forumAberto  Boolean   @default(false)
+  // Telão Comandado (Modalidade C) — comando atual do telão do notebook,
+  // controlado pelo celular do facilitador no Painel de Condução. A página
+  // /telao-vivo/<slug> faz polling deste campo e troca o conteúdo sozinha
+  // (sem websocket). Valores: "placar" | "quiz" | "atividade:<id>" (id inclui
+  // "termometro") | null (tela de espera). Backfill em lib/coluna-telao-comando.ts.
+  telaoComando String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

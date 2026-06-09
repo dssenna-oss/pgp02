@@ -89,5 +89,6 @@ export const config = {
     "/admin/:path*",
     "/facilitador/:path*",
     "/telao",
+    "/telao-vivo/:path*",
   ],
 };

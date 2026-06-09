@@ -9,8 +9,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
-  ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Projector, Users,
+  ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Users,
   AlertTriangle, LifeBuoy, Layers3, FileText, Award, CheckSquare, Clock, Zap,
+  Tv2, ExternalLink, Copy, Check,
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao } from "@/lib/conducao-mapa";
@@ -38,6 +39,12 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [statusTermo, setStatusTermo] = useState<any>(null);
   const [modoCards, setModoCards] = useState<boolean>(false);
   const [alterandoMC, setAlterandoMC] = useState(false);
+  const [comandoTelao, setComandoTelao] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+  const [copiado, setCopiado] = useState(false);
+
+  // origin só no cliente (evita mismatch de hidratação)
+  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   // ---- polling ao vivo ----
   const carregar = useCallback(async () => {
@@ -49,6 +56,8 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
         setPainel(data);
         if (typeof data?.turma?.modoCards === "boolean") setModoCards(data.turma.modoCards);
       }
+      const c = await fetch(`/api/curso/telao-comando?turmaId=${turmaId}`, { cache: "no-store" });
+      if (c.ok) { const cd = await c.json(); setComandoTelao(cd?.comando ?? null); }
       const stAtiv = momento.status.find((s) => s.kind === "atividade") as any;
       if (stAtiv) {
         const r = await fetch(`/api/curso/atividade-c/painel?turmaId=${turmaId}&atividadeId=${stAtiv.atividadeId}`, { cache: "no-store" });
@@ -89,6 +98,42 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   }
   function cartaz(atividadeId: string) {
     return `/facilitador/atividades/cartaz/${turma?.slug}?a=${atividadeId}`;
+  }
+
+  // ---- Telão Comandado: o celular grava o comando; o /telao-vivo do notebook
+  // lê no próximo tick (~3s) e troca sozinho. ----
+  const telaoVivoUrl = origin && turma?.slug ? `${origin}/telao-vivo/${turma.slug}` : "";
+
+  async function mostrarNoTelao(comando: string | null, label: string) {
+    setComandoTelao(comando); // otimista
+    const res = await fetch("/api/curso/telao-comando", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ turmaId, comando }),
+    });
+    if (res.ok) toast.success(`📺 No telão: ${label}`);
+    else { toast.error("Erro ao comandar o telão"); carregar(); }
+  }
+
+  function rotuloComando(c: string | null): string {
+    if (!c) return "Tela de espera";
+    if (c === "placar") return "🏆 Placar / pódio";
+    if (c === "quiz") return "📱 Quiz (QR)";
+    if (c.startsWith("atividade:")) {
+      const id = c.slice("atividade:".length);
+      if (id === "termometro") return "🌡️ Termômetro";
+      const at = ATIVIDADES_C.find((a) => a.id === id);
+      return at ? `${at.emoji} ${at.titulo}` : id;
+    }
+    return c;
+  }
+
+  async function copiarTelaoUrl() {
+    if (!telaoVivoUrl) return;
+    try {
+      await navigator.clipboard.writeText(telaoVivoUrl);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 1800);
+    } catch { toast.error("Não consegui copiar"); }
   }
 
   async function disparar(tipo: "dsr" | "incidente", orgao: "PM" | "CM") {
@@ -150,26 +195,71 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <Layers3 className="h-4 w-4" /> {modoCards ? "Modo Cards: LIGADO" : "Modo Cards: desligado"}
         </button>
 
-        {/* atalho: abrir telão de qualquer atividade (inclui a Trilha) */}
+        {/* fallback: abrir telão de qualquer atividade numa NOVA ABA (no dispositivo do clique) */}
         <Select
           value=""
           onChange={(e) => { if (e.target.value) { abrirTelao(cartaz(e.target.value)); e.target.value = ""; } }}
-          className="max-w-[16rem]"
+          className="max-w-[17rem]"
+          title="Abre numa nova aba, neste dispositivo (fallback)"
         >
-          <option value="">📺 Abrir telão de uma atividade…</option>
+          <option value="">↗ Abrir atividade em nova aba…</option>
           <option value="termometro">🌡️ Termômetro (evolução)</option>
           {ATIVIDADES_C.map((a) => (
             <option key={a.id} value={a.id}>{a.emoji} {a.titulo}</option>
           ))}
         </Select>
 
-        <button onClick={() => abrirTelao("/telao")} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 bg-white text-gray-700 hover:border-indigo-300">
-          <Projector className="h-4 w-4" /> Telão (placar)
-        </button>
-
         <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-gray-600">
           <Users className="h-4 w-4 text-green-600" /> <strong>{online}</strong> online
         </span>
+      </div>
+
+      {/* ====== TELÃO COMANDADO ====== */}
+      {/* O notebook abre /telao-vivo/<slug> UMA vez (+ Modo Projeção). Daqui, do
+          celular, o facilitador comanda o que aparece lá — os botões "Mostrar no
+          telão" deste painel gravam o comando e o telão troca sozinho (~3s). */}
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-800">
+            <Tv2 className="h-4 w-4" /> Telão do notebook
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-sm font-medium text-indigo-900 border border-indigo-200">
+            mostrando: <strong>{rotuloComando(comandoTelao)}</strong>
+          </span>
+          {comandoTelao && (
+            <button
+              onClick={() => mostrarNoTelao(null, "Tela de espera")}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
+            >
+              limpar
+            </button>
+          )}
+          <div className="ml-auto flex items-center gap-1.5">
+            <code className="hidden sm:inline rounded bg-white px-2 py-1 text-xs text-gray-600 border border-gray-200">
+              /telao-vivo/{turma?.slug}
+            </code>
+            <button
+              onClick={copiarTelaoUrl}
+              disabled={!telaoVivoUrl}
+              className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 bg-white px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-40"
+              title="Copiar o link pra abrir no notebook"
+            >
+              {copiado ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+              {copiado ? "Copiado" : "Copiar link"}
+            </button>
+            <button
+              onClick={() => telaoVivoUrl && abrirTelao(telaoVivoUrl)}
+              disabled={!telaoVivoUrl}
+              className="inline-flex items-center gap-1 rounded-lg border border-indigo-300 bg-white px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-40"
+              title="Abrir o telão ao vivo numa nova aba"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Abrir
+            </button>
+          </div>
+        </div>
+        <p className="mt-1.5 text-xs text-indigo-700/80">
+          No notebook: abra esse link uma vez e ligue o <strong>Modo Projeção</strong>. Daqui do celular, use os botões <strong>“Mostrar no telão”</strong> abaixo.
+        </p>
       </div>
 
       {/* ====== ALERTAS (bloco 4) ====== */}
@@ -228,13 +318,13 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <div className="flex flex-wrap gap-2">
             {momento.acoes.map((a, i) => {
               if (a.kind === "telao-atividade")
-                return <BotaoAcao key={i} onClick={() => abrirTelao(cartaz(a.atividadeId))} icon={<Projector className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`atividade:${a.atividadeId}`, a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
               if (a.kind === "telao-termometro")
-                return <BotaoAcao key={i} onClick={() => abrirTelao(cartaz("termometro"))} icon={<Projector className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
               if (a.kind === "telao-quiz")
-                return <BotaoAcao key={i} onClick={() => abrirTelao("/facilitador/quiz")} icon={<Projector className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
               if (a.kind === "telao-placar")
-                return <BotaoAcao key={i} onClick={() => abrirTelao("/telao")} icon={<Projector className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("placar", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
               if (a.kind === "disparar-dsr")
                 return (
                   <div key={i} className="inline-flex items-center gap-1">
