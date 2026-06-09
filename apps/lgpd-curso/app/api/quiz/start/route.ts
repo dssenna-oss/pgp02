@@ -1,5 +1,5 @@
 // POST /api/quiz/start
-// Cria uma QuizResponse anônima e devolve as 30 perguntas (sem revelar resposta correta).
+// Cria uma QuizResponse anônima e devolve as perguntas (sem revelar resposta correta).
 // Identificação 100% via UUID gerado no cliente (localStorage). Sem auth.
 //
 // Body: { turmaSlug: string, uuid: string }

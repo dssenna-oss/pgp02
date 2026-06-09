@@ -224,16 +224,8 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
             <Tv2 className="h-4 w-4" /> Telão do notebook
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-sm font-medium text-indigo-900 border border-indigo-200">
-            mostrando: <strong>{rotuloComando(comandoTelao)}</strong>
+            no ar: <strong>{rotuloComando(comandoTelao)}</strong>
           </span>
-          {comandoTelao && (
-            <button
-              onClick={() => mostrarNoTelao(null, "Tela de espera")}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-800 underline underline-offset-2"
-            >
-              limpar
-            </button>
-          )}
           <div className="ml-auto flex items-center gap-1.5">
             <code className="hidden sm:inline rounded bg-white px-2 py-1 text-xs text-gray-600 border border-gray-200">
               /telao-vivo/{turma?.slug}
@@ -258,8 +250,32 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           </div>
         </div>
         <p className="mt-1.5 text-xs text-indigo-700/80">
-          No notebook: abra esse link uma vez e ligue o <strong>Modo Projeção</strong>. Daqui do celular, use os botões <strong>“Mostrar no telão”</strong> abaixo.
+          No notebook: abra esse link uma vez e ligue o <strong>Modo Projeção</strong>. Daqui do celular, a <strong>ação certa de cada momento</strong> aparece abaixo ↓.
         </p>
+
+        {/* Atalhos manuais — mostrar QUALQUER tela, a qualquer hora (fora do roteiro).
+            Secundário de propósito: o co-piloto (ação do momento) é o protagonista. */}
+        <div className="mt-2.5 border-t border-dashed border-indigo-200 pt-2.5">
+          <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-400 mb-1.5">
+            <Tv2 className="h-3 w-3" /> Mostrar outra tela (fora do roteiro)
+          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
+            <MiniTelao ativo={comandoTelao === "quiz"} onClick={() => mostrarNoTelao("quiz", "Quiz (QR)")}>📱 Quiz</MiniTelao>
+            <MiniTelao ativo={comandoTelao === "atividade:termometro"} onClick={() => mostrarNoTelao("atividade:termometro", "Termômetro")}>🌡️ Termômetro</MiniTelao>
+            <MiniTelao ativo={!comandoTelao} onClick={() => mostrarNoTelao(null, "Tela de espera")}>⏳ Espera</MiniTelao>
+            <Select
+              value={comandoTelao?.startsWith("atividade:") && comandoTelao !== "atividade:termometro" ? comandoTelao : ""}
+              onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
+              className="max-w-[12rem] !py-1 !text-xs"
+            >
+              <option value="">📋 Atividade ao vivo…</option>
+              {ATIVIDADES_C.map((a) => (
+                <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
+              ))}
+            </Select>
+          </div>
+        </div>
       </div>
 
       {/* ====== ALERTAS (bloco 4) ====== */}
@@ -311,20 +327,20 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
 
       {/* ====== AÇÕES DO MOMENTO (bloco 2) ====== */}
       <div className="rounded-xl border border-gray-200 bg-white p-4">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-3"><Zap className="h-4 w-4 text-indigo-500" /> Ações deste momento</p>
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-3"><Zap className="h-4 w-4 text-indigo-500" /> Ação certa deste momento</p>
         {momento.acoes.length === 0 ? (
-          <p className="text-sm text-gray-400 italic">Nenhuma ação no app neste momento — conduza pelos slides/cards.</p>
+          <p className="text-sm text-gray-400 italic">Sem ação no app aqui — conduza pelos slides/cards. (Pra mostrar algo no telão mesmo assim, use os atalhos no card do Telão acima ↑.)</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {momento.acoes.map((a, i) => {
               if (a.kind === "telao-atividade")
-                return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`atividade:${a.atividadeId}`, a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`atividade:${a.atividadeId}`, rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-termometro")
-                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz")
-                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-placar")
-                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("placar", a.label)} icon={<Tv2 className="h-4 w-4" />}>{a.label}</BotaoAcao>;
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("placar", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "disparar-dsr")
                 return (
                   <div key={i} className="inline-flex items-center gap-1">
@@ -472,6 +488,29 @@ function Bloco({ titulo, texto }: { titulo: string; texto: string }) {
       <p className="text-sm text-gray-800 leading-relaxed">{texto}</p>
     </div>
   );
+}
+
+// Atalho compacto pra comandar o telão fora do roteiro (card "Telão do notebook").
+function MiniTelao({ children, onClick, ativo }: { children: React.ReactNode; onClick: () => void; ativo?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+        ativo ? "border-indigo-500 bg-indigo-600 text-white" : "border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Limpa o rótulo da ação do momento ("Abrir Quiz Diagnóstico" → "Quiz Diagnóstico")
+// pra compor "Mostrar no telão: <X>".
+function rotuloTelaoCurto(s: string): string {
+  const t = s
+    .replace(/^(Abrir|Projetar a evolução do|Projetar)\s+/i, "")
+    .replace(/\s+no telão$/i, "");
+  return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
 function BotaoAcao({ children, onClick, icon, danger }: { children: React.ReactNode; onClick: () => void; icon?: React.ReactNode; danger?: boolean }) {

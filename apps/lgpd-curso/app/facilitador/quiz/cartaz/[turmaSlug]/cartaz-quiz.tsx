@@ -155,7 +155,7 @@ export function CartazQuiz({ turma }: { turma: Turma }) {
           {/* Rodapé com chips das categorias + instruções */}
           <div className="space-y-3">
             <div className="text-center text-xs sm:text-sm font-medium opacity-90 print:text-gray-700">
-              30 perguntas · 7-10 minutos · 100% anônimo
+              20 perguntas · 5-8 minutos · 100% anônimo
             </div>
             <div className="flex flex-wrap justify-center gap-2 text-[11px] sm:text-xs font-medium">
               <span className="rounded-full bg-white/15 px-3 py-1.5 ring-1 ring-white/25 print:bg-gray-100 print:text-gray-700 print:ring-gray-300">
