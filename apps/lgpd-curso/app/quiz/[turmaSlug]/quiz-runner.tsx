@@ -21,10 +21,11 @@ import confetti from "canvas-confetti";
 import { QuizHero } from "./quiz-hero";
 import type { CategoriaQuiz, PerguntaPublica } from "@/lib/quiz-perguntas";
 
-// Pontuação mínima pra disparar a celebração (confete + palmas).
-// 27/30 = 90% — sinaliza "domínio sólido" raro o suficiente pra render
-// o ritual de celebração impactante (não banaliza).
-const PONTUACAO_CELEBRACAO = 27;
+// Fração de acerto pra disparar a celebração (confete + palmas): ≥90%.
+// Calculada sobre o TOTAL REAL de perguntas (hoje 18/20), pra nunca depender
+// de um número fixo se o banco mudar de tamanho. Sinaliza "domínio sólido"
+// raro o suficiente pra render o ritual impactante (não banaliza).
+const FRACAO_CELEBRACAO = 0.9;
 
 // Palmas sintetizadas via Web Audio — mesmo padrão de resumo-turma.tsx.
 // Buffer de ruído branco curto + filtro passa-banda em ~2kHz + envelope rápido.
@@ -516,9 +517,10 @@ function categoriaRotulo(cat: CategoriaQuiz): string {
 function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }) {
   const perc = Math.round((resultado.scoreTotal / resultado.totalPerguntas) * 100);
   const lacunas = resultado.lacunas.filter((l) => l.ehLacuna);
-  const ehCelebracao = resultado.scoreTotal >= PONTUACAO_CELEBRACAO;
+  const ehCelebracao =
+    resultado.scoreTotal >= Math.ceil(resultado.totalPerguntas * FRACAO_CELEBRACAO);
 
-  // Dispara confete + palmas se score >= 27. Só roda 1x quando o componente
+  // Dispara confete + palmas se acertou ≥90%. Só roda 1x quando o componente
   // monta (entrada do user na tela de resultado). Se for "ja respondeu",
   // NÃO dispara — celebração é pra quem acabou de fechar o quiz, não pra
   // quem está revisitando.
@@ -619,7 +621,7 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
         </div>
       </div>
 
-      {/* Mensagem extra de celebração quando score >= 27 */}
+      {/* Mensagem extra de celebração quando acertou ≥90% */}
       {ehCelebracao && (
         <div className="rounded-xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 text-center shadow-sm">
           <div className="text-2xl">🎉 🎊 🎉</div>
