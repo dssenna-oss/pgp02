@@ -260,12 +260,12 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-400 mb-1.5">
             <Tv2 className="h-3 w-3" /> Mostrar outra tela (fora do roteiro)
           </p>
+          {/* Ordem = sequência do curso: Espera → Quiz → Resultado → Termômetro → Atividade → Placar (pódio). */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
+            <MiniTelao ativo={!comandoTelao} onClick={() => mostrarNoTelao(null, "Tela de espera")}>⏳ Espera</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz"} onClick={() => mostrarNoTelao("quiz", "Quiz (QR)")}>📱 Quiz</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz-resultado"} onClick={() => mostrarNoTelao("quiz-resultado", "Resultado do Quiz")}>📊 Resultado</MiniTelao>
             <MiniTelao ativo={comandoTelao === "atividade:termometro"} onClick={() => mostrarNoTelao("atividade:termometro", "Termômetro")}>🌡️ Termômetro</MiniTelao>
-            <MiniTelao ativo={!comandoTelao} onClick={() => mostrarNoTelao(null, "Tela de espera")}>⏳ Espera</MiniTelao>
             <Select
               value={comandoTelao?.startsWith("atividade:") && comandoTelao !== "atividade:termometro" ? comandoTelao : ""}
               onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
@@ -276,6 +276,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
                 <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
               ))}
             </Select>
+            <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
           </div>
         </div>
       </div>
