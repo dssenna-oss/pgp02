@@ -7,6 +7,7 @@ import {
 import Link from "next/link";
 import { getMissoesProgresso, type MissoesProgresso } from "@/lib/missoes-progresso";
 import { MapaPgp, type FaseAtual } from "@/components/mapa-pgp";
+import { turmaEmModoCards } from "@/lib/curso-permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,7 @@ export default async function DashboardPage() {
   const companyName = session?.user?.company?.name ?? "—";
   const role = session?.user?.role;
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
+  const modoCards = await turmaEmModoCards(session?.user?.companyId);
 
   const progresso = await getMissoesProgresso();
   const proxima = getProximaMissao(progresso, isDpoOuAdmin);
@@ -74,11 +76,20 @@ export default async function DashboardPage() {
         </p>
       </header>
 
+      {modoCards && <SigaTelaoBanner />}
+
       <section className="mb-6">
         <MapaPgp faseAtual={faseAtual} />
+        {modoCards && (
+          <p className="mt-2 text-center text-xs text-gray-400 italic">
+            📍 Mapa de referência da jornada — não é sua lista de tarefas. A produção é nos cards da mesa.
+          </p>
+        )}
       </section>
 
-      {proxima ? (
+      {/* Em Modo Cards a produção é física — esconde o CTA de "missão atual"
+          (que leva a telas só-leitura) pra não contradizer o "siga o telão". */}
+      {!modoCards && (proxima ? (
         <Link
           href={proxima.href}
           className="block bg-emerald-600 hover:bg-emerald-700 transition-colors text-white rounded-lg p-5 mt-2 shadow-md"
@@ -105,18 +116,49 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      )}
+      ))}
 
       <section className="mt-8 p-4 bg-training-50 border border-training-400 rounded-lg">
         <h2 className="text-sm font-semibold text-training-900 mb-1">
           Como funciona o curso
         </h2>
-        <p className="text-xs text-training-900 leading-relaxed">
-          Você e seu grupo vão percorrer as missões cronometradas, na ordem da sidebar.
-          Cada missão termina com check-in coletivo do facilitador. Não tente pular a Missão 4a (RIPD + Terceiros + DSR) — ela alimenta a Missão 4b (Aviso de Privacidade).
-          Errar é parte do aprendizado. Pergunte aos observadores do seu grupo se ficar em dúvida — eles têm o mural do grupo na mesa.
-        </p>
+        {modoCards ? (
+          <p className="text-xs text-training-900 leading-relaxed">
+            <strong>Modalidade C — produção nos cards da mesa.</strong> Aqui no celular você faz só os
+            <strong> toques leves</strong> (quiz, votações, termômetro) e <strong>só quando o facilitador pedir</strong>.
+            O detalhamento (Inventário, Riscos…) é feito nos <strong>cards físicos</strong> com seu grupo. Acompanhe o <strong>telão</strong> — ele dá o ritmo.
+          </p>
+        ) : (
+          <p className="text-xs text-training-900 leading-relaxed">
+            Você e seu grupo vão percorrer as missões cronometradas, na ordem da sidebar.
+            Cada missão termina com check-in coletivo do facilitador. Não tente pular a Missão 4a (RIPD + Terceiros + DSR) — ela alimenta a Missão 4b (Aviso de Privacidade).
+            Errar é parte do aprendizado. Pergunte aos observadores do seu grupo se ficar em dúvida — eles têm o mural do grupo na mesa.
+          </p>
+        )}
       </section>
+    </div>
+  );
+}
+
+// Banner da home em Modo Cards (Modalidade C): orienta o aluno a NÃO tratar o
+// app como lista de tarefas — o celular é só pros toques leves, no tempo do
+// facilitador; a produção é nos cards. Mata a confusão de "por que estou na
+// Fase 3?" logo na entrada.
+function SigaTelaoBanner() {
+  return (
+    <div className="mb-6 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="text-2xl leading-none">👀</span>
+        <div>
+          <p className="text-base font-bold text-indigo-900">Siga o telão</p>
+          <p className="mt-1 text-sm text-indigo-900 leading-relaxed">
+            Abra cada atividade <strong>só quando o facilitador pedir</strong>. A produção do seu
+            grupo é nos <strong>cards da mesa</strong> 🃏 — aqui no celular você faz só os{" "}
+            <strong>toques leves</strong> (quiz, votações, termômetro). O mapa abaixo é só{" "}
+            <strong>referência</strong>, não é sua lista de tarefas.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
