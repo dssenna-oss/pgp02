@@ -19,19 +19,40 @@ export type StatusConducao =
   | { kind: "termometro"; fase: "inicio" | "fim"; label: string }
   | { kind: "online"; label: string };
 
+// Dispositivo/meio que VOCÊ (facilitador) usa no momento: comanda pelo celular
+// (Painel), opera direto no notebook (slides não-comandáveis) ou conduz na sala.
+export type DispositivoVoce = "celular" | "notebook" | "sala";
+// Meio que os ALUNOS usam: o celular deles, material impresso (cards) ou
+// discussão/oral.
+export type DispositivoAluno = "celular" | "impresso" | "discussao";
+
 export type MomentoConducao = MomentoRoteiro & {
   acoes: AcaoConducao[];
   status: StatusConducao[];
   dica?: string;
+  voceUsa: DispositivoVoce[];
+  alunoUsa: DispositivoAluno[];
 };
 
-// Mapa por número de momento (1-15). Momentos só de cards/presencial ficam sem
-// ação de app (o painel mostra "nenhuma ação no app neste momento").
-const MAPA: Record<number, { acoes: AcaoConducao[]; status: StatusConducao[]; dica?: string }> = {
+// Mapa por número de momento (1-16). `voceUsa`/`alunoUsa` alimentam os chips de
+// dispositivo no card do momento (quem faz o quê, em qual meio). Momentos só de
+// cards/presencial ficam sem ação de app.
+const MAPA: Record<
+  number,
+  {
+    acoes: AcaoConducao[];
+    status: StatusConducao[];
+    dica?: string;
+    voceUsa: DispositivoVoce[];
+    alunoUsa: DispositivoAluno[];
+  }
+> = {
   1: {
     acoes: [],
     status: [{ kind: "online", label: "Participantes online" }],
     dica: "Decida A/B/C pela infraestrutura. Na dúvida, use a Modalidade C (ligue o Modo Cards no atalho acima).",
+    voceUsa: ["sala"],
+    alunoUsa: ["impresso"],
   },
   2: {
     acoes: [
@@ -40,28 +61,63 @@ const MAPA: Record<number, { acoes: AcaoConducao[]; status: StatusConducao[]; di
     ],
     status: [{ kind: "online", label: "Participantes online" }],
     dica: "Projete o QR (todos respondem) e, no fim, projete o Resultado do Quiz pra comentar com a turma.",
+    voceUsa: ["celular"],
+    alunoUsa: ["celular"],
   },
   3: {
     acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro no telão" }],
     status: [{ kind: "termometro", fase: "inicio", label: "Termômetro (início)" }],
+    voceUsa: ["celular"],
+    alunoUsa: ["celular"],
   },
-  4: { acoes: [], status: [], dica: "Momento de slides + cards (discussão da Carta). Sem ação no app." },
-  5: { acoes: [], status: [], dica: "Momento de cards (Ato de Designação do DPO). Sem ação no app." },
+  4: {
+    acoes: [],
+    status: [],
+    dica: "Histórico e Estrutura: abra no notebook (Slides das fases). Desafios LGPD: atalho '📋 Atividade ao vivo' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
+    voceUsa: ["notebook", "celular"],
+    alunoUsa: ["celular", "impresso"],
+  },
+  5: {
+    acoes: [],
+    status: [],
+    dica: "Momento de slides + cards (discussão da Carta). Sem ação no app.",
+    voceUsa: ["notebook", "sala"],
+    alunoUsa: ["impresso", "discussao"],
+  },
   6: {
-    acoes: [{ kind: "telao-atividade", atividadeId: "priorizacao-f2", label: "Abrir votação de Priorização" }],
-    status: [{ kind: "atividade", atividadeId: "priorizacao-f2", label: "Priorização (votação)" }],
+    acoes: [],
+    status: [],
+    dica: "Momento de cards (Ato de Designação do DPO). Sem ação no app.",
+    voceUsa: ["notebook", "sala"],
+    alunoUsa: ["impresso"],
   },
   7: {
+    acoes: [{ kind: "telao-atividade", atividadeId: "priorizacao-f2", label: "Abrir votação de Priorização" }],
+    status: [{ kind: "atividade", atividadeId: "priorizacao-f2", label: "Priorização (votação)" }],
+    voceUsa: ["celular", "sala"],
+    alunoUsa: ["impresso", "celular"],
+  },
+  8: {
     acoes: [{ kind: "telao-atividade", atividadeId: "classificacao-f3", label: "Abrir Classificação (base legal)" }],
     status: [{ kind: "atividade", atividadeId: "classificacao-f3", label: "Classificação (base legal)" }],
     dica: "O Inventário e os Riscos são montados nos cards físicos (fichas). Acompanhe o fluxo na mesa.",
+    voceUsa: ["celular", "sala"],
+    alunoUsa: ["impresso", "celular"],
   },
-  8: {
+  9: {
     acoes: [{ kind: "telao-atividade", atividadeId: "aderencia-f4", label: "Abrir votação de Aderência (GAP)" }],
     status: [{ kind: "atividade", atividadeId: "aderencia-f4", label: "Aderência (GAP)" }],
+    voceUsa: ["celular", "sala"],
+    alunoUsa: ["impresso", "celular"],
   },
-  9: { acoes: [], status: [], dica: "Momento de cards (Plano de Ação). Sem ação no app." },
   10: {
+    acoes: [],
+    status: [],
+    dica: "Momento de cards (Plano de Ação). Sem ação no app.",
+    voceUsa: ["sala"],
+    alunoUsa: ["impresso"],
+  },
+  11: {
     acoes: [
       { kind: "telao-atividade", atividadeId: "ripd-ordem-f6", label: "Abrir RIPD (ordenar seções)" },
       { kind: "telao-atividade", atividadeId: "politica-ordem-f6", label: "Abrir Política (ordenar)" },
@@ -70,28 +126,40 @@ const MAPA: Record<number, { acoes: AcaoConducao[]; status: StatusConducao[]; di
     ],
     status: [{ kind: "atividade", atividadeId: "ripd-ordem-f6", label: "RIPD (ordenar)" }],
     dica: "No meio da fase, entregue o card DSR Surpresa e dispare no app.",
+    voceUsa: ["celular", "sala"],
+    alunoUsa: ["celular", "impresso"],
   },
-  11: {
+  12: {
     acoes: [{ kind: "disparar-incidente", label: "Disparar Incidente (cronômetro 72h)" }],
     status: [],
     dica: "Leia o card do Incidente em voz alta e ligue o clima de tensão.",
-  },
-  12: {
-    acoes: [{ kind: "telao-placar", label: "Abrir pódio / placar no telão" }],
-    status: [],
+    voceUsa: ["celular", "sala"],
+    alunoUsa: ["impresso"],
   },
   13: {
-    acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro (evolução)" }],
-    status: [{ kind: "termometro", fase: "fim", label: "Termômetro (fim)" }],
+    acoes: [{ kind: "telao-placar", label: "Abrir pódio / placar no telão" }],
+    status: [],
+    voceUsa: ["celular"],
+    alunoUsa: ["celular"],
   },
   14: {
+    acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro (evolução)" }],
+    status: [{ kind: "termometro", fase: "fim", label: "Termômetro (fim)" }],
+    voceUsa: ["celular"],
+    alunoUsa: ["celular"],
+  },
+  15: {
     acoes: [{ kind: "telao-termometro", label: "Projetar a evolução do Termômetro" }],
     status: [],
     dica: "Conecte a evolução do Termômetro (início × fim) com o que o grupo viveu.",
+    voceUsa: ["sala"],
+    alunoUsa: ["discussao"],
   },
-  15: {
+  16: {
     acoes: [{ kind: "fechamento", label: "Relatório, certificados e entrega" }],
     status: [],
+    voceUsa: ["notebook", "sala"],
+    alunoUsa: ["discussao"],
   },
 };
 
@@ -100,6 +168,8 @@ export const ROTEIRO_CONDUCAO: MomentoConducao[] = ROTEIRO.map((m) => ({
   acoes: MAPA[m.numero]?.acoes ?? [],
   status: MAPA[m.numero]?.status ?? [],
   dica: MAPA[m.numero]?.dica,
+  voceUsa: MAPA[m.numero]?.voceUsa ?? [],
+  alunoUsa: MAPA[m.numero]?.alunoUsa ?? [],
 }));
 
 // Minutos sugeridos a partir da string "35 min" / "120 min".

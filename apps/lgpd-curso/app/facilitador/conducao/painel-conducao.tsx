@@ -14,7 +14,7 @@ import {
   Tv2, ExternalLink, Copy, Check,
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
-import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao } from "@/lib/conducao-mapa";
+import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao, type DispositivoVoce, type DispositivoAluno } from "@/lib/conducao-mapa";
 import { ATIVIDADES_C } from "@/lib/atividades-c";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
@@ -465,8 +465,16 @@ function MomentoCard({
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3 mt-4">
-        <Bloco titulo="✋ Você (facilitador) faz" texto={momento.oQueFacilitadorFaz} />
-        <Bloco titulo="👥 Os participantes fazem" texto={momento.oQueParticipantesFazem} />
+        <Bloco
+          titulo="✋ Você (facilitador) faz"
+          texto={momento.oQueFacilitadorFaz}
+          chips={<DispositivoChips tipo="voce" tokens={momento.voceUsa} />}
+        />
+        <Bloco
+          titulo="👥 Os participantes fazem"
+          texto={momento.oQueParticipantesFazem}
+          chips={<DispositivoChips tipo="aluno" tokens={momento.alunoUsa} />}
+        />
       </div>
       <div className="mt-3 text-sm text-gray-600"><span className="font-semibold text-gray-700">Material:</span> {momento.material}</div>
       {momento.dica && (
@@ -485,11 +493,43 @@ function MomentoCard({
   );
 }
 
-function Bloco({ titulo, texto }: { titulo: string; texto: string }) {
+function Bloco({ titulo, texto, chips }: { titulo: string; texto: string; chips?: React.ReactNode }) {
   return (
     <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{titulo}</p>
+      {chips}
       <p className="text-sm text-gray-800 leading-relaxed">{texto}</p>
+    </div>
+  );
+}
+
+// Chips de dispositivo/meio — diferenciam, de relance, ONDE a coisa acontece:
+// pra VOCÊ (celular = comanda no Painel · notebook = opera direto · sala = oral)
+// e pros ALUNOS (celular deles · material impresso · discussão).
+const CHIP_VOCE: Record<DispositivoVoce, { rotulo: string; cls: string }> = {
+  celular: { rotulo: "📱 No seu celular", cls: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  notebook: { rotulo: "🖥️ Direto no notebook", cls: "bg-slate-100 text-slate-700 border-slate-200" },
+  sala: { rotulo: "🗣️ Na sala", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+};
+const CHIP_ALUNO: Record<DispositivoAluno, { rotulo: string; cls: string }> = {
+  celular: { rotulo: "📱 No celular deles", cls: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  impresso: { rotulo: "🃏 Material impresso", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+  discussao: { rotulo: "💬 Discussão", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+};
+
+function DispositivoChips({ tipo, tokens }: { tipo: "voce" | "aluno"; tokens: (DispositivoVoce | DispositivoAluno)[] }) {
+  if (!tokens?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mb-1.5">
+      {tokens.map((t) => {
+        const def = tipo === "voce" ? CHIP_VOCE[t as DispositivoVoce] : CHIP_ALUNO[t as DispositivoAluno];
+        if (!def) return null;
+        return (
+          <span key={t} className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium ${def.cls}`}>
+            {def.rotulo}
+          </span>
+        );
+      })}
     </div>
   );
 }

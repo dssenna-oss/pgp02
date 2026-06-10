@@ -324,7 +324,7 @@ export const COLA_PRIORIZACAO = {
 };
 
 // =============================================================================
-// ROTEIRO DO FACILITADOR — 15 momentos com tempos
+// ROTEIRO DO FACILITADOR — 16 momentos com tempos
 // =============================================================================
 
 export type MomentoRoteiro = {
@@ -358,73 +358,79 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "App (Termômetro)",
   },
   {
-    dia: 1, numero: 4, titulo: "Fase Preliminar — Sensibilização + Carta à Alta Gestão", duracao: "40 min", meio: "📺 telão + 🃏 cards",
+    dia: 1, numero: 4, titulo: "Fundamentos da LGPD — Histórico, Estrutura e Desafios (art. 1–65)", duracao: "40 min", meio: "📺 telão + 📱 celular",
+    oQueFacilitadorFaz: "Conduz os slides de Histórico e Estrutura da LGPD (abre direto no notebook, em 'Slides das fases'). Depois aplica os Desafios LGPD (Trilha do Conhecimento): no card do Telão, atalho '📋 Atividade ao vivo', escolhe a faixa (art. 1-11 … 51-65) e projeta o agregado pra comentar.",
+    oQueParticipantesFazem: "Acompanham os slides de Histórico e Estrutura. Recebem o card da Trilha (imagem) e descobrem o número de cada artigo pela descrição, registrando no celular.",
+    material: "Slides Histórico/Estrutura (notebook) · cards da Trilha (1 por grupo) · App (Desafios)",
+  },
+  {
+    dia: 1, numero: 5, titulo: "Fase Preliminar — Sensibilização + Carta à Alta Gestão", duracao: "40 min", meio: "📺 telão + 🃏 cards",
     oQueFacilitadorFaz: "Apresenta os slides (por que LGPD importa no setor público, riscos de não fazer, papel da Alta Gestão). Depois distribui o deck da Preliminar e conduz a DISCUSSÃO RÁPIDA da Carta (~10 min): cada grupo debate as 3 perguntas e compartilha 1 resposta com a turma. NÃO produzem o documento — ele vai no Pacote pra levar.",
     oQueParticipantesFazem: "Assistem a sensibilização. Discutem em grupo: qual o PEDIDO à Alta Gestão? qual o maior RISCO de não fazer? qual ARGUMENTO convence a gestão? Compartilham 1 resposta.",
     material: "Slides (telão) · deck Fase Preliminar (3 cards de discussão + card 'pra levar')",
   },
   {
-    dia: 1, numero: 5, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
+    dia: 1, numero: 6, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
     oQueFacilitadorFaz: "Apresenta o art. 41 no telão. Distribui o deck da Fase 1. Conduz a discussão sobre o perfil do DPO.",
     oQueParticipantesFazem: "Ordenam os 8 blocos do Ato de Designação. Escolhem quem do grupo é o DPO (critérios do card de referência).",
     material: "Deck Fase 1 · cola (nenhuma)",
   },
   {
-    dia: 1, numero: 6, titulo: "Fase 2 — Diagnóstico Inicial", duracao: "45 min", meio: "🃏 cards + 📱 celular",
+    dia: 1, numero: 7, titulo: "Fase 2 — Diagnóstico Inicial", duracao: "45 min", meio: "🃏 cards + 📱 celular",
     oQueFacilitadorFaz: "Apresenta a priorização (Res. 2/2022) no telão. Distribui o deck da Fase 2. Dispara a votação de critérios no celular (resultado no telão).",
     oQueParticipantesFazem: "Selecionam os cards de SETOR que tratam dados. Ordenam os PROCESSOS por prioridade. Votam os critérios no celular.",
     material: "Deck Fase 2 · cola de Priorização · App (votação)",
   },
   {
-    dia: 1, numero: 7, titulo: "Fase 3 — Inventário + Riscos (almoço no meio)", duracao: "120 min", meio: "🃏 cards + 📱 + fichas",
+    dia: 1, numero: 8, titulo: "Fase 3 — Inventário + Riscos (almoço no meio)", duracao: "120 min", meio: "🃏 cards + 📱 + fichas",
     oQueFacilitadorFaz: "Apresenta o Inventário no telão. Distribui o deck da Fase 3, o tabuleiro da matriz P×I e as fichas de encaminhamento. Conduz o fluxo Contribuidor→DPO→TI.",
     oQueParticipantesFazem: "Donos de processo montam a ficha de Inventário e SUBMETEM ao DPO (ficha 📤). DPO revisa, pede apoio (🆘), aprova (✅). Posicionam os riscos na matriz P×I. Classificam base legal e 'é sensível?' no celular.",
     material: "Deck Fase 3 · fichas de encaminhamento · tabuleiro P×I · colas (Bases Legais, Matriz) · App",
   },
   {
-    dia: 2, numero: 8, titulo: "Retomada + Fase 4 (GAP)", duracao: "45 min", meio: "🃏 cards + 📱 celular",
+    dia: 2, numero: 9, titulo: "Retomada + Fase 4 (GAP)", duracao: "45 min", meio: "🃏 cards + 📱 celular",
     oQueFacilitadorFaz: "Retoma o dia 1 (reorganiza grupos se necessário — material físico do dia 1 serve de referência). Apresenta o GAP no telão. Distribui o deck da Fase 4. Dispara votação de aderência (% no telão).",
     oQueParticipantesFazem: "Classificam cada controle (ADERENTE/PARCIAL/NÃO ADERENTE). Votam a aderência no celular.",
     material: "Deck Fase 4 · App (votação)",
   },
   {
-    dia: 2, numero: 9, titulo: "Fase 5 — Plano de Ação", duracao: "30 min", meio: "🃏 cards",
+    dia: 2, numero: 10, titulo: "Fase 5 — Plano de Ação", duracao: "30 min", meio: "🃏 cards",
     oQueFacilitadorFaz: "Apresenta o conceito de plano. Distribui os cards de ação em branco.",
     oQueParticipantesFazem: "Transformam GAPs NÃO ADERENTES + riscos ALTOS em cards de ação (o quê, quem, prazo, prioridade). DPO distribui responsáveis.",
     material: "Deck Fase 5 (cards de ação)",
   },
   {
-    dia: 2, numero: 10, titulo: "Fase 6 — Execução + DSR Surpresa", duracao: "45 min", meio: "📱 celular + 🃏 surpresa",
+    dia: 2, numero: 11, titulo: "Fase 6 — Execução + DSR Surpresa", duracao: "45 min", meio: "📱 celular + 🃏 surpresa",
     oQueFacilitadorFaz: "Apresenta os instrumentos (RIPD, Aviso, DSR, Terceiros). Dispara no celular: ordenar 8 seções do RIPD, ordenar a Política, teste de balanceamento de legítimo interesse. No meio, ENTREGA o card DSR Surpresa.",
     oQueParticipantesFazem: "Fazem as micro-atividades no celular. Reagem ao DSR Surpresa decidindo como responder (confirmar identidade? prazo? dá pra apagar tudo?).",
     material: "App (Modo Atividade — Onda 2) · card DSR Surpresa",
   },
   {
-    dia: 2, numero: 11, titulo: "Fase 7 — Incidente Surpresa + PRI", duracao: "40 min", meio: "🃏 cards + 📺 cronômetro",
+    dia: 2, numero: 12, titulo: "Fase 7 — Incidente Surpresa + PRI", duracao: "40 min", meio: "🃏 cards + 📺 cronômetro",
     oQueFacilitadorFaz: "DISPARA o Incidente Surpresa (lê o card em voz alta, liga o cronômetro de 72h no telão, clima de tensão). Distribui o deck da Fase 7.",
     oQueParticipantesFazem: "Ordenam as etapas NIST, montam a matriz RACI, decidem: comunica ANPD? titulares? Apresentam a resposta antes do cronômetro zerar.",
     material: "Card Incidente Surpresa · deck Fase 7 · cronômetro (telão)",
   },
   {
-    dia: 2, numero: 12, titulo: "Caça às Pegadinhas", duracao: "20 min", meio: "📱 celular",
+    dia: 2, numero: 13, titulo: "Caça às Pegadinhas", duracao: "20 min", meio: "📱 celular",
     oQueFacilitadorFaz: "Apresenta a missão final. Projeta o pódio do Olho Clínico no telão.",
     oQueParticipantesFazem: "Fazem o quiz Caça às Pegadinhas no celular.",
     material: "App (Caça às Pegadinhas)",
   },
   {
-    dia: 2, numero: 13, titulo: "Termômetro Institucional (fim)", duracao: "10 min", meio: "📱 celular",
+    dia: 2, numero: 14, titulo: "Termômetro Institucional (fim)", duracao: "10 min", meio: "📱 celular",
     oQueFacilitadorFaz: "Pede que repitam o Termômetro. Projeta a evolução início × fim no telão.",
     oQueParticipantesFazem: "Respondem o Termômetro novamente. Veem a própria evolução.",
     material: "App (Termômetro)",
   },
   {
-    dia: 2, numero: 14, titulo: "Reflexão Final (debrief)", duracao: "20 min", meio: "presencial",
+    dia: 2, numero: 15, titulo: "Reflexão Final (debrief)", duracao: "20 min", meio: "presencial",
     oQueFacilitadorFaz: "Conduz a discussão coletiva: o que aprenderam? o que vão fazer no órgão? Conecta a evolução do Termômetro com o trabalho.",
     oQueParticipantesFazem: "Compartilham percepções. Cada grupo diz 1 próximo passo concreto na Instituição.",
     material: "—",
   },
   {
-    dia: 2, numero: 15, titulo: "Encerramento + entrega dos materiais", duracao: "15 min", meio: "📺 telão",
+    dia: 2, numero: 16, titulo: "Encerramento + entrega dos materiais", duracao: "15 min", meio: "📺 telão",
     oQueFacilitadorFaz: "Entrega/explica os 5 documentos pra levar (Caderno, Resumo, Cartilha, Pacote de Modelos, Planilha). Distribui os Certificados.",
     oQueParticipantesFazem: "Recebem os materiais e o certificado. Sabem como continuar no órgão.",
     material: "Os 5 documentos institucionais (já no app) · Certificados",
