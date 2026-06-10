@@ -339,7 +339,7 @@ function TelaEspera({ turma, aviso }: { turma: Turma; aviso?: string }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/30" />
       <div className="relative z-10 max-w-2xl rounded-[22px] bg-slate-900/50 px-12 py-8 text-white backdrop-blur-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/lgpd-badge.png" alt="LGPD" className="mx-auto mb-2.5 h-24 w-auto drop-shadow-lg" />
+        <img src="/lgpd-badge-transparente.png" alt="LGPD" className="mx-auto mb-2.5 h-24 w-auto drop-shadow-lg" />
         <p className="text-lg font-medium text-white/80">{turma.nome} · {turma.cidade}</p>
         <p className="mt-3.5 text-[2.5rem] font-bold leading-[1.22] [text-shadow:0_2px_14px_rgba(0,0,0,0.4)]">
           Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.

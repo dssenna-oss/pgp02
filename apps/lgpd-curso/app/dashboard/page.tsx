@@ -76,16 +76,21 @@ export default async function DashboardPage() {
         </p>
       </header>
 
-      {modoCards && <SigaTelaoBanner />}
-
-      <section className="mb-6">
-        <MapaPgp faseAtual={faseAtual} />
-        {modoCards && (
-          <p className="mt-2 text-center text-xs text-gray-400 italic">
-            📍 Mapa de referência da jornada — não é sua lista de tarefas. A produção é nos cards da mesa.
-          </p>
-        )}
-      </section>
+      {/* Modo Cards (Modalidade C): a home vira tela de orientação/espera — hero
+          "Siga o telão" com a identidade do telão + jornada NEUTRA recolhida
+          (sem "feito"/"você está aqui": Preliminar/F1/F2 acontecem AO VIVO no
+          curso; status de progresso aqui geraria a sensação de "o que eu perdi?").
+          Na Modalidade A, o mapa original com progresso continua valendo. */}
+      {modoCards ? (
+        <>
+          <HeroSigaTelao />
+          <JornadaCurso />
+        </>
+      ) : (
+        <section className="mb-6">
+          <MapaPgp faseAtual={faseAtual} />
+        </section>
+      )}
 
       {/* Em Modo Cards a produção é física — esconde o CTA de "missão atual"
           (que leva a telas só-leitura) pra não contradizer o "siga o telão". */}
@@ -140,25 +145,72 @@ export default async function DashboardPage() {
   );
 }
 
-// Banner da home em Modo Cards (Modalidade C): orienta o aluno a NÃO tratar o
-// app como lista de tarefas — o celular é só pros toques leves, no tempo do
-// facilitador; a produção é nos cards. Mata a confusão de "por que estou na
-// Fase 3?" logo na entrada.
-function SigaTelaoBanner() {
+// Hero da home em Modo Cards (Modalidade C): tela de orientação/espera com a
+// MESMA identidade visual da tela de espera do telão (fundo LGPD + selo +
+// frase da jornada). Mata a confusão de "o que eu perdi?" logo na entrada.
+function HeroSigaTelao() {
   return (
-    <div className="mb-6 rounded-xl border-2 border-indigo-300 bg-indigo-50 p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="text-2xl leading-none">👀</span>
-        <div>
-          <p className="text-base font-bold text-indigo-900">Siga o telão</p>
-          <p className="mt-1 text-sm text-indigo-900 leading-relaxed">
-            Abra cada atividade <strong>só quando o facilitador pedir</strong>. A produção do seu
-            grupo é nos <strong>cards da mesa</strong> 🃏 — aqui no celular você faz só os{" "}
-            <strong>toques leves</strong> (quiz, votações, termômetro). O mapa abaixo é só{" "}
-            <strong>referência</strong>, não é sua lista de tarefas.
-          </p>
-        </div>
+    <div
+      className="relative mb-4 overflow-hidden rounded-2xl bg-slate-900 bg-cover bg-center text-center text-white"
+      style={{ backgroundImage: "url('/telao-espera-fundo.webp')" }}
+    >
+      <div className="absolute inset-0 bg-slate-900/60" />
+      <div className="relative z-10 px-5 py-7">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/lgpd-badge-transparente.png" alt="LGPD" className="mx-auto h-16 w-auto drop-shadow-lg" />
+        <p className="mt-2.5 text-2xl font-extrabold">👀 Siga o telão</p>
+        <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-white/90">
+          Aguarde o facilitador. Abra cada atividade no celular{" "}
+          <strong>só quando ele pedir</strong> — a produção do seu grupo é nos{" "}
+          <strong>cards da mesa</strong> 🃏.
+        </p>
+        <p className="mt-3.5 text-[13px] italic text-white/75">
+          Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
+        </p>
       </div>
     </div>
+  );
+}
+
+// Jornada NEUTRA (Modo Cards): o mapa das 8 etapas SEM status — nada de
+// "feito" nem "você está aqui". Em Modalidade C, Preliminar/F1/F2 acontecem
+// ao vivo no curso (momentos 5-7 do roteiro); marcar como "feito" faria o
+// aluno achar que perdeu algo. Recolhida por padrão (<details> nativo).
+const JORNADA_ETAPAS = [
+  { num: "·", rotulo: "Preliminar", nome: "Sensibilização e engajamento" },
+  { num: "1", rotulo: "Fase 1", nome: "Formação das equipes" },
+  { num: "2", rotulo: "Fase 2", nome: "Diagnóstico inicial" },
+  { num: "3", rotulo: "Fase 3", nome: "Mapeamento e Análise de Riscos" },
+  { num: "4", rotulo: "Fase 4", nome: "GAP Analysis" },
+  { num: "5", rotulo: "Fase 5", nome: "Plano de Ação" },
+  { num: "6", rotulo: "Fase 6", nome: "Execução" },
+  { num: "7", rotulo: "Fase 7", nome: "Monitoramento" },
+];
+
+function JornadaCurso() {
+  return (
+    <details className="mb-6 rounded-xl border border-gray-200 bg-gray-50">
+      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 text-sm font-semibold text-gray-700 [&::-webkit-details-marker]:hidden">
+        <span>🗺️ Nossa jornada no curso</span>
+        <span className="text-gray-400">▾</span>
+      </summary>
+      <div className="px-4 pb-3.5">
+        <p className="mb-1.5 text-xs text-gray-500">
+          Vamos percorrer estas etapas juntos, no ritmo do telão. Nada aqui é tarefa sua
+          agora — é só o mapa do caminho.
+        </p>
+        {JORNADA_ETAPAS.map((e) => (
+          <div key={e.rotulo} className="flex items-center gap-2.5 border-t border-gray-100 py-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">
+              {e.num}
+            </span>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{e.rotulo}</div>
+              <div className="text-sm font-medium text-gray-700">{e.nome}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
