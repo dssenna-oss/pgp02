@@ -118,6 +118,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
     if (!c) return "Tela de espera";
     if (c === "placar") return "🏆 Placar / pódio";
     if (c === "quiz") return "📱 Quiz (QR)";
+    if (c === "quiz-resultado") return "📊 Resultado do Quiz";
     if (c.startsWith("atividade:")) {
       const id = c.slice("atividade:".length);
       if (id === "termometro") return "🌡️ Termômetro";
@@ -262,6 +263,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz"} onClick={() => mostrarNoTelao("quiz", "Quiz (QR)")}>📱 Quiz</MiniTelao>
+            <MiniTelao ativo={comandoTelao === "quiz-resultado"} onClick={() => mostrarNoTelao("quiz-resultado", "Resultado do Quiz")}>📊 Resultado</MiniTelao>
             <MiniTelao ativo={comandoTelao === "atividade:termometro"} onClick={() => mostrarNoTelao("atividade:termometro", "Termômetro")}>🌡️ Termômetro</MiniTelao>
             <MiniTelao ativo={!comandoTelao} onClick={() => mostrarNoTelao(null, "Tela de espera")}>⏳ Espera</MiniTelao>
             <Select
@@ -339,6 +341,8 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
+              if (a.kind === "telao-quiz-resultado")
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz-resultado", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-placar")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("placar", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "disparar-dsr")

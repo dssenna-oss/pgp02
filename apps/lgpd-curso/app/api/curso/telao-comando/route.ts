@@ -2,7 +2,7 @@
 //
 // POST /api/curso/telao-comando { turmaId, comando }
 //   Seta o comando atual do telão da turma. comando ∈
-//   "placar" | "quiz" | "atividade:<id>" (id inclui "termometro") | null.
+//   "placar" | "quiz" | "quiz-resultado" | "atividade:<id>" (id inclui "termometro") | null.
 //   Admin-only — só o facilitador comanda, pelo Painel de Condução.
 //
 // GET /api/curso/telao-comando?turmaId=<id>
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 function comandoValido(c: unknown): c is string | null {
   if (c === null) return true;
   if (typeof c !== "string") return false;
-  return c === "placar" || c === "quiz" || c.startsWith("atividade:");
+  return c === "placar" || c === "quiz" || c === "quiz-resultado" || c.startsWith("atividade:");
 }
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json()) as { turmaId?: string; comando?: string | null };
   if (!body.turmaId || !comandoValido(body.comando)) {
     return NextResponse.json(
-      { error: "turmaId e comando (placar|quiz|atividade:<id>|null) obrigatórios" },
+      { error: "turmaId e comando (placar|quiz|quiz-resultado|atividade:<id>|null) obrigatórios" },
       { status: 400 },
     );
   }

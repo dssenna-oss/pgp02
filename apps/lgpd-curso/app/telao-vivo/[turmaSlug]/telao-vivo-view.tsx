@@ -23,6 +23,7 @@ import { getAtividadeC, ATIVIDADES_C } from "@/lib/atividades-c";
 import { Select } from "@/components/ui/select";
 import { TelaoView } from "@/app/telao/telao-view";
 import { CartazQuiz } from "@/app/facilitador/quiz/cartaz/[turmaSlug]/cartaz-quiz";
+import { CartazQuizResultado } from "@/app/facilitador/quiz/cartaz/[turmaSlug]/cartaz-quiz-resultado";
 import { CartazAtividade } from "@/app/facilitador/atividades/cartaz/[turmaSlug]/cartaz-atividade";
 
 type Turma = {
@@ -53,6 +54,7 @@ function rotuloComando(c: string | null): string {
   if (!c) return "Tela de espera";
   if (c === "placar") return "🏆 Placar / pódio";
   if (c === "quiz") return "📱 Quiz (QR)";
+  if (c === "quiz-resultado") return "📊 Resultado do Quiz";
   if (c.startsWith("atividade:")) {
     const id = c.slice("atividade:".length);
     if (id === "termometro") return "🌡️ Termômetro";
@@ -154,6 +156,8 @@ export function TelaoVivoView({
     conteudo = <TelaoView key="placar" turmas={[turma]} />;
   } else if (comandoEfetivo === "quiz") {
     conteudo = <CartazQuiz key="quiz" turma={turma} />;
+  } else if (comandoEfetivo === "quiz-resultado") {
+    conteudo = <CartazQuizResultado key="quiz-resultado" turma={turma} />;
   } else if (comandoEfetivo?.startsWith("atividade:")) {
     const id = comandoEfetivo.slice("atividade:".length);
     const atividade = montarAtividade(id);
@@ -254,6 +258,9 @@ export function TelaoVivoView({
               </BotaoLocal>
               <BotaoLocal ativo={comandoEfetivo === "quiz"} onClick={() => aplicarLocal("quiz")}>
                 📱 Quiz (QR)
+              </BotaoLocal>
+              <BotaoLocal ativo={comandoEfetivo === "quiz-resultado"} onClick={() => aplicarLocal("quiz-resultado")}>
+                📊 Resultado do Quiz
               </BotaoLocal>
               <BotaoLocal
                 ativo={comandoEfetivo === "atividade:termometro"}

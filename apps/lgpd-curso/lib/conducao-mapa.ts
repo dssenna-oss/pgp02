@@ -8,6 +8,7 @@ export type AcaoConducao =
   | { kind: "telao-atividade"; atividadeId: string; label: string }
   | { kind: "telao-termometro"; label: string }
   | { kind: "telao-quiz"; label: string }
+  | { kind: "telao-quiz-resultado"; label: string }
   | { kind: "telao-placar"; label: string }
   | { kind: "disparar-dsr"; label: string }
   | { kind: "disparar-incidente"; label: string }
@@ -33,9 +34,12 @@ const MAPA: Record<number, { acoes: AcaoConducao[]; status: StatusConducao[]; di
     dica: "Decida A/B/C pela infraestrutura. Na dúvida, use a Modalidade C (ligue o Modo Cards no atalho acima).",
   },
   2: {
-    acoes: [{ kind: "telao-quiz", label: "Abrir Quiz Diagnóstico" }],
+    acoes: [
+      { kind: "telao-quiz", label: "Abrir Quiz Diagnóstico" },
+      { kind: "telao-quiz-resultado", label: "Resultado do Quiz" },
+    ],
     status: [{ kind: "online", label: "Participantes online" }],
-    dica: "Projete o QR do quiz no telão. Acompanhe o painel do Quiz para ver o progresso.",
+    dica: "Projete o QR (todos respondem) e, no fim, projete o Resultado do Quiz pra comentar com a turma.",
   },
   3: {
     acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro no telão" }],
