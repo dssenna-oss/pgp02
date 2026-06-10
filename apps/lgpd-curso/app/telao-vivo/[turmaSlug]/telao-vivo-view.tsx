@@ -18,7 +18,7 @@
 // telão troca na hora pela escolha local mesmo que a gravação falhe.
 
 import { useEffect, useRef, useState } from "react";
-import { Radio, RotateCcw, Projector, Settings, X, Smartphone, MonitorCog } from "lucide-react";
+import { Radio, RotateCcw, Settings, X, Smartphone, MonitorCog } from "lucide-react";
 import { getAtividadeC, ATIVIDADES_C } from "@/lib/atividades-c";
 import { Select } from "@/components/ui/select";
 import { TelaoView } from "@/app/telao/telao-view";
@@ -331,20 +331,22 @@ function BotaoLocal({
 // Tela de espera (comando null) — mostra a turma e instrui a aguardar.
 function TelaEspera({ turma, aviso }: { turma: Turma; aviso?: string }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-indigo-700 via-indigo-600 to-purple-700 p-10 text-center text-white">
-      <Projector className="h-20 w-20 text-white/80" />
-      <h1 className="mt-6 text-4xl font-extrabold tracking-tight">{turma.nome}</h1>
-      <p className="mt-1 text-xl text-indigo-100">{turma.cidade}</p>
-      <p className="mt-8 text-2xl font-medium text-white/90">
-        📱 Aguardando o facilitador…
-      </p>
-      <p className="mt-2 text-base text-indigo-200">
-        O conteúdo deste telão é comandado pelo celular.
-      </p>
-      <p className="mt-1 text-sm text-indigo-300/80">
-        (Sem sinal no celular? Tecla <kbd className="rounded border border-white/30 bg-white/10 px-1.5 py-0.5 font-mono text-xs">C</kbd> = controle local no notebook.)
-      </p>
-      {aviso && <p className="mt-4 text-sm text-amber-200">{aviso}</p>}
+    <div
+      className="relative flex min-h-screen flex-col items-center justify-center bg-slate-900 bg-cover bg-center p-10 text-center"
+      style={{ backgroundImage: "url('/telao-espera-fundo.webp')" }}
+    >
+      {/* scrim pra legibilidade do texto sobre a ilustração clara */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-black/30" />
+      <div className="relative z-10 max-w-2xl rounded-[22px] bg-slate-900/50 px-12 py-8 text-white backdrop-blur-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/lgpd-badge.png" alt="LGPD" className="mx-auto mb-2.5 h-24 w-auto drop-shadow-lg" />
+        <p className="text-lg font-medium text-white/80">{turma.nome} · {turma.cidade}</p>
+        <p className="mt-3.5 text-[2.5rem] font-bold leading-[1.22] [text-shadow:0_2px_14px_rgba(0,0,0,0.4)]">
+          Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
+        </p>
+        <p className="mt-5 text-2xl font-medium text-white/90">Aguardando o facilitador…</p>
+        {aviso && <p className="mt-4 text-sm text-amber-200">{aviso}</p>}
+      </div>
     </div>
   );
 }
