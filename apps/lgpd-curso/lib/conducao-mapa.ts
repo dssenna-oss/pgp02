@@ -6,6 +6,8 @@ import { ROTEIRO, type MomentoRoteiro } from "./modalidade-c-conteudo";
 
 export type AcaoConducao =
   | { kind: "telao-atividade"; atividadeId: string; label: string }
+  // Slides/conteúdos do curso no Telão Comandado (ids em lib/conteudos-telao.ts)
+  | { kind: "telao-conteudo"; conteudoId: string; label: string }
   | { kind: "telao-termometro"; label: string }
   | { kind: "liberar-termometro"; label: string }
   | { kind: "telao-quiz"; label: string }
@@ -81,54 +83,73 @@ const MAPA: Record<
     alunoUsa: ["celular"],
   },
   4: {
-    acoes: [],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "historico-lgpd", label: "Histórico da LGPD no telão" },
+      { kind: "telao-conteudo", conteudoId: "estrutura-lgpd", label: "Estrutura da LGPD no telão" },
+    ],
     status: [],
-    dica: "Histórico e Estrutura: abra no notebook (Slides das fases). Desafios LGPD: atalho '📋 Atividade ao vivo' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
-    voceUsa: ["notebook", "celular"],
+    dica: "Sequência: projete o Histórico → depois a Estrutura (botões acima, tudo pelo celular). Desafios LGPD: atalho '📋 Atividade ao vivo' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
+    voceUsa: ["celular"],
     alunoUsa: ["celular", "impresso"],
   },
   5: {
-    acoes: [],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-preliminar", label: "Fase Preliminar no telão" },
+    ],
     status: [],
-    dica: "Momento de slides + cards (discussão da Carta). Sem ação no app.",
-    voceUsa: ["notebook", "sala"],
+    dica: "Projete a Fase Preliminar (sensibilização) e conduza a discussão da Carta nos cards.",
+    voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso", "discussao"],
   },
   6: {
-    acoes: [],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-1", label: "Fase 1 (art. 41) no telão" },
+    ],
     status: [],
-    dica: "Momento de cards (Ato de Designação do DPO). Sem ação no app.",
-    voceUsa: ["notebook", "sala"],
+    dica: "Projete a Fase 1 (art. 41) e conduza o Ato de Designação nos cards.",
+    voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso"],
   },
   7: {
-    acoes: [{ kind: "telao-atividade", atividadeId: "priorizacao-f2", label: "Abrir votação de Priorização" }],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-2", label: "Fase 2 (priorização) no telão" },
+      { kind: "telao-atividade", atividadeId: "priorizacao-f2", label: "Abrir votação de Priorização" },
+    ],
     status: [{ kind: "atividade", atividadeId: "priorizacao-f2", label: "Priorização (votação)" }],
     voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso", "celular"],
   },
   8: {
-    acoes: [{ kind: "telao-atividade", atividadeId: "classificacao-f3", label: "Abrir Classificação (base legal)" }],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-3", label: "Fase 3 (Inventário) no telão" },
+      { kind: "telao-atividade", atividadeId: "classificacao-f3", label: "Abrir Classificação (base legal)" },
+    ],
     status: [{ kind: "atividade", atividadeId: "classificacao-f3", label: "Classificação (base legal)" }],
     dica: "O Inventário e os Riscos são montados nos cards físicos (fichas). Acompanhe o fluxo na mesa.",
     voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso", "celular"],
   },
   9: {
-    acoes: [{ kind: "telao-atividade", atividadeId: "aderencia-f4", label: "Abrir votação de Aderência (GAP)" }],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-4", label: "Fase 4 (GAP) no telão" },
+      { kind: "telao-atividade", atividadeId: "aderencia-f4", label: "Abrir votação de Aderência (GAP)" },
+    ],
     status: [{ kind: "atividade", atividadeId: "aderencia-f4", label: "Aderência (GAP)" }],
     voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso", "celular"],
   },
   10: {
-    acoes: [],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-5", label: "Fase 5 (Plano de Ação) no telão" },
+    ],
     status: [],
-    dica: "Momento de cards (Plano de Ação). Sem ação no app.",
-    voceUsa: ["sala"],
+    dica: "Projete a Fase 5 e conduza os cards de ação na mesa.",
+    voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso"],
   },
   11: {
     acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-6", label: "Fase 6 (instrumentos) no telão" },
       { kind: "telao-atividade", atividadeId: "ripd-ordem-f6", label: "Abrir RIPD (ordenar seções)" },
       { kind: "telao-atividade", atividadeId: "politica-ordem-f6", label: "Abrir Política (ordenar)" },
       { kind: "telao-atividade", atividadeId: "balanceamento-f6", label: "Abrir Balanceamento (LI)" },
@@ -140,7 +161,10 @@ const MAPA: Record<
     alunoUsa: ["celular", "impresso"],
   },
   12: {
-    acoes: [{ kind: "disparar-incidente", label: "Disparar Incidente (cronômetro 72h)" }],
+    acoes: [
+      { kind: "telao-conteudo", conteudoId: "fase-7", label: "Fase 7 (incidentes) no telão" },
+      { kind: "disparar-incidente", label: "Disparar Incidente (cronômetro 72h)" },
+    ],
     status: [],
     dica: "Leia o card do Incidente em voz alta e ligue o clima de tensão.",
     voceUsa: ["celular", "sala"],

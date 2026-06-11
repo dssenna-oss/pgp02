@@ -294,6 +294,23 @@ export function TelaoVivoView({
               </BotaoLocal>
             </div>
 
+            {/* Slides e conteúdos do curso (projetáveis) — antes das atividades,
+                espelhando a sequência do curso (conteúdo → votação). */}
+            <p className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Slides e conteúdos
+            </p>
+            <Select
+              value={comandoEfetivo?.startsWith("conteudo:") ? comandoEfetivo : ""}
+              onChange={(e) => { if (e.target.value) aplicarLocal(e.target.value); }}
+            >
+              <option value="">Escolher um conteúdo…</option>
+              {CONTEUDOS_TELAO.map((c) => (
+                <option key={c.id} value={`conteudo:${c.id}`}>
+                  {c.emoji} {c.titulo}
+                </option>
+              ))}
+            </Select>
+
             {/* Atividades (lista grande → select) */}
             <p className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
               Atividades ao vivo
@@ -306,22 +323,6 @@ export function TelaoVivoView({
               {ATIVIDADES_C.map((a) => (
                 <option key={a.id} value={`atividade:${a.id}`}>
                   {a.emoji} {a.titulo}
-                </option>
-              ))}
-            </Select>
-
-            {/* Materiais de Apoio (conteúdos projetáveis) */}
-            <p className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Materiais de apoio
-            </p>
-            <Select
-              value={comandoEfetivo?.startsWith("conteudo:") ? comandoEfetivo : ""}
-              onChange={(e) => { if (e.target.value) aplicarLocal(e.target.value); }}
-            >
-              <option value="">Escolher um material…</option>
-              {CONTEUDOS_TELAO.map((c) => (
-                <option key={c.id} value={`conteudo:${c.id}`}>
-                  {c.emoji} {c.titulo}
                 </option>
               ))}
             </Select>
