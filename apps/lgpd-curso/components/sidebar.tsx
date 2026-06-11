@@ -175,14 +175,11 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
       { href: "/facilitador/quiz",         label: "Quiz Diagnóstico",          icon: ClipboardCheck },
       { href: "/facilitador/atividades",   label: "Atividades ao vivo (C)",    icon: LayoutGrid },
       { href: "/facilitador",              label: "Painel do Facilitador",     icon: LayoutDashboard },
-      { href: "/telao",                    label: "Telão (placar)",            icon: Trophy, externalNewTab: true },
-    ],
-  },
-  {
-    titulo: "Encerramento",
-    itens: [
+      // LIA — gabarito do facilitador pro debrief de Legítimo Interesse
+      // (Reflexão Final). Antes ficava num grupo "Encerramento" solto; agora
+      // mora aqui, com as outras ferramentas de condução ao vivo.
       { href: "/facilitador/lia-modelos",  label: "LIA — Modelos (debrief)",   icon: Scale },
-      { href: "/facilitador/forum",        label: "Fórum da turma",            icon: MessagesSquare },
+      { href: "/telao",                    label: "Telão (placar)",            icon: Trophy, externalNewTab: true },
     ],
   },
 ];
@@ -514,7 +511,7 @@ export function Sidebar() {
               </div>
 
               {/* Grupos por etapa do curso — subcabeçalho cinza-claro pra
-                  comunicar visualmente "preparação / execução / encerramento".
+                  comunicar visualmente "preparação / execução".
                   Telão é o único que abre em nova aba (precisa de projeção). */}
               {GRUPOS_FACILITADOR.map((grupo, gi) => (
                 <div key={grupo.titulo} className={gi === 0 ? "" : "mt-3"}>
@@ -559,12 +556,13 @@ export function Sidebar() {
                 </div>
               ))}
 
-              {/* Conteúdos e slides — grupo único: a biblioteca de materiais
-                  de apoio (1º item, de propósito — o facilitador a divulga ao
-                  navegar os slides ao vivo: "vocês levam isso pra depois do
-                  curso") + os slides que ele projeta antes das missões. */}
+              {/* Materiais de apoio — recursos de estudo (antes/durante/depois
+                  do curso): biblioteca de e-books + Fórum da turma (suporte
+                  contínuo) + os slides que o facilitador projeta. O Fórum veio
+                  do antigo grupo "Encerramento" (apagado) — é recurso contínuo,
+                  não de encerramento. */}
               <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
-                <Library className="h-3 w-3" /> Conteúdos e slides
+                <Library className="h-3 w-3" /> Materiais de apoio
               </div>
               <Link
                 href="/dashboard/conteudos-didaticos"
@@ -578,6 +576,19 @@ export function Sidebar() {
               >
                 <Library className="h-4 w-4 shrink-0 text-gray-500" />
                 <span className="flex-1 text-[13px] leading-tight">📚 Conteúdos Didáticos</span>
+              </Link>
+              <Link
+                href="/facilitador/forum"
+                onClick={closeMobile}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
+                  pathname === "/facilitador/forum"
+                    ? "bg-brand-50 text-brand-700 font-medium"
+                    : "text-gray-700 hover:bg-gray-100",
+                )}
+              >
+                <MessagesSquare className="h-4 w-4 shrink-0 text-gray-500" />
+                <span className="flex-1 text-[13px] leading-tight">💬 Fórum da turma</span>
               </Link>
               {/* Histórico da LGPD — panorama (mundo + Brasil) apresentado
                   antes das fases. Página nativa (não é faixa de slides). */}
