@@ -18,6 +18,7 @@ export type AcaoConducao =
 export type StatusConducao =
   | { kind: "atividade"; atividadeId: string; label: string }
   | { kind: "termometro"; fase: "inicio" | "fim"; label: string }
+  | { kind: "quiz"; label: string }
   | { kind: "online"; label: string };
 
 // Dispositivo/meio que VOCÊ (facilitador) usa no momento: comanda pelo celular
@@ -61,7 +62,10 @@ const MAPA: Record<
       { kind: "liberar-quiz", label: "Liberar quiz" },
       { kind: "telao-quiz-resultado", label: "Resultado do Quiz" },
     ],
-    status: [{ kind: "online", label: "Participantes online" }],
+    status: [
+      { kind: "quiz", label: "Quiz Diagnóstico" },
+      { kind: "online", label: "Participantes online" },
+    ],
     dica: "Sequência: projete o QR → espere todos na tela 'aguarde' → LIBERE o quiz (largada conjunta) → no fim, projete o Resultado pra comentar.",
     voceUsa: ["celular"],
     alunoUsa: ["celular"],

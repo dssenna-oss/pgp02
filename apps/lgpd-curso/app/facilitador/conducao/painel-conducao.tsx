@@ -37,6 +37,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [painel, setPainel] = useState<PainelData | null>(null);
   const [statusAtiv, setStatusAtiv] = useState<any>(null);
   const [statusTermo, setStatusTermo] = useState<any>(null);
+  const [statusQuiz, setStatusQuiz] = useState<any>(null);
   const [modoCards, setModoCards] = useState<boolean>(false);
   const [alterandoMC, setAlterandoMC] = useState(false);
   const [quizLiberado, setQuizLiberado] = useState<boolean>(false);
@@ -70,6 +71,11 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
         const r = await fetch(`/api/curso/termometro/painel?turmaId=${turmaId}`, { cache: "no-store" });
         setStatusTermo(r.ok ? await r.json() : null);
       } else setStatusTermo(null);
+      const stQuiz = momento.status.find((s) => s.kind === "quiz");
+      if (stQuiz) {
+        const r = await fetch(`/api/quiz/painel?turmaId=${turmaId}`, { cache: "no-store" });
+        setStatusQuiz(r.ok ? await r.json() : null);
+      } else setStatusQuiz(null);
     } catch {
       /* silencioso */
     }
@@ -403,6 +409,16 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <p className="flex items-center gap-1.5 text-sm font-semibold text-indigo-800 mb-2"><CheckSquare className="h-4 w-4" /> Posso avançar?</p>
           <div className="space-y-1.5 text-sm text-indigo-900">
             {momento.status.map((s, i) => {
+              if (s.kind === "quiz") {
+                const completos = statusQuiz?.total?.completos ?? 0;
+                const andamento = statusQuiz?.timer?.emAndamento ?? 0;
+                return (
+                  <p key={i}>
+                    📱 <strong>{s.label}</strong>: <strong>{completos}</strong> terminaram · {andamento} em andamento
+                    {!quizLiberado && <span className="text-amber-700"> · 🔒 ainda travado</span>}.
+                  </p>
+                );
+              }
               if (s.kind === "online")
                 return <p key={i}>👥 <strong>{online}</strong> participante(s) online agora.</p>;
               if (s.kind === "atividade") {
