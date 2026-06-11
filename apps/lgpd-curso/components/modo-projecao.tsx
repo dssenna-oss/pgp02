@@ -18,10 +18,20 @@ const STORAGE_KEY = "modo-projecao-ativo";
 export function ModoProjecao() {
   const [ativo, setAtivo] = useState(false);
   const [hidratado, setHidratado] = useState(false);
+  // Modo EMBED (?projecao=1 na URL): a página está dentro do iframe do Telão
+  // Comandado — aplica o modo (sidebar oculta, fontes ampliadas) SEM banner,
+  // sem botão flutuante e sem persistir no localStorage.
+  const [embed, setEmbed] = useState(false);
 
   // 1º mount: lê localStorage e aplica classe no <html>
   useEffect(() => {
     try {
+      if (new URLSearchParams(window.location.search).get("projecao") === "1") {
+        setEmbed(true);
+        document.documentElement.classList.add("modo-projecao");
+        setHidratado(true);
+        return;
+      }
       const salvo = localStorage.getItem(STORAGE_KEY) === "1";
       setAtivo(salvo);
       if (salvo) document.documentElement.classList.add("modo-projecao");
@@ -29,9 +39,10 @@ export function ModoProjecao() {
     setHidratado(true);
   }, []);
 
-  // Toda vez que ativo mudar: aplica/remove classe + persiste
+  // Toda vez que ativo mudar: aplica/remove classe + persiste.
+  // No modo embed a classe é fixa (gerida pelo 1º efeito) — não mexe.
   useEffect(() => {
-    if (!hidratado) return;
+    if (!hidratado || embed) return;
     try {
       if (ativo) {
         document.documentElement.classList.add("modo-projecao");
@@ -41,10 +52,11 @@ export function ModoProjecao() {
         localStorage.removeItem(STORAGE_KEY);
       }
     } catch {}
-  }, [ativo, hidratado]);
+  }, [ativo, hidratado, embed]);
 
-  // Evita flash de conteúdo errado no 1º render do servidor
-  if (!hidratado) return null;
+  // Evita flash de conteúdo errado no 1º render do servidor.
+  // No modo embed (iframe do telão) não renderiza UI nenhuma.
+  if (!hidratado || embed) return null;
 
   return (
     <>

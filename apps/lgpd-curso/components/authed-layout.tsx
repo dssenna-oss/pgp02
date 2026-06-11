@@ -7,6 +7,7 @@ import { DsrAlertBanner } from "@/components/dsr-alert-banner";
 import { IncidentAlertBanner } from "@/components/incident-alert-banner";
 import { Heartbeat } from "@/components/heartbeat";
 import { ModoProjecao } from "@/components/modo-projecao";
+import { TelaoAvisoBanner } from "@/components/telao-aviso-banner";
 
 export function AuthedLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,8 @@ export function AuthedLayout({ children }: { children: React.ReactNode }) {
         {/* Incidente é mais urgente — fica acima do banner DSR */}
         <IncidentAlertBanner />
         <DsrAlertBanner />
+        {/* "📺 No telão agora…" — facilitador projetando Material de Apoio */}
+        <TelaoAvisoBanner />
         <div className="flex-1 p-4 sm:p-6">{children}</div>
       </main>
       <PhaseSkipProvider />

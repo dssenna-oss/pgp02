@@ -18,7 +18,9 @@ export async function AdminPreviewBanner() {
   if (!isAdmin || !semCompany) return null;
 
   return (
-    <div className="mb-4 rounded-md border-l-4 border-l-amber-500 border border-amber-200 bg-amber-50 p-3">
+    // esconder-em-projecao: no telão (Modo Projeção / iframe do Telão
+    // Comandado) este aviso é ruído — só interessa ao facilitador navegando.
+    <div className="esconder-em-projecao mb-4 rounded-md border-l-4 border-l-amber-500 border border-amber-200 bg-amber-50 p-3">
       <div className="flex items-start gap-2">
         <Eye className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
         <div className="flex-1 text-xs text-amber-900">

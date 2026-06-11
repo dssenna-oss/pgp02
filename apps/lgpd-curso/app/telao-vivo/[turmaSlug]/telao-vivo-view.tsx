@@ -20,6 +20,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Radio, RotateCcw, Settings, X, Smartphone, MonitorCog } from "lucide-react";
 import { getAtividadeC, ATIVIDADES_C } from "@/lib/atividades-c";
+import { CONTEUDOS_TELAO, getConteudoTelao } from "@/lib/conteudos-telao";
 import { Select } from "@/components/ui/select";
 import { TelaoView } from "@/app/telao/telao-view";
 import { CartazQuiz } from "@/app/facilitador/quiz/cartaz/[turmaSlug]/cartaz-quiz";
@@ -62,6 +63,10 @@ function rotuloComando(c: string | null): string {
     if (id === "termometro") return "🌡️ Termômetro";
     const at = ATIVIDADES_C.find((a) => a.id === id);
     return at ? `${at.emoji} ${at.titulo}` : id;
+  }
+  if (c.startsWith("conteudo:")) {
+    const m = getConteudoTelao(c.slice("conteudo:".length));
+    return m ? `${m.emoji} ${m.titulo}` : c;
   }
   return c;
 }
@@ -167,6 +172,23 @@ export function TelaoVivoView({
       <CartazAtividade key={comandoEfetivo} turma={turma} atividade={atividade} />
     ) : (
       <TelaEspera turma={turma} aviso={`Atividade "${id}" não encontrada.`} />
+    );
+  } else if (comandoEfetivo?.startsWith("conteudo:")) {
+    // Material de Apoio — renderiza a própria página do app num iframe
+    // fullscreen (mesma origem; este navegador está logado como facilitador).
+    // ?projecao=1 ativa o Modo Projeção silencioso lá dentro (sem sidebar,
+    // fontes ampliadas, sem banner).
+    const id = comandoEfetivo.slice("conteudo:".length);
+    const material = getConteudoTelao(id);
+    conteudo = material ? (
+      <iframe
+        key={comandoEfetivo}
+        src={`${material.hrefTelao}?projecao=1`}
+        title={material.titulo}
+        className="fixed inset-0 h-full w-full border-0 bg-white"
+      />
+    ) : (
+      <TelaEspera turma={turma} aviso={`Conteúdo "${id}" não encontrado.`} />
     );
   } else {
     conteudo = <TelaEspera key="espera" turma={turma} />;
@@ -284,6 +306,22 @@ export function TelaoVivoView({
               {ATIVIDADES_C.map((a) => (
                 <option key={a.id} value={`atividade:${a.id}`}>
                   {a.emoji} {a.titulo}
+                </option>
+              ))}
+            </Select>
+
+            {/* Materiais de Apoio (conteúdos projetáveis) */}
+            <p className="mb-1.5 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Materiais de apoio
+            </p>
+            <Select
+              value={comandoEfetivo?.startsWith("conteudo:") ? comandoEfetivo : ""}
+              onChange={(e) => { if (e.target.value) aplicarLocal(e.target.value); }}
+            >
+              <option value="">Escolher um material…</option>
+              {CONTEUDOS_TELAO.map((c) => (
+                <option key={c.id} value={`conteudo:${c.id}`}>
+                  {c.emoji} {c.titulo}
                 </option>
               ))}
             </Select>

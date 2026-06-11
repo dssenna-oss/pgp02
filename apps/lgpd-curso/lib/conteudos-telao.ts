@@ -1,0 +1,44 @@
+// Materiais de Apoio projetáveis no Telão Comandado (comando "conteudo:<id>").
+//
+// O telão ao vivo renderiza a página num IFRAME fullscreen (mesma origem; o
+// notebook está logado como facilitador) com `?projecao=1` — o ModoProjecao
+// detecta o param e esconde sidebar/amplia fontes sem mostrar o banner verde.
+//
+// `hrefAluno` é a rota equivalente no celular do participante (banner "📺 No
+// telão agora…"). null = conteúdo sem página própria pro participante (Fases
+// 3-7 vivem só em /facilitador/conteudo-fase) — o banner aparece sem botão.
+
+export type ConteudoTelao = {
+  id: string;
+  emoji: string;
+  titulo: string;
+  hrefTelao: string; // rota que o telão (admin) abre no iframe
+  hrefAluno: string | null; // rota no celular do participante
+};
+
+function ambos(id: string, emoji: string, titulo: string, href: string): ConteudoTelao {
+  return { id, emoji, titulo, hrefTelao: href, hrefAluno: href };
+}
+
+function soTelao(id: string, emoji: string, titulo: string, href: string): ConteudoTelao {
+  return { id, emoji, titulo, hrefTelao: href, hrefAluno: null };
+}
+
+export const CONTEUDOS_TELAO: ConteudoTelao[] = [
+  ambos("conteudos-didaticos", "📚", "Conteúdos Didáticos", "/dashboard/conteudos-didaticos"),
+  ambos("entendendo-pgp", "🧭", "Entendendo o PGP", "/dashboard/entendendo-pgp"),
+  ambos("historico-lgpd", "📜", "Histórico da LGPD", "/dashboard/historico-lgpd"),
+  ambos("estrutura-lgpd", "📖", "Estrutura da LGPD", "/dashboard/estrutura-lgpd"),
+  ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
+  ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
+  ambos("fase-2", "🚩", "Fase 2 — Diagnóstico inicial", "/dashboard/fase-2"),
+  soTelao("fase-3", "🚩", "Fase 3 — Mapeamento e Riscos", "/facilitador/conteudo-fase/fase-3"),
+  soTelao("fase-4", "🚩", "Fase 4 — GAP Analysis", "/facilitador/conteudo-fase/fase-4"),
+  soTelao("fase-5", "🚩", "Fase 5 — Plano de Ação", "/facilitador/conteudo-fase/fase-5"),
+  soTelao("fase-6", "🚩", "Fase 6 — Execução", "/facilitador/conteudo-fase/fase-6"),
+  soTelao("fase-7", "🚩", "Fase 7 — Monitoramento Contínuo", "/facilitador/conteudo-fase/fase-7"),
+];
+
+export function getConteudoTelao(id: string): ConteudoTelao | null {
+  return CONTEUDOS_TELAO.find((c) => c.id === id) ?? null;
+}
