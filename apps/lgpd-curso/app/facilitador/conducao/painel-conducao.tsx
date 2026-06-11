@@ -26,7 +26,7 @@ type Grupo = {
   sos?: { id: string; status: string; requestedByName?: string; createdAt?: string }[];
   phaseSkips?: { id: string; faseTentada?: string; acaoTentada?: string; requestedByName?: string }[];
 };
-type PainelData = { turma?: { modoCards?: boolean }; grupos?: Grupo[] };
+type PainelData = { turma?: { modoCards?: boolean; quizLiberado?: boolean }; grupos?: Grupo[] };
 
 export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [turmaId, setTurmaId] = useState(turmas[0]?.id ?? "");
@@ -39,6 +39,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [statusTermo, setStatusTermo] = useState<any>(null);
   const [modoCards, setModoCards] = useState<boolean>(false);
   const [alterandoMC, setAlterandoMC] = useState(false);
+  const [quizLiberado, setQuizLiberado] = useState<boolean>(false);
   const [comandoTelao, setComandoTelao] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -55,6 +56,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
         const data = await p.json();
         setPainel(data);
         if (typeof data?.turma?.modoCards === "boolean") setModoCards(data.turma.modoCards);
+        if (typeof data?.turma?.quizLiberado === "boolean") setQuizLiberado(data.turma.quizLiberado);
       }
       const c = await fetch(`/api/curso/telao-comando?turmaId=${turmaId}`, { cache: "no-store" });
       if (c.ok) { const cd = await c.json(); setComandoTelao(cd?.comando ?? null); }
@@ -135,6 +137,19 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
       setCopiado(true);
       setTimeout(() => setCopiado(false), 1800);
     } catch { toast.error("Não consegui copiar"); }
+  }
+
+  // Trava de largada do quiz: travado → alunos ficam na tela "aguarde";
+  // liberar → todos entram juntos (o celular deles entra sozinho via polling).
+  async function toggleQuizLiberado() {
+    const novo = !quizLiberado;
+    setQuizLiberado(novo); // otimista
+    const res = await fetch("/api/curso/quiz-liberar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ turmaId, liberado: novo }),
+    });
+    if (res.ok) toast.success(novo ? "🏁 Quiz LIBERADO — largada dada!" : "🔒 Quiz travado");
+    else { toast.error("Erro ao alterar a trava do quiz"); setQuizLiberado(!novo); }
   }
 
   async function disparar(tipo: "dsr" | "incidente", orgao: "PM" | "CM") {
@@ -344,6 +359,20 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz-resultado")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz-resultado", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
+              if (a.kind === "liberar-quiz")
+                return (
+                  <button
+                    key={i}
+                    onClick={toggleQuizLiberado}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border ${
+                      quizLiberado
+                        ? "border-green-500 bg-green-600 text-white hover:bg-green-700"
+                        : "border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                    }`}
+                  >
+                    {quizLiberado ? "🏁 Quiz LIBERADO (tocar pra travar)" : "🔒 Liberar quiz (largada conjunta)"}
+                  </button>
+                );
               if (a.kind === "telao-placar")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("placar", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "disparar-dsr")

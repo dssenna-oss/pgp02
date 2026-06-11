@@ -87,6 +87,7 @@ function dispararConfete() {
 
 type Estado =
   | "IDLE"
+  | "BLOQUEADO" // trava de largada: facilitador ainda não liberou — espera com polling
   | "READY"
   | "RUNNING"
   | "TEMPO_ESGOTADO" // NOVO: timer da turma zerou — bloqueia perguntas, mostra mensagem, submete auto
@@ -145,7 +146,9 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
   // mostra contador na UI pra não pressionar (decisão UX 2026-05-25).
   const [deadline, setDeadline] = useState<string | null>(null);
 
-  // Inicializa: pega/cria UUID + chama /start
+  // Inicializa: pega/cria UUID + chama /start. Se o quiz estiver TRAVADO
+  // (trava de largada), fica em BLOQUEADO e repete o /start a cada 4s —
+  // quando o facilitador liberar, entra sozinho.
   useEffect(() => {
     const chave = `quiz-uuid-${turmaSlug}`;
     let u = "";
@@ -160,7 +163,11 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
     }
     setUuid(u);
 
-    (async () => {
+    let cancelado = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    async function iniciar() {
+      if (cancelado) return;
       try {
         const res = await fetch("/api/quiz/start", {
           method: "POST",
@@ -168,8 +175,15 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
           body: JSON.stringify({ turmaSlug, uuid: u }),
         });
         const data = await res.json();
+        if (cancelado) return;
         if (!res.ok) {
           throw new Error(data?.error || "Erro ao carregar quiz");
+        }
+        if (data.bloqueado) {
+          setTurmaNome(`${data.turma.nome} · ${data.turma.cidade}`);
+          setEstado("BLOQUEADO");
+          timer = setTimeout(iniciar, 4000);
+          return;
         }
         setTurmaNome(`${data.turma.nome} · ${data.turma.cidade}`);
         setPerguntas(data.perguntas || []);
@@ -209,10 +223,17 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
           setEstado("READY");
         }
       } catch (e: any) {
+        if (cancelado) return;
         setErro(e.message || "Erro ao carregar");
         setEstado("ERRO");
       }
-    })();
+    }
+
+    iniciar();
+    return () => {
+      cancelado = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [turmaSlug]);
 
   // Timer invisível: se a turma definiu duração, agenda submit automático
@@ -310,6 +331,27 @@ export function QuizRunner({ turmaSlug }: { turmaSlug: string }) {
             <div className="font-semibold">Erro</div>
             <div className="text-sm">{erro}</div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Trava de largada: facilitador ainda não liberou. A página entra sozinha
+  // assim que liberar (polling do /start no efeito de inicialização).
+  if (estado === "BLOQUEADO") {
+    return (
+      <div className="space-y-5">
+        <QuizHero subtitle={turmaNome} />
+        <div className="rounded-xl border bg-white p-6 text-center">
+          <div className="text-4xl">🔒</div>
+          <h2 className="mt-2 text-lg font-semibold text-gray-900">Quase lá!</h2>
+          <p className="mt-1.5 text-sm text-gray-600 leading-relaxed">
+            Aguarde o facilitador <strong>liberar o quiz</strong> — todos começam juntos.
+          </p>
+          <p className="mt-3 inline-flex items-center gap-2 text-xs text-gray-400">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Pode deixar esta tela aberta: o quiz entra sozinho na liberação.
+          </p>
         </div>
       </div>
     );

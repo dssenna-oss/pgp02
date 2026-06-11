@@ -162,6 +162,12 @@ model CursoTurma {
   // automático o que foi respondido. Configurado no /facilitador/quiz.
   // Backfill automático via lib/coluna-quiz-duracao.ts.
   quizDuracaoMinutos Int?
+  // Trava de largada do Quiz Diagnóstico. false = travado: /api/quiz/start
+  // devolve { bloqueado: true } e o celular fica numa tela de espera (polling),
+  // entrando sozinho quando o facilitador liberar (Painel de Condução /
+  // painel do Quiz). Quem já finalizou segue revendo o resultado mesmo
+  // travado. Backfill em lib/coluna-quiz-liberado.ts.
+  quizLiberado Boolean @default(false)
   // Fórum da turma (suporte PÓS-curso). Quando true, o login do participante
   // deixa de ser bloqueado pela data limite (acessoFim) — a turma fica aberta
   // pra dúvidas/respostas no fórum até o facilitador arquivar. Só o facilitador
