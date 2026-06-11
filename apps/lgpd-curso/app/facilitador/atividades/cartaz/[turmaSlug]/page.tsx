@@ -27,8 +27,9 @@ export default async function CartazAtividadePage({
     ? null
     : ((searchParams.a && getAtividadeC(searchParams.a)) || ATIVIDADES_C[0]);
 
+  // Rótulo neutro: o Termômetro vai ao telão no início (M3) E no final (M14).
   const atividadeProp = ehTermometro
-    ? { id: "termometro", titulo: "Termômetro — Evolução dos Grupos", fase: "Reflexão Final · Momento 13", emoji: "🌡️" }
+    ? { id: "termometro", titulo: "Termômetro — Evolução dos Grupos", fase: "Termômetro Institucional · início × final", emoji: "🌡️" }
     : { id: at!.id, titulo: at!.titulo, fase: at!.fase, emoji: at!.emoji, contexto: at!.contexto };
 
   return <CartazAtividade turma={turma} atividade={atividadeProp} />;
