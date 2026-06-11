@@ -181,7 +181,12 @@ export function CartazQuiz({ turma }: { turma: Turma }) {
         </div>
       </div>
 
-      {/* CSS de impressão pra economizar tinta e ajustar layout A4 paisagem */}
+      {/* CSS de impressão pra economizar tinta e ajustar layout A4 paisagem.
+          O cartaz vive DENTRO do AuthedLayout (banner + sidebar + paddings) e
+          tem min-h-screen no contêiner externo E no interno — sem zerar tudo,
+          a moldura vira uma página ~vazia antes e a sobra de padding gera outra
+          depois (PDF saía com 3 páginas, 1ª e 3ª em branco). Aqui escondemos a
+          moldura inteira e zeramos as alturas: sobra 1 página, só o cartaz. */}
       <style jsx global>{`
         @media print {
           @page {
@@ -193,14 +198,35 @@ export function CartazQuiz({ turma }: { turma: Turma }) {
             margin: 0;
             padding: 0;
           }
-          /* Esconde o banner amarelo de treinamento durante impressão */
-          body > div.bg-yellow-400,
-          body > .training-banner {
+          /* Moldura do app: banner de treinamento + rodapé global */
+          body > .training-banner,
+          body > footer {
             display: none !important;
           }
+          /* Sidebar + header mobile (irmãos do <main> no contêiner do layout) */
+          div:has(> main) > *:not(main) {
+            display: none !important;
+          }
+          div:has(> main) {
+            min-height: 0 !important;
+            display: block !important;
+          }
+          main {
+            padding: 0 !important;
+            overflow: visible !important;
+          }
+          /* wrapper .flex-1.p-4 do AuthedLayout em volta do cartaz */
+          main > div {
+            padding: 0 !important;
+          }
+          .cartaz-quiz,
+          .cartaz-quiz > div {
+            min-height: 0 !important;
+            height: auto !important;
+          }
           .cartaz-quiz {
-            min-height: auto !important;
             background: white !important;
+            break-inside: avoid;
           }
         }
       `}</style>
