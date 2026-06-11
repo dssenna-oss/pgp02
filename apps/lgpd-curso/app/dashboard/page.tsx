@@ -7,7 +7,7 @@ import {
 import Link from "next/link";
 import { getMissoesProgresso, type MissoesProgresso } from "@/lib/missoes-progresso";
 import { MapaPgp, type FaseAtual } from "@/components/mapa-pgp";
-import { turmaEmModoCards } from "@/lib/curso-permissoes";
+import { turmaDoGrupo } from "@/lib/curso-permissoes";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
   const companyName = session?.user?.company?.name ?? "—";
   const role = session?.user?.role;
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
-  const modoCards = await turmaEmModoCards(session?.user?.companyId);
+  const { modoCards, turmaSlug } = await turmaDoGrupo(session?.user?.companyId);
 
   const progresso = await getMissoesProgresso();
   const proxima = getProximaMissao(progresso, isDpoOuAdmin);
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
           Na Modalidade A, o mapa original com progresso continua valendo. */}
       {modoCards ? (
         <>
-          <HeroSigaTelao />
+          <HeroSigaTelao turmaSlug={turmaSlug} />
           <JornadaCurso />
         </>
       ) : (
@@ -148,7 +148,9 @@ export default async function DashboardPage() {
 // Hero da home em Modo Cards (Modalidade C): tela de orientação/espera com a
 // MESMA identidade visual da tela de espera do telão (fundo LGPD + selo +
 // frase da jornada). Mata a confusão de "o que eu perdi?" logo na entrada.
-function HeroSigaTelao() {
+// O botão do Quiz evita o gargalo de 50+ pessoas escaneando o QR do telão de
+// longe: quem já logou pelo crachá só toca aqui quando o facilitador pedir.
+function HeroSigaTelao({ turmaSlug }: { turmaSlug: string | null }) {
   return (
     <div
       className="relative mb-4 overflow-hidden rounded-2xl bg-slate-900 bg-cover bg-center text-center text-white"
@@ -164,6 +166,17 @@ function HeroSigaTelao() {
           <strong>só quando ele pedir</strong> — a produção do seu grupo é nos{" "}
           <strong>cards da mesa</strong> 🃏.
         </p>
+        {turmaSlug && (
+          <>
+            <Link
+              href={`/quiz/${turmaSlug}`}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
+            >
+              📱 Quiz Diagnóstico
+            </Link>
+            <p className="mt-1.5 text-xs text-white/60">(toque só quando o facilitador pedir)</p>
+          </>
+        )}
         <p className="mt-3.5 text-[13px] italic text-white/75">
           Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
         </p>

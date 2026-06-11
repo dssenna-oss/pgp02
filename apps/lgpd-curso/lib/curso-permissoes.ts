@@ -23,16 +23,29 @@ import { prisma } from "@/lib/prisma";
 import { ensureColunaModoCards } from "@/lib/coluna-modo-cards";
 
 export async function turmaEmModoCards(companyId: string | null | undefined): Promise<boolean> {
-  if (!companyId) return false;
+  const { modoCards } = await turmaDoGrupo(companyId);
+  return modoCards;
+}
+
+// Variante que devolve também o slug da turma — a home do aluno usa pra montar
+// o link direto do Quiz Diagnóstico (/quiz/<slug>), evitando que 50+ pessoas
+// precisem escanear o QR do telão de longe. Mesma tolerância a falha.
+export async function turmaDoGrupo(
+  companyId: string | null | undefined,
+): Promise<{ modoCards: boolean; turmaSlug: string | null }> {
+  if (!companyId) return { modoCards: false, turmaSlug: null };
   try {
     await ensureColunaModoCards();
     const grupo = await prisma.cursoGrupo.findUnique({
       where: { companyId },
-      select: { turma: { select: { modoCards: true } } },
+      select: { turma: { select: { modoCards: true, slug: true } } },
     });
-    return grupo?.turma?.modoCards === true;
+    return {
+      modoCards: grupo?.turma?.modoCards === true,
+      turmaSlug: grupo?.turma?.slug || null,
+    };
   } catch {
-    return false;
+    return { modoCards: false, turmaSlug: null };
   }
 }
 
