@@ -558,26 +558,26 @@ export function Sidebar() {
                 </div>
               ))}
 
-              {/* Conteúdos Didáticos — biblioteca de leitura complementar. */}
+              {/* Conteúdos e slides — grupo único: a biblioteca de materiais
+                  de apoio (1º item, de propósito — o facilitador a divulga ao
+                  navegar os slides ao vivo: "vocês levam isso pra depois do
+                  curso") + os slides que ele projeta antes das missões. */}
+              <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
+                <Library className="h-3 w-3" /> Conteúdos e slides
+              </div>
               <Link
                 href="/dashboard/conteudos-didaticos"
                 onClick={closeMobile}
                 className={cn(
-                  "mt-3 flex items-center gap-2 px-3 py-2.5 rounded-md text-sm transition-colors min-h-[44px]",
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-slate-300",
                   pathname === "/dashboard/conteudos-didaticos"
                     ? "bg-brand-50 text-brand-700 font-medium"
                     : "text-gray-700 hover:bg-gray-100",
                 )}
               >
-                <Library className="h-4 w-4 shrink-0" />
-                <span>Conteúdos Didáticos</span>
+                <Library className="h-4 w-4 shrink-0 text-gray-500" />
+                <span className="flex-1 text-[13px] leading-tight">📚 Conteúdos Didáticos</span>
               </Link>
-
-              {/* Slides das fases — apresentação teórica (Preliminar/1/2)
-                  que o facilitador projeta antes das missões. */}
-              <div className="mt-3 px-3 pb-1 text-[10px] uppercase font-semibold text-gray-500 flex items-center gap-1">
-                <Projector className="h-3 w-3" /> Slides das fases
-              </div>
               {/* Histórico da LGPD — panorama (mundo + Brasil) apresentado
                   antes das fases. Página nativa (não é faixa de slides). */}
               <Link
