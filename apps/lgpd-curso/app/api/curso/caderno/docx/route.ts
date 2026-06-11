@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, requireSession } from "@/lib/auth-server";
+import { ensureTabelaTermometro } from "@/lib/colunas-termometro";
 import { Document, Packer } from "docx";
 import {
   gerarCadernoCompleto,
@@ -150,7 +151,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 });
   }
 
-  const data: GrupoCadernoData = { grupo: grupo as any };
+  // Termômetros INDIVIDUAIS dos membros do grupo (cada um avaliou o PRÓPRIO
+  // órgão real). A tabela pode não existir em turma muito antiga → catch
+  // graceful (cai no fallback de modelo no caderno).
+  await ensureTabelaTermometro();
+  const termometros = await prisma.termometroResposta
+    .findMany({
+      where: { companyId: grupo.companyId },
+      select: { userId: true, momento: true, score: true },
+    })
+    .catch(() => [] as { userId: string; momento: string; score: number }[]);
+
+  const data: GrupoCadernoData = { grupo: grupo as any, termometros };
   const children = modo === "executivo" ? gerarCadernoExecutivo(data) : gerarCadernoCompleto(data);
 
   const c = grupo.company;

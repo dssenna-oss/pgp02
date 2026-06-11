@@ -13,6 +13,7 @@ import { ensureColunaOlhoClinico } from "@/lib/coluna-olho-clinico";
 import { ensureColunaModoCards } from "@/lib/coluna-modo-cards";
 import { ensureColunaTelaoComando } from "@/lib/coluna-telao-comando";
 import { ensureColunaQuizLiberado } from "@/lib/coluna-quiz-liberado";
+import { ensureColunaTermometroLiberado } from "@/lib/coluna-termometro-liberado";
 
 // Endpoint chamado em loop (3s) pelo painel — primeira chamada pós-suspend
 // pode esperar 10-20s o Neon acordar + retry do Prisma. Folga generosa.
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
   await ensureColunaModoCards();
   await ensureColunaTelaoComando();
   await ensureColunaQuizLiberado();
+  await ensureColunaTermometroLiberado();
 
   const turma = await prisma.cursoTurma.findUnique({
     where: { id: turmaId },
@@ -336,6 +338,7 @@ export async function GET(req: NextRequest) {
       pacoteGapTamanho: pacoteGapCustomizado ? turma.gapPacote.length : 10,
       modoCards: (turma as any).modoCards === true,
       quizLiberado: (turma as any).quizLiberado === true,
+      termometroLiberado: (turma as any).termometroLiberado === true,
     },
     grupos: result,
     geradoEm: new Date().toISOString(),

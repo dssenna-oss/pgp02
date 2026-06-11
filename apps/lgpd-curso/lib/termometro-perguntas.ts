@@ -113,13 +113,31 @@ export const DIMENSOES_TERMOMETRO: DimensaoTermometro[] = [
 
 export const SCORE_MAXIMO = DIMENSOES_TERMOMETRO.length * 20; // 100
 
-// Faixas qualitativas pro feedback pós-preenchimento (e pro debrief comparativo)
-export function faixaQualitativa(score: number): { label: string; cor: string; descricao: string } {
-  if (score >= 80) return { label: "Maturidade Avançada", cor: "emerald", descricao: "Órgão referência — adequação consolidada com cultura forte." };
-  if (score >= 60) return { label: "Maturidade Estabelecida", cor: "blue", descricao: "Boa base institucional — falta consolidar práticas em alguns pontos." };
-  if (score >= 40) return { label: "Maturidade em Desenvolvimento", cor: "amber", descricao: "Caminho iniciado — precisa estruturar mais o trabalho." };
-  if (score >= 20) return { label: "Maturidade Inicial", cor: "orange", descricao: "Pontos de partida identificados — agora é começar com método." };
-  return { label: "Diagnóstico de Partida", cor: "gray", descricao: "Quase nada estruturado — exatamente por isso vocês estão aqui." };
+// As 5 faixas qualitativas, em ORDEM CRESCENTE de maturidade. `min` = score
+// mínimo (inclusive) pra cair na faixa. A ordem importa: o painel do
+// facilitador monta a distribuição da turma (histograma) a partir deste array.
+export type FaixaTermometro = {
+  id: string;
+  min: number;
+  label: string;
+  cor: string; // gray | orange | amber | blue | emerald
+  descricao: string;
+};
+
+export const FAIXAS_TERMOMETRO: FaixaTermometro[] = [
+  { id: "partida",         min: 0,  label: "Diagnóstico de Partida",        cor: "gray",    descricao: "Quase nada estruturado — exatamente por isso estão aqui." },
+  { id: "inicial",         min: 20, label: "Maturidade Inicial",            cor: "orange",  descricao: "Pontos de partida identificados — agora é começar com método." },
+  { id: "desenvolvimento", min: 40, label: "Maturidade em Desenvolvimento", cor: "amber",   descricao: "Caminho iniciado — precisa estruturar mais o trabalho." },
+  { id: "estabelecida",    min: 60, label: "Maturidade Estabelecida",       cor: "blue",    descricao: "Boa base institucional — falta consolidar práticas em alguns pontos." },
+  { id: "avancada",        min: 80, label: "Maturidade Avançada",           cor: "emerald", descricao: "Órgão referência — adequação consolidada com cultura forte." },
+];
+
+// Faixa qualitativa de um score (feedback pós-preenchimento + agregação).
+export function faixaQualitativa(score: number): FaixaTermometro {
+  for (let i = FAIXAS_TERMOMETRO.length - 1; i >= 0; i--) {
+    if (score >= FAIXAS_TERMOMETRO[i].min) return FAIXAS_TERMOMETRO[i];
+  }
+  return FAIXAS_TERMOMETRO[0];
 }
 
 // Tipos pro JSON salvo na Company.termometroInicio / termometroFim
@@ -146,4 +164,63 @@ export function calcularScoreTermometro(
     if (opcao) soma += opcao.pontos;
   }
   return soma;
+}
+
+// === Agregado da TURMA (painel + telão do facilitador) ===
+// Termômetro é INDIVIDUAL: cada participante avalia o próprio órgão real. O
+// facilitador NÃO vê nome-a-nome (é auto-percepção pessoal) — só o panorama
+// anônimo da turma: distribuição por faixa, médias e o salto médio.
+
+// Uma barra do histograma de distribuição (quantos participantes em cada faixa).
+export type DistribuicaoFaixa = { faixaId: string; label: string; cor: string; n: number };
+
+export type TurmaTermometro = {
+  totalParticipantes: number; // quantos participantes (users) há na turma
+  preenchidosInicio: number; // quantos responderam o INÍCIO
+  preenchidosFim: number; // quantos responderam o FIM
+  mediaInicio: number | null; // média dos scores de início (0-100)
+  mediaFim: number | null; // média dos scores de fim
+  distInicio: DistribuicaoFaixa[]; // contagem por faixa (início)
+  distFim: DistribuicaoFaixa[]; // contagem por faixa (fim)
+  comAmbos: number; // quantos têm início E fim (base do salto)
+  saltoMedio: number | null; // média de (fim - início) entre os que têm ambos
+};
+
+// Conta quantos scores caem em cada faixa, devolvendo SEMPRE as 5 faixas (zeros
+// inclusos) na ordem crescente — pra desenhar o histograma estável.
+export function distribuicaoPorFaixa(scores: number[]): DistribuicaoFaixa[] {
+  const base = FAIXAS_TERMOMETRO.map((f) => ({ faixaId: f.id, label: f.label, cor: f.cor, n: 0 }));
+  for (const s of scores) {
+    const faixa = faixaQualitativa(s);
+    const slot = base.find((b) => b.faixaId === faixa.id);
+    if (slot) slot.n += 1;
+  }
+  return base;
+}
+
+function media(nums: number[]): number | null {
+  if (nums.length === 0) return null;
+  return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+}
+
+// Monta o agregado da turma a partir dos pares (início, fim) de cada
+// participante. `scoresInicio`/`scoresFim` já vêm filtrados (só quem respondeu);
+// `saltos` são os deltas de quem respondeu AMBOS os momentos.
+export function montarTurmaTermometro(args: {
+  totalParticipantes: number;
+  scoresInicio: number[];
+  scoresFim: number[];
+  saltos: number[];
+}): TurmaTermometro {
+  return {
+    totalParticipantes: args.totalParticipantes,
+    preenchidosInicio: args.scoresInicio.length,
+    preenchidosFim: args.scoresFim.length,
+    mediaInicio: media(args.scoresInicio),
+    mediaFim: media(args.scoresFim),
+    distInicio: distribuicaoPorFaixa(args.scoresInicio),
+    distFim: distribuicaoPorFaixa(args.scoresFim),
+    comAmbos: args.saltos.length,
+    saltoMedio: media(args.saltos),
+  };
 }

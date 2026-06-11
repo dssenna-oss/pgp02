@@ -26,7 +26,7 @@ type Grupo = {
   sos?: { id: string; status: string; requestedByName?: string; createdAt?: string }[];
   phaseSkips?: { id: string; faseTentada?: string; acaoTentada?: string; requestedByName?: string }[];
 };
-type PainelData = { turma?: { modoCards?: boolean; quizLiberado?: boolean }; grupos?: Grupo[] };
+type PainelData = { turma?: { modoCards?: boolean; quizLiberado?: boolean; termometroLiberado?: boolean }; grupos?: Grupo[] };
 
 export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [turmaId, setTurmaId] = useState(turmas[0]?.id ?? "");
@@ -41,6 +41,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
   const [modoCards, setModoCards] = useState<boolean>(false);
   const [alterandoMC, setAlterandoMC] = useState(false);
   const [quizLiberado, setQuizLiberado] = useState<boolean>(false);
+  const [termometroLiberado, setTermometroLiberado] = useState<boolean>(false);
   const [comandoTelao, setComandoTelao] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -58,6 +59,7 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
         setPainel(data);
         if (typeof data?.turma?.modoCards === "boolean") setModoCards(data.turma.modoCards);
         if (typeof data?.turma?.quizLiberado === "boolean") setQuizLiberado(data.turma.quizLiberado);
+        if (typeof data?.turma?.termometroLiberado === "boolean") setTermometroLiberado(data.turma.termometroLiberado);
       }
       const c = await fetch(`/api/curso/telao-comando?turmaId=${turmaId}`, { cache: "no-store" });
       if (c.ok) { const cd = await c.json(); setComandoTelao(cd?.comando ?? null); }
@@ -156,6 +158,20 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
     });
     if (res.ok) toast.success(novo ? "🏁 Quiz LIBERADO — largada dada!" : "🔒 Quiz travado");
     else { toast.error("Erro ao alterar a trava do quiz"); setQuizLiberado(!novo); }
+  }
+
+  // Trava de largada do Termômetro: travado → participante vê "aguarde a
+  // largada"; liberar → a tela dele abre sozinha (refresh) e todos começam
+  // juntos. O facilitador abre no Momento 3 (inicial) e no Momento 14 (final).
+  async function toggleTermometroLiberado() {
+    const novo = !termometroLiberado;
+    setTermometroLiberado(novo); // otimista
+    const res = await fetch("/api/curso/termometro-liberar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ turmaId, liberado: novo }),
+    });
+    if (res.ok) toast.success(novo ? "🏁 Termômetro LIBERADO — largada dada!" : "🔒 Termômetro travado");
+    else { toast.error("Erro ao alterar a trava do termômetro"); setTermometroLiberado(!novo); }
   }
 
   async function disparar(tipo: "dsr" | "incidente", orgao: "PM" | "CM") {
@@ -365,6 +381,20 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz-resultado")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("quiz-resultado", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
+              if (a.kind === "liberar-termometro")
+                return (
+                  <button
+                    key={i}
+                    onClick={toggleTermometroLiberado}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border ${
+                      termometroLiberado
+                        ? "border-green-500 bg-green-600 text-white hover:bg-green-700"
+                        : "border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                    }`}
+                  >
+                    {termometroLiberado ? "🏁 Termômetro LIBERADO (tocar pra travar)" : "🔒 Liberar Termômetro (largada conjunta)"}
+                  </button>
+                );
               if (a.kind === "liberar-quiz")
                 return (
                   <button
@@ -429,8 +459,8 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
               }
               if (s.kind === "termometro") {
                 const t = statusTermo ?? {};
-                const v = s.fase === "inicio" ? (t.preenchidos ?? 0) : (t.concluidos ?? 0);
-                return <p key={i}>🌡️ <strong>{s.label}</strong>: {v} de {t.total ?? 0} grupos.</p>;
+                const v = s.fase === "inicio" ? (t.preenchidosInicio ?? 0) : (t.preenchidosFim ?? 0);
+                return <p key={i}>🌡️ <strong>{s.label}</strong>: {v} de {t.totalParticipantes ?? 0} participantes{!termometroLiberado && <span className="text-amber-700"> · 🔒 ainda travado</span>}.</p>;
               }
               return null;
             })}

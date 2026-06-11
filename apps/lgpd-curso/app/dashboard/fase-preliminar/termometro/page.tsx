@@ -5,13 +5,18 @@ import { TermometroRunner } from "./termometro-runner";
 export const dynamic = "force-dynamic";
 
 export default async function TermometroPage() {
-  const { inicio, fim } = await getTermometro();
+  const { inicio, fim, liberado, isAdmin } = await getTermometro();
   return (
     <div>
       <div className="max-w-5xl mx-auto">
         <AdminPreviewBanner />
       </div>
-      <TermometroRunner inicioSalvo={inicio} fimSalvo={fim} />
+      <TermometroRunner
+        inicioSalvo={inicio}
+        fimSalvo={fim}
+        liberado={liberado}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }

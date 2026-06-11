@@ -45,7 +45,7 @@ import {
   PROXIMOS_PASSOS_POR_FASE,
   SELO_MODELO,
 } from "./caderno-modelo";
-import { DIMENSOES_TERMOMETRO, faixaQualitativa } from "./termometro-perguntas";
+import { DIMENSOES_TERMOMETRO, faixaQualitativa, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
 import { CRITERIOS_PRIORIZACAO, faixaPriorizacao } from "./criterios-priorizacao";
 import { getControleById } from "./gap-catalogo";
 import { gerarRoadmap90Dias } from "./roadmap-gerador";
@@ -77,6 +77,10 @@ import { CATALOGO_ERROS_PLANTADOS } from "./aviso-erros-plantados";
 // =============================================================================
 
 export type GrupoCadernoData = {
+  // Respostas INDIVIDUAIS do Termômetro dos membros do grupo (cada um avaliou
+  // o próprio órgão real). Injetado pelo loader da rota /caderno/docx.
+  // Ausente/vazio = ninguém preencheu → cai no fallback de modelo.
+  termometros?: Array<{ userId: string; momento: string; score: number }>;
   grupo: {
     id: string;
     numero: number;
@@ -597,6 +601,59 @@ function calcularKpis(data: GrupoCadernoData): KpisGrupo {
 // FASE PRELIMINAR — Sensibilização e Engajamento
 // =============================================================================
 
+// Agrega os termômetros INDIVIDUAIS dos membros do grupo num panorama (mini-
+// versão do painel da turma do facilitador). Cada participante avaliou o
+// PRÓPRIO órgão real — o grupo vê o leque de maturidade. null = ninguém fez.
+function agregarTermometroGrupo(data: GrupoCadernoData): TurmaTermometro | null {
+  const respostas = data.termometros ?? [];
+  const porUser = new Map<string, { inicio?: number; fim?: number }>();
+  for (const r of respostas) {
+    const slot = porUser.get(r.userId) ?? {};
+    if (r.momento === "INICIO") slot.inicio = r.score;
+    else if (r.momento === "FIM") slot.fim = r.score;
+    porUser.set(r.userId, slot);
+  }
+  const scoresInicio: number[] = [];
+  const scoresFim: number[] = [];
+  const saltos: number[] = [];
+  for (const { inicio, fim } of porUser.values()) {
+    if (typeof inicio === "number") scoresInicio.push(inicio);
+    if (typeof fim === "number") scoresFim.push(fim);
+    if (typeof inicio === "number" && typeof fim === "number") saltos.push(fim - inicio);
+  }
+  if (scoresInicio.length === 0 && scoresFim.length === 0) return null;
+  const totalParticipantes = (data.grupo.company.users ?? []).filter((u) => u.role !== "ADMIN").length;
+  return montarTurmaTermometro({ totalParticipantes, scoresInicio, scoresFim, saltos });
+}
+
+// Renderiza o panorama do grupo no DOCX: médias + salto + distribuição por
+// faixa (a "mini-versão" do painel da turma do facilitador).
+function renderDistribuicaoGrupo(tg: TurmaTermometro): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  const temFim = tg.preenchidosFim > 0;
+
+  const medias: Array<[string, string]> = [];
+  if (tg.mediaInicio !== null)
+    medias.push(["Maturidade média no início", `${tg.mediaInicio}/100 — ${faixaQualitativa(tg.mediaInicio).label}`]);
+  if (tg.mediaFim !== null)
+    medias.push(["Maturidade média no fim", `${tg.mediaFim}/100 — ${faixaQualitativa(tg.mediaFim).label}`]);
+  if (tg.saltoMedio !== null)
+    medias.push(["Salto médio de consciência", `${tg.saltoMedio > 0 ? "+" : ""}${tg.saltoMedio} pontos (entre ${tg.comAmbos} que fizeram início e fim)`]);
+  if (medias.length) out.push(tabelaCampos(medias));
+
+  out.push(
+    p("Distribuição por faixa — cada participante avaliou o próprio órgão, então o leque mostra a diversidade real da turma:"),
+  );
+  const fIni = [...tg.distInicio].reverse(); // Avançada → Partida
+  const fFim = [...tg.distFim].reverse();
+  const linhas: Array<[string, string]> = fIni.map((ini, i) => [
+    ini.label,
+    temFim ? `início: ${ini.n} · fim: ${fFim[i]?.n ?? 0}` : `${ini.n} participante(s)`,
+  ]);
+  out.push(tabelaCampos(linhas));
+  return out;
+}
+
 function renderFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   out.push(h1("Fase Preliminar — Sensibilização e Engajamento"));
@@ -607,11 +664,15 @@ function renderFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   out.push(h2("✅ O que vocês fizeram"));
   // 2a. Termômetro Institucional
   out.push(h3("Termômetro Institucional"));
-  const tInicio = data.grupo.company.termometroInicio;
-  const tFim = data.grupo.company.termometroFim;
-  if (tInicio || tFim) {
+  const panoramaGrupo = agregarTermometroGrupo(data);
+  if (panoramaGrupo) {
     out.push(seloFeitoPeloGrupo());
-    out.push(...renderTermometro(tInicio, tFim));
+    out.push(
+      p(
+        `Cada participante deste grupo avaliou a maturidade LGPD do PRÓPRIO órgão real, no início (e no fim) do curso — o salto mede a evolução da consciência. ${panoramaGrupo.preenchidosInicio} de ${panoramaGrupo.totalParticipantes} responderam o início${panoramaGrupo.preenchidosFim ? ` e ${panoramaGrupo.preenchidosFim} o fim` : ""}. Panorama do grupo:`,
+      ),
+    );
+    out.push(...renderDistribuicaoGrupo(panoramaGrupo));
   } else {
     out.push(seloModelo());
     out.push(
@@ -642,26 +703,6 @@ function renderFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   // 3. Próximos passos
   out.push(h2("➡️ Próximos passos"));
   for (const passo of PROXIMOS_PASSOS_POR_FASE.PRELIMINAR) out.push(bullet(passo));
-  return out;
-}
-
-function renderTermometro(inicio: any, fim: any): (Paragraph | Table)[] {
-  const out: (Paragraph | Table)[] = [];
-  const blocos: Array<{ titulo: string; dado: any }> = [];
-  if (inicio) blocos.push({ titulo: "Diagnóstico inicial (início do curso)", dado: inicio });
-  if (fim) blocos.push({ titulo: "Diagnóstico final (fim do curso)", dado: fim });
-  for (const bloco of blocos) {
-    out.push(h3(bloco.titulo));
-    out.push(pComBold(`Score: **${bloco.dado.score || 0}/100** — ${faixaQualitativa(bloco.dado.score || 0).label}`));
-    const linhas: Array<[string, string]> = [];
-    for (const dim of DIMENSOES_TERMOMETRO) {
-      const d = (bloco.dado.dimensoes || []).find((x: any) => x.id === dim.id);
-      if (!d) continue;
-      const op = dim.opcoes.find((o) => o.id === d.opcaoEscolhida);
-      linhas.push([`${dim.emoji} ${dim.titulo}`, `${op?.rotulo || "?"} (${d.pontos} pts)`]);
-    }
-    if (linhas.length > 0) out.push(tabelaCampos(linhas));
-  }
   return out;
 }
 
@@ -1727,18 +1768,20 @@ function sumarioExecutivo(data: GrupoCadernoData): (Paragraph | Table)[] {
     ),
   );
 
-  // Evolução do Termômetro
-  const tInicio = c.termometroInicio;
-  const tFim = c.termometroFim;
-  if (tInicio || tFim) {
+  // Evolução do Termômetro — agregado anônimo dos membros do grupo (cada um
+  // avaliou o próprio órgão real; aqui só médias e salto pra leitura rápida).
+  const panoramaExec = agregarTermometroGrupo(data);
+  if (panoramaExec) {
     out.push(h2Exec("Evolução da Maturidade Percebida"));
+    out.push(
+      pExec(
+        `Cada participante avaliou o próprio órgão real (${panoramaExec.preenchidosInicio} responderam no início${panoramaExec.preenchidosFim ? `, ${panoramaExec.preenchidosFim} no fim` : ""}). Médias do grupo:`,
+      ),
+    );
     const linhas: Array<[string, string]> = [];
-    if (tInicio) linhas.push(["Auto-diagnóstico no início do curso", `${tInicio.score || 0}/100 — ${faixaQualitativa(tInicio.score || 0).label}`]);
-    if (tFim) linhas.push(["Auto-diagnóstico no fim do curso", `${tFim.score || 0}/100 — ${faixaQualitativa(tFim.score || 0).label}`]);
-    if (tInicio && tFim) {
-      const delta = (tFim.score || 0) - (tInicio.score || 0);
-      linhas.push(["Δ Evolução", `${delta > 0 ? "+" : ""}${delta} pontos`]);
-    }
+    if (panoramaExec.mediaInicio !== null) linhas.push(["Maturidade média no início", `${panoramaExec.mediaInicio}/100 — ${faixaQualitativa(panoramaExec.mediaInicio).label}`]);
+    if (panoramaExec.mediaFim !== null) linhas.push(["Maturidade média no fim", `${panoramaExec.mediaFim}/100 — ${faixaQualitativa(panoramaExec.mediaFim).label}`]);
+    if (panoramaExec.saltoMedio !== null) linhas.push(["Δ Salto médio de consciência", `${panoramaExec.saltoMedio > 0 ? "+" : ""}${panoramaExec.saltoMedio} pontos`]);
     out.push(tabelaCampos(linhas));
   }
 
@@ -1807,11 +1850,13 @@ function statusFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   const c = data.grupo.company;
   out.push(h1Exec("Fase Preliminar — Sensibilização"));
   // Termômetro
-  if (c.termometroInicio || c.termometroFim) {
-    out.push(statusBadge("ok", "Termômetro Institucional aplicado pelo grupo"));
+  const panoramaStatus = agregarTermometroGrupo(data);
+  if (panoramaStatus) {
+    out.push(statusBadge("ok", `Termômetro aplicado — ${panoramaStatus.preenchidosInicio}/${panoramaStatus.totalParticipantes} participantes avaliaram o próprio órgão`));
     const linhas: Array<[string, string]> = [];
-    if (c.termometroInicio) linhas.push(["Diagnóstico inicial", `${c.termometroInicio.score || 0}/100`]);
-    if (c.termometroFim) linhas.push(["Diagnóstico final", `${c.termometroFim.score || 0}/100`]);
+    if (panoramaStatus.mediaInicio !== null) linhas.push(["Maturidade média no início", `${panoramaStatus.mediaInicio}/100`]);
+    if (panoramaStatus.mediaFim !== null) linhas.push(["Maturidade média no fim", `${panoramaStatus.mediaFim}/100`]);
+    if (panoramaStatus.saltoMedio !== null) linhas.push(["Salto médio", `${panoramaStatus.saltoMedio > 0 ? "+" : ""}${panoramaStatus.saltoMedio} pontos`]);
     out.push(tabelaCampos(linhas));
   } else {
     out.push(statusBadge("pendente", "Termômetro Institucional pendente — recomendado aplicar como linha de base"));

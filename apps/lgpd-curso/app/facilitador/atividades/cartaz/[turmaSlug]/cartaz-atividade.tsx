@@ -6,8 +6,9 @@
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import type { AgregadoAtividade } from "@/lib/atividades-c";
+import type { TurmaTermometro } from "@/lib/termometro-perguntas";
 import { AgregadoView } from "../../agregado-view";
-import { TermometroView, type GrupoTermometro } from "../../termometro-view";
+import { TermometroView } from "../../termometro-view";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
 type Atividade = { id: string; titulo: string; fase: string; emoji: string; contexto?: string };
@@ -16,7 +17,7 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
   const ehTermometro = atividade.id === "termometro";
 
   const [agregado, setAgregado] = useState<AgregadoAtividade | null>(null);
-  const [gruposTermometro, setGruposTermometro] = useState<GrupoTermometro[] | null>(null);
+  const [turmaTermometro, setTurmaTermometro] = useState<TurmaTermometro | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
           );
           if (!res.ok) return;
           const data = await res.json();
-          if (!cancelado) setGruposTermometro(data.grupos ?? []);
+          if (!cancelado) setTurmaTermometro(data);
         } else {
           const res = await fetch(
             `/api/curso/atividade-c/painel?turmaId=${turma.id}&atividadeId=${atividade.id}`,
@@ -75,8 +76,8 @@ export function CartazAtividade({ turma, atividade }: { turma: Turma; atividade:
         </header>
 
         {ehTermometro ? (
-          gruposTermometro ? (
-            <TermometroView grupos={gruposTermometro} grande />
+          turmaTermometro ? (
+            <TermometroView turma={turmaTermometro} grande />
           ) : (
             <p className="text-center text-gray-500 text-xl">Carregando…</p>
           )

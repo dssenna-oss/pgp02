@@ -4,8 +4,9 @@
 // 5 dimensões × 4 opções fechadas → score 0-100. Aplicado no INÍCIO do curso
 // e repetido no FIM pra mostrar a evolução percebida pela equipe.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ArrowLeft, Check, RotateCcw, Thermometer, Award } from "lucide-react";
 import {
@@ -22,10 +23,25 @@ type Momento = "INICIO" | "FIM";
 export function TermometroRunner({
   inicioSalvo,
   fimSalvo,
+  liberado,
+  isAdmin,
 }: {
   inicioSalvo: TermometroSalvo | null;
   fimSalvo: TermometroSalvo | null;
+  liberado: boolean;
+  isAdmin: boolean;
 }) {
+  const router = useRouter();
+  // Largada conjunta: enquanto travado (e não-facilitador), o participante vê a
+  // tela de espera. O ADMIN sempre passa (preview). Polling leve recarrega o
+  // server component a cada 5s pra abrir sozinho quando o facilitador liberar.
+  const bloqueado = !liberado && !isAdmin;
+  useEffect(() => {
+    if (!bloqueado) return;
+    const id = setInterval(() => router.refresh(), 5000);
+    return () => clearInterval(id);
+  }, [bloqueado, router]);
+
   // Decide qual termômetro estamos preenchendo. Padrão: INICIO se vazio.
   // Se INICIO já feito, abre o FIM. Toggle pra reabrir o INICIO se quiser
   // (ex: refazer antes de submeter).
@@ -89,6 +105,38 @@ export function TermometroRunner({
     }
   }
 
+  // Tela de espera da largada conjunta — só pro participante, enquanto travado.
+  if (bloqueado) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Link
+          href="/dashboard/fase-preliminar"
+          className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 mb-3"
+        >
+          <ArrowLeft className="h-3 w-3" /> Voltar à Fase Preliminar
+        </Link>
+        <div className="mt-4 rounded-xl border-2 border-amber-300 bg-amber-50 p-8 text-center">
+          <Thermometer className="mx-auto h-12 w-12 text-amber-500 mb-3" />
+          <h1 className="text-xl font-bold text-amber-900">🏁 Aguarde a largada</h1>
+          {inicioSalvo ? (
+            <p className="mt-2 text-sm text-amber-800">
+              Você já preencheu o termômetro inicial ✓. Aguarde o facilitador liberar a
+              próxima etapa — esta tela abre sozinha.
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-amber-800">
+              O facilitador vai liberar o Termômetro para todos começarem juntos. Pode deixar
+              esta tela aberta — ela abre sozinha quando ele der a largada.
+            </p>
+          )}
+          <div className="mt-4 inline-flex items-center gap-2 text-xs text-amber-700">
+            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" /> aguardando liberação…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const respondidas = Object.keys(respostas).length;
   const total = DIMENSOES_TERMOMETRO.length;
   const faixa = resultado ? faixaQualitativa(resultado.score) : null;
@@ -116,9 +164,10 @@ export function TermometroRunner({
         Termômetro Institucional
       </h1>
       <p className="text-sm text-gray-600 mt-1">
-        Auto-diagnóstico do quanto a Instituição está madura em LGPD hoje, em 5 dimensões.
-        Cada um marca a opção que melhor descreve a realidade do órgão — não há resposta certa,
-        só auto-percepção sincera.
+        Auto-diagnóstico de quanto o <strong>seu órgão real</strong> (onde você trabalha)
+        está maduro em LGPD hoje, em 5 dimensões. Cada pessoa responde sobre a própria
+        instituição — não há resposta certa, só auto-percepção sincera. Você repete no
+        fim do curso pra ver a <strong>sua</strong> evolução.
       </p>
 
       {/* Toggle Início / Fim */}

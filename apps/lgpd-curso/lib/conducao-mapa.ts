@@ -7,6 +7,7 @@ import { ROTEIRO, type MomentoRoteiro } from "./modalidade-c-conteudo";
 export type AcaoConducao =
   | { kind: "telao-atividade"; atividadeId: string; label: string }
   | { kind: "telao-termometro"; label: string }
+  | { kind: "liberar-termometro"; label: string }
   | { kind: "telao-quiz"; label: string }
   | { kind: "telao-quiz-resultado"; label: string }
   | { kind: "liberar-quiz"; label: string }
@@ -71,7 +72,10 @@ const MAPA: Record<
     alunoUsa: ["celular"],
   },
   3: {
-    acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro no telão" }],
+    acoes: [
+      { kind: "liberar-termometro", label: "Liberar Termômetro (largada)" },
+      { kind: "telao-termometro", label: "Abrir Termômetro no telão" },
+    ],
     status: [{ kind: "termometro", fase: "inicio", label: "Termômetro (início)" }],
     voceUsa: ["celular"],
     alunoUsa: ["celular"],
@@ -149,7 +153,10 @@ const MAPA: Record<
     alunoUsa: ["celular"],
   },
   14: {
-    acoes: [{ kind: "telao-termometro", label: "Abrir Termômetro (evolução)" }],
+    acoes: [
+      { kind: "liberar-termometro", label: "Liberar Termômetro final (largada)" },
+      { kind: "telao-termometro", label: "Abrir Termômetro (evolução)" },
+    ],
     status: [{ kind: "termometro", fase: "fim", label: "Termômetro (fim)" }],
     voceUsa: ["celular"],
     alunoUsa: ["celular"],
