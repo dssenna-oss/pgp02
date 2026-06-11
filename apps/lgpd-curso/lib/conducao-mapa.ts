@@ -84,11 +84,13 @@ const MAPA: Record<
   },
   4: {
     acoes: [
+      { kind: "telao-conteudo", conteudoId: "conteudos-didaticos", label: "Conteúdos Didáticos no telão" },
+      { kind: "telao-conteudo", conteudoId: "entendendo-pgp", label: "Entendendo o PGP no telão" },
       { kind: "telao-conteudo", conteudoId: "historico-lgpd", label: "Histórico da LGPD no telão" },
       { kind: "telao-conteudo", conteudoId: "estrutura-lgpd", label: "Estrutura da LGPD no telão" },
     ],
     status: [],
-    dica: "Sequência: projete o Histórico → depois a Estrutura (botões acima, tudo pelo celular). Desafios LGPD: atalho '📋 Atividade ao vivo' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
+    dica: "Siga os botões acima na ordem (tudo pelo celular). Desafios LGPD: dropdown '📺 Slides e conteúdos…' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
     voceUsa: ["celular"],
     alunoUsa: ["celular", "impresso"],
   },

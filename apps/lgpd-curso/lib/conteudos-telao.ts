@@ -42,3 +42,13 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
 export function getConteudoTelao(id: string): ConteudoTelao | null {
   return CONTEUDOS_TELAO.find((c) => c.id === id) ?? null;
 }
+
+// Recorte "biblioteca" pro dropdown "📺 Slides e conteúdos…" do Painel de
+// Condução: só os conteúdos transversais. As Fases (Preliminar e 1-7) ficam
+// FORA do dropdown — cada uma já tem botão pronto em "Ação certa deste
+// momento" do Momento correspondente (M5-M12). O catálogo completo continua
+// valendo pros botões dos momentos e pro controle local do telão (plano B).
+const IDS_BIBLIOTECA = ["conteudos-didaticos", "entendendo-pgp", "historico-lgpd", "estrutura-lgpd"];
+export const CONTEUDOS_TELAO_BIBLIOTECA = CONTEUDOS_TELAO.filter((c) =>
+  IDS_BIBLIOTECA.includes(c.id),
+);

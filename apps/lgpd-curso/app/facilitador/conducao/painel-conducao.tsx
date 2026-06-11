@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao, type DispositivoVoce, type DispositivoAluno } from "@/lib/conducao-mapa";
-import { ATIVIDADES_C } from "@/lib/atividades-c";
-import { CONTEUDOS_TELAO, getConteudoTelao } from "@/lib/conteudos-telao";
+import { ATIVIDADES_C, ATIVIDADES_C_SEM_DESAFIOS, DESAFIOS_LGPD } from "@/lib/atividades-c";
+import { CONTEUDOS_TELAO_BIBLIOTECA, getConteudoTelao } from "@/lib/conteudos-telao";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
 
@@ -310,26 +310,42 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
             <MiniTelao ativo={comandoTelao === "quiz"} onClick={() => mostrarNoTelao("quiz", "Quiz (QR)")}>📱 Quiz</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz-resultado"} onClick={() => mostrarNoTelao("quiz-resultado", "Resultado do Quiz")}>📊 Resultado</MiniTelao>
             <MiniTelao ativo={comandoTelao === "atividade:termometro"} onClick={() => mostrarNoTelao("atividade:termometro", "Termômetro")}>🌡️ Termômetro</MiniTelao>
-            {/* Slides e conteúdos do curso — o telão abre a própria página do
-                conteúdo (iframe) e o celular dos participantes mostra o aviso
-                "📺 No telão agora…" com atalho pra mesma página. */}
+            {/* Slides e conteúdos do curso — biblioteca transversal (Conteúdos
+                Didáticos, Entendendo o PGP, Histórico, Estrutura) + Desafios
+                LGPD (conteúdo do M4). As Fases NÃO entram aqui: cada uma tem
+                botão pronto no Momento correspondente. O telão abre a página
+                (iframe) ou o agregado do Desafio; o celular dos participantes
+                mostra o aviso "📺 No telão agora…". */}
             <Select
-              value={comandoTelao?.startsWith("conteudo:") ? comandoTelao : ""}
+              value={
+                comandoTelao?.startsWith("conteudo:") || comandoTelao?.startsWith("atividade:trilha-")
+                  ? comandoTelao
+                  : ""
+              }
               onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
               className="max-w-[12rem] !py-1 !text-xs"
             >
               <option value="">📺 Slides e conteúdos…</option>
-              {CONTEUDOS_TELAO.map((c) => (
+              {CONTEUDOS_TELAO_BIBLIOTECA.map((c) => (
                 <option key={c.id} value={`conteudo:${c.id}`}>{c.emoji} {c.titulo}</option>
+              ))}
+              {DESAFIOS_LGPD.map((a) => (
+                <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
               ))}
             </Select>
             <Select
-              value={comandoTelao?.startsWith("atividade:") && comandoTelao !== "atividade:termometro" ? comandoTelao : ""}
+              value={
+                comandoTelao?.startsWith("atividade:") &&
+                comandoTelao !== "atividade:termometro" &&
+                !comandoTelao.startsWith("atividade:trilha-")
+                  ? comandoTelao
+                  : ""
+              }
               onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
               className="max-w-[12rem] !py-1 !text-xs"
             >
               <option value="">📋 Atividade ao vivo…</option>
-              {ATIVIDADES_C.map((a) => (
+              {ATIVIDADES_C_SEM_DESAFIOS.map((a) => (
                 <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
               ))}
             </Select>
