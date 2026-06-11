@@ -52,11 +52,12 @@ model Company {
   // { processos: [{processoId, criterios:{...}, score, justificativa}], atualizadoEm }.
   priorizacaoProcessos    Json?
   // === Práticas da FASE PRELIMINAR (Sensibilização e Engajamento) ===
-  // Termômetro Institucional aplicado pelo grupo no INÍCIO do curso (auto-
-  // diagnóstico de maturidade percebida em 5 dimensões) e repetido no FIM
-  // pra evidenciar a evolução. JSON: { dimensoes:[...], score, finalizadoEm }.
-  // Estrutura em lib/termometro-perguntas.ts. Auto-migração em
-  // lib/coluna-fase-preliminar.ts.
+  // [LEGADO] Termômetro Institucional — ANTES era por-grupo (1 score nesta
+  // company). Desde a refatoração pra Termômetro INDIVIDUAL, cada participante
+  // avalia o PRÓPRIO órgão real e o dado vive em `termometro_respostas` (model
+  // TermometroResposta, 1 linha por user × momento). Estas 2 colunas ficam só
+  // por retrocompat/histórico — não são mais escritas nem lidas pelas telas ao
+  // vivo. (O Caderno DOCX ainda as lê como fallback até ser migrado.)
   termometroInicio Json?
   termometroFim    Json?
   // Carta para a Alta Gestão — documento institucional que o grupo personaliza
@@ -168,6 +169,12 @@ model CursoTurma {
   // painel do Quiz). Quem já finalizou segue revendo o resultado mesmo
   // travado. Backfill em lib/coluna-quiz-liberado.ts.
   quizLiberado Boolean @default(false)
+  // Largada conjunta do Termômetro Institucional: false = travado (estado
+  // inicial). Travado, o participante vê uma tela de espera; o facilitador
+  // "abre" no Momento 3 (todos fazem o diagnóstico inicial juntos) e abre de
+  // novo no Momento 14 (o final). O runner escolhe início/fim sozinho. Quem já
+  // preencheu vê a confirmação mesmo travado. Backfill em lib/coluna-termometro-liberado.ts.
+  termometroLiberado Boolean @default(false)
   // Fórum da turma (suporte PÓS-curso). Quando true, o login do participante
   // deixa de ser bloqueado pela data limite (acessoFim) — a turma fica aberta
   // pra dúvidas/respostas no fórum até o facilitador arquivar. Só o facilitador
@@ -298,6 +305,33 @@ model CursoAtividadeResposta {
   @@unique([userId, atividadeId])
   @@index([turmaId, atividadeId])
   @@map("curso_atividade_respostas")
+}
+
+// Termômetro Institucional INDIVIDUAL (Fase Preliminar). Cada participante
+// avalia a maturidade LGPD da PRÓPRIA instituição real, no INÍCIO e no FIM do
+// curso — o salto INICIO→FIM mede a evolução da consciência, que é individual
+// (os grupos misturam pessoas de órgãos diferentes, então a média de grupo não
+// representava instituição nenhuma). O facilitador vê só o AGREGADO da turma
+// (distribuição por faixa + média + salto médio), nunca nome-a-nome, porque é
+// auto-percepção pessoal. UNIQUE(userId, momento) + upsert: cada pessoa tem 1
+// registro por momento. Campos turmaId/companyId/papel desnormalizados (como
+// CursoAtividadeResposta) pra agregar por turma sem join. Estrutura das
+// dimensões em lib/termometro-perguntas.ts. Backfill em lib/colunas-termometro.ts.
+model TermometroResposta {
+  id           String   @id @default(cuid())
+  turmaId      String
+  companyId    String // grupo do participante (recorte opcional no painel)
+  userId       String
+  papel        String? // DPO | SAUDE | RH | TI | COMUNICACAO — recorte no painel
+  momento      String // "INICIO" | "FIM"
+  dimensoes    Json // [{ id, opcaoEscolhida, pontos }]
+  score        Int      @default(0)
+  finalizadoEm DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, momento])
+  @@index([turmaId, momento])
+  @@map("termometro_respostas")
 }
 
 model CursoGrupo {

@@ -7,22 +7,34 @@ import { getFaseSlides } from "@/lib/slides-fases";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth-server";
 import { ensureColunasFasePreliminar } from "@/lib/coluna-fase-preliminar";
-import type { TermometroSalvo } from "@/lib/termometro-perguntas";
+import { ensureTabelaTermometro } from "@/lib/colunas-termometro";
 import type { CartaAltaGestaoSalva } from "@/lib/carta-alta-gestao";
 
 export const dynamic = "force-dynamic";
 
 async function getStatusPraticas() {
   const session = await getSession();
+  const userId = session?.user?.id;
   const companyId = session?.user?.companyId;
   if (!companyId) return { termometroInicio: null, cartaFinalizada: false };
   await ensureColunasFasePreliminar();
-  const company = await prisma.company.findUnique({
-    where: { id: companyId },
-    select: { termometroInicio: true, cartaAltaGestao: true },
-  });
+  await ensureTabelaTermometro();
+  // Carta continua na company (produção do grupo); termômetro agora é do
+  // próprio participante (individual).
+  const [company, termo] = await Promise.all([
+    prisma.company.findUnique({
+      where: { id: companyId },
+      select: { cartaAltaGestao: true },
+    }),
+    userId
+      ? prisma.termometroResposta.findUnique({
+          where: { userId_momento: { userId, momento: "INICIO" } },
+          select: { score: true },
+        })
+      : null,
+  ]);
   return {
-    termometroInicio: (company?.termometroInicio as TermometroSalvo | null) ?? null,
+    termometroInicio: termo, // { score } | null
     cartaFinalizada: !!(company?.cartaAltaGestao as CartaAltaGestaoSalva | null)?.finalizadaEm,
   };
 }

@@ -9,8 +9,9 @@ import Link from "next/link";
 import { RefreshCw, Projector, LayoutGrid, Users, FileText } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ATIVIDADES_C, type AgregadoAtividade } from "@/lib/atividades-c";
+import type { TurmaTermometro } from "@/lib/termometro-perguntas";
 import { AgregadoView } from "./agregado-view";
-import { TermometroView, type GrupoTermometro } from "./termometro-view";
+import { TermometroView } from "./termometro-view";
 
 const ATIVIDADE_TERMOMETRO_ID = "termometro";
 
@@ -29,19 +30,12 @@ type Dados = {
   geradoEm: string;
 };
 
-type DadosTermometro = {
-  grupos: GrupoTermometro[];
-  preenchidos: number;
-  concluidos: number;
-  total: number;
-};
-
 export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
   const inicial = turmas.find((t) => t.proximoCurso)?.id ?? turmas[0]?.id ?? "";
   const [turmaId, setTurmaId] = useState(inicial);
   const [atividadeId, setAtividadeId] = useState(ATIVIDADE_TERMOMETRO_ID);
   const [dados, setDados] = useState<Dados | null>(null);
-  const [dadosTermometro, setDadosTermometro] = useState<DadosTermometro | null>(null);
+  const [dadosTermometro, setDadosTermometro] = useState<TurmaTermometro | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   const turmaSel = turmas.find((t) => t.id === turmaId);
@@ -116,7 +110,7 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">Atividade</label>
           <Select value={atividadeId} onChange={(e) => setAtividadeId(e.target.value)}>
             <option value={ATIVIDADE_TERMOMETRO_ID}>
-              🌡️ Termômetro — evolução dos grupos
+              🌡️ Termômetro — panorama da turma
             </option>
             {ATIVIDADES_C.map((a) => (
               <option key={a.id} value={a.id}>
@@ -132,7 +126,7 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
           {carregando && <RefreshCw className="h-4 w-4 animate-spin" />}
           {ehTermometro
             ? dadosTermometro
-              ? `${dadosTermometro.preenchidos}/${dadosTermometro.total} grupos preencheram o início · ${dadosTermometro.concluidos} com final`
+              ? `${dadosTermometro.preenchidosInicio}/${dadosTermometro.totalParticipantes} participantes no início · ${dadosTermometro.preenchidosFim} no final`
               : "carregando…"
             : dados
               ? `${dados.agregado.respondentes} respostas`
@@ -162,7 +156,7 @@ export function PainelAtividades({ turmas }: { turmas: Turma[] }) {
       </p>
 
       {ehTermometro
-        ? dadosTermometro && <TermometroView grupos={dadosTermometro.grupos} />
+        ? dadosTermometro && <TermometroView turma={dadosTermometro} />
         : dados && <AgregadoView agregado={dados.agregado} />}
 
       {!ehTermometro && dados && dados.porGrupo.length > 0 && (
