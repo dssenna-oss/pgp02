@@ -95,7 +95,10 @@ export function CartazQuiz({ turma }: { turma: Turma }) {
           <rect width="100%" height="100%" fill="url(#cartaz-grid)" />
         </svg>
 
-        <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-8 py-8 print:px-6 print:py-6">
+        {/* print:py-3 + QR 230px: calibrado por impressão headless real — o
+            conteúdo ficava ~708px contra ~734px úteis (A4 paisagem, margem
+            8mm) e qualquer variação estourava uma 2ª página. */}
+        <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-8 py-8 print:px-6 print:py-3">
           {/* Topo */}
           <div className="text-center">
             <div className="inline-flex items-center justify-center gap-3">
@@ -132,12 +135,15 @@ export function CartazQuiz({ turma }: { turma: Turma }) {
               📱 Aponte a câmera do celular pro QR pra começar
             </div>
 
-            {/* QR Code grande */}
+            {/* QR Code grande. print:! obrigatório: o papel A4 paisagem
+                (~1122px) também satisfaz o breakpoint sm, e sm:h-[360px] vem
+                DEPOIS no CSS — sem o !important o QR imprimia a 360px e
+                estourava uma 2ª página. */}
             <div className="rounded-2xl bg-white p-5 shadow-2xl ring-4 ring-white/30 print:ring-2 print:ring-gray-300 print:shadow-none">
               <img
                 src={qrSrc(quizUrl, 500)}
                 alt="QR Code do Quiz LGPD"
-                className="h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] print:h-[260px] print:w-[260px] block"
+                className="h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] print:!h-[230px] print:!w-[230px] block"
               />
             </div>
 
