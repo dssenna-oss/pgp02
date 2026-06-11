@@ -24,12 +24,10 @@ export async function AdminPreviewBanner() {
       <div className="flex items-start gap-2">
         <Eye className="h-4 w-4 shrink-0 text-amber-700 mt-0.5" />
         <div className="flex-1 text-xs text-amber-900">
-          <div className="font-semibold mb-0.5">Modo Facilitador — Visualização</div>
+          <div className="font-semibold mb-0.5">Modo Facilitador</div>
           <p>
-            Esta é uma atividade dos participantes (cada grupo grava dados na sua
-            própria company). Como facilitador, você visualiza a tela mas não
-            consegue salvar. Pra interagir, saia e entre com um login de DPO
-            de algum grupo (ex.: <code className="bg-amber-100 px-1 rounded">dpo.g1.&lt;slug&gt;@curso.lgpd</code>).
+            Você vê esta página como os participantes. As práticas (Termômetro,
+            Carta) são preenchidas por eles no celular.
           </p>
         </div>
       </div>
