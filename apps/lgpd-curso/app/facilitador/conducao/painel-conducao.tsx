@@ -302,12 +302,27 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-indigo-400 mb-1.5">
             <Tv2 className="h-3 w-3" /> Mostrar outra tela (fora do roteiro)
           </p>
-          {/* Ordem = sequência do curso: Espera → Quiz → Resultado → Termômetro → Atividade → Placar (pódio). */}
+          {/* Ordem = sequência do curso: Espera → Quiz → Resultado → Termômetro →
+              Slides e conteúdos (M4-M6 apresentam os conteúdos ANTES das
+              votações) → Atividade ao vivo → Placar (pódio). */}
           <div className="flex flex-wrap items-center gap-1.5">
             <MiniTelao ativo={!comandoTelao} onClick={() => mostrarNoTelao(null, "Tela de espera")}>⏳ Espera</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz"} onClick={() => mostrarNoTelao("quiz", "Quiz (QR)")}>📱 Quiz</MiniTelao>
             <MiniTelao ativo={comandoTelao === "quiz-resultado"} onClick={() => mostrarNoTelao("quiz-resultado", "Resultado do Quiz")}>📊 Resultado</MiniTelao>
             <MiniTelao ativo={comandoTelao === "atividade:termometro"} onClick={() => mostrarNoTelao("atividade:termometro", "Termômetro")}>🌡️ Termômetro</MiniTelao>
+            {/* Slides e conteúdos do curso — o telão abre a própria página do
+                conteúdo (iframe) e o celular dos participantes mostra o aviso
+                "📺 No telão agora…" com atalho pra mesma página. */}
+            <Select
+              value={comandoTelao?.startsWith("conteudo:") ? comandoTelao : ""}
+              onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
+              className="max-w-[12rem] !py-1 !text-xs"
+            >
+              <option value="">📺 Slides e conteúdos…</option>
+              {CONTEUDOS_TELAO.map((c) => (
+                <option key={c.id} value={`conteudo:${c.id}`}>{c.emoji} {c.titulo}</option>
+              ))}
+            </Select>
             <Select
               value={comandoTelao?.startsWith("atividade:") && comandoTelao !== "atividade:termometro" ? comandoTelao : ""}
               onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
@@ -316,19 +331,6 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
               <option value="">📋 Atividade ao vivo…</option>
               {ATIVIDADES_C.map((a) => (
                 <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
-              ))}
-            </Select>
-            {/* Materiais de Apoio — o telão abre a própria página do conteúdo
-                (iframe) e o celular dos participantes mostra o aviso "📺 No
-                telão agora…" com atalho pra mesma página. */}
-            <Select
-              value={comandoTelao?.startsWith("conteudo:") ? comandoTelao : ""}
-              onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
-              className="max-w-[12rem] !py-1 !text-xs"
-            >
-              <option value="">📚 Material de apoio…</option>
-              {CONTEUDOS_TELAO.map((c) => (
-                <option key={c.id} value={`conteudo:${c.id}`}>{c.emoji} {c.titulo}</option>
               ))}
             </Select>
             <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
@@ -393,6 +395,8 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
             {momento.acoes.map((a, i) => {
               if (a.kind === "telao-atividade")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`atividade:${a.atividadeId}`, rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
+              if (a.kind === "telao-conteudo")
+                return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`conteudo:${a.conteudoId}`, rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-termometro")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz")
