@@ -126,26 +126,32 @@ export const CONTEUDO_FASE_2: DescricaoBloco[] = [
 // de inserir no DOCX. Os textos são institucionalmente defensáveis, baseados em
 // templates da ANPD e práticas reais do setor público.
 
+// Ids = bloco INSTITUCIONAL do Termômetro (lib/termometro-perguntas.ts) —
+// as 7 etapas da jornada do PGP. Scores na escala normalizada 0-100.
 export const MODELO_TERMOMETRO_INICIO = {
-  conhecimento: "desenvolvimento",
-  apoio_gestao: "desenvolvimento",
-  cultura: "inicial",
-  recursos: "inicial",
-  urgencia: "estabelecido",
-  score: 50,
+  i_gestao: "desenvolvimento",
+  i_encarregado: "desenvolvimento",
+  i_inventario: "desenvolvimento",
+  i_riscos: "inicial",
+  i_gap: "inicial",
+  i_plano: "inicial",
+  i_monitoramento: "inicial",
+  score: 36,
   interpretacao:
-    "Diagnóstico típico de órgão público brasileiro de pequeno-médio porte iniciando a jornada de adequação. Há consciência institucional crescente, mas a prática ainda não acompanha — falta capacitação sistemática, recursos dedicados e cultura consolidada.",
+    "Diagnóstico típico de órgão público brasileiro de pequeno-médio porte iniciando a jornada: a gestão reconhece o tema e alguém cuida informalmente, mas as etapas estruturantes (inventário, riscos, GAP, plano e monitoramento) ainda não começaram com método.",
 };
 
 export const MODELO_TERMOMETRO_FIM = {
-  conhecimento: "estabelecido",
-  apoio_gestao: "estabelecido",
-  cultura: "desenvolvimento",
-  recursos: "desenvolvimento",
-  urgencia: "estabelecido",
-  score: 70,
+  i_gestao: "estabelecido",
+  i_encarregado: "estabelecido",
+  i_inventario: "estabelecido",
+  i_riscos: "desenvolvimento",
+  i_gap: "estabelecido",
+  i_plano: "desenvolvimento",
+  i_monitoramento: "desenvolvimento",
+  score: 64,
   interpretacao:
-    "Evolução esperada após um ciclo inicial de capacitação e estruturação. O conhecimento avança rapidamente quando a equipe é exposta ao método; a cultura e os recursos demandam ciclos mais longos pra se consolidarem.",
+    "Evolução esperada após um ciclo inicial de estruturação: Encarregado nomeado, inventário e levantamento de lacunas feitos. Riscos, execução do plano e monitoramento demandam ciclos mais longos pra se consolidarem.",
 };
 
 export const MODELO_INVENTARIO_PROCESSOS = [

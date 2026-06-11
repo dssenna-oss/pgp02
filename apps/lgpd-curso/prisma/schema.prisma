@@ -325,7 +325,12 @@ model TermometroResposta {
   papel        String? // DPO | SAUDE | RH | TI | COMUNICACAO — recorte no painel
   momento      String // "INICIO" | "FIM"
   dimensoes    Json // [{ id, opcaoEscolhida, pontos }]
+  // 2 scores SEPARADOS, ambos normalizados 0-100: `score` = bloco INSTITUIÇÃO
+  // (7 perguntas espelhando as Fases do PGP); `scorePessoal` = bloco SOBRE
+  // VOCÊ (3 perguntas de conhecimento próprio da LGPD). Separados de propósito:
+  // a pessoa evoluir não faz a instituição dela melhorar.
   score        Int      @default(0)
+  scorePessoal Int      @default(0)
   finalizadoEm DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

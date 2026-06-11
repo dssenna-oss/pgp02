@@ -1,18 +1,22 @@
 "use client";
 
-// Panorama da turma no Termômetro Institucional (INDIVIDUAL). Mostra a
-// maturidade MÉDIA da turma (início → fim), o salto médio e a DISTRIBUIÇÃO por
-// faixa — é anônimo de propósito: cada participante avaliou o próprio órgão
-// real, então o valor pedagógico é o panorama coletivo ("por que algumas
-// instituições estão mais maduras?"), nunca o nome de cada um. Usada no painel
-// do facilitador (compacta) e no cartaz de projeção (`grande=true`).
+// Panorama da turma no Termômetro (INDIVIDUAL), em 2 leituras:
+//   👤 PERFIL DA TURMA — quanto as pessoas conhecem a LGPD (calibra o ritmo
+//      do curso logo no Momento 3: quantos nunca tinham ouvido falar?)
+//   🏛️ PANORAMA DAS INSTITUIÇÕES — em que etapa da jornada os órgãos reais
+//      estão (médias início→fim + salto + distribuição por faixa).
+// É anônimo de propósito: cada participante avaliou a si e ao próprio órgão;
+// o valor pedagógico é o panorama coletivo, nunca o nome de cada um. Usada no
+// painel do facilitador (compacta) e no cartaz de projeção (`grande=true`).
 
 import { Thermometer, ArrowRight } from "lucide-react";
-import {
-  faixaQualitativa,
-  type TurmaTermometro,
-  type DistribuicaoFaixa,
+import type {
+  TurmaTermometro,
+  BlocoTurmaTermometro,
+  DistribuicaoFaixa,
+  FaixaTermometro,
 } from "@/lib/termometro-perguntas";
+import { FAIXAS_TERMOMETRO, FAIXAS_PESSOAIS, faixaDe } from "@/lib/termometro-perguntas";
 
 function corFaixa(cor: string): { bg: string; border: string; text: string; num: string; bar: string } {
   switch (cor) {
@@ -24,17 +28,32 @@ function corFaixa(cor: string): { bg: string; border: string; text: string; num:
   }
 }
 
-// Rótulo curto da faixa pra caber na barra do histograma.
+// Rótulos curtos pras barras do histograma (institucionais + pessoais).
 const ROTULO_CURTO: Record<string, string> = {
   avancada: "Avançada",
   estabelecida: "Estabelecida",
   desenvolvimento: "Em desenvolv.",
   inicial: "Inicial",
   partida: "Partida",
+  multiplicador: "Multiplicador",
+  dominio: "Bom domínio",
+  construcao: "Em construção",
+  despertar: "Conhec. inicial",
+  primeiro_contato: "1º contato",
 };
 
-// Um medidor de média (número grande + faixa qualitativa).
-function Medidor({ titulo, score, grande }: { titulo: string; score: number | null; grande: boolean }) {
+// Um medidor de média (número grande + faixa qualitativa da escala dada).
+function Medidor({
+  titulo,
+  score,
+  faixas,
+  grande,
+}: {
+  titulo: string;
+  score: number | null;
+  faixas: FaixaTermometro[];
+  grande: boolean;
+}) {
   if (score === null) {
     return (
       <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3 text-center flex-1">
@@ -44,7 +63,7 @@ function Medidor({ titulo, score, grande }: { titulo: string; score: number | nu
       </div>
     );
   }
-  const faixa = faixaQualitativa(score);
+  const faixa = faixaDe(score, faixas);
   const c = corFaixa(faixa.cor);
   return (
     <div className={`rounded-lg border ${c.border} ${c.bg} ${grande ? "p-4" : "p-3"} text-center flex-1`}>
@@ -61,7 +80,7 @@ function Medidor({ titulo, score, grande }: { titulo: string; score: number | nu
 function Distribuicao({ titulo, dist, grande }: { titulo: string; dist: DistribuicaoFaixa[]; grande: boolean }) {
   const total = dist.reduce((s, d) => s + d.n, 0);
   const max = Math.max(1, ...dist.map((d) => d.n));
-  const linhas = [...dist].reverse(); // Avançada no topo, Partida embaixo
+  const linhas = [...dist].reverse(); // melhor faixa no topo
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-3">
       <p className={`font-bold text-gray-700 text-center mb-2 ${grande ? "text-lg" : "text-sm"}`}>{titulo}</p>
@@ -74,7 +93,7 @@ function Distribuicao({ titulo, dist, grande }: { titulo: string; dist: Distribu
             const pct = Math.round((d.n / max) * 100);
             return (
               <div key={d.faixaId} className="flex items-center gap-2">
-                <span className={`shrink-0 text-right text-gray-600 ${grande ? "text-sm w-28" : "text-[10px] w-20"}`}>
+                <span className={`shrink-0 text-right text-gray-600 ${grande ? "text-sm w-32" : "text-[10px] w-20"}`}>
                   {ROTULO_CURTO[d.faixaId] ?? d.label}
                 </span>
                 <div className={`flex-1 rounded bg-gray-100 overflow-hidden ${grande ? "h-6" : "h-4"}`}>
@@ -95,6 +114,60 @@ function Distribuicao({ titulo, dist, grande }: { titulo: string; dist: Distribu
   );
 }
 
+// Uma das 2 leituras (Perfil da turma OU Panorama das instituições):
+// médias início→fim + salto médio + distribuições.
+function BlocoView({
+  titulo,
+  saltoLabel,
+  bloco,
+  faixas,
+  comAmbos,
+  temFim,
+  grande,
+}: {
+  titulo: string;
+  saltoLabel: string;
+  bloco: BlocoTurmaTermometro;
+  faixas: FaixaTermometro[];
+  comAmbos: number;
+  temFim: boolean;
+  grande: boolean;
+}) {
+  return (
+    <div className="rounded-xl border-2 border-indigo-100 bg-white p-4">
+      <p className={`text-center font-bold text-indigo-900 mb-3 ${grande ? "text-2xl" : "text-base"}`}>
+        {titulo}
+      </p>
+      <div className="flex items-stretch gap-2 sm:gap-3">
+        <Medidor titulo="Início do curso" score={bloco.mediaInicio} faixas={faixas} grande={grande} />
+        <div className="flex items-center text-indigo-300 shrink-0">
+          <ArrowRight className={grande ? "h-8 w-8" : "h-5 w-5"} />
+        </div>
+        <Medidor titulo="Final do curso" score={bloco.mediaFim} faixas={faixas} grande={grande} />
+      </div>
+
+      {temFim && bloco.saltoMedio !== null && (
+        <div className="mt-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-center">
+          <p className={`font-bold uppercase tracking-wide text-amber-800 ${grande ? "text-sm" : "text-[10px]"}`}>
+            {saltoLabel}
+          </p>
+          <p className={`font-extrabold text-amber-900 leading-none mt-0.5 ${grande ? "text-4xl" : "text-2xl"}`}>
+            {bloco.saltoMedio > 0 ? "+" : ""}{bloco.saltoMedio} pontos
+          </p>
+          <p className={`text-amber-700 mt-1 ${grande ? "text-base" : "text-xs"}`}>
+            entre os {comAmbos} que responderam início e fim
+          </p>
+        </div>
+      )}
+
+      <div className={`mt-3 grid gap-3 ${temFim ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+        <Distribuicao titulo="No início" dist={bloco.distInicio} grande={grande} />
+        {temFim && <Distribuicao titulo="No final" dist={bloco.distFim} grande={grande} />}
+      </div>
+    </div>
+  );
+}
+
 export function TermometroView({ turma, grande = false }: { turma: TurmaTermometro; grande?: boolean }) {
   const nada = turma.preenchidosInicio === 0 && turma.preenchidosFim === 0;
   if (nada) {
@@ -103,7 +176,7 @@ export function TermometroView({ turma, grande = false }: { turma: TurmaTermomet
         <Thermometer className="mx-auto h-10 w-10 text-gray-300 mb-3" />
         <p className={grande ? "text-xl" : "text-base"}>Nenhum participante preencheu o Termômetro ainda.</p>
         <p className={`mt-1 ${grande ? "text-lg" : "text-sm"} text-gray-400`}>
-          Cada um acessa em <strong>Fase Preliminar → Termômetro Institucional</strong> e avalia o próprio órgão.
+          Cada um acessa em <strong>Fase Preliminar → Termômetro</strong> e responde sobre si e sobre o próprio órgão.
         </p>
       </div>
     );
@@ -113,49 +186,29 @@ export function TermometroView({ turma, grande = false }: { turma: TurmaTermomet
 
   return (
     <div className={grande ? "space-y-6" : "space-y-4"}>
-      {/* Médias + salto */}
-      <div className="rounded-xl border-2 border-indigo-100 bg-white p-4">
-        <p className={`text-center font-bold text-indigo-900 mb-3 ${grande ? "text-2xl" : "text-base"}`}>
-          🌡️ Maturidade média da turma
-        </p>
-        <div className="flex items-stretch gap-2 sm:gap-3">
-          <Medidor titulo="Início do curso" score={turma.mediaInicio} grande={grande} />
-          <div className="flex items-center text-indigo-300 shrink-0">
-            <ArrowRight className={grande ? "h-8 w-8" : "h-5 w-5"} />
-          </div>
-          <Medidor titulo="Final do curso" score={turma.mediaFim} grande={grande} />
-        </div>
+      <BlocoView
+        titulo="👤 Perfil da turma — conhecimento sobre a LGPD"
+        saltoLabel="Salto médio de conhecimento"
+        bloco={turma.pessoal}
+        faixas={FAIXAS_PESSOAIS}
+        comAmbos={turma.comAmbos}
+        temFim={temFim}
+        grande={grande}
+      />
 
-        {temFim && turma.saltoMedio !== null && (
-          <div className="mt-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-center">
-            <p className={`font-bold uppercase tracking-wide text-amber-800 ${grande ? "text-sm" : "text-[10px]"}`}>
-              Salto médio de consciência
-            </p>
-            <p className={`font-extrabold text-amber-900 leading-none mt-0.5 ${grande ? "text-4xl" : "text-2xl"}`}>
-              {turma.saltoMedio > 0 ? "+" : ""}{turma.saltoMedio} pontos
-            </p>
-            <p className={`text-amber-700 mt-1 ${grande ? "text-base" : "text-xs"}`}>
-              entre os {turma.comAmbos} que responderam início e fim
-            </p>
-          </div>
-        )}
-      </div>
+      <BlocoView
+        titulo="🏛️ Panorama das instituições — etapas da jornada"
+        saltoLabel="Salto médio das instituições"
+        bloco={turma.instituicao}
+        faixas={FAIXAS_TERMOMETRO}
+        comAmbos={turma.comAmbos}
+        temFim={temFim}
+        grande={grande}
+      />
 
-      {/* Distribuição — o panorama: cada instituição num estágio */}
-      <div>
-        <p className={`text-center text-gray-500 mb-2 ${grande ? "text-base" : "text-xs"}`}>
-          Cada participante avaliou o <strong>próprio órgão</strong> — veja como a turma se distribui:
-        </p>
-        <div className={`grid gap-3 ${temFim ? "sm:grid-cols-2" : "grid-cols-1"}`}>
-          <Distribuicao titulo="No início" dist={turma.distInicio} grande={grande} />
-          {temFim && <Distribuicao titulo="No final" dist={turma.distFim} grande={grande} />}
-        </div>
-      </div>
-
-      {/* Rodapé: cobertura */}
       <p className={`text-center text-gray-400 ${grande ? "text-base" : "text-xs"}`}>
-        {turma.preenchidosInicio} de {turma.totalParticipantes} preencheram o início
-        {temFim ? ` · ${turma.preenchidosFim} com o final` : ""}
+        Cada participante avaliou a si e ao próprio órgão · {turma.preenchidosInicio} de{" "}
+        {turma.totalParticipantes} preencheram o início{temFim ? ` · ${turma.preenchidosFim} com o final` : ""}
       </p>
     </div>
   );

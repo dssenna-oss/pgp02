@@ -158,9 +158,9 @@ export async function GET(req: NextRequest) {
   const termometros = await prisma.termometroResposta
     .findMany({
       where: { companyId: grupo.companyId },
-      select: { userId: true, momento: true, score: true },
+      select: { userId: true, momento: true, score: true, scorePessoal: true },
     })
-    .catch(() => [] as { userId: string; momento: string; score: number }[]);
+    .catch(() => [] as { userId: string; momento: string; score: number; scorePessoal: number }[]);
 
   const data: GrupoCadernoData = { grupo: grupo as any, termometros };
   const children = modo === "executivo" ? gerarCadernoExecutivo(data) : gerarCadernoCompleto(data);

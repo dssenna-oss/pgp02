@@ -41,32 +41,56 @@ export async function GET(req: NextRequest) {
   // Todas as respostas da turma em 1 query (turmaId desnormalizado, indexado).
   const respostas = await prisma.termometroResposta.findMany({
     where: { turmaId },
-    select: { userId: true, momento: true, score: true },
+    select: { userId: true, momento: true, score: true, scorePessoal: true },
   });
 
-  // Agrupa por participante pra calcular o salto (fim − início) de quem fez os dois.
-  const porUser = new Map<string, { inicio?: number; fim?: number }>();
+  // Agrupa por participante pra calcular os saltos (fim − início) de quem fez os dois.
+  type Par = { inicioInst?: number; fimInst?: number; inicioPess?: number; fimPess?: number };
+  const porUser = new Map<string, Par>();
   for (const r of respostas) {
     const slot = porUser.get(r.userId) ?? {};
-    if (r.momento === "INICIO") slot.inicio = r.score;
-    else if (r.momento === "FIM") slot.fim = r.score;
+    if (r.momento === "INICIO") {
+      slot.inicioInst = r.score;
+      slot.inicioPess = r.scorePessoal;
+    } else if (r.momento === "FIM") {
+      slot.fimInst = r.score;
+      slot.fimPess = r.scorePessoal;
+    }
     porUser.set(r.userId, slot);
   }
 
-  const scoresInicio: number[] = [];
-  const scoresFim: number[] = [];
-  const saltos: number[] = [];
-  for (const { inicio, fim } of porUser.values()) {
-    if (typeof inicio === "number") scoresInicio.push(inicio);
-    if (typeof fim === "number") scoresFim.push(fim);
-    if (typeof inicio === "number" && typeof fim === "number") saltos.push(fim - inicio);
+  const inst = { scoresInicio: [] as number[], scoresFim: [] as number[], saltos: [] as number[] };
+  const pess = { scoresInicio: [] as number[], scoresFim: [] as number[], saltos: [] as number[] };
+  let preenchidosInicio = 0;
+  let preenchidosFim = 0;
+  let comAmbos = 0;
+  for (const p of porUser.values()) {
+    const temInicio = typeof p.inicioInst === "number";
+    const temFim = typeof p.fimInst === "number";
+    if (temInicio) {
+      preenchidosInicio++;
+      inst.scoresInicio.push(p.inicioInst!);
+      pess.scoresInicio.push(p.inicioPess ?? 0);
+    }
+    if (temFim) {
+      preenchidosFim++;
+      inst.scoresFim.push(p.fimInst!);
+      pess.scoresFim.push(p.fimPess ?? 0);
+    }
+    if (temInicio && temFim) {
+      comAmbos++;
+      inst.saltos.push(p.fimInst! - p.inicioInst!);
+      pess.saltos.push((p.fimPess ?? 0) - (p.inicioPess ?? 0));
+    }
   }
 
   const turmaTermometro = montarTurmaTermometro({
     totalParticipantes,
-    scoresInicio,
-    scoresFim,
-    saltos,
+    preenchidosInicio,
+    preenchidosFim,
+    comAmbos,
+    pessoal: pess,
+    instituicao: inst,
   });
 
   return NextResponse.json(turmaTermometro);
