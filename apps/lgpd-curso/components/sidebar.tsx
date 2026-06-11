@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Compass,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Compass, KeyRound,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -154,6 +154,7 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     itens: [
       { href: "/admin/criar-turma",        label: "Controle de turma",         icon: Settings },
       { href: "/admin/pacote-gap",         label: "Pacote GAP por turma",      icon: ClipboardCheck },
+      { href: "/facilitador/acesso-rapido", label: "🔑 Acesso rápido",         icon: KeyRound },
     ],
   },
   {
