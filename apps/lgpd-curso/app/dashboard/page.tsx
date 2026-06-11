@@ -166,17 +166,28 @@ function HeroSigaTelao({ turmaSlug }: { turmaSlug: string | null }) {
           <strong>só quando ele pedir</strong> — a produção do seu grupo é nos{" "}
           <strong>cards da mesa</strong> 🃏.
         </p>
-        {turmaSlug && (
-          <>
+        {/* Hub do curso: os botões da vez. O aluno nunca navega pela árvore de
+            fases durante o curso — volta sempre pra cá e toca o que o
+            facilitador anunciar. O Termômetro mora na Fase Preliminar (mapa da
+            metodologia), mas é USADO no M3 (início) e M14 (final) — este
+            atalho serve aos dois momentos. */}
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {turmaSlug && (
             <Link
               href={`/quiz/${turmaSlug}`}
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
             >
               📱 Quiz Diagnóstico
             </Link>
-            <p className="mt-1.5 text-xs text-white/60">(toque só quando o facilitador pedir)</p>
-          </>
-        )}
+          )}
+          <Link
+            href="/dashboard/fase-preliminar/termometro"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
+          >
+            🌡️ Termômetro
+          </Link>
+        </div>
+        <p className="mt-1.5 text-xs text-white/60">(toque só quando o facilitador pedir)</p>
         <p className="mt-3.5 text-[13px] italic text-white/75">
           Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
         </p>
