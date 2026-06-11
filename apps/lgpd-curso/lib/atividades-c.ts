@@ -530,6 +530,14 @@ export function getAtividadeC(id: string): AtividadeC | undefined {
   return ATIVIDADES_C.find((a) => a.id === id);
 }
 
+// Recortes pro Painel de Condução: os Desafios LGPD (Trilha do Conhecimento)
+// são pedagogicamente CONTEÚDO do Momento 4 — aparecem no dropdown "📺 Slides
+// e conteúdos…", não no "📋 Atividade ao vivo…" (que fica só com as
+// votações/dinâmicas das fases). Por dentro continuam atividades normais
+// (comando "atividade:<id>", agregado ao vivo no telão).
+export const DESAFIOS_LGPD = ATIVIDADES_C.filter((a) => a.fase === "Trilha do Conhecimento");
+export const ATIVIDADES_C_SEM_DESAFIOS = ATIVIDADES_C.filter((a) => a.fase !== "Trilha do Conhecimento");
+
 // -----------------------------------------------------------------------------
 // FORMATO DA RESPOSTA SALVA (Json na tabela)
 // -----------------------------------------------------------------------------
