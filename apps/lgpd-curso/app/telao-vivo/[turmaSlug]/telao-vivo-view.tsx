@@ -38,10 +38,12 @@ type Turma = {
 // a página /facilitador/atividades/cartaz faz no servidor.
 function montarAtividade(id: string) {
   if (id === "termometro") {
+    // Rótulo NEUTRO de propósito: o Termômetro vai ao telão em DOIS momentos
+    // (início, M3 · final/evolução, M14) — nada de número de momento fixo.
     return {
       id: "termometro",
       titulo: "Termômetro — Evolução dos Grupos",
-      fase: "Reflexão Final · Momento 13",
+      fase: "Termômetro Institucional · início × final",
       emoji: "🌡️",
     };
   }
