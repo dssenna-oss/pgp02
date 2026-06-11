@@ -40,6 +40,42 @@ export default async function FasePreliminarPage() {
         <AdminPreviewBanner />
       </div>
 
+      {/* Trilha da fase — a ORDEM encena o bottom-up do serviço público:
+          medir onde estou → me capacitar → engajar quem decide. Histórico e
+          Estrutura moram em "Slides das fases", mas ganham endereço aqui
+          porque SÃO sensibilização (conteúdo da Preliminar). */}
+      <div className="mt-6 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+        <h2 className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
+          🧭 Trilha da Fase Preliminar
+        </h2>
+        <p className="mt-0.5 text-xs text-indigo-800/80">
+          Bottom-up do serviço público: <strong>medir</strong> onde estamos → <strong>se capacitar</strong> → <strong>engajar quem decide</strong>.
+        </p>
+        <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+          {[
+            { n: "1", emoji: "🌡️", titulo: "Termômetro Institucional", desc: "Medir a maturidade percebida (antes de qualquer conteúdo).", href: "/dashboard/fase-preliminar/termometro" },
+            { n: "2", emoji: "🕰️", titulo: "Histórico da LGPD", desc: "Por que a lei existe — a capacitação começa aqui.", href: "/dashboard/historico-lgpd" },
+            { n: "3", emoji: "🏛️", titulo: "Estrutura da LGPD", desc: "O que a lei diz (+ Desafios art. 1–65, ao vivo no telão).", href: "/dashboard/estrutura-lgpd" },
+            { n: "4", emoji: "✉️", titulo: "Carta para a Alta Gestão", desc: "Desfecho: engajar a gestão com os argumentos recém-aprendidos.", href: "/dashboard/fase-preliminar/carta-alta-gestao" },
+          ].map((p) => (
+            <li key={p.n}>
+              <Link
+                href={p.href}
+                className="group flex items-start gap-2.5 rounded-lg border border-indigo-100 bg-white p-3 hover:bg-indigo-50 transition-colors h-full"
+              >
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                  {p.n}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-gray-900">{p.emoji} {p.titulo}</span>
+                  <span className="block text-xs text-gray-600 mt-0.5">{p.desc}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </div>
+
       {/* Coloque em prática — 2 atividades pedagógicas que o grupo executa
           após assistir aos slides. Termômetro (5min) + Carta (10min). */}
       <div className="mt-6">
