@@ -2,7 +2,8 @@
 // Telão Comandado (Modalidade C): o facilitador toca no CELULAR e o telão do
 // notebook (página /telao-vivo/<slug>) troca sozinho, via polling — sem
 // websocket (padrão Vercel). Esta coluna guarda o comando atual:
-//   "placar" | "quiz" | "atividade:<id>" (id inclui "termometro") | null
+//   "placar" | "quiz" | "quiz-resultado" | "atividade:<id>" (id inclui
+//   "termometro") | "conteudo:<id>" (Materiais de Apoio) | null
 // null = tela de espera. Mesmo padrão das outras colunas auto-migradas.
 
 import { prisma } from "@/lib/prisma";

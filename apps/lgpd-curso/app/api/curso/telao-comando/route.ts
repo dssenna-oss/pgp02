@@ -2,7 +2,8 @@
 //
 // POST /api/curso/telao-comando { turmaId, comando }
 //   Seta o comando atual do telão da turma. comando ∈
-//   "placar" | "quiz" | "quiz-resultado" | "atividade:<id>" (id inclui "termometro") | null.
+//   "placar" | "quiz" | "quiz-resultado" | "atividade:<id>" (id inclui
+//   "termometro") | "conteudo:<id>" (Materiais de Apoio) | null.
 //   Admin-only — só o facilitador comanda, pelo Painel de Condução.
 //
 // GET /api/curso/telao-comando?turmaId=<id>
@@ -16,12 +17,19 @@ import { ensureColunaTelaoComando } from "@/lib/coluna-telao-comando";
 
 export const dynamic = "force-dynamic";
 
-// Comandos aceitos. Atividade aceita qualquer id (validado pelo telão na hora
-// de renderizar) no formato "atividade:<id>".
+// Comandos aceitos. Atividade/conteúdo aceitam qualquer id (validado pelo
+// telão na hora de renderizar): "atividade:<id>" e "conteudo:<id>" (Materiais
+// de Apoio — catálogo em lib/conteudos-telao.ts).
 function comandoValido(c: unknown): c is string | null {
   if (c === null) return true;
   if (typeof c !== "string") return false;
-  return c === "placar" || c === "quiz" || c === "quiz-resultado" || c.startsWith("atividade:");
+  return (
+    c === "placar" ||
+    c === "quiz" ||
+    c === "quiz-resultado" ||
+    c.startsWith("atividade:") ||
+    c.startsWith("conteudo:")
+  );
 }
 
 export async function POST(req: NextRequest) {

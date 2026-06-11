@@ -16,6 +16,7 @@ import {
 import { Select } from "@/components/ui/select";
 import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao, type DispositivoVoce, type DispositivoAluno } from "@/lib/conducao-mapa";
 import { ATIVIDADES_C } from "@/lib/atividades-c";
+import { CONTEUDOS_TELAO, getConteudoTelao } from "@/lib/conteudos-telao";
 
 type Turma = { id: string; nome: string; cidade: string; slug: string };
 
@@ -134,6 +135,10 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
       if (id === "termometro") return "🌡️ Termômetro";
       const at = ATIVIDADES_C.find((a) => a.id === id);
       return at ? `${at.emoji} ${at.titulo}` : id;
+    }
+    if (c.startsWith("conteudo:")) {
+      const m = getConteudoTelao(c.slice("conteudo:".length));
+      return m ? `${m.emoji} ${m.titulo}` : c;
     }
     return c;
   }
@@ -311,6 +316,19 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
               <option value="">📋 Atividade ao vivo…</option>
               {ATIVIDADES_C.map((a) => (
                 <option key={a.id} value={`atividade:${a.id}`}>{a.emoji} {a.titulo}</option>
+              ))}
+            </Select>
+            {/* Materiais de Apoio — o telão abre a própria página do conteúdo
+                (iframe) e o celular dos participantes mostra o aviso "📺 No
+                telão agora…" com atalho pra mesma página. */}
+            <Select
+              value={comandoTelao?.startsWith("conteudo:") ? comandoTelao : ""}
+              onChange={(e) => { if (e.target.value) mostrarNoTelao(e.target.value, rotuloComando(e.target.value)); }}
+              className="max-w-[12rem] !py-1 !text-xs"
+            >
+              <option value="">📚 Material de apoio…</option>
+              {CONTEUDOS_TELAO.map((c) => (
+                <option key={c.id} value={`conteudo:${c.id}`}>{c.emoji} {c.titulo}</option>
               ))}
             </Select>
             <MiniTelao ativo={comandoTelao === "placar"} onClick={() => mostrarNoTelao("placar", "Placar / pódio")}>🏆 Placar</MiniTelao>
