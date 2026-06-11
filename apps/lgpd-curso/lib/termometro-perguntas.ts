@@ -1,15 +1,27 @@
-// Termômetro Institucional — auto-diagnóstico de maturidade LGPD percebida.
-// Aplicado pelo grupo na FASE PRELIMINAR (início do curso) e repetido na
-// REFLEXÃO FINAL (fim do curso) pra evidenciar a evolução.
+// Termômetro — auto-diagnóstico INDIVIDUAL em 2 blocos:
 //
-// 5 dimensões × 4 opções fechadas (escala qualitativa Inicial → Avançado).
-// Cada opção = 5/10/15/20 pontos. Score máximo = 100 (5 × 20).
+//   PESSOAL (3 perguntas)       → "quanto EU conheço a LGPD hoje?"
+//   INSTITUIÇÃO (7 perguntas)   → "em que etapa da jornada o MEU órgão real está?"
 //
-// Decisão UX: opções fechadas em vez de texto livre — economiza tempo
-// (curso tem 3h cronometradas; cada minuto importa) e padroniza o
-// vocabulário pra comparação entre grupos no debrief.
+// As 7 perguntas institucionais espelham as Fases do PGP (Preliminar + 1-7),
+// mas em linguagem do dia-a-dia — a maioria dos participantes chega sem nunca
+// ter lido a LGPD, então a pergunta descreve a ATIVIDADE concreta e o nome da
+// fase aparece só como etiqueta discreta (hint). O 1º nível de cada pergunta é
+// sempre acolhedor ("ainda não paramos pra pensar nisso") — começar do zero é
+// o esperado, e ler as 4 opções já ensina o que é aquela etapa.
+//
+// Aplicado no INÍCIO do curso e repetido no FIM: o salto pessoal mostra a
+// evolução da consciência; o retrato institucional vira o mapa do "o que fazer
+// quando eu voltar pro meu órgão". Scores SEPARADOS (0-100 cada, normalizados)
+// — misturar poluiria a leitura: uma pessoa que aprendeu muito não faz a
+// instituição dela melhorar.
+//
+// Decisão UX: opções fechadas em vez de texto livre — economiza tempo (curso
+// tem horas cronometradas) e padroniza o vocabulário pro debrief.
 
 export type NivelTermometro = "inicial" | "desenvolvimento" | "estabelecido" | "avancado";
+
+export type BlocoTermometro = "pessoal" | "instituicao";
 
 export type OpcaoTermometro = {
   id: NivelTermometro;
@@ -20,102 +32,181 @@ export type OpcaoTermometro = {
 
 export type DimensaoTermometro = {
   id: string;
+  bloco: BlocoTermometro;
   emoji: string;
   titulo: string;
-  hint: string; // 1 linha que aparece abaixo do título
+  hint: string; // 1 linha abaixo do título — nas institucionais, a etiqueta "No curso: Fase X"
   opcoes: OpcaoTermometro[];
 };
 
-// Helper pra evitar repetir os 4 níveis padrão. Só muda a descrição de cada.
-function dim(
-  id: string,
-  emoji: string,
-  titulo: string,
-  hint: string,
-  desc: [string, string, string, string],
-): DimensaoTermometro {
-  return {
-    id,
-    emoji,
-    titulo,
-    hint,
-    opcoes: [
-      { id: "inicial",         rotulo: "Inicial",          pontos: 5,  descricao: desc[0] },
-      { id: "desenvolvimento", rotulo: "Em desenvolvimento", pontos: 10, descricao: desc[1] },
-      { id: "estabelecido",    rotulo: "Estabelecido",     pontos: 15, descricao: desc[2] },
-      { id: "avancado",        rotulo: "Avançado",         pontos: 20, descricao: desc[3] },
-    ],
-  };
+// Helper: monta as 4 opções (5/10/15/20 pts). Cada opção tem rótulo curto
+// (resumo) + frase completa — a frase é o conteúdo aprovado, o rótulo só
+// facilita a leitura rápida no celular.
+function ops(
+  niveis: [
+    [string, string],
+    [string, string],
+    [string, string],
+    [string, string],
+  ],
+): OpcaoTermometro[] {
+  const ids: NivelTermometro[] = ["inicial", "desenvolvimento", "estabelecido", "avancado"];
+  const pontos = [5, 10, 15, 20];
+  return niveis.map(([rotulo, descricao], i) => ({
+    id: ids[i],
+    rotulo,
+    pontos: pontos[i],
+    descricao,
+  }));
 }
 
 export const DIMENSOES_TERMOMETRO: DimensaoTermometro[] = [
-  dim(
-    "conhecimento",
-    "📚",
-    "Conhecimento geral sobre LGPD da equipe",
-    "Qual o nível médio de conhecimento dos servidores envolvidos no tratamento de dados?",
-    [
-      "A maioria da equipe nunca ouviu falar de LGPD, ou tem percepção bem vaga sobre o assunto.",
-      "Alguns servidores conhecem o básico da LGPD, mas é minoria — o conhecimento não é compartilhado.",
-      "Boa parte da equipe sabe o essencial: direitos do titular, bases legais, prazos da Lei.",
-      "Equipe foi capacitada formalmente nos últimos 12 meses — há domínio prático do tema.",
-    ],
-  ),
-  dim(
-    "apoio_gestao",
-    "🏛",
-    "Apoio percebido da Alta Gestão",
-    "Como você percebe o engajamento dos principais gestores (Prefeito/Presidente, secretários)?",
-    [
-      "A Alta Gestão desconhece ou minimiza a importância — LGPD não está na agenda institucional.",
-      "Reconhece como importante, mas não prioriza — sem orçamento ou tempo dedicado pro tema.",
-      "Apoia formalmente (portaria, ato de nomeação do Encarregado, reuniões periódicas com Comitê).",
-      "Patrocina ativamente — cobra resultados, integra LGPD à agenda estratégica do órgão.",
-    ],
-  ),
-  dim(
-    "cultura",
-    "🌱",
-    "Cultura de proteção de dados",
-    "Como os dados pessoais são tratados no dia-a-dia, fora do que está formalizado?",
-    [
-      "Dados são tratados sem critério — senhas compartilhadas, planilhas abertas, papéis sobre a mesa.",
-      "Há consciência pontual de alguns servidores, mas a prática é inconsistente entre setores.",
-      "Práticas mínimas adotadas e respeitadas (controle de acesso, descarte seguro, sigilo).",
-      "Cultura institucional consolidada — proteção de dados é parte do DNA do órgão.",
-    ],
-  ),
-  dim(
-    "recursos",
-    "💼",
-    "Recursos disponíveis (humanos, financeiros, tecnológicos)",
-    "Quanto o órgão investe em pessoas, ferramentas e orçamento dedicados à adequação?",
-    [
-      "Praticamente zero — sem orçamento, sem ferramentas próprias, sem servidores dedicados ao tema.",
-      "Algumas pessoas em tempo parcial cuidam, sem ferramentas próprias nem orçamento previsto.",
-      "Equipe definida, orçamento previsto pra próximo exercício, ferramentas básicas implantadas.",
-      "Equipe dedicada exclusiva, orçamento robusto, ferramentas especializadas (sistemas, consultoria).",
-    ],
-  ),
-  dim(
-    "urgencia",
-    "⏱",
-    "Urgência institucional percebida",
-    "Quão prioritária é a adequação à LGPD na lista de prioridades do órgão?",
-    [
-      "Não é prioridade — outros assuntos vêm sempre primeiro; LGPD fica pra depois.",
-      "Reconhecida como importante, mas sem prazo definido ou marcos institucionais.",
-      "Há cronograma e marcos institucionais formalizados — adequação tem data pra concluir.",
-      "Prioridade máxima — equipe mobilizada com metas claras e cobrança periódica de avanços.",
-    ],
-  ),
+  // ───────────────────────── BLOCO 1 — SOBRE VOCÊ ─────────────────────────
+  {
+    id: "p_contato",
+    bloco: "pessoal",
+    emoji: "📖",
+    titulo: "Qual o seu contato com a LGPD até hoje?",
+    hint: "Auto-percepção sincera — não é prova.",
+    opcoes: ops([
+      ["Nunca ouvi falar", "Nunca tinha ouvido falar (ou só de nome) — e tá tudo bem!"],
+      ["Já ouvi falar", "Já ouvi falar, mas nunca li nem estudei."],
+      ["Conheço o básico", "Conheço o básico — já li materiais ou assisti palestra/curso rápido."],
+      ["Conheço bem", "Conheço bem — estudei e já uso no trabalho."],
+    ]),
+  },
+  {
+    id: "p_dia_a_dia",
+    bloco: "pessoal",
+    emoji: "💼",
+    titulo: "No seu trabalho, você saberia dizer o que pode e o que não pode fazer com dados de pessoas?",
+    hint: "Pense nas suas tarefas reais: cadastros, processos, atendimentos.",
+    opcoes: ops([
+      ["Ainda não saberia", "Ainda não saberia — nunca precisei pensar nisso."],
+      ["Só intuição", "Tenho intuição do certo/errado, mas não sei o que a lei diz."],
+      ["Sei o essencial", "Sei o essencial pro meu setor."],
+      ["Sei com segurança", "Sei com segurança — inclusive oriento colegas."],
+    ]),
+  },
+  {
+    id: "p_incidente",
+    bloco: "pessoal",
+    emoji: "🚨",
+    titulo: "Se acontecer um problema com dados pessoais (vazamento, reclamação de cidadão), você sabe o que fazer?",
+    hint: "Vazamento, uso indevido, reclamação de um cidadão…",
+    opcoes: ops([
+      ["Não faria ideia", "Não faria ideia por onde começar."],
+      ["Avisaria o chefe", "Avisaria meu chefe e esperaria orientação."],
+      ["Sei os primeiros passos", "Sei os primeiros passos e a quem comunicar."],
+      ["Sei o procedimento", "Sei o procedimento, os prazos e quem aciona quem."],
+    ]),
+  },
+
+  // ────────────────── BLOCO 2 — SOBRE A SUA INSTITUIÇÃO ──────────────────
+  {
+    id: "i_gestao",
+    bloco: "instituicao",
+    emoji: "🏛️",
+    titulo: "Os chefes (prefeito/presidente, secretários, diretores) compram a ideia de proteger dados?",
+    hint: "No curso: Fase Preliminar — engajar quem decide.",
+    opcoes: ops([
+      ["Não olham pra isso", "A direção ainda não olha pra esse assunto."],
+      ["Acham importante", "Acham importante, mas não priorizam (sem tempo nem verba)."],
+      ["Apoiam oficialmente", "Apoiam de forma oficial (assinam atos, cobram o tema em reuniões)."],
+      ["Puxam o tema", "Puxam o tema na frente — cobram resultados e tratam como prioridade."],
+    ]),
+  },
+  {
+    id: "i_encarregado",
+    bloco: "instituicao",
+    emoji: "👤",
+    titulo: "Tem alguém responsável por proteção de dados no órgão?",
+    hint: "No curso: Fase 1 — Encarregado e equipes de trabalho.",
+    opcoes: ops([
+      ["Ninguém ainda", "Ainda não temos ninguém responsável por isso."],
+      ["Alguém informal", "Alguém cuida do tema informalmente, sem nomeação oficial."],
+      ["Nomeado oficialmente", "Temos um responsável nomeado por portaria/ato."],
+      ["Responsável + equipe", "Responsável + equipe/comitê com rotina e apoio definidos."],
+    ]),
+  },
+  {
+    id: "i_inventario",
+    bloco: "instituicao",
+    emoji: "🗂️",
+    titulo: "Vocês sabem quais dados de pessoas o órgão usa e onde ficam guardados?",
+    hint: "No curso: Fase 2 — Diagnóstico inicial (Inventário de Dados).",
+    opcoes: ops([
+      ["Ainda não levantamos", "Ainda não paramos pra levantar isso."],
+      ["Só uma noção", "Temos uma noção, mas nada anotado nem organizado."],
+      ["Principais mapeados", "Já mapeamos os principais cadastros e sistemas."],
+      ["Mapa completo", "Sabemos exatamente quais dados, de quem, pra quê e por quanto tempo."],
+    ]),
+  },
+  {
+    id: "i_riscos",
+    bloco: "instituicao",
+    emoji: "⚠️",
+    titulo: "Vocês avaliam os riscos antes de usar dados delicados (saúde, crianças, etc.)?",
+    hint: "No curso: Fase 3 — Mapeamento e Análise de Riscos.",
+    opcoes: ops([
+      ["Sem esse hábito", "Ainda não temos o hábito de avaliar riscos antes de usar dados."],
+      ["Só quando salta aos olhos", "Pensamos quando \"salta aos olhos\", mas sem método."],
+      ["Nos casos delicados", "Avaliamos os riscos nos usos mais delicados de dados."],
+      ["Método padrão", "Temos um jeito padrão de avaliar e anotar os riscos antes de agir."],
+    ]),
+  },
+  {
+    id: "i_gap",
+    bloco: "instituicao",
+    emoji: "🔍",
+    titulo: "Vocês já compararam o que fazem hoje com o que a Lei exige, pra achar o que falta?",
+    hint: "No curso: Fase 4 — GAP Analysis (o que falta pra cumprir).",
+    opcoes: ops([
+      ["Não sabemos o que falta", "Ainda não sabemos ao certo o que a LGPD exige de nós."],
+      ["Ideia geral", "Temos uma ideia geral, mas nunca checamos ponto a ponto."],
+      ["Levantamento feito", "Já fizemos um levantamento do que falta pra cumprir a Lei."],
+      ["Lista priorizada", "Temos a lista de pendências priorizada e atualizada."],
+    ]),
+  },
+  {
+    id: "i_plano",
+    bloco: "instituicao",
+    emoji: "🛠️",
+    titulo: "Existe um plano com prazos pra resolver o que falta — e ele sai do papel?",
+    hint: "No curso: Fases 5 e 6 — Plano de Ação e Execução.",
+    opcoes: ops([
+      ["Sem plano ainda", "Ainda não temos um plano pra isso."],
+      ["Boas intenções", "Temos boas intenções, mas nada escrito com prazos."],
+      ["Plano escrito", "Existe um plano com responsáveis e prazos."],
+      ["Em execução", "O plano está em execução e as medidas vão sendo concluídas."],
+    ]),
+  },
+  {
+    id: "i_monitoramento",
+    bloco: "instituicao",
+    emoji: "🔄",
+    titulo: "Depois de ajustar, vocês acompanham e revisam de tempos em tempos?",
+    hint: "No curso: Fase 7 — Monitoramento Contínuo e Melhoria.",
+    opcoes: ops([
+      ["Não revisamos", "Ainda não revisamos depois que resolvemos algo."],
+      ["Só quando dá problema", "Olhamos de novo só quando aparece um problema."],
+      ["Revisão combinada", "Revisamos de tempos em tempos, de forma combinada."],
+      ["Com indicadores", "Acompanhamos com indicadores e melhoramos continuamente."],
+    ]),
+  },
 ];
 
-export const SCORE_MAXIMO = DIMENSOES_TERMOMETRO.length * 20; // 100
+export const DIMENSOES_PESSOAIS = DIMENSOES_TERMOMETRO.filter((d) => d.bloco === "pessoal");
+export const DIMENSOES_INSTITUICAO = DIMENSOES_TERMOMETRO.filter((d) => d.bloco === "instituicao");
 
-// As 5 faixas qualitativas, em ORDEM CRESCENTE de maturidade. `min` = score
-// mínimo (inclusive) pra cair na faixa. A ordem importa: o painel do
-// facilitador monta a distribuição da turma (histograma) a partir deste array.
+// Ambos os scores são NORMALIZADOS pra 0-100 (o nº de perguntas difere por
+// bloco: 3 pessoais × 20 = 60 brutos; 7 institucionais × 20 = 140 brutos).
+export const SCORE_MAXIMO = 100;
+
+// === Faixas qualitativas ===
+// Duas escalas de rótulo (a régua 0-100 é a mesma): a INSTITUCIONAL fala de
+// maturidade do órgão; a PESSOAL fala da jornada de quem aprende — "Maturidade
+// Estabelecida" soaria estranho pra uma pessoa.
 export type FaixaTermometro = {
   id: string;
   min: number;
@@ -132,66 +223,100 @@ export const FAIXAS_TERMOMETRO: FaixaTermometro[] = [
   { id: "avancada",        min: 80, label: "Maturidade Avançada",           cor: "emerald", descricao: "Órgão referência — adequação consolidada com cultura forte." },
 ];
 
-// Faixa qualitativa de um score (feedback pós-preenchimento + agregação).
-export function faixaQualitativa(score: number): FaixaTermometro {
-  for (let i = FAIXAS_TERMOMETRO.length - 1; i >= 0; i--) {
-    if (score >= FAIXAS_TERMOMETRO[i].min) return FAIXAS_TERMOMETRO[i];
+export const FAIXAS_PESSOAIS: FaixaTermometro[] = [
+  { id: "primeiro_contato", min: 0,  label: "Primeiro contato",          cor: "gray",    descricao: "Você está começando agora — o curso é exatamente pra isso." },
+  { id: "despertar",        min: 20, label: "Conhecimento inicial",      cor: "orange",  descricao: "Já ouviu os termos — agora é organizar as ideias." },
+  { id: "construcao",       min: 40, label: "Conhecimento em construção", cor: "amber",   descricao: "Base formada — faltam as conexões com a prática." },
+  { id: "dominio",          min: 60, label: "Bom domínio",               cor: "blue",    descricao: "Você navega bem pelo tema no dia-a-dia." },
+  { id: "multiplicador",    min: 80, label: "Multiplicador",             cor: "emerald", descricao: "Domínio forte — você pode orientar colegas." },
+];
+
+// Faixa de um score numa escala (default: institucional).
+export function faixaDe(score: number, faixas: FaixaTermometro[]): FaixaTermometro {
+  for (let i = faixas.length - 1; i >= 0; i--) {
+    if (score >= faixas[i].min) return faixas[i];
   }
-  return FAIXAS_TERMOMETRO[0];
+  return faixas[0];
 }
 
-// Tipos pro JSON salvo na Company.termometroInicio / termometroFim
+export function faixaQualitativa(score: number): FaixaTermometro {
+  return faixaDe(score, FAIXAS_TERMOMETRO);
+}
+
+export function faixaPessoal(score: number): FaixaTermometro {
+  return faixaDe(score, FAIXAS_PESSOAIS);
+}
+
+// Tipos pro JSON salvo em termometro_respostas.dimensoes + score/scorePessoal
 export type TermometroSalvo = {
   dimensoes: Array<{
     id: string;
     opcaoEscolhida: NivelTermometro;
     pontos: number;
   }>;
-  score: number;
+  score: number; // INSTITUCIONAL normalizado 0-100
+  scorePessoal: number; // PESSOAL normalizado 0-100
   finalizadoEm: string; // ISO
-  preenchidoPor?: string; // nome do user que finalizou (opcional, descritivo)
 };
 
-// Calcula score a partir das respostas
-export function calcularScoreTermometro(
+// Calcula os 2 scores (normalizados 0-100) a partir das respostas.
+export function calcularScoresTermometro(
   respostas: Record<string, NivelTermometro>,
-): number {
-  let soma = 0;
-  for (const dim of DIMENSOES_TERMOMETRO) {
-    const escolhida = respostas[dim.id];
-    if (!escolhida) continue;
-    const opcao = dim.opcoes.find((o) => o.id === escolhida);
-    if (opcao) soma += opcao.pontos;
+): { instituicao: number; pessoal: number } {
+  function somaBloco(dims: DimensaoTermometro[]): number {
+    let soma = 0;
+    let max = 0;
+    for (const dim of dims) {
+      max += 20;
+      const escolhida = respostas[dim.id];
+      if (!escolhida) continue;
+      const opcao = dim.opcoes.find((o) => o.id === escolhida);
+      if (opcao) soma += opcao.pontos;
+    }
+    return max > 0 ? Math.round((soma / max) * 100) : 0;
   }
-  return soma;
+  return {
+    pessoal: somaBloco(DIMENSOES_PESSOAIS),
+    instituicao: somaBloco(DIMENSOES_INSTITUICAO),
+  };
 }
 
 // === Agregado da TURMA (painel + telão do facilitador) ===
-// Termômetro é INDIVIDUAL: cada participante avalia o próprio órgão real. O
-// facilitador NÃO vê nome-a-nome (é auto-percepção pessoal) — só o panorama
-// anônimo da turma: distribuição por faixa, médias e o salto médio.
+// Termômetro é INDIVIDUAL: o facilitador NÃO vê nome-a-nome (é auto-percepção
+// pessoal) — só o panorama anônimo, em 2 leituras: PERFIL DA TURMA (quanto as
+// pessoas conhecem a LGPD — calibra o ritmo do curso) e PANORAMA DAS
+// INSTITUIÇÕES (em que etapa da jornada os órgãos reais estão).
 
 // Uma barra do histograma de distribuição (quantos participantes em cada faixa).
 export type DistribuicaoFaixa = { faixaId: string; label: string; cor: string; n: number };
+
+// Agregado de UM bloco (pessoal OU instituição).
+export type BlocoTurmaTermometro = {
+  mediaInicio: number | null;
+  mediaFim: number | null;
+  distInicio: DistribuicaoFaixa[];
+  distFim: DistribuicaoFaixa[];
+  saltoMedio: number | null; // média de (fim − início) entre quem tem ambos
+};
 
 export type TurmaTermometro = {
   totalParticipantes: number; // quantos participantes (users) há na turma
   preenchidosInicio: number; // quantos responderam o INÍCIO
   preenchidosFim: number; // quantos responderam o FIM
-  mediaInicio: number | null; // média dos scores de início (0-100)
-  mediaFim: number | null; // média dos scores de fim
-  distInicio: DistribuicaoFaixa[]; // contagem por faixa (início)
-  distFim: DistribuicaoFaixa[]; // contagem por faixa (fim)
   comAmbos: number; // quantos têm início E fim (base do salto)
-  saltoMedio: number | null; // média de (fim - início) entre os que têm ambos
+  pessoal: BlocoTurmaTermometro;
+  instituicao: BlocoTurmaTermometro;
 };
 
-// Conta quantos scores caem em cada faixa, devolvendo SEMPRE as 5 faixas (zeros
-// inclusos) na ordem crescente — pra desenhar o histograma estável.
-export function distribuicaoPorFaixa(scores: number[]): DistribuicaoFaixa[] {
-  const base = FAIXAS_TERMOMETRO.map((f) => ({ faixaId: f.id, label: f.label, cor: f.cor, n: 0 }));
+// Conta quantos scores caem em cada faixa da escala dada, devolvendo SEMPRE as
+// 5 faixas (zeros inclusos) na ordem crescente — pro histograma ficar estável.
+export function distribuicaoPorFaixa(
+  scores: number[],
+  faixas: FaixaTermometro[] = FAIXAS_TERMOMETRO,
+): DistribuicaoFaixa[] {
+  const base = faixas.map((f) => ({ faixaId: f.id, label: f.label, cor: f.cor, n: 0 }));
   for (const s of scores) {
-    const faixa = faixaQualitativa(s);
+    const faixa = faixaDe(s, faixas);
     const slot = base.find((b) => b.faixaId === faixa.id);
     if (slot) slot.n += 1;
   }
@@ -203,24 +328,38 @@ function media(nums: number[]): number | null {
   return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
 }
 
-// Monta o agregado da turma a partir dos pares (início, fim) de cada
-// participante. `scoresInicio`/`scoresFim` já vêm filtrados (só quem respondeu);
-// `saltos` são os deltas de quem respondeu AMBOS os momentos.
-export function montarTurmaTermometro(args: {
-  totalParticipantes: number;
+export type ScoresBlocoArgs = {
   scoresInicio: number[];
   scoresFim: number[];
   saltos: number[];
+};
+
+function montarBloco(args: ScoresBlocoArgs, faixas: FaixaTermometro[]): BlocoTurmaTermometro {
+  return {
+    mediaInicio: media(args.scoresInicio),
+    mediaFim: media(args.scoresFim),
+    distInicio: distribuicaoPorFaixa(args.scoresInicio, faixas),
+    distFim: distribuicaoPorFaixa(args.scoresFim, faixas),
+    saltoMedio: media(args.saltos),
+  };
+}
+
+// Monta o agregado da turma. Os arrays já vêm filtrados (só quem respondeu);
+// `saltos` são os deltas de quem respondeu AMBOS os momentos.
+export function montarTurmaTermometro(args: {
+  totalParticipantes: number;
+  preenchidosInicio: number;
+  preenchidosFim: number;
+  comAmbos: number;
+  pessoal: ScoresBlocoArgs;
+  instituicao: ScoresBlocoArgs;
 }): TurmaTermometro {
   return {
     totalParticipantes: args.totalParticipantes,
-    preenchidosInicio: args.scoresInicio.length,
-    preenchidosFim: args.scoresFim.length,
-    mediaInicio: media(args.scoresInicio),
-    mediaFim: media(args.scoresFim),
-    distInicio: distribuicaoPorFaixa(args.scoresInicio),
-    distFim: distribuicaoPorFaixa(args.scoresFim),
-    comAmbos: args.saltos.length,
-    saltoMedio: media(args.saltos),
+    preenchidosInicio: args.preenchidosInicio,
+    preenchidosFim: args.preenchidosFim,
+    comAmbos: args.comAmbos,
+    pessoal: montarBloco(args.pessoal, FAIXAS_PESSOAIS),
+    instituicao: montarBloco(args.instituicao, FAIXAS_TERMOMETRO),
   };
 }

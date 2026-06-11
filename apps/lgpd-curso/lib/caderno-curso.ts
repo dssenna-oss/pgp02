@@ -45,7 +45,7 @@ import {
   PROXIMOS_PASSOS_POR_FASE,
   SELO_MODELO,
 } from "./caderno-modelo";
-import { DIMENSOES_TERMOMETRO, faixaQualitativa, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
+import { DIMENSOES_TERMOMETRO, faixaQualitativa, faixaPessoal, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
 import { CRITERIOS_PRIORIZACAO, faixaPriorizacao } from "./criterios-priorizacao";
 import { getControleById } from "./gap-catalogo";
 import { gerarRoadmap90Dias } from "./roadmap-gerador";
@@ -78,9 +78,10 @@ import { CATALOGO_ERROS_PLANTADOS } from "./aviso-erros-plantados";
 
 export type GrupoCadernoData = {
   // Respostas INDIVIDUAIS do Termômetro dos membros do grupo (cada um avaliou
-  // o próprio órgão real). Injetado pelo loader da rota /caderno/docx.
-  // Ausente/vazio = ninguém preencheu → cai no fallback de modelo.
-  termometros?: Array<{ userId: string; momento: string; score: number }>;
+  // a si — scorePessoal — e o próprio órgão real — score). Injetado pelo
+  // loader da rota /caderno/docx. Ausente/vazio = ninguém preencheu → fallback
+  // de modelo.
+  termometros?: Array<{ userId: string; momento: string; score: number; scorePessoal: number }>;
   grupo: {
     id: string;
     numero: number;
@@ -602,55 +603,100 @@ function calcularKpis(data: GrupoCadernoData): KpisGrupo {
 // =============================================================================
 
 // Agrega os termômetros INDIVIDUAIS dos membros do grupo num panorama (mini-
-// versão do painel da turma do facilitador). Cada participante avaliou o
-// PRÓPRIO órgão real — o grupo vê o leque de maturidade. null = ninguém fez.
+// versão do painel da turma do facilitador), nas 2 leituras: conhecimento
+// pessoal da equipe + etapa da jornada das instituições. null = ninguém fez.
 function agregarTermometroGrupo(data: GrupoCadernoData): TurmaTermometro | null {
   const respostas = data.termometros ?? [];
-  const porUser = new Map<string, { inicio?: number; fim?: number }>();
+  type Par = { inicioInst?: number; fimInst?: number; inicioPess?: number; fimPess?: number };
+  const porUser = new Map<string, Par>();
   for (const r of respostas) {
     const slot = porUser.get(r.userId) ?? {};
-    if (r.momento === "INICIO") slot.inicio = r.score;
-    else if (r.momento === "FIM") slot.fim = r.score;
+    if (r.momento === "INICIO") {
+      slot.inicioInst = r.score;
+      slot.inicioPess = r.scorePessoal ?? 0;
+    } else if (r.momento === "FIM") {
+      slot.fimInst = r.score;
+      slot.fimPess = r.scorePessoal ?? 0;
+    }
     porUser.set(r.userId, slot);
   }
-  const scoresInicio: number[] = [];
-  const scoresFim: number[] = [];
-  const saltos: number[] = [];
-  for (const { inicio, fim } of porUser.values()) {
-    if (typeof inicio === "number") scoresInicio.push(inicio);
-    if (typeof fim === "number") scoresFim.push(fim);
-    if (typeof inicio === "number" && typeof fim === "number") saltos.push(fim - inicio);
+  const inst = { scoresInicio: [] as number[], scoresFim: [] as number[], saltos: [] as number[] };
+  const pess = { scoresInicio: [] as number[], scoresFim: [] as number[], saltos: [] as number[] };
+  let preenchidosInicio = 0;
+  let preenchidosFim = 0;
+  let comAmbos = 0;
+  for (const p of porUser.values()) {
+    const temInicio = typeof p.inicioInst === "number";
+    const temFim = typeof p.fimInst === "number";
+    if (temInicio) {
+      preenchidosInicio++;
+      inst.scoresInicio.push(p.inicioInst!);
+      pess.scoresInicio.push(p.inicioPess ?? 0);
+    }
+    if (temFim) {
+      preenchidosFim++;
+      inst.scoresFim.push(p.fimInst!);
+      pess.scoresFim.push(p.fimPess ?? 0);
+    }
+    if (temInicio && temFim) {
+      comAmbos++;
+      inst.saltos.push(p.fimInst! - p.inicioInst!);
+      pess.saltos.push((p.fimPess ?? 0) - (p.inicioPess ?? 0));
+    }
   }
-  if (scoresInicio.length === 0 && scoresFim.length === 0) return null;
+  if (preenchidosInicio === 0 && preenchidosFim === 0) return null;
   const totalParticipantes = (data.grupo.company.users ?? []).filter((u) => u.role !== "ADMIN").length;
-  return montarTurmaTermometro({ totalParticipantes, scoresInicio, scoresFim, saltos });
+  return montarTurmaTermometro({
+    totalParticipantes,
+    preenchidosInicio,
+    preenchidosFim,
+    comAmbos,
+    pessoal: pess,
+    instituicao: inst,
+  });
 }
 
-// Renderiza o panorama do grupo no DOCX: médias + salto + distribuição por
-// faixa (a "mini-versão" do painel da turma do facilitador).
+// Renderiza o panorama do grupo no DOCX (mini-versão do painel da turma):
+// 2 leituras — conhecimento pessoal da equipe + etapa da jornada das
+// instituições — com médias, saltos e distribuições por faixa.
 function renderDistribuicaoGrupo(tg: TurmaTermometro): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const temFim = tg.preenchidosFim > 0;
 
-  const medias: Array<[string, string]> = [];
-  if (tg.mediaInicio !== null)
-    medias.push(["Maturidade média no início", `${tg.mediaInicio}/100 — ${faixaQualitativa(tg.mediaInicio).label}`]);
-  if (tg.mediaFim !== null)
-    medias.push(["Maturidade média no fim", `${tg.mediaFim}/100 — ${faixaQualitativa(tg.mediaFim).label}`]);
-  if (tg.saltoMedio !== null)
-    medias.push(["Salto médio de consciência", `${tg.saltoMedio > 0 ? "+" : ""}${tg.saltoMedio} pontos (entre ${tg.comAmbos} que fizeram início e fim)`]);
-  if (medias.length) out.push(tabelaCampos(medias));
+  // helper: tabela de distribuição (melhor faixa primeiro)
+  function tabelaDist(bloco: TurmaTermometro["pessoal"]): Table {
+    const fIni = [...bloco.distInicio].reverse();
+    const fFim = [...bloco.distFim].reverse();
+    const linhas: Array<[string, string]> = fIni.map((ini, i) => [
+      ini.label,
+      temFim ? `início: ${ini.n} · fim: ${fFim[i]?.n ?? 0}` : `${ini.n} participante(s)`,
+    ]);
+    return tabelaCampos(linhas);
+  }
 
-  out.push(
-    p("Distribuição por faixa — cada participante avaliou o próprio órgão, então o leque mostra a diversidade real da turma:"),
-  );
-  const fIni = [...tg.distInicio].reverse(); // Avançada → Partida
-  const fFim = [...tg.distFim].reverse();
-  const linhas: Array<[string, string]> = fIni.map((ini, i) => [
-    ini.label,
-    temFim ? `início: ${ini.n} · fim: ${fFim[i]?.n ?? 0}` : `${ini.n} participante(s)`,
-  ]);
-  out.push(tabelaCampos(linhas));
+  // 1. Conhecimento pessoal da equipe
+  out.push(p("👤 Conhecimento da equipe sobre a LGPD (auto-percepção):", { bold: true }));
+  const mediasPess: Array<[string, string]> = [];
+  if (tg.pessoal.mediaInicio !== null)
+    mediasPess.push(["Média no início", `${tg.pessoal.mediaInicio}/100 — ${faixaPessoal(tg.pessoal.mediaInicio).label}`]);
+  if (tg.pessoal.mediaFim !== null)
+    mediasPess.push(["Média no fim", `${tg.pessoal.mediaFim}/100 — ${faixaPessoal(tg.pessoal.mediaFim).label}`]);
+  if (tg.pessoal.saltoMedio !== null)
+    mediasPess.push(["Salto médio de conhecimento", `${tg.pessoal.saltoMedio > 0 ? "+" : ""}${tg.pessoal.saltoMedio} pontos (entre ${tg.comAmbos} que fizeram início e fim)`]);
+  if (mediasPess.length) out.push(tabelaCampos(mediasPess));
+  out.push(tabelaDist(tg.pessoal));
+
+  // 2. Etapa da jornada das instituições
+  out.push(p("🏛️ Estágio das instituições na jornada de adequação (cada participante avaliou o próprio órgão — o leque mostra a diversidade real):", { bold: true }));
+  const mediasInst: Array<[string, string]> = [];
+  if (tg.instituicao.mediaInicio !== null)
+    mediasInst.push(["Maturidade média no início", `${tg.instituicao.mediaInicio}/100 — ${faixaQualitativa(tg.instituicao.mediaInicio).label}`]);
+  if (tg.instituicao.mediaFim !== null)
+    mediasInst.push(["Maturidade média no fim", `${tg.instituicao.mediaFim}/100 — ${faixaQualitativa(tg.instituicao.mediaFim).label}`]);
+  if (tg.instituicao.saltoMedio !== null)
+    mediasInst.push(["Salto médio das instituições", `${tg.instituicao.saltoMedio > 0 ? "+" : ""}${tg.instituicao.saltoMedio} pontos`]);
+  if (mediasInst.length) out.push(tabelaCampos(mediasInst));
+  out.push(tabelaDist(tg.instituicao));
   return out;
 }
 
@@ -669,7 +715,7 @@ function renderFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
     out.push(seloFeitoPeloGrupo());
     out.push(
       p(
-        `Cada participante deste grupo avaliou a maturidade LGPD do PRÓPRIO órgão real, no início (e no fim) do curso — o salto mede a evolução da consciência. ${panoramaGrupo.preenchidosInicio} de ${panoramaGrupo.totalParticipantes} responderam o início${panoramaGrupo.preenchidosFim ? ` e ${panoramaGrupo.preenchidosFim} o fim` : ""}. Panorama do grupo:`,
+        `Cada participante respondeu em 2 blocos: quanto EU conheço a LGPD (3 perguntas) e em que etapa da jornada o MEU órgão real está (7 perguntas espelhando as Fases do PGP). Repetido no fim do curso, mostra os 2 saltos. ${panoramaGrupo.preenchidosInicio} de ${panoramaGrupo.totalParticipantes} responderam o início${panoramaGrupo.preenchidosFim ? ` e ${panoramaGrupo.preenchidosFim} o fim` : ""}. Panorama do grupo:`,
       ),
     );
     out.push(...renderDistribuicaoGrupo(panoramaGrupo));
@@ -1769,19 +1815,25 @@ function sumarioExecutivo(data: GrupoCadernoData): (Paragraph | Table)[] {
   );
 
   // Evolução do Termômetro — agregado anônimo dos membros do grupo (cada um
-  // avaliou o próprio órgão real; aqui só médias e salto pra leitura rápida).
+  // avaliou a si e ao próprio órgão real; aqui só médias e saltos pra leitura
+  // rápida da Alta Gestão).
   const panoramaExec = agregarTermometroGrupo(data);
   if (panoramaExec) {
     out.push(h2Exec("Evolução da Maturidade Percebida"));
     out.push(
       pExec(
-        `Cada participante avaliou o próprio órgão real (${panoramaExec.preenchidosInicio} responderam no início${panoramaExec.preenchidosFim ? `, ${panoramaExec.preenchidosFim} no fim` : ""}). Médias do grupo:`,
+        `Cada participante respondeu sobre si (conhecimento da LGPD) e sobre o próprio órgão real (etapa da jornada de adequação) — ${panoramaExec.preenchidosInicio} responderam no início${panoramaExec.preenchidosFim ? `, ${panoramaExec.preenchidosFim} no fim` : ""}. Médias do grupo:`,
       ),
     );
+    const pe = panoramaExec.pessoal;
+    const ie = panoramaExec.instituicao;
     const linhas: Array<[string, string]> = [];
-    if (panoramaExec.mediaInicio !== null) linhas.push(["Maturidade média no início", `${panoramaExec.mediaInicio}/100 — ${faixaQualitativa(panoramaExec.mediaInicio).label}`]);
-    if (panoramaExec.mediaFim !== null) linhas.push(["Maturidade média no fim", `${panoramaExec.mediaFim}/100 — ${faixaQualitativa(panoramaExec.mediaFim).label}`]);
-    if (panoramaExec.saltoMedio !== null) linhas.push(["Δ Salto médio de consciência", `${panoramaExec.saltoMedio > 0 ? "+" : ""}${panoramaExec.saltoMedio} pontos`]);
+    if (pe.mediaInicio !== null) linhas.push(["👤 Conhecimento da equipe no início", `${pe.mediaInicio}/100 — ${faixaPessoal(pe.mediaInicio).label}`]);
+    if (pe.mediaFim !== null) linhas.push(["👤 Conhecimento da equipe no fim", `${pe.mediaFim}/100 — ${faixaPessoal(pe.mediaFim).label}`]);
+    if (pe.saltoMedio !== null) linhas.push(["👤 Δ Salto de conhecimento", `${pe.saltoMedio > 0 ? "+" : ""}${pe.saltoMedio} pontos`]);
+    if (ie.mediaInicio !== null) linhas.push(["🏛️ Maturidade das instituições no início", `${ie.mediaInicio}/100 — ${faixaQualitativa(ie.mediaInicio).label}`]);
+    if (ie.mediaFim !== null) linhas.push(["🏛️ Maturidade das instituições no fim", `${ie.mediaFim}/100 — ${faixaQualitativa(ie.mediaFim).label}`]);
+    if (ie.saltoMedio !== null) linhas.push(["🏛️ Δ Salto das instituições", `${ie.saltoMedio > 0 ? "+" : ""}${ie.saltoMedio} pontos`]);
     out.push(tabelaCampos(linhas));
   }
 
@@ -1852,11 +1904,13 @@ function statusFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   // Termômetro
   const panoramaStatus = agregarTermometroGrupo(data);
   if (panoramaStatus) {
-    out.push(statusBadge("ok", `Termômetro aplicado — ${panoramaStatus.preenchidosInicio}/${panoramaStatus.totalParticipantes} participantes avaliaram o próprio órgão`));
+    out.push(statusBadge("ok", `Termômetro aplicado — ${panoramaStatus.preenchidosInicio}/${panoramaStatus.totalParticipantes} participantes avaliaram a si e ao próprio órgão`));
+    const ps = panoramaStatus.pessoal;
+    const is = panoramaStatus.instituicao;
     const linhas: Array<[string, string]> = [];
-    if (panoramaStatus.mediaInicio !== null) linhas.push(["Maturidade média no início", `${panoramaStatus.mediaInicio}/100`]);
-    if (panoramaStatus.mediaFim !== null) linhas.push(["Maturidade média no fim", `${panoramaStatus.mediaFim}/100`]);
-    if (panoramaStatus.saltoMedio !== null) linhas.push(["Salto médio", `${panoramaStatus.saltoMedio > 0 ? "+" : ""}${panoramaStatus.saltoMedio} pontos`]);
+    if (ps.mediaInicio !== null) linhas.push(["👤 Conhecimento da equipe (média)", `${ps.mediaInicio}/100${ps.mediaFim !== null ? ` → ${ps.mediaFim}/100` : ""}`]);
+    if (is.mediaInicio !== null) linhas.push(["🏛️ Maturidade das instituições (média)", `${is.mediaInicio}/100${is.mediaFim !== null ? ` → ${is.mediaFim}/100` : ""}`]);
+    if (ps.saltoMedio !== null) linhas.push(["Saltos médios (equipe · instituições)", `${ps.saltoMedio > 0 ? "+" : ""}${ps.saltoMedio} · ${(is.saltoMedio ?? 0) > 0 ? "+" : ""}${is.saltoMedio ?? 0} pontos`]);
     out.push(tabelaCampos(linhas));
   } else {
     out.push(statusBadge("pendente", "Termômetro Institucional pendente — recomendado aplicar como linha de base"));

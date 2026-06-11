@@ -11,7 +11,7 @@ import { getSession } from "@/lib/auth-server";
 import { ensureTabelaTermometro } from "@/lib/colunas-termometro";
 import { ensureColunaTermometroLiberado } from "@/lib/coluna-termometro-liberado";
 import {
-  calcularScoreTermometro,
+  calcularScoresTermometro,
   DIMENSOES_TERMOMETRO,
   type NivelTermometro,
   type TermometroSalvo,
@@ -24,12 +24,14 @@ type Momento = "INICIO" | "FIM";
 function linhaParaSalvo(row: {
   dimensoes: unknown;
   score: number;
+  scorePessoal: number;
   finalizadoEm: Date;
 } | null): TermometroSalvo | null {
   if (!row) return null;
   return {
     dimensoes: (row.dimensoes as TermometroSalvo["dimensoes"]) ?? [],
     score: row.score,
+    scorePessoal: row.scorePessoal,
     finalizadoEm: row.finalizadoEm.toISOString(),
   };
 }
@@ -52,7 +54,7 @@ export async function getTermometro(): Promise<{
 
   const rows = await prisma.termometroResposta.findMany({
     where: { userId, momento: { in: ["INICIO", "FIM"] } },
-    select: { momento: true, dimensoes: true, score: true, finalizadoEm: true },
+    select: { momento: true, dimensoes: true, score: true, scorePessoal: true, finalizadoEm: true },
   });
   const inicio = rows.find((r) => r.momento === "INICIO") ?? null;
   const fim = rows.find((r) => r.momento === "FIM") ?? null;
@@ -76,7 +78,7 @@ export async function getTermometro(): Promise<{
 export async function salvarTermometro(
   momento: Momento,
   respostas: Record<string, NivelTermometro>,
-): Promise<{ ok: true; score: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; score: number; scorePessoal: number } | { ok: false; error: string }> {
   try {
     await ensureTabelaTermometro();
     await ensureColunaTermometroLiberado();
@@ -102,7 +104,7 @@ export async function salvarTermometro(
       }
       dimensoes.push({ id: dim.id, opcaoEscolhida: escolhida, pontos: opcao.pontos });
     }
-    const score = calcularScoreTermometro(respostas);
+    const { instituicao: score, pessoal: scorePessoal } = calcularScoresTermometro(respostas);
 
     // turmaId vem do grupo do participante (1 company = 1 grupo).
     const grupo = await prisma.cursoGrupo.findUnique({
@@ -127,10 +129,12 @@ export async function salvarTermometro(
         momento,
         dimensoes,
         score,
+        scorePessoal,
       },
       update: {
         dimensoes,
         score,
+        scorePessoal,
         finalizadoEm: new Date(),
         // mantém turma/grupo/papel atualizados caso algo tenha mudado
         turmaId: grupo.turmaId,
@@ -141,7 +145,7 @@ export async function salvarTermometro(
 
     revalidatePath("/dashboard/fase-preliminar/termometro");
     revalidatePath("/dashboard/fase-preliminar");
-    return { ok: true, score };
+    return { ok: true, score, scorePessoal };
   } catch (e: any) {
     return { ok: false, error: e?.message || "Erro ao salvar" };
   }
