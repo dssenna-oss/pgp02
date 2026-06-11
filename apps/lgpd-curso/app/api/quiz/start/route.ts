@@ -40,21 +40,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Turma encerrada — quiz indisponível" }, { status: 403 });
     }
 
-    // Cria ou recupera a QuizResponse existente
-    const resposta = await prisma.quizResponse.upsert({
-      where: {
-        turmaId_uuid: {
-          turmaId: turma.id,
-          uuid,
-        },
-      },
+    // Cria ou recupera a QuizResponse existente.
+    // O upsert do Prisma NÃO é atômico (select+insert): dois starts simultâneos
+    // do MESMO cliente (retry do celular, efeito duplo do React em dev) podem
+    // ambos tentar criar — o perdedor estoura P2002. Nesse caso a linha já
+    // existe; repetir o upsert cai no caminho de update e devolve o estado.
+    const argsUpsert = {
+      where: { turmaId_uuid: { turmaId: turma.id, uuid } },
       update: {},
-      create: {
-        turmaId: turma.id,
-        uuid,
-      },
+      create: { turmaId: turma.id, uuid },
       select: { id: true, startedAt: true, finishedAt: true, scoreTotal: true, scorePorCategoria: true },
-    });
+    } as const;
+    let resposta;
+    try {
+      resposta = await prisma.quizResponse.upsert(argsUpsert);
+    } catch (e: any) {
+      if (e?.code !== "P2002") throw e;
+      resposta = await prisma.quizResponse.upsert(argsUpsert);
+    }
 
     // Calcula deadline se a turma tem duração configurada.
     // Decisão UX (2026-05-25): timer POR participante (cada um tem o mesmo
