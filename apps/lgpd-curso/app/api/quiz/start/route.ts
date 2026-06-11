@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ensureTabelaQuiz } from "@/lib/colunas-quiz";
 import { ensureColunaQuizDuracao } from "@/lib/coluna-quiz-duracao";
+import { ensureColunaQuizLiberado } from "@/lib/coluna-quiz-liberado";
 import { perguntasPublicas, TOTAL_PERGUNTAS } from "@/lib/quiz-perguntas";
 
 export const maxDuration = 30;
@@ -20,6 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     await ensureTabelaQuiz();
     await ensureColunaQuizDuracao();
+    await ensureColunaQuizLiberado();
 
     const body = await req.json();
     const turmaSlug = String(body?.turmaSlug || "").trim();
@@ -31,13 +33,32 @@ export async function POST(req: NextRequest) {
 
     const turma = await prisma.cursoTurma.findFirst({
       where: { slug: turmaSlug },
-      select: { id: true, nome: true, cidade: true, status: true, quizDuracaoMinutos: true },
+      select: { id: true, nome: true, cidade: true, status: true, quizDuracaoMinutos: true, quizLiberado: true },
     });
     if (!turma) {
       return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
     }
     if (turma.status !== "ATIVA") {
       return NextResponse.json({ error: "Turma encerrada — quiz indisponível" }, { status: 403 });
+    }
+
+    // Trava de largada: com o quiz TRAVADO, quem ainda não terminou fica na
+    // tela de espera (o cliente faz polling e entra sozinho na liberação).
+    // Checado ANTES do upsert de propósito: a QuizResponse (e o startedAt, que
+    // ancora o timer individual) só nasce depois da liberação — quem abriu
+    // cedo não perde tempo de prova. Quem JÁ finalizou passa pra rever o
+    // resultado mesmo travado.
+    if (!turma.quizLiberado) {
+      const existente = await prisma.quizResponse.findUnique({
+        where: { turmaId_uuid: { turmaId: turma.id, uuid } },
+        select: { finishedAt: true },
+      });
+      if (!existente?.finishedAt) {
+        return NextResponse.json({
+          bloqueado: true,
+          turma: { nome: turma.nome, cidade: turma.cidade },
+        });
+      }
     }
 
     // Cria ou recupera a QuizResponse existente.

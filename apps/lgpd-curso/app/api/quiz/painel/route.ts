@@ -18,6 +18,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { ensureTabelaQuiz } from "@/lib/colunas-quiz";
 import { ensureColunaQuizDuracao } from "@/lib/coluna-quiz-duracao";
+import { ensureColunaQuizLiberado } from "@/lib/coluna-quiz-liberado";
 import { PERGUNTAS, CATEGORIAS, type CategoriaQuiz } from "@/lib/quiz-perguntas";
 
 export const maxDuration = 30;
@@ -32,6 +33,7 @@ export async function GET(req: NextRequest) {
   try {
     await ensureTabelaQuiz();
     await ensureColunaQuizDuracao();
+    await ensureColunaQuizLiberado();
 
     const turmaId = req.nextUrl.searchParams.get("turmaId");
     if (!turmaId) {
@@ -40,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     const turma = await prisma.cursoTurma.findUnique({
       where: { id: turmaId },
-      select: { quizDuracaoMinutos: true },
+      select: { quizDuracaoMinutos: true, quizLiberado: true },
     });
 
     const respostas = await prisma.quizResponse.findMany({
@@ -191,6 +193,7 @@ export async function GET(req: NextRequest) {
       porCategoria,
       // Info do timer pro Facilitador visualizar — null se a turma não tem
       // duração configurada. Cliente do quiz é INVISÍVEL (sem UI de tempo).
+      quizLiberado: turma?.quizLiberado === true,
       timer: {
         duracaoMinutos,
         emAndamento: emAndamento.length,

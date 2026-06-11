@@ -30,6 +30,7 @@ type Turma = {
 };
 
 type Dados = {
+  quizLiberado?: boolean;
   total: {
     respondentes: number;
     completos: number;
@@ -102,6 +103,7 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
   const [copiou, setCopiou] = useState(false);
   const [zerando, setZerando] = useState(false);
   const [salvandoTempo, setSalvandoTempo] = useState(false);
+  const [liberando, setLiberando] = useState(false);
   // origin só é conhecido no cliente. Computar no SSR causaria mismatch de
   // hidratação no QR (server "/quiz/.." vs client "http://.../quiz/.."), então
   // começa vazio e é preenchido após a montagem.
@@ -396,6 +398,37 @@ export function PainelQuiz({ turmas }: { turmas: Turma[] }) {
                 💡 Projete o cartaz no telão pra a turma escanear, ou cole o link no e-mail de convite.
                 O QR funciona em qualquer câmera de celular sem app extra.
               </p>
+              {/* Trava de largada — todos começam juntos */}
+              <div className="mt-3 flex items-center gap-2 flex-wrap border-t border-blue-200 pt-3">
+                <button
+                  type="button"
+                  disabled={liberando}
+                  onClick={async () => {
+                    const novo = !(dados?.quizLiberado === true);
+                    setLiberando(true);
+                    try {
+                      const res = await fetch("/api/curso/quiz-liberar", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ turmaId, liberado: novo }),
+                      });
+                      if (res.ok) setDados((d) => (d ? { ...d, quizLiberado: novo } : d));
+                    } finally {
+                      setLiberando(false);
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-semibold ${
+                    dados?.quizLiberado
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "border border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                  }`}
+                >
+                  {dados?.quizLiberado ? "🏁 Quiz LIBERADO — tocar pra travar" : "🔒 Quiz travado — tocar pra LIBERAR"}
+                </button>
+                <span className="text-xs text-blue-800">
+                  Travado: quem abrir vê &quot;aguarde o facilitador&quot;. Ao liberar, todos entram juntos.
+                </span>
+              </div>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ export type AcaoConducao =
   | { kind: "telao-termometro"; label: string }
   | { kind: "telao-quiz"; label: string }
   | { kind: "telao-quiz-resultado"; label: string }
+  | { kind: "liberar-quiz"; label: string }
   | { kind: "telao-placar"; label: string }
   | { kind: "disparar-dsr"; label: string }
   | { kind: "disparar-incidente"; label: string }
@@ -57,10 +58,11 @@ const MAPA: Record<
   2: {
     acoes: [
       { kind: "telao-quiz", label: "Abrir Quiz Diagnóstico" },
+      { kind: "liberar-quiz", label: "Liberar quiz" },
       { kind: "telao-quiz-resultado", label: "Resultado do Quiz" },
     ],
     status: [{ kind: "online", label: "Participantes online" }],
-    dica: "Projete o QR (todos respondem) e, no fim, projete o Resultado do Quiz pra comentar com a turma.",
+    dica: "Sequência: projete o QR → espere todos na tela 'aguarde' → LIBERE o quiz (largada conjunta) → no fim, projete o Resultado pra comentar.",
     voceUsa: ["celular"],
     alunoUsa: ["celular"],
   },
