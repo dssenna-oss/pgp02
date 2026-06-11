@@ -12,6 +12,7 @@
 // a refresh do navegador e impede contar 2x.
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Lightbulb, Scale, Users, Shield, Flag,
   ArrowRight, ArrowLeft, CheckCircle2, Circle, Sparkles, AlertTriangle,
@@ -742,6 +743,17 @@ function TelaResultado({ resultado, ja }: { resultado: Resultado; ja?: boolean }
       <div className="rounded-lg border bg-gray-50 p-4 text-center text-xs text-gray-600">
         Resposta enviada anonimamente. O facilitador vê só números agregados da turma.<br />
         Bom curso! 🎯
+      </div>
+
+      {/* Fecha o circuito do hub: quiz feito → volta pra home ("Siga o telão"),
+          onde está o botão da próxima atividade que o facilitador anunciar. */}
+      <div className="text-center">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow hover:bg-indigo-700"
+        >
+          🏠 Voltar ao início
+        </Link>
       </div>
     </div>
   );
