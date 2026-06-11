@@ -10,9 +10,17 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import type { NextAuthOptions } from "next-auth";
+import { encode } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { ensureColunasControleTurma } from "@/lib/colunas-controle-turma";
 import { ensureColunaForumAberto } from "@/lib/coluna-forum-aberto";
+
+// Duração da sessão POR PAPEL. O facilitador (ADMIN) acessa o tempo todo e em
+// vários dispositivos → 30 dias (loga raríssimo). Os participantes ficam em 4h
+// pra PRESERVAR o controle de janela de acesso da turma (checado no login):
+// uma sessão longa deixaria o aluno entrar muito depois do acessoFim.
+const MAXAGE_ADMIN = 30 * 24 * 60 * 60; // 30 dias
+const MAXAGE_PADRAO = 4 * 60 * 60; // 4h
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -123,7 +131,17 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt" as const,
-    maxAge: 4 * 60 * 60, // 4h — mais que a aula prática
+    // Limite EXTERNO do cookie (o maior dos dois). O exp REAL do token é setado
+    // por papel no jwt.encode abaixo — admin 30d, demais 4h.
+    maxAge: MAXAGE_ADMIN,
+  },
+  jwt: {
+    // Sessão por papel: encode customizado que escolhe o maxAge pelo token.role
+    // (setado no callback jwt). O decode segue o padrão do NextAuth.
+    async encode(params) {
+      const isAdmin = (params.token as any)?.role === "ADMIN";
+      return encode({ ...params, maxAge: isAdmin ? MAXAGE_ADMIN : MAXAGE_PADRAO });
+    },
   },
   useSecureCookies: process.env.NODE_ENV === "production",
   callbacks: {
