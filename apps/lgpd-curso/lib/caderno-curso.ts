@@ -517,13 +517,13 @@ function introducao(data: GrupoCadernoData): (Paragraph | Table)[] {
   );
   out.push(h2("Estrutura do Caderno"));
   out.push(bullet("Fase Preliminar — Sensibilização e Engajamento"));
-  out.push(bullet("Fase 1 — Designação do Encarregado (DPO)"));
+  out.push(bullet("Fase 1 — Formação das equipes de trabalho"));
   out.push(bullet("Fase 2 — Diagnóstico Inicial"));
   out.push(bullet("Fase 3 — Mapeamento e Análise de Riscos"));
-  out.push(bullet("Fase 4 — Análise de Conformidade (GAP Analysis)"));
-  out.push(bullet("Fase 5 — Programa de Governança em Privacidade"));
-  out.push(bullet("Fase 6 — Execução (RIPD, Operadores, DSR, Aviso, Políticas)"));
-  out.push(bullet("Fase 7 — Monitoramento e Resposta a Incidentes"));
+  out.push(bullet("Fase 4 — GAP Analysis"));
+  out.push(bullet("Fase 5 — Plano de Ação e Adequação"));
+  out.push(bullet("Fase 6 — Execução"));
+  out.push(bullet("Fase 7 — Monitoramento Contínuo e Melhoria"));
   out.push(p(""));
   // Painel de Maturidade
   const kpis = calcularKpis(data);
@@ -792,12 +792,12 @@ function renderCarta(carta: any): Paragraph[] {
 }
 
 // =============================================================================
-// FASE 1 — Designação do Encarregado (DPO)
+// FASE 1 — Formação das equipes de trabalho (Encarregado/DPO)
 // =============================================================================
 
 function renderFase1(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1("Fase 1 — Designação do Encarregado (DPO)"));
+  out.push(h1("Fase 1 — Formação das equipes de trabalho"));
   out.push(h2("📚 Conteúdo institucional"));
   out.push(...renderDescricaoBlocos(CONTEUDO_FASE_1));
   out.push(h2("✅ O que vocês fizeram"));
@@ -1126,7 +1126,7 @@ function traduzirStatus(s: string): string {
 
 function renderFase4(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1("Fase 4 — Análise de Conformidade (GAP Analysis)"));
+  out.push(h1("Fase 4 — GAP Analysis"));
   out.push(h2("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-4");
   if (conteudo) {
@@ -1191,7 +1191,7 @@ function traduzirResposta(r: string): string {
 
 function renderFase5(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1("Fase 5 — Programa de Governança em Privacidade"));
+  out.push(h1("Fase 5 — Plano de Ação e Adequação"));
   out.push(h2("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-5");
   if (conteudo) {
@@ -1281,12 +1281,12 @@ function renderTabelaAcoes(acoes: Array<{
 }
 
 // =============================================================================
-// FASE 6 — Execução (RIPD, Operadores, DSR, Aviso)
+// FASE 6 — Execução (conteúdo: RIPD, Operadores, DSR, Aviso)
 // =============================================================================
 
 function renderFase6(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1("Fase 6 — Execução (Instrumentos)"));
+  out.push(h1("Fase 6 — Execução"));
   out.push(h2("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-6");
   if (conteudo) {
@@ -1426,12 +1426,12 @@ function renderFase6(data: GrupoCadernoData): (Paragraph | Table)[] {
 }
 
 // =============================================================================
-// FASE 7 — Monitoramento e Resposta a Incidentes
+// FASE 7 — Monitoramento Contínuo e Melhoria
 // =============================================================================
 
 function renderFase7(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1("Fase 7 — Monitoramento e Resposta a Incidentes"));
+  out.push(h1("Fase 7 — Monitoramento Contínuo e Melhoria"));
   out.push(h2("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-7");
   if (conteudo) {
@@ -1900,7 +1900,7 @@ function painelConsolidado(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase Preliminar — Sensibilização"));
+  out.push(h1Exec("Fase Preliminar — Sensibilização e Engajamento"));
   // Termômetro
   const panoramaStatus = agregarTermometroGrupo(data);
   if (panoramaStatus) {
@@ -1930,7 +1930,7 @@ function statusFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFase1(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase 1 — Designação do Encarregado"));
+  out.push(h1Exec("Fase 1 — Formação das equipes de trabalho"));
   if (c.dpoName) {
     out.push(statusBadge("ok", "Encarregado(a) designado(a)"));
     out.push(
@@ -2021,7 +2021,7 @@ function statusFase3(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFase4(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase 4 — Análise de Conformidade (GAP)"));
+  out.push(h1Exec("Fase 4 — GAP Analysis"));
   const gap = c.gapAnswers;
   if (gap.length > 0) {
     const aderentes = gap.filter((g) => g.resposta === "ADERENTE").length;
@@ -2050,7 +2050,7 @@ function statusFase4(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFase5(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase 5 — Programa de Governança em Privacidade"));
+  out.push(h1Exec("Fase 5 — Plano de Ação e Adequação"));
   const acoes = c.actions;
   if (acoes.length > 0) {
     const abertas = acoes.filter((a) => a.status === "ABERTA").length;
@@ -2077,7 +2077,7 @@ function statusFase5(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFase6(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase 6 — Execução (Instrumentos)"));
+  out.push(h1Exec("Fase 6 — Execução"));
   // RIPD
   if (c.ripds.length > 0) {
     const aprovados = c.ripds.filter((r) => r.status === "APROVADO").length;
@@ -2115,7 +2115,7 @@ function statusFase6(data: GrupoCadernoData): (Paragraph | Table)[] {
 function statusFase7(data: GrupoCadernoData): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
   const c = data.grupo.company;
-  out.push(h1Exec("Fase 7 — Monitoramento e Resposta"));
+  out.push(h1Exec("Fase 7 — Monitoramento Contínuo e Melhoria"));
   // Incidentes
   if (c.incidents.length > 0) {
     const comAnpd = c.incidents.filter((i) => i.comunicadoAnpd).length;
@@ -2752,7 +2752,7 @@ function renderFasePreliminarCartilha(): (Paragraph | Table)[] {
 
 function renderFase1Cartilha(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Cartilha("Fase 1 — Designação do Encarregado (DPO)"));
+  out.push(h1Cartilha("Fase 1 — Formação das equipes de trabalho"));
   out.push(h2Cartilha("📚 Conteúdo institucional"));
   out.push(...renderDescricaoBlocos(CONTEUDO_FASE_1));
 
@@ -2927,7 +2927,7 @@ function renderFase3Cartilha(): (Paragraph | Table)[] {
 
 function renderFase4Cartilha(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Cartilha("Fase 4 — Análise de Conformidade (GAP Analysis)"));
+  out.push(h1Cartilha("Fase 4 — GAP Analysis"));
   out.push(h2Cartilha("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-4");
   if (conteudo) {
@@ -2962,7 +2962,7 @@ function renderFase4Cartilha(): (Paragraph | Table)[] {
 
 function renderFase5Cartilha(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Cartilha("Fase 5 — Programa de Governança em Privacidade"));
+  out.push(h1Cartilha("Fase 5 — Plano de Ação e Adequação"));
   out.push(h2Cartilha("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-5");
   if (conteudo) {
@@ -3003,7 +3003,7 @@ function renderFase5Cartilha(): (Paragraph | Table)[] {
 
 function renderFase6Cartilha(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Cartilha("Fase 6 — Execução (Instrumentos)"));
+  out.push(h1Cartilha("Fase 6 — Execução"));
   out.push(h2Cartilha("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-6");
   if (conteudo) {
@@ -3075,7 +3075,7 @@ function renderFase6Cartilha(): (Paragraph | Table)[] {
 
 function renderFase7Cartilha(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Cartilha("Fase 7 — Monitoramento e Resposta a Incidentes"));
+  out.push(h1Cartilha("Fase 7 — Monitoramento Contínuo e Melhoria"));
   out.push(h2Cartilha("📚 Conteúdo institucional"));
   const conteudo = getConteudoFase("fase-7");
   if (conteudo) {
