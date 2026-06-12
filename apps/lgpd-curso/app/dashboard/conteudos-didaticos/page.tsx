@@ -43,7 +43,7 @@ export default function ConteudosDidaticosPage() {
               Guia de Implementação da LGPD em Instituições Públicas
             </p>
             <p className="text-sm text-gray-700 mt-2">
-              Documento institucional de ~60 páginas com tudo o que você precisa pra implementar a LGPD na sua
+              Documento institucional (PDF, 31 páginas) com tudo o que você precisa pra implementar a LGPD na sua
               Instituição: conteúdo das 8 etapas do Programa de Governança em Privacidade, glossário, modelos de
               documentos (Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento,
               Comunicação à ANPD), explicação das armadilhas comuns no setor público, adaptação por porte do órgão,
@@ -53,13 +53,17 @@ export default function ConteudosDidaticosPage() {
               📌 Independente do trabalho do seu grupo no curso. Pra você levar pra sua Instituição.
             </p>
             <div className="mt-4">
+              {/* PDF estático (public/cartilha-pgp.pdf) — versão diagramada
+                  fornecida pelo facilitador (2026-06-12). Substituiu o DOCX
+                  gerado (/api/curso/caderno/docx?modo=cartilha — rota segue
+                  existindo pro facilitador). Pra atualizar: trocar o arquivo. */}
               <Link
-                href="/api/curso/caderno/docx?modo=cartilha"
+                href="/cartilha-pgp.pdf"
                 target="_blank"
                 className="inline-flex items-center gap-2 rounded-lg bg-purple-700 hover:bg-purple-800 px-4 py-2 text-sm font-semibold text-white shadow-sm"
               >
                 <Download className="h-4 w-4" />
-                Baixar Cartilha do PGP (DOCX)
+                Baixar Cartilha do PGP (PDF)
               </Link>
             </div>
           </div>
