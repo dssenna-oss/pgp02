@@ -29,6 +29,12 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
   ambos("entendendo-pgp", "🧭", "Entendendo o PGP", "/dashboard/entendendo-pgp"),
   ambos("historico-lgpd", "📜", "Histórico da LGPD", "/dashboard/historico-lgpd"),
   ambos("estrutura-lgpd", "📖", "Estrutura da LGPD", "/dashboard/estrutura-lgpd"),
+  // Guia didático de UM módulo da Estrutura (HTML estático standalone). Existe
+  // pro "escape" do Momento 4: projetar SÓ os arts. 1-11 como amostra antes do
+  // Desafio. O comando conteudo:estrutura-lgpd mostra a LISTA de módulos; este
+  // projeta o conteúdo do guia direto. Fora do dropdown da biblioteca (só o
+  // botão do M4 e o controle local usam). hrefAluno = mesmo HTML.
+  ambos("guia-art-1-11", "📘", "Guia LGPD — Artigos 1 a 11", "/estrutura-lgpd/artigos-1-11.html"),
   ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
   ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
   ambos("fase-2", "🚩", "Fase 2 — Diagnóstico inicial", "/dashboard/fase-2"),
