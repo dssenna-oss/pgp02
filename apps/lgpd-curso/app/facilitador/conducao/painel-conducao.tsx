@@ -238,14 +238,17 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
           <Layers3 className="h-4 w-4" /> {modoCards ? "Modo Cards: LIGADO" : "Modo Cards: desligado"}
         </button>
 
-        {/* fallback: abrir telão de qualquer atividade numa NOVA ABA (no dispositivo do clique) */}
+        {/* "Espiar" o agregado de uma atividade NO PRÓPRIO DISPOSITIVO (nova
+            aba), SEM mudar o telão — ex.: acompanhar as respostas chegando
+            enquanto o telão mostra outra coisa. Também serve de plano C de
+            projeção se o /telao-vivo não estiver aberto no notebook. */}
         <Select
           value=""
           onChange={(e) => { if (e.target.value) { abrirTelao(cartaz(e.target.value)); e.target.value = ""; } }}
           className="max-w-[17rem]"
-          title="Abre numa nova aba, neste dispositivo (fallback)"
+          title="Abre numa nova aba neste aparelho — o telão não muda"
         >
-          <option value="">↗ Abrir atividade em nova aba…</option>
+          <option value="">👁️ Ver no meu celular…</option>
           <option value="termometro">🌡️ Termômetro (evolução)</option>
           {ATIVIDADES_C.map((a) => (
             <option key={a.id} value={a.id}>{a.emoji} {a.titulo}</option>
