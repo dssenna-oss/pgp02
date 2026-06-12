@@ -16,6 +16,9 @@ export type AcaoConducao =
   | { kind: "telao-placar"; label: string }
   | { kind: "disparar-dsr"; label: string }
   | { kind: "disparar-incidente"; label: string }
+  // Abre uma PÁGINA do facilitador em nova aba (não comanda o telão) — ex.:
+  // atalho pros cards imprimíveis. Renderizado discreto (não é botão de telão).
+  | { kind: "abrir-pagina"; href: string; label: string }
   | { kind: "fechamento"; label: string };
 
 export type StatusConducao =
@@ -91,6 +94,7 @@ const MAPA: Record<
       // Escape estratégico (sem tempo): Guia art. 1-11 → Desafio art. 1-11.
       { kind: "telao-conteudo", conteudoId: "guia-art-1-11", label: "Guia art. 1-11 no telão" },
       { kind: "telao-atividade", atividadeId: "trilha-1-11", label: "Abrir Desafio art. 1-11" },
+      { kind: "abrir-pagina", href: "/facilitador/cards-trilha", label: "Cards da Trilha (imprimir)" },
     ],
     status: [],
     dica: "Roteiro completo: projete Histórico → Estrutura (botões acima) e aplique os 6 Desafios pelo dropdown '📺 Slides e conteúdos…'. ⏱ SEM TEMPO? Use o ESCAPE (2 últimos botões): projete o 'Guia art. 1-11' → distribua o card impresso → 'Desafio art. 1-11' no telão. Os grupos respondem no celular — é a amostra que mostra por que vale aprofundar na lei.",
