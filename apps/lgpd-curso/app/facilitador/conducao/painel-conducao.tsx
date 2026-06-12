@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import {
   ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Users,
   AlertTriangle, LifeBuoy, Layers3, FileText, Award, CheckSquare, Clock, Zap,
-  Tv2, ExternalLink, Copy, Check,
+  Tv2, ExternalLink, Copy, Check, Printer,
 } from "lucide-react";
 import { Select } from "@/components/ui/select";
 import { ROTEIRO_CONDUCAO, minutosDoMomento, type MomentoConducao, type DispositivoVoce, type DispositivoAluno } from "@/lib/conducao-mapa";
@@ -416,6 +416,21 @@ export function PainelConducao({ turmas }: { turmas: Turma[] }) {
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`atividade:${a.atividadeId}`, rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-conteudo")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao(`conteudo:${a.conteudoId}`, rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
+              // Atalho discreto pra uma página do facilitador (NÃO comanda o
+              // telão — abre em nova aba). Estilo leve, contrasta com os botões
+              // de telão.
+              if (a.kind === "abrir-pagina")
+                return (
+                  <a
+                    key={i}
+                    href={a.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-indigo-300 hover:text-indigo-700"
+                  >
+                    <Printer className="h-3.5 w-3.5" /> {a.label}
+                  </a>
+                );
               if (a.kind === "telao-termometro")
                 return <BotaoAcao key={i} onClick={() => mostrarNoTelao("atividade:termometro", rotuloTelaoCurto(a.label))} icon={<Tv2 className="h-4 w-4" />}>📺 Mostrar no telão: {rotuloTelaoCurto(a.label)}</BotaoAcao>;
               if (a.kind === "telao-quiz")
