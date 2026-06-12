@@ -88,9 +88,12 @@ const MAPA: Record<
       { kind: "telao-conteudo", conteudoId: "entendendo-pgp", label: "Entendendo o PGP no telão" },
       { kind: "telao-conteudo", conteudoId: "historico-lgpd", label: "Histórico da LGPD no telão" },
       { kind: "telao-conteudo", conteudoId: "estrutura-lgpd", label: "Estrutura da LGPD no telão" },
+      // Escape estratégico (sem tempo): Guia art. 1-11 → Desafio art. 1-11.
+      { kind: "telao-conteudo", conteudoId: "guia-art-1-11", label: "Guia art. 1-11 no telão" },
+      { kind: "telao-atividade", atividadeId: "trilha-1-11", label: "Abrir Desafio art. 1-11" },
     ],
     status: [],
-    dica: "Siga os botões acima na ordem (tudo pelo celular). Desafios LGPD: dropdown '📺 Slides e conteúdos…' → escolha a faixa (1-11 … 51-65); os grupos respondem no celular.",
+    dica: "Roteiro completo: projete Histórico → Estrutura (botões acima) e aplique os 6 Desafios pelo dropdown '📺 Slides e conteúdos…'. ⏱ SEM TEMPO? Use o ESCAPE (2 últimos botões): projete o 'Guia art. 1-11' → distribua o card impresso → 'Desafio art. 1-11' no telão. Os grupos respondem no celular — é a amostra que mostra por que vale aprofundar na lei.",
     voceUsa: ["celular"],
     alunoUsa: ["celular", "impresso"],
   },
