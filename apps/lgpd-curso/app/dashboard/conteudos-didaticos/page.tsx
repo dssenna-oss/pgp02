@@ -65,6 +65,19 @@ export default function ConteudosDidaticosPage() {
                 <Download className="h-4 w-4" />
                 Baixar Cartilha do PGP (PDF)
               </Link>
+              {/* Versão Word — mesmo conteúdo, sem a diagramação, pra adaptar
+                  ao órgão. Rota geradora (DOCX) acessível a participantes. */}
+              <p className="mt-2 text-xs text-gray-500">
+                Prefere adaptar ao seu órgão?{" "}
+                <Link
+                  href="/api/curso/caderno/docx?modo=cartilha"
+                  target="_blank"
+                  className="font-medium text-purple-700 underline underline-offset-2 hover:text-purple-800"
+                >
+                  Baixe a versão Word (editável)
+                </Link>
+                .
+              </p>
             </div>
           </div>
         </div>
@@ -106,6 +119,19 @@ export default function ConteudosDidaticosPage() {
                 <Download className="h-4 w-4" />
                 Baixar Pacote de Modelos (PDF)
               </Link>
+              {/* Versão Word — pra preencher os modelos de verdade (placeholders
+                  pra substituir no Word). Rota geradora acessível a participantes. */}
+              <p className="mt-2 text-xs text-gray-500">
+                Vai preencher os modelos?{" "}
+                <Link
+                  href="/api/curso/pacote-modelos/docx"
+                  target="_blank"
+                  className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-800"
+                >
+                  Baixe a versão Word (campos editáveis)
+                </Link>
+                .
+              </p>
             </div>
           </div>
         </div>
