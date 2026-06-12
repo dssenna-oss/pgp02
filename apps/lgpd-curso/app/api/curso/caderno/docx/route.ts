@@ -6,7 +6,7 @@
 //               reais ou modelo amarelo quando vazio. Exige grupoId. Admin-only.
 //   executivo — Relatório Executivo (~12pg) pra Alta Gestão do grupo. Score +
 //               métricas + recomendações estratégicas. Exige grupoId. Admin-only.
-//   cartilha  — Cartilha do PGP (~100-150pg) — guia genérico de implementação
+//   cartilha  — Cartilha do PGP (~60pg) — guia genérico de implementação
 //               da LGPD pra qualquer Instituição Pública. NÃO depende de
 //               grupoId. Aberto a qualquer autenticado (facilitador OU
 //               participante). Opcionais: ?instituicao=X&tipo=PM|CM|AUTARQUIA|

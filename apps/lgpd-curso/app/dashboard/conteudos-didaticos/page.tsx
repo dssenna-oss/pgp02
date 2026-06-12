@@ -43,7 +43,7 @@ export default function ConteudosDidaticosPage() {
               Guia de Implementação da LGPD em Instituições Públicas
             </p>
             <p className="text-sm text-gray-700 mt-2">
-              Documento institucional de ~120 páginas com tudo o que você precisa pra implementar a LGPD na sua
+              Documento institucional de ~60 páginas com tudo o que você precisa pra implementar a LGPD na sua
               Instituição: conteúdo das 8 etapas do Programa de Governança em Privacidade, glossário, modelos de
               documentos (Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento,
               Comunicação à ANPD), explicação das armadilhas comuns no setor público, adaptação por porte do órgão,

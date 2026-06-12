@@ -45,7 +45,7 @@ import {
   PROXIMOS_PASSOS_POR_FASE,
   SELO_MODELO,
 } from "./caderno-modelo";
-import { DIMENSOES_TERMOMETRO, faixaQualitativa, faixaPessoal, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
+import { DIMENSOES_TERMOMETRO, DIMENSOES_PESSOAIS, DIMENSOES_INSTITUICAO, faixaQualitativa, faixaPessoal, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
 import { CRITERIOS_PRIORIZACAO, faixaPriorizacao } from "./criterios-priorizacao";
 import { getControleById } from "./gap-catalogo";
 import { gerarRoadmap90Dias } from "./roadmap-gerador";
@@ -723,7 +723,7 @@ function renderFasePreliminar(data: GrupoCadernoData): (Paragraph | Table)[] {
     out.push(seloModelo());
     out.push(
       p(
-        "Pelos dados-modelo, o diagnóstico de partida deste grupo seria semelhante ao perfil abaixo (auto-diagnóstico em 5 dimensões — escala Inicial / Em desenvolvimento / Estabelecido / Avançado):",
+        "Pelos dados-modelo, o diagnóstico de partida deste grupo seria semelhante ao perfil abaixo (auto-diagnóstico da instituição em 7 etapas do PGP — escala Inicial / Em desenvolvimento / Estabelecido / Avançado):",
       ),
     );
     out.push(...renderTermometroModelo(MODELO_TERMOMETRO_INICIO, "Diagnóstico inicial"));
@@ -2703,23 +2703,30 @@ function renderFasePreliminarCartilha(): (Paragraph | Table)[] {
 
   out.push(tituloModelos());
 
-  // Termômetro Institucional — apresentar como FERRAMENTA, sem score
-  out.push(h3Cartilha("Termômetro Institucional — ferramenta de auto-diagnóstico"));
+  // Termômetro — apresentar como FERRAMENTA, sem score. As perguntas vêm do
+  // arquivo oficial (termometro-perguntas.ts): mudou o questionário, a
+  // Cartilha acompanha sozinha.
+  out.push(h3Cartilha("Termômetro — ferramenta de auto-diagnóstico (você + sua Instituição)"));
   out.push(
     p(
-      "Ferramenta para a equipe medir, em 5 dimensões, a maturidade percebida da Instituição em relação à LGPD. Aplicar no início do trabalho de adequação (linha de base) e repetir periodicamente (semestral / anual) pra evidenciar evolução. Cada dimensão tem 4 níveis qualitativos.",
+      "Ferramenta de auto-diagnóstico em 2 blocos com scores separados: o primeiro mede o conhecimento de CADA PESSOA sobre a LGPD (3 perguntas); o segundo mede em que etapa da jornada de adequação a INSTITUIÇÃO está (7 perguntas — uma por etapa do PGP). Aplicar no início do trabalho (linha de base) e repetir periodicamente (semestral / anual) pra evidenciar a evolução. Cada pergunta tem 4 alternativas em escala crescente.",
     ),
   );
-  out.push(p("As 5 dimensões do Termômetro:", { bold: true, color: COR_CARTILHA_ACCENT }));
-  for (const dim of DIMENSOES_TERMOMETRO) {
+  out.push(p("Parte 1 — Sobre você (conhecimento pessoal):", { bold: true, color: COR_CARTILHA_ACCENT }));
+  for (const dim of DIMENSOES_PESSOAIS) {
     out.push(p(`${dim.emoji} ${dim.titulo}`, { bold: true }));
-    out.push(p(dim.hint, { italics: true, size: 20 }));
   }
-  out.push(p("Os 4 níveis qualitativos (em todas as dimensões):", { bold: true, color: COR_CARTILHA_ACCENT }));
-  out.push(bullet("Inicial — quase nada estruturado"));
-  out.push(bullet("Em desenvolvimento — pontos de partida identificados, prática inconsistente"));
-  out.push(bullet("Estabelecido — práticas mínimas adotadas e respeitadas"));
-  out.push(bullet("Avançado — cultura consolidada, equipe capacitada, ferramentas implantadas"));
+  out.push(p("Parte 2 — Sobre a sua Instituição (uma pergunta por etapa do PGP):", { bold: true, color: COR_CARTILHA_ACCENT }));
+  for (const dim of DIMENSOES_INSTITUICAO) {
+    out.push(p(`${dim.emoji} ${dim.titulo}`, { bold: true }));
+    out.push(p(dim.hint.replace(/^No curso: /, "Etapa correspondente: "), { italics: true, size: 20 }));
+  }
+  out.push(
+    p(
+      "O formulário completo (com as 4 alternativas de cada pergunta, a pontuação e as faixas de resultado) está no Pacote de Modelos — Modelo 12.",
+      { italics: true },
+    ),
+  );
 
   // Carta para a Alta Gestão — apresentar como ESTRUTURA, com texto modelo
   out.push(h3Cartilha("Carta para a Alta Gestão — estrutura recomendada"));

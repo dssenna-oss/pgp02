@@ -36,7 +36,7 @@ export const CONTEUDO_PRELIMINAR: DescricaoBloco[] = [
   {
     tipo: "lista",
     itens: [
-      "Aplicar o Termômetro Institucional: auto-diagnóstico de maturidade percebida em 5 dimensões (conhecimento, apoio da gestão, cultura, recursos, urgência). Identifica de onde se está partindo.",
+      "Aplicar o Termômetro: auto-diagnóstico individual em 2 blocos — quanto cada pessoa conhece a LGPD (3 perguntas) e em que etapa da jornada a Instituição está (7 perguntas, uma por etapa do PGP). Identifica de onde se está partindo.",
       "Escrever a Carta para a Alta Gestão: documento institucional curto com destinatário, justificativa legal, riscos de não-cumprimento, pedido de apoio concreto e assinatura do Encarregado (ou da liderança que conduzirá o trabalho).",
       "Apresentar um Roadmap inicial de 90 dias com marcos verificáveis — mostrar que existe um plano concreto, não promessas genéricas.",
       "Obter comprometimento formal: idealmente um Ato/Despacho do dirigente máximo aprovando o início do PGP e prevendo recursos.",

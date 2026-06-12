@@ -354,7 +354,7 @@ export const ROTEIRO: MomentoRoteiro[] = [
   {
     dia: 1, numero: 3, titulo: "Termômetro Institucional (início) — abre a Fase Preliminar", duracao: "10 min", meio: "📱 celular",
     oQueFacilitadorFaz: "Abre a Fase Preliminar medindo a maturidade percebida ANTES de qualquer conteúdo (repetem no fim do curso pra ver o salto).",
-    oQueParticipantesFazem: "Cada grupo responde o Termômetro (5 dimensões).",
+    oQueParticipantesFazem: "Cada participante responde o Termômetro no celular (2 blocos: sobre você + sobre a sua instituição real).",
     material: "App (Termômetro)",
   },
   {
