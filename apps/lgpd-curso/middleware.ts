@@ -23,8 +23,14 @@ const DPO_ONLY_DASHBOARD_PATHS = [
 //
 // Match via startsWith: liberar "/dashboard/fase-preliminar" também libera
 // "/dashboard/fase-preliminar/termometro", "/dashboard/fase-preliminar/carta-alta-gestao", etc.
+//
+// SINCRONIA: toda página /dashboard projetável no Telão Comandado
+// (lib/conteudos-telao.ts) PRECISA estar aqui — senão o telão (sessão ADMIN)
+// é redirecionado pro /facilitador ao carregar o iframe. Mantenha as 2 listas
+// alinhadas ao adicionar um conteúdo projetável.
 const ADMIN_DASHBOARD_PERMITIDO = [
   "/dashboard/conteudos-didaticos",
+  "/dashboard/entendendo-pgp",
   "/dashboard/historico-lgpd",
   "/dashboard/estrutura-lgpd",
   "/dashboard/fase-preliminar",
