@@ -470,7 +470,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
                 size="sm"
                 variant="outline"
                 asChild
-                title="Baixar Cartilha do PGP — Guia institucional ~120pg, não depende de grupo (pra distribuir aos participantes ou usar de referência)"
+                title="Baixar Cartilha do PGP — Guia institucional ~60pg, não depende de grupo (pra distribuir aos participantes ou usar de referência)"
               >
                 <a
                   href="/api/curso/caderno/docx?modo=cartilha"

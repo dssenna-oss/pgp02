@@ -111,8 +111,8 @@ export default async function FasePreliminarPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
-                  5 dimensões × 4 opções fechadas → score 0-100 de maturidade percebida.
-                  Repetem no fim do curso para ver o salto. ~5min.
+                  10 perguntas em 2 blocos (sobre você + sobre a sua instituição) → 2 scores 0-100.
+                  Você repete no fim do curso pra ver o salto. ~4min.
                 </p>
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 group-hover:text-emerald-800">
                   {status.termometroInicio ? "Revisar" : "Começar"} <ArrowRight className="h-3 w-3" />

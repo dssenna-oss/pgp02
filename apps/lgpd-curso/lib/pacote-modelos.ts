@@ -24,6 +24,14 @@ import {
   BorderStyle,
   ShadingType,
 } from "docx";
+import {
+  DIMENSOES_PESSOAIS,
+  DIMENSOES_INSTITUICAO,
+  FAIXAS_PESSOAIS,
+  FAIXAS_TERMOMETRO,
+  type DimensaoTermometro,
+  type FaixaTermometro,
+} from "./termometro-perguntas";
 
 const COR_TITULO = "0F766E"; // teal escuro — distingue dos outros 3 documentos
 const COR_ACCENT = "0D9488";
@@ -365,7 +373,7 @@ function sumarioPacote(): (Paragraph | Table)[] {
   out.push(bullet("Modelo 11 — Comunicação de Incidente aos Titulares"));
 
   out.push(h2("Grupo 3 — Fichas Operacionais (9)"));
-  out.push(bullet("Modelo 12 — Termômetro Institucional (formulário)"));
+  out.push(bullet("Modelo 12 — Termômetro: você + sua Instituição (formulário)"));
   out.push(bullet("Modelo 13 — Matriz de Priorização de Processos (Res. ANPD nº 2/2022)"));
   out.push(bullet("Modelo 14 — Ficha de Processo (Inventário)"));
   out.push(bullet("Modelo 15 — Ficha de Risco com matriz P × I"));
@@ -1256,46 +1264,63 @@ export function modelosInstitucionais(): (Paragraph | Table)[] {
   ];
 }
 
-// ===== MODELO 12 — Termômetro Institucional =====
+// ===== MODELO 12 — Termômetro (você + sua Instituição) =====
+// Formulário GERADO das perguntas oficiais do app (lib/termometro-perguntas.ts)
+// — se o questionário mudar, este modelo acompanha sozinho. 2 blocos com
+// scores SEPARADOS, espelhando o Termômetro do curso.
 function modelo12_Termometro(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(12, "Termômetro Institucional"));
+
+  // tabela de um bloco: pergunta → opções "rótulo (pontos)"
+  const tabelaBloco = (dims: DimensaoTermometro[]) =>
+    tabelaCampos(
+      dims.map((d) => [
+        `${d.emoji} ${d.titulo}`,
+        `<[MARCAR — ${d.opcoes.map((o) => `${o.rotulo} (${o.pontos})`).join(" · ")}]>`,
+      ]),
+    );
+
+  // faixas com o intervalo numérico (ex.: "40-59 — Bom domínio (…)")
+  const bulletsFaixas = (faixas: FaixaTermometro[]) =>
+    [...faixas]
+      .map((f, i) => {
+        const max = i + 1 < faixas.length ? faixas[i + 1].min - 1 : 100;
+        return `${f.min}-${max} — ${f.label} (${f.descricao.replace(/\.$/, "")})`;
+      })
+      .reverse()
+      .map((t) => bullet(t));
+
+  out.push(h1Modelo(12, "Termômetro — auto-diagnóstico (você + sua Instituição)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
-      "Na Fase Preliminar, como linha de base. Repetir periodicamente (semestral/anual) pra evidenciar a evolução da maturidade da Instituição.",
+      "Na Fase Preliminar, como linha de base, e periodicamente (semestral/anual) pra evidenciar a evolução. São 2 blocos com scores SEPARADOS: a Parte 1 mede o conhecimento de CADA PESSOA sobre a LGPD (aplicar individualmente — ex.: antes e depois de capacitações internas); a Parte 2 mede em que etapa da jornada de adequação a INSTITUIÇÃO está — uma pergunta por etapa do PGP (responder em consenso pela equipe do PGP, ou tirar a média das respostas individuais).",
     ),
   );
-  out.push(h2("Formulário pra preencher"));
-  out.push(p("Pra cada dimensão, marque o nível que melhor reflete a realidade ATUAL da Instituição:"));
 
-  const dimensoes: Array<[string, string]> = [
-    ["📚 Conhecimento geral sobre LGPD da equipe", "Inicial (5) · Em desenvolvimento (10) · Estabelecido (15) · Avançado (20)"],
-    ["🏛 Apoio percebido da Alta Gestão", "Inicial · Em desenvolvimento · Estabelecido · Avançado"],
-    ["🌱 Cultura de proteção de dados", "Inicial · Em desenvolvimento · Estabelecido · Avançado"],
-    ["💼 Recursos disponíveis (humanos, financeiros, tecnológicos)", "Inicial · Em desenvolvimento · Estabelecido · Avançado"],
-    ["⏱ Urgência institucional percebida", "Inicial · Em desenvolvimento · Estabelecido · Avançado"],
-  ];
-  out.push(tabelaCampos(dimensoes.map(([dim, opcoes]) => [dim, `<[MARCAR — ${opcoes}]>`])));
+  out.push(h2("Parte 1 — Sobre você (3 perguntas)"));
+  out.push(tabelaBloco(DIMENSOES_PESSOAIS));
+  out.push(pComPlaceholder("Score pessoal (0-100) = soma dos pontos ÷ 60 × 100 = <[SCORE]>"));
 
-  out.push(h3("Faixa do score total (5 a 100)"));
-  out.push(bullet("80-100 — Maturidade Avançada (órgão referência)"));
-  out.push(bullet("60-79 — Maturidade Estabelecida (boa base, falta consolidar)"));
-  out.push(bullet("40-59 — Maturidade em Desenvolvimento (caminho iniciado)"));
-  out.push(bullet("20-39 — Maturidade Inicial (pontos de partida identificados)"));
-  out.push(bullet("Menos de 20 — Diagnóstico de Partida (quase nada estruturado)"));
+  out.push(h2("Parte 2 — Sobre a sua Instituição (7 perguntas — uma por etapa do PGP)"));
+  out.push(tabelaBloco(DIMENSOES_INSTITUICAO));
+  out.push(pComPlaceholder("Score institucional (0-100) = soma dos pontos ÷ 140 × 100 = <[SCORE]>"));
+
+  out.push(h3("Faixas do score pessoal (conhecimento)"));
+  out.push(...bulletsFaixas(FAIXAS_PESSOAIS));
+  out.push(h3("Faixas do score institucional (maturidade)"));
+  out.push(...bulletsFaixas(FAIXAS_TERMOMETRO));
 
   out.push(
     pComPlaceholder("Aplicação realizada em: <[DATA]> · Aplicado por: <[NOME — opcional]>"),
   );
-  out.push(pComPlaceholder("Score total: <[SOMA DOS 5]>/100 · Faixa: <[FAIXA]>"));
 
   out.push(
     ...caixaExemplo([
-      "Aplicação em 15/01/2027 pela equipe do PGP da Prefeitura Municipal de Vegas:",
-      "Conhecimento: Em desenvolvimento (10) · Apoio: Estabelecido (15) · Cultura: Inicial (5) · Recursos: Em desenvolvimento (10) · Urgência: Estabelecido (15)",
-      "Score: 55/100 — Maturidade em Desenvolvimento.",
-      "Reaplicar em 6 meses pra acompanhar evolução.",
+      "Aplicação em 15/01/2027 — servidor(a) da Prefeitura Municipal de Vegas:",
+      "Parte 1 (você): 10 + 10 + 5 = 25 pontos → 25 ÷ 60 × 100 = score pessoal 42/100 — Conhecimento em construção.",
+      "Parte 2 (instituição): 10 + 10 + 10 + 5 + 5 + 5 + 5 = 50 pontos → 50 ÷ 140 × 100 = score institucional 36/100 — Maturidade Inicial.",
+      "Reaplicar em 6 meses pra acompanhar a evolução dos 2 scores.",
     ]),
   );
   return out;
