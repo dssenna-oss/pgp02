@@ -2364,10 +2364,9 @@ function apresentacaoCartilha(): (Paragraph | Table)[] {
   out.push(pComBold("**Consulta pontual** — pra dúvidas específicas. Use o sumário pra ir direto ao instrumento que está estruturando: Inventário · Riscos · GAP · Plano · RIPD · Aviso · DSR · Operadores · Incidentes · PRI."));
   out.push(pComBold("**Apoio à capacitação** — pra capacitar a equipe. Os capítulos FAQ (perguntas frequentes), Glossário, Base Legal e Armadilhas Comuns servem de material didático em treinamentos internos."));
   out.push(h2Cartilha("Estrutura"));
-  out.push(bullet("Glossário LGPD essencial (30 termos)"));
-  out.push(bullet("Base Legal — guia decisivo (Art. 7º + Art. 11)"));
-  out.push(bullet("8 etapas do PGP (Preliminar + Fases 1-7) com conteúdo institucional e modelos"));
+  out.push(bullet("8 etapas do PGP (Preliminar + Fases 1-7) com conteúdo institucional e modelos — a jornada completa, em sequência"));
   out.push(bullet("Modelos de documentos: Política do PGP · Comunicação ANPD · Cláusulas LGPD · Retenção · Consentimento"));
+  out.push(bullet("Capítulos de consulta (no final): Glossário LGPD essencial (30 termos) · Base Legal — guia decisivo (Art. 7º + Art. 11)"));
   out.push(bullet("Armadilhas comuns no setor público (10 situações reais)"));
   out.push(bullet("Adaptação por porte (pequeno · médio · grande)"));
   out.push(bullet("Calendário de revisões recomendado"));
@@ -3132,8 +3131,10 @@ export function gerarCartilhaInstitucional(opts: CartilhaOpts = {}): (Paragraph 
   return [
     ...capaCartilha(opts),
     ...apresentacaoCartilha(),
-    ...renderGlossario(),
-    ...renderBaseLegal(),
+    // A JORNADA primeiro: o leitor entra direto nas 8 etapas após a
+    // Apresentação. Glossário e Base Legal são material de CONSULTA —
+    // moram no bloco final, junto de Armadilhas/FAQ/Checklist (decisão
+    // do user 2026-06-12: o começo com "dicionário + lei" era árido).
     // 8 fases — funções dedicadas (sem linguagem de relatório)
     ...renderFasePreliminarCartilha(),
     ...renderFase1Cartilha(),
@@ -3153,7 +3154,10 @@ export function gerarCartilhaInstitucional(opts: CartilhaOpts = {}): (Paragraph 
     ...renderFase7Cartilha(),
     // Comunicação ANPD é da Fase 7
     ...renderModeloComunicacaoAnpd(),
-    // Capítulos transversais
+    // Capítulos de CONSULTA — abrem com Glossário + Base Legal (movidos
+    // do início; ver comentário acima)
+    ...renderGlossario(),
+    ...renderBaseLegal(),
     ...renderArmadilhas(),
     ...renderAdaptacaoPorte(),
     ...renderCalendarioRevisoes(),
