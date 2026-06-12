@@ -80,27 +80,31 @@ export default function ConteudosDidaticosPage() {
           <div className="flex-1">
             <h2 className="text-lg font-bold text-teal-900">Pacote de Modelos do PGP</h2>
             <p className="mb-1 text-sm text-teal-700 italic">
-              20 templates editáveis pra a sua Instituição preencher
+              20 modelos pra a sua Instituição adaptar e preencher
             </p>
             <p className="text-sm text-gray-700 mt-2">
-              Documento Word com 20 modelos editáveis dos principais instrumentos do PGP — Ato de Designação do
+              Documento (PDF, 29 páginas) com 20 modelos dos principais instrumentos do PGP — Ato de Designação do
               Encarregado, Carta para a Alta Gestão, Roadmap 90 dias, Aviso de Privacidade, Documento do PRI,
               Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento, Comunicação
-              à ANPD, Comunicação aos Titulares, Termômetro Institucional, Matriz de Priorização, Fichas de Processo /
+              à ANPD, Comunicação aos Titulares, Termômetro, Matriz de Priorização, Fichas de Processo /
               Risco / Operador / DSR, GAP, Plano de Ação e RIPD.
             </p>
             <p className="text-xs text-gray-500 mt-2 italic">
-              📌 Cada modelo tem campos marcados em vermelho ([NOME DA INSTITUIÇÃO], [DATA] etc.) pra você localizar com Ctrl+F e
-              substituir. Caixas amarelas com exemplos preenchidos ajudam a entender como adaptar.
+              📌 Os campos a preencher estão marcados em vermelho ([NOME DA INSTITUIÇÃO], [DATA] etc.).
+              Caixas amarelas com exemplos preenchidos ajudam a entender como adaptar.
             </p>
             <div className="mt-4">
+              {/* PDF estático (public/pacote-modelos-pgp.pdf) — versão diagramada
+                  fornecida pelo facilitador (2026-06-12). Substituiu o DOCX
+                  gerado (/api/curso/pacote-modelos/docx — rota segue existindo
+                  pro facilitador). Pra atualizar: trocar o arquivo. */}
               <Link
-                href="/api/curso/pacote-modelos/docx"
+                href="/pacote-modelos-pgp.pdf"
                 target="_blank"
                 className="inline-flex items-center gap-2 rounded-lg bg-teal-700 hover:bg-teal-800 px-4 py-2 text-sm font-semibold text-white shadow-sm"
               >
                 <Download className="h-4 w-4" />
-                Baixar Pacote de Modelos (DOCX)
+                Baixar Pacote de Modelos (PDF)
               </Link>
             </div>
           </div>
