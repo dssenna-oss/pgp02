@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building, Target, Calendar, ArrowRight } from "lucide-react";
+import { Building, Target, Calendar, ArrowRight, Thermometer } from "lucide-react";
 import { VisualizadorSlides } from "@/components/visualizador-slides";
 import { BaseLegalCard } from "@/components/base-legal-card";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
@@ -39,6 +39,31 @@ export default async function Fase2Page() {
 
       <div className="mt-4">
         <AdminPreviewBanner />
+      </div>
+
+      {/* Nota de orientação — o "diagnóstico de maturidade/cultura" dos slides
+          01/02 NÃO é uma prática daqui: é o Termômetro (Fase Preliminar). Aqui
+          (slide 03) começa o PLANEJAMENTO: priorizar processos + cronograma.
+          Evita o facilitador procurar uma tela de diagnóstico que não existe. */}
+      <div className="mt-6 rounded-xl border-l-4 border-l-indigo-400 border border-indigo-200 bg-indigo-50/60 p-4">
+        <h2 className="text-sm font-semibold text-indigo-900 flex items-center gap-2">
+          <Thermometer className="h-4 w-4 text-indigo-600" />
+          Maturidade e cultura? Já foi medido no Termômetro
+        </h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-indigo-900/80">
+          Os slides <strong>01 (cultura organizacional)</strong> e <strong>02 (maturidade — 7 dimensões)</strong>{" "}
+          referem-se ao <strong>Termômetro Institucional</strong>, respondido na Fase Preliminar: o bloco
+          “Sobre você” mede a cultura e “Sobre sua instituição” são as 7 dimensões de adequação.{" "}
+          <strong>Não há uma tela de diagnóstico aqui</strong> — na hora desses slides, projete os
+          resultados do Termômetro pra abrir a discussão. As 3 atividades abaixo são o{" "}
+          <strong>planejamento</strong> (slide 03): priorizar os processos e montar o cronograma.
+        </p>
+        <Link
+          href="/dashboard/fase-preliminar/termometro"
+          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-indigo-700 hover:text-indigo-800"
+        >
+          Ver o Termômetro Institucional <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
 
       {/* Coloque em prática — 3 atividades pedagógicas da Fase 2:
