@@ -33,8 +33,10 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
   // pro "escape" do Momento 4: projetar SÓ os arts. 1-11 como amostra antes do
   // Desafio. O comando conteudo:estrutura-lgpd mostra a LISTA de módulos; este
   // projeta o conteúdo do guia direto. Fora do dropdown da biblioteca (só o
-  // botão do M4 e o controle local usam). hrefAluno = mesmo HTML.
-  ambos("guia-art-1-11", "📘", "Guia LGPD — Artigos 1 a 11", "/estrutura-lgpd/artigos-1-11.html"),
+  // botão do M4 e o controle local usam). soTelao: a página é HTML estático
+  // (sem barra do app / sem banner) → abrir no celular vira beco sem saída; o
+  // Guia é pra LER no telão, e o celular segue pro Desafio (atividade) depois.
+  soTelao("guia-art-1-11", "📘", "Guia LGPD — Artigos 1 a 11", "/estrutura-lgpd/artigos-1-11.html"),
   ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
   ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
   ambos("fase-2", "🚩", "Fase 2 — Diagnóstico inicial", "/dashboard/fase-2"),
