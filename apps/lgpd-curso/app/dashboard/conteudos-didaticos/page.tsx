@@ -83,7 +83,7 @@ export default function ConteudosDidaticosPage() {
         </div>
       </div>
 
-      {/* Pacote de Modelos — 20 templates editáveis (complementa a Cartilha
+      {/* Pacote de Modelos — 21 templates editáveis (complementa a Cartilha
           que é descritiva). Cor teal pra diferenciar visualmente. */}
       <div className="mt-6 rounded-lg border-2 border-teal-200 bg-gradient-to-br from-teal-50 to-white p-5 shadow-sm">
         <div className="flex items-start gap-4">
@@ -93,11 +93,11 @@ export default function ConteudosDidaticosPage() {
           <div className="flex-1">
             <h2 className="text-lg font-bold text-teal-900">Pacote de Modelos do PGP</h2>
             <p className="mb-1 text-sm text-teal-700 italic">
-              20 modelos pra a sua Instituição adaptar e preencher
+              21 modelos pra a sua Instituição adaptar e preencher
             </p>
             <p className="text-sm text-gray-700 mt-2">
-              Documento (PDF, 29 páginas) com 20 modelos dos principais instrumentos do PGP — Ato de Designação do
-              Encarregado, Carta para a Alta Gestão, Roadmap 90 dias, Aviso de Privacidade, Documento do PRI,
+              Documento (PDF, 16 páginas) com 21 modelos dos principais instrumentos do PGP — Ato de Designação do
+              Encarregado, Portaria do Comitê Gestor, Carta para a Alta Gestão, Roadmap 90 dias, Aviso de Privacidade, Documento do PRI,
               Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento, Comunicação
               à ANPD, Comunicação aos Titulares, Termômetro, Matriz de Priorização, Fichas de Processo /
               Risco / Operador / DSR, GAP, Plano de Ação e RIPD.
@@ -108,9 +108,10 @@ export default function ConteudosDidaticosPage() {
             </p>
             <div className="mt-4">
               {/* PDF estático (public/pacote-modelos-pgp.pdf) — versão diagramada
-                  fornecida pelo facilitador (2026-06-12). Substituiu o DOCX
-                  gerado (/api/curso/pacote-modelos/docx — rota segue existindo
-                  pro facilitador). Pra atualizar: trocar o arquivo. */}
+                  fornecida pelo facilitador (2026-06-13, 21 modelos, Portaria do
+                  Comitê como Modelo 02). A rota geradora /api/curso/pacote-modelos/docx
+                  segue existindo pro facilitador (versão plana + ?instituicao=X).
+                  Pra atualizar: trocar o arquivo em public/. */}
               <Link
                 href="/pacote-modelos-pgp.pdf"
                 target="_blank"
@@ -119,12 +120,14 @@ export default function ConteudosDidaticosPage() {
                 <Download className="h-4 w-4" />
                 Baixar Pacote de Modelos (PDF)
               </Link>
-              {/* Versão Word — pra preencher os modelos de verdade (placeholders
-                  pra substituir no Word). Rota geradora acessível a participantes. */}
+              {/* Versão Word DIAGRAMADA (public/pacote-modelos-pgp.docx) — mesma
+                  arte do PDF, com os placeholders [NOME DA INSTITUIÇÃO] etc.
+                  preservados pra preencher no Word. Estático (não personaliza por
+                  ?instituicao). Pra atualizar: trocar o arquivo em public/. */}
               <p className="mt-2 text-xs text-gray-500">
                 Vai preencher os modelos?{" "}
                 <Link
-                  href="/api/curso/pacote-modelos/docx"
+                  href="/pacote-modelos-pgp.docx"
                   target="_blank"
                   className="font-medium text-teal-700 underline underline-offset-2 hover:text-teal-800"
                 >
