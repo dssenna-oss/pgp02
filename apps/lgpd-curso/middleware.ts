@@ -43,6 +43,9 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // Caça às Pegadinhas (missão de Encerramento) — ADMIN consegue ver
   // o quiz pra preview/projeção mesmo sem grupo associado.
   "/dashboard/caca-pegadinhas",
+  // Documentos-modelo da Fase 1 (Ato de Designação e Portaria do Comitê),
+  // projetáveis no Telão Comandado. startsWith cobre as duas sub-rotas.
+  "/dashboard/modelo",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {

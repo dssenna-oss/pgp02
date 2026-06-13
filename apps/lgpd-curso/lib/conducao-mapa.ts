@@ -113,9 +113,11 @@ const MAPA: Record<
   6: {
     acoes: [
       { kind: "telao-conteudo", conteudoId: "fase-1", label: "Fase 1 (art. 41) no telão" },
+      { kind: "telao-conteudo", conteudoId: "modelo-ato-designacao", label: "Ato de Designação (modelo) no telão" },
+      { kind: "telao-conteudo", conteudoId: "modelo-portaria-comite", label: "Portaria do Comitê (modelo) no telão" },
     ],
     status: [],
-    dica: "Projete a Fase 1 (art. 41) e conduza o Ato de Designação nos cards.",
+    dica: "Projete a Fase 1 (art. 41) e conduza o Ato de Designação nos cards. Depois mostre os MODELOS no telão: o Ato de Designação (Encarregado) e a Portaria do Comitê Gestor — a Fase 1 forma as EQUIPES (comitê + encarregado), não só uma pessoa. A versão editável vai no Pacote de Modelos pra levar.",
     voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso"],
   },

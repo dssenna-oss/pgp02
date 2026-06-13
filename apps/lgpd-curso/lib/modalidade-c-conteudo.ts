@@ -151,7 +151,7 @@ export const DECKS: Deck[] = [
   },
   // ─── FASE 1 — Montar o Ato de Designação ─────────────────────────────────
   {
-    fase: "Fase 1 — Designação do Encarregado",
+    fase: "Fase 1 — Formação das equipes de trabalho",
     atividade: "Montar o Ato de Designação (ordenar os blocos)",
     instrucao:
       "Os 8 blocos abaixo formam um Ato de Designação do Encarregado, mas estão FORA DE ORDEM. Ordenem na sequência correta de um ato administrativo. Depois, discutam os critérios do card 'Perfil do Encarregado' e justifiquem quem será o DPO (o crachá já define quem OPERA o app; aqui o grupo decide o PORQUÊ da escolha).",
@@ -370,7 +370,7 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "Slides (telão) · deck Fase Preliminar (3 cards de discussão + card 'pra levar')",
   },
   {
-    dia: 1, numero: 6, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
+    dia: 1, numero: 6, titulo: "Fase 1 — Formação das equipes de trabalho", duracao: "30 min", meio: "🃏 cards",
     oQueFacilitadorFaz: "Apresenta o art. 41 no telão. Distribui o deck da Fase 1. Conduz a discussão sobre o perfil do DPO.",
     oQueParticipantesFazem: "Ordenam os 8 blocos do Ato de Designação. Discutem os critérios do Perfil do Encarregado e justificam quem será o DPO (o crachá já define quem opera o app; aqui decidem o porquê da escolha).",
     material: "Deck Fase 1 · cola (nenhuma)",
