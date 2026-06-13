@@ -1,6 +1,6 @@
 // GET /api/curso/pacote-modelos/docx
 //
-// Gera o Pacote de Modelos do PGP — DOCX único com 20 templates editáveis
+// Gera o Pacote de Modelos do PGP — DOCX único com 21 templates editáveis
 // pra implementação da LGPD em Instituições Públicas. Diferente da Cartilha
 // (que é guia descritivo), os modelos têm placeholders [NOME DA INSTITUIÇÃO]
 // destacados em vermelho + caixa amarela "Exemplo preenchido" ao lado.
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       ? `Pacote de Modelos do PGP — ${instituicao}`
       : "Pacote de Modelos do PGP — Templates pra Instituições Públicas",
     description:
-      "20 templates editáveis pra implementação da LGPD em Instituições Públicas — Programa de Governança em Privacidade.",
+      "21 templates editáveis pra implementação da LGPD em Instituições Públicas — Programa de Governança em Privacidade.",
     styles: {
       default: {
         document: { run: { font: "Calibri", size: 22 } },

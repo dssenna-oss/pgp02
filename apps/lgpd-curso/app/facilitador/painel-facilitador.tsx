@@ -484,7 +484,7 @@ export function PainelFacilitador({ turmas }: { turmas: Turma[] }) {
                 size="sm"
                 variant="outline"
                 asChild
-                title="Baixar Pacote de Modelos — 20 templates editáveis em DOCX único pra a Instituição preencher (placeholders em vermelho + exemplos)"
+                title="Baixar Pacote de Modelos — 21 templates editáveis em DOCX único pra a Instituição preencher (placeholders em vermelho + exemplos)"
               >
                 <a
                   href="/api/curso/pacote-modelos/docx"
