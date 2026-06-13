@@ -1,14 +1,23 @@
 "use client";
 
-// Banner "📺 No telão agora…" — aparece no celular do participante quando o
-// facilitador projeta um Material de Apoio pelo Telão Comandado. Toque abre a
-// MESMA página no celular (quando ela existe pro participante); o X dispensa
-// até o facilitador trocar de conteúdo. Polling leve do /api/curso/telao-aviso
-// (a turma é derivada da sessão no servidor). Mesmo padrão do DsrAlertBanner.
+// Banner "📺 No telão agora…" + acompanhamento do telão no celular do
+// participante.
+//
+// Dois modos, conforme `autoSeguir` (= turma em Modo Cards / Modalidade C):
+//   • autoSeguir = true  → o celular ESPELHA o telão: quando o facilitador
+//     troca o que está projetado, o celular NAVEGA SOZINHO pra tela
+//     correspondente (quando ela tem página própria — `href`). Sem toque.
+//   • autoSeguir = false → comportamento clássico (Modalidade A): só mostra a
+//     faixa e o participante DECIDE tocar pra abrir. Nunca arranca a tela de
+//     quem está digitando.
+// Comandos sem página própria no celular (`href` null: Guia estático,
+// Fases 3-7 só-telão) nunca navegam — a faixa diz "acompanhe pelo telão".
+// Polling leve do /api/curso/telao-aviso (a turma é derivada da sessão no
+// servidor). Mesmo padrão do DsrAlertBanner.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Tv2, ChevronRight, X } from "lucide-react";
 
@@ -19,13 +28,22 @@ type Aviso = {
   href: string | null;
 };
 
+const INTERVALO_MS = 5000; // espelho do telão precisa ser ágil
+
 export function TelaoAvisoBanner() {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [aviso, setAviso] = useState<Aviso | null>(null);
   // guarda o comando dispensado — se o facilitador trocar de conteúdo, o
   // banner novo volta a aparecer.
   const [dispensado, setDispensado] = useState<string | null>(null);
+
+  // pathname e o último comando que JÁ navegamos vivem em refs pra serem lidos
+  // dentro do setInterval sem rearmá-lo a cada navegação.
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
+  const ultimoComandoNavegado = useRef<string | null>(null);
 
   const isAdmin = session?.user?.role === "ADMIN";
   const temGrupo = !!session?.user?.companyId;
@@ -38,13 +56,25 @@ export function TelaoAvisoBanner() {
         const res = await fetch("/api/curso/telao-aviso", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled) setAviso(data?.aviso ?? null);
+        if (cancelled) return;
+        const av: Aviso | null = data?.aviso ?? null;
+        setAviso(av);
+
+        // Espelho do telão (Modo Cards): navega sozinho quando o comando MUDA
+        // e a tela tem página própria. Só dispara na troca (não a cada poll),
+        // pra não prender o participante numa só tela entre comandos.
+        if (data?.autoSeguir && av?.href && av.comando !== ultimoComandoNavegado.current) {
+          ultimoComandoNavegado.current = av.comando;
+          if (pathnameRef.current !== av.href) router.push(av.href);
+        } else {
+          ultimoComandoNavegado.current = av?.comando ?? null;
+        }
       } catch {}
     }
     load();
-    const id = setInterval(load, 12000);
+    const id = setInterval(load, INTERVALO_MS);
     return () => { cancelled = true; clearInterval(id); };
-  }, [isAdmin, temGrupo]);
+  }, [isAdmin, temGrupo, router]);
 
   // Não mostra: facilitador, sem grupo, nada no telão, dispensado, ou o
   // participante JÁ está na página apresentada.
