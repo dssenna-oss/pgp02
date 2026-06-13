@@ -1,4 +1,6 @@
 // Pacote de Modelos do PGP — 21 templates editáveis em DOCX único.
+// (nota: o Modelo 21 — Portaria do Comitê — foi acrescentado depois dos 20
+// originais; aparece adjacente ao Modelo 01 no corpo e no sumário.)
 //
 // Diferente da Cartilha (que é guia descritivo), este pacote contém
 // MODELOS PRONTOS PRA EDITAR. Cada modelo tem:
@@ -267,7 +269,7 @@ function capaPacote(opts: PacoteOpts): Paragraph[] {
       spacing: { after: 800 },
       children: [
         new TextRun({
-          text: "20 templates editáveis pra implementação da LGPD em Instituições Públicas",
+          text: "21 templates editáveis pra implementação da LGPD em Instituições Públicas",
           italics: true,
           size: 22,
           color: "64748B",
@@ -320,7 +322,7 @@ function apresentacaoPacote(): (Paragraph | Table)[] {
       children: [new TextRun({ text: "Como usar este Pacote", bold: true, size: 36, color: COR_TITULO })],
     }),
     p(
-      "Este documento reúne 20 modelos editáveis pra implementação da LGPD em órgãos públicos. Diferente da Cartilha (que é guia descritivo), aqui você tem TEMPLATES PRONTOS PRA EDITAR — abra no Word, navegue pelo sumário, vá direto ao modelo que precisa e adapte.",
+      "Este documento reúne 21 modelos editáveis pra implementação da LGPD em órgãos públicos. Diferente da Cartilha (que é guia descritivo), aqui você tem TEMPLATES PRONTOS PRA EDITAR — abra no Word, navegue pelo sumário, vá direto ao modelo que precisa e adapte.",
     ),
     h2("Como os modelos estão organizados"),
     bullet("Cada modelo começa em página nova com cabeçalho 'Modelo NN — Nome' pra fácil localização."),
