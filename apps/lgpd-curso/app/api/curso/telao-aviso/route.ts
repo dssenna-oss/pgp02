@@ -11,6 +11,11 @@
 // null — têm fluxo próprio no celular e não precisam de banner.
 // A turma é derivada da sessão (companyId → cursoGrupo → turma): o client não
 // precisa saber turmaId.
+//
+// `autoSeguir` (= turma em Modo Cards): no Modo Cards o celular ESPELHA o telão
+// (navega sozinho pra tela com `href`). Na Modalidade A fica false — lá o
+// participante digita os instrumentos no celular e arrancar a tela seria
+// desastre; o banner segue como nudge opcional (toque pra abrir).
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
@@ -31,16 +36,18 @@ export async function GET() {
   await ensureColunaTelaoComando();
   const grupo = await prisma.cursoGrupo.findUnique({
     where: { companyId },
-    select: { turma: { select: { telaoComando: true } } },
+    select: { turma: { select: { telaoComando: true, modoCards: true } } },
   });
 
+  const autoSeguir = grupo?.turma?.modoCards === true;
   const comando = grupo?.turma?.telaoComando ?? null;
 
   // Material de Apoio projetado → banner com link pra mesma página no celular.
   if (comando?.startsWith("conteudo:")) {
     const conteudo = getConteudoTelao(comando.slice("conteudo:".length));
-    if (!conteudo) return NextResponse.json({ aviso: null });
+    if (!conteudo) return NextResponse.json({ aviso: null, autoSeguir });
     return NextResponse.json({
+      autoSeguir,
       aviso: {
         comando,
         emoji: conteudo.emoji,
@@ -55,8 +62,9 @@ export async function GET() {
   // não é atividade de catálogo (getAtividadeC = undefined) → sem banner, fluxo próprio.
   if (comando?.startsWith("atividade:")) {
     const at = getAtividadeC(comando.slice("atividade:".length));
-    if (!at) return NextResponse.json({ aviso: null });
+    if (!at) return NextResponse.json({ aviso: null, autoSeguir });
     return NextResponse.json({
+      autoSeguir,
       aviso: {
         comando,
         emoji: at.emoji,
@@ -66,5 +74,5 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({ aviso: null });
+  return NextResponse.json({ aviso: null, autoSeguir });
 }
