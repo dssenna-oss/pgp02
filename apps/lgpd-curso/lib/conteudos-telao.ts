@@ -43,6 +43,7 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
   // exemplo entre [colchetes]; versão editável no Pacote de Modelos pra levar).
   ambos("modelo-ato-designacao", "📜", "Ato de Designação (modelo)", "/dashboard/modelo/ato-designacao"),
   ambos("modelo-portaria-comite", "🏛️", "Portaria do Comitê Gestor (modelo)", "/dashboard/modelo/portaria-comite"),
+  ambos("modelo-carta-alta-gestao", "✉️", "Carta à Alta Gestão (modelo)", "/dashboard/modelo/carta-alta-gestao"),
   ambos("fase-2", "🚩", "Fase 2 — Diagnóstico inicial", "/dashboard/fase-2"),
   soTelao("fase-3", "🚩", "Fase 3 — Mapeamento e Riscos", "/facilitador/conteudo-fase/fase-3"),
   soTelao("fase-4", "🚩", "Fase 4 — GAP Analysis", "/facilitador/conteudo-fase/fase-4"),
