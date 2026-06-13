@@ -2722,7 +2722,7 @@ function renderFasePreliminarCartilha(): (Paragraph | Table)[] {
   }
   out.push(
     p(
-      "O formulário completo (com as 4 alternativas de cada pergunta, a pontuação e as faixas de resultado) está no Pacote de Modelos — Modelo 12.",
+      "O formulário completo (com as 4 alternativas de cada pergunta, a pontuação e as faixas de resultado) está no Pacote de Modelos — Modelo 13.",
       { italics: true },
     ),
   );

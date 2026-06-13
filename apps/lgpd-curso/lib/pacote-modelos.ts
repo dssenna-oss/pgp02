@@ -1,6 +1,4 @@
 // Pacote de Modelos do PGP — 21 templates editáveis em DOCX único.
-// (nota: o Modelo 21 — Portaria do Comitê — foi acrescentado depois dos 20
-// originais; aparece adjacente ao Modelo 01 no corpo e no sumário.)
 //
 // Diferente da Cartilha (que é guia descritivo), este pacote contém
 // MODELOS PRONTOS PRA EDITAR. Cada modelo tem:
@@ -362,30 +360,30 @@ function sumarioPacote(): (Paragraph | Table)[] {
 
   out.push(h2("Grupo 1 — Documentos Formais (6)"));
   out.push(bullet("Modelo 01 — Ato de Designação do Encarregado"));
-  out.push(bullet("Modelo 21 — Portaria de Instituição do Comitê Gestor de Privacidade (companheiro do Modelo 01, Fase 1)"));
-  out.push(bullet("Modelo 02 — Carta para a Alta Gestão"));
-  out.push(bullet("Modelo 03 — Roadmap de 90 dias"));
-  out.push(bullet("Modelo 04 — Aviso de Privacidade público"));
-  out.push(bullet("Modelo 05 — Documento do PRI (Plano de Resposta a Incidentes)"));
+  out.push(bullet("Modelo 02 — Portaria de Instituição do Comitê Gestor de Privacidade (companheiro do Modelo 01)"));
+  out.push(bullet("Modelo 03 — Carta para a Alta Gestão"));
+  out.push(bullet("Modelo 04 — Roadmap de 90 dias"));
+  out.push(bullet("Modelo 05 — Aviso de Privacidade público"));
+  out.push(bullet("Modelo 06 — Documento do PRI (Plano de Resposta a Incidentes)"));
 
   out.push(h2("Grupo 2 — Documentos Institucionais (6)"));
-  out.push(bullet("Modelo 06 — Política do PGP (documento mater)"));
-  out.push(bullet("Modelo 07 — Cláusulas LGPD pra contratos (aditamento padrão)"));
-  out.push(bullet("Modelo 08 — Política de Retenção e Descarte"));
-  out.push(bullet("Modelo 09 — Termo de Consentimento do Titular"));
-  out.push(bullet("Modelo 10 — Comunicação de Incidente à ANPD"));
-  out.push(bullet("Modelo 11 — Comunicação de Incidente aos Titulares"));
+  out.push(bullet("Modelo 07 — Política do PGP (documento mater)"));
+  out.push(bullet("Modelo 08 — Cláusulas LGPD pra contratos (aditamento padrão)"));
+  out.push(bullet("Modelo 09 — Política de Retenção e Descarte"));
+  out.push(bullet("Modelo 10 — Termo de Consentimento do Titular"));
+  out.push(bullet("Modelo 11 — Comunicação de Incidente à ANPD"));
+  out.push(bullet("Modelo 12 — Comunicação de Incidente aos Titulares"));
 
   out.push(h2("Grupo 3 — Fichas Operacionais (9)"));
-  out.push(bullet("Modelo 12 — Termômetro: você + sua Instituição (formulário)"));
-  out.push(bullet("Modelo 13 — Matriz de Priorização de Processos (Res. ANPD nº 2/2022)"));
-  out.push(bullet("Modelo 14 — Ficha de Processo (Inventário)"));
-  out.push(bullet("Modelo 15 — Ficha de Risco com matriz P × I"));
-  out.push(bullet("Modelo 16 — GAP — Planilha de Avaliação de Controles"));
-  out.push(bullet("Modelo 17 — Plano de Ação"));
-  out.push(bullet("Modelo 18 — RIPD — Relatório de Impacto à Proteção de Dados (8 seções)"));
-  out.push(bullet("Modelo 19 — Ficha de Operador (Terceiro)"));
-  out.push(bullet("Modelo 20 — Registro de Solicitação DSR (Direitos do Titular)"));
+  out.push(bullet("Modelo 13 — Termômetro: você + sua Instituição (formulário)"));
+  out.push(bullet("Modelo 14 — Matriz de Priorização de Processos (Res. ANPD nº 2/2022)"));
+  out.push(bullet("Modelo 15 — Ficha de Processo (Inventário)"));
+  out.push(bullet("Modelo 16 — Ficha de Risco com matriz P × I"));
+  out.push(bullet("Modelo 17 — GAP — Planilha de Avaliação de Controles"));
+  out.push(bullet("Modelo 18 — Plano de Ação"));
+  out.push(bullet("Modelo 19 — RIPD — Relatório de Impacto à Proteção de Dados (8 seções)"));
+  out.push(bullet("Modelo 20 — Ficha de Operador (Terceiro)"));
+  out.push(bullet("Modelo 21 — Registro de Solicitação DSR (Direitos do Titular)"));
 
   return out;
 }
@@ -484,7 +482,7 @@ function modelo01_AtoDesignacao(): (Paragraph | Table)[] {
 // ===== MODELO 21 — Portaria de Instituição do Comitê Gestor de Privacidade =====
 function modelo21_PortariaComite(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(21, "Portaria de Instituição do Comitê Gestor de Privacidade"));
+  out.push(h1Modelo(2, "Portaria de Instituição do Comitê Gestor de Privacidade"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -545,7 +543,7 @@ function modelo21_PortariaComite(): (Paragraph | Table)[] {
 // ===== MODELO 02 — Carta para a Alta Gestão =====
 function modelo02_CartaAltaGestao(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(2, "Carta para a Alta Gestão"));
+  out.push(h1Modelo(3, "Carta para a Alta Gestão"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -604,11 +602,11 @@ function modelo02_CartaAltaGestao(): (Paragraph | Table)[] {
 // ===== MODELO 03 — Roadmap 90 dias =====
 function modelo03_Roadmap90Dias(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(3, "Roadmap de 90 dias"));
+  out.push(h1Modelo(4, "Roadmap de 90 dias"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
-      "Ao iniciar o PGP, pra dar visibilidade da execução à Alta Gestão. Cronograma de 13 semanas (~3 meses) distribuindo as 7 Fases do PGP em marcos verificáveis. Anexar à Carta da Alta Gestão (Modelo 02).",
+      "Ao iniciar o PGP, pra dar visibilidade da execução à Alta Gestão. Cronograma de 13 semanas (~3 meses) distribuindo as 7 Fases do PGP em marcos verificáveis. Anexar à Carta da Alta Gestão (Modelo 03).",
     ),
   );
 
@@ -714,7 +712,7 @@ function modelo03_Roadmap90Dias(): (Paragraph | Table)[] {
 // ===== MODELO 04 — Aviso de Privacidade público =====
 function modelo04_AvisoPrivacidade(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(4, "Aviso de Privacidade público"));
+  out.push(h1Modelo(5, "Aviso de Privacidade público"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -804,7 +802,7 @@ function modelo04_AvisoPrivacidade(): (Paragraph | Table)[] {
 // ===== MODELO 05 — Documento do PRI =====
 function modelo05_DocumentoPRI(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(5, "Documento do PRI — Plano de Resposta a Incidentes"));
+  out.push(h1Modelo(6, "Documento do PRI — Plano de Resposta a Incidentes"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -881,7 +879,7 @@ export function modelosDocumentosFormais(): (Paragraph | Table)[] {
 // ===== MODELO 06 — Política do PGP (documento mater) =====
 function modelo06_PoliticaPGP(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(6, "Política do PGP (documento mater)"));
+  out.push(h1Modelo(7, "Política do PGP (documento mater)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -959,7 +957,7 @@ function modelo06_PoliticaPGP(): (Paragraph | Table)[] {
 // ===== MODELO 07 — Cláusulas LGPD pra contratos =====
 function modelo07_ClausulasLGPD(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(7, "Cláusulas LGPD pra contratos (aditamento padrão)"));
+  out.push(h1Modelo(8, "Cláusulas LGPD pra contratos (aditamento padrão)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1014,7 +1012,7 @@ function modelo07_ClausulasLGPD(): (Paragraph | Table)[] {
 // ===== MODELO 08 — Política de Retenção e Descarte =====
 function modelo08_PoliticaRetencao(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(8, "Política de Retenção e Descarte de Dados Pessoais"));
+  out.push(h1Modelo(9, "Política de Retenção e Descarte de Dados Pessoais"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1075,7 +1073,7 @@ function modelo08_PoliticaRetencao(): (Paragraph | Table)[] {
 // ===== MODELO 09 — Termo de Consentimento do Titular =====
 function modelo09_TermoConsentimento(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(9, "Termo de Consentimento do Titular"));
+  out.push(h1Modelo(10, "Termo de Consentimento do Titular"));
   out.push(
     ...caixaInstrucao(
       "Quando usar — ATENÇÃO",
@@ -1136,7 +1134,7 @@ function modelo09_TermoConsentimento(): (Paragraph | Table)[] {
 // ===== MODELO 10 — Comunicação de Incidente à ANPD =====
 function modelo10_ComunicacaoANPD(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(10, "Comunicação de Incidente à ANPD"));
+  out.push(h1Modelo(11, "Comunicação de Incidente à ANPD"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1243,7 +1241,7 @@ function modelo10_ComunicacaoANPD(): (Paragraph | Table)[] {
 // ===== MODELO 11 — Comunicação de Incidente aos Titulares =====
 function modelo11_ComunicacaoTitulares(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(11, "Comunicação de Incidente aos Titulares"));
+  out.push(h1Modelo(12, "Comunicação de Incidente aos Titulares"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1356,7 +1354,7 @@ function modelo12_Termometro(): (Paragraph | Table)[] {
       .reverse()
       .map((t) => bullet(t));
 
-  out.push(h1Modelo(12, "Termômetro — auto-diagnóstico (você + sua Instituição)"));
+  out.push(h1Modelo(13, "Termômetro — auto-diagnóstico (você + sua Instituição)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1395,7 +1393,7 @@ function modelo12_Termometro(): (Paragraph | Table)[] {
 // ===== MODELO 13 — Matriz de Priorização (Res. CD/ANPD nº 2/2022) =====
 function modelo13_MatrizPriorizacao(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(13, "Matriz de Priorização de Processos (Res. CD/ANPD nº 2/2022)"));
+  out.push(h1Modelo(14, "Matriz de Priorização de Processos (Res. CD/ANPD nº 2/2022)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1438,7 +1436,7 @@ function modelo13_MatrizPriorizacao(): (Paragraph | Table)[] {
 // ===== MODELO 14 — Ficha de Processo (Inventário) =====
 function modelo14_FichaProcesso(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(14, "Ficha de Processo (Inventário)"));
+  out.push(h1Modelo(15, "Ficha de Processo (Inventário)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1486,7 +1484,7 @@ function modelo14_FichaProcesso(): (Paragraph | Table)[] {
 // ===== MODELO 15 — Ficha de Risco com matriz P × I =====
 function modelo15_FichaRisco(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(15, "Ficha de Risco com matriz P × I"));
+  out.push(h1Modelo(16, "Ficha de Risco com matriz P × I"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1532,7 +1530,7 @@ function modelo15_FichaRisco(): (Paragraph | Table)[] {
 // ===== MODELO 16 — GAP — Planilha de Avaliação de Controles =====
 function modelo16_GAP(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(16, "GAP — Planilha de Avaliação de Controles"));
+  out.push(h1Modelo(17, "GAP — Planilha de Avaliação de Controles"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1572,7 +1570,7 @@ function modelo16_GAP(): (Paragraph | Table)[] {
 // ===== MODELO 17 — Plano de Ação =====
 function modelo17_PlanoAcao(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(17, "Plano de Ação"));
+  out.push(h1Modelo(18, "Plano de Ação"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1615,7 +1613,7 @@ function modelo17_PlanoAcao(): (Paragraph | Table)[] {
 // ===== MODELO 18 — RIPD (8 seções estruturadas) =====
 function modelo18_RIPD(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(18, "RIPD — Relatório de Impacto à Proteção de Dados"));
+  out.push(h1Modelo(19, "RIPD — Relatório de Impacto à Proteção de Dados"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1700,7 +1698,7 @@ function modelo18_RIPD(): (Paragraph | Table)[] {
 // ===== MODELO 19 — Ficha de Operador (Terceiro) =====
 function modelo19_FichaOperador(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(19, "Ficha de Operador (Terceiro)"));
+  out.push(h1Modelo(20, "Ficha de Operador (Terceiro)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
@@ -1747,7 +1745,7 @@ function modelo19_FichaOperador(): (Paragraph | Table)[] {
 // ===== MODELO 20 — Registro de Solicitação DSR =====
 function modelo20_RegistroDSR(): (Paragraph | Table)[] {
   const out: (Paragraph | Table)[] = [];
-  out.push(h1Modelo(20, "Registro de Solicitação DSR (Direitos do Titular)"));
+  out.push(h1Modelo(21, "Registro de Solicitação DSR (Direitos do Titular)"));
   out.push(
     ...caixaInstrucao(
       "Quando usar",
