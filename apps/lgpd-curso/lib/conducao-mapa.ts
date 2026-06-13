@@ -104,9 +104,10 @@ const MAPA: Record<
   5: {
     acoes: [
       { kind: "telao-conteudo", conteudoId: "fase-preliminar", label: "Fase Preliminar no telão" },
+      { kind: "telao-conteudo", conteudoId: "modelo-carta-alta-gestao", label: "Carta à Alta Gestão (modelo) no telão" },
     ],
     status: [],
-    dica: "Projete a Fase Preliminar (sensibilização) e conduza a discussão da Carta nos cards.",
+    dica: "Projete a Fase Preliminar (sensibilização) e conduza a discussão da Carta nos cards. Mostre o MODELO da Carta à Alta Gestão no telão pra ilustrar o desfecho; a versão editável vai no Pacote de Modelos pra levar.",
     voceUsa: ["celular", "sala"],
     alunoUsa: ["impresso", "discussao"],
   },
