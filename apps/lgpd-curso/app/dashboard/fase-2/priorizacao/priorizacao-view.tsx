@@ -119,7 +119,7 @@ export function PriorizacaoView({
         <p>
           Os critérios usados aqui derivam da{" "}
           <a
-            href="https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-publica-regulamento-de-dosimetria-de-sancoes-administrativas"
+            href="https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022"
             target="_blank"
             rel="noreferrer"
             className="underline inline-flex items-center gap-0.5"
