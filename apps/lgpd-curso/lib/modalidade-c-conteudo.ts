@@ -154,7 +154,7 @@ export const DECKS: Deck[] = [
     fase: "Fase 1 — Designação do Encarregado",
     atividade: "Montar o Ato de Designação (ordenar os blocos)",
     instrucao:
-      "Os 8 blocos abaixo formam um Ato de Designação do Encarregado, mas estão FORA DE ORDEM. Ordenem na sequência correta de um ato administrativo. Depois, o grupo escolhe quem será o DPO (use os critérios do card 'Perfil do Encarregado').",
+      "Os 8 blocos abaixo formam um Ato de Designação do Encarregado, mas estão FORA DE ORDEM. Ordenem na sequência correta de um ato administrativo. Depois, discutam os critérios do card 'Perfil do Encarregado' e justifiquem quem será o DPO (o crachá já define quem OPERA o app; aqui o grupo decide o PORQUÊ da escolha).",
     cards: [
       { titulo: "Bloco — Cabeçalho", conteudo: "ATO DE DESIGNAÇÃO Nº __/____ (Designação do Encarregado pelo Tratamento de Dados Pessoais)", tag: "ordem-1" },
       { titulo: "Bloco — Ementa", conteudo: "Designa o(a) Encarregado(a) pelo Tratamento de Dados Pessoais (DPO) do órgão, em cumprimento ao art. 41 da Lei nº 13.709/2018 (LGPD).", tag: "ordem-2" },
@@ -164,7 +164,7 @@ export const DECKS: Deck[] = [
       { titulo: "Bloco — Art. 3º (atribuições)", conteudo: "Compete ao Encarregado: aceitar reclamações, receber comunicações da ANPD, orientar a equipe (art. 41 §2º).", tag: "ordem-6" },
       { titulo: "Bloco — Art. 4º (vigência)", conteudo: "Este ato entra em vigor na data de sua publicação.", tag: "ordem-7" },
       { titulo: "Bloco — Assinatura", conteudo: "Autoridade máxima do órgão + ciência do(a) designado(a).", tag: "ordem-8" },
-      { titulo: "Perfil do Encarregado (referência)", conteudo: "Quem do grupo tem: perfil técnico-jurídico? autonomia? acesso à alta gestão? sem conflito de interesse? Escolham o DPO juntos.", tag: "referencia" },
+      { titulo: "Perfil do Encarregado (referência)", conteudo: "Quem do grupo tem: perfil técnico-jurídico? autonomia? acesso à alta gestão? sem conflito de interesse? Validem e justifiquem a escolha do DPO.", tag: "referencia" },
     ],
   },
   // ─── FASE 2 — Setores + Priorização ──────────────────────────────────────
@@ -372,7 +372,7 @@ export const ROTEIRO: MomentoRoteiro[] = [
   {
     dia: 1, numero: 6, titulo: "Fase 1 — Designação do Encarregado", duracao: "30 min", meio: "🃏 cards",
     oQueFacilitadorFaz: "Apresenta o art. 41 no telão. Distribui o deck da Fase 1. Conduz a discussão sobre o perfil do DPO.",
-    oQueParticipantesFazem: "Ordenam os 8 blocos do Ato de Designação. Escolhem quem do grupo é o DPO (critérios do card de referência).",
+    oQueParticipantesFazem: "Ordenam os 8 blocos do Ato de Designação. Discutem os critérios do Perfil do Encarregado e justificam quem será o DPO (o crachá já define quem opera o app; aqui decidem o porquê da escolha).",
     material: "Deck Fase 1 · cola (nenhuma)",
   },
   {
