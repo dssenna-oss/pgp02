@@ -1,14 +1,16 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { requireCompany, requireSession } from "@/lib/auth-server";
+import { requireSession } from "@/lib/auth-server";
 import { ensureColunaDpoJustificativa } from "@/lib/coluna-dpo-justificativa";
+import { ensureColunasEncarregado } from "@/lib/colunas-encarregado";
 import { revalidatePath } from "next/cache";
 
 // ADMIN sem companyId recebe null — página renderiza formulário vazio +
 // banner de preview explica. Não crasha.
 export async function getEncarregado() {
   await ensureColunaDpoJustificativa();
+  await ensureColunasEncarregado();
   const session = await requireSession();
   const companyId = session.user.companyId;
   if (!companyId) return null;
@@ -41,15 +43,22 @@ export async function saveEncarregado(input: {
   dpoSubstitutoNome?: string;
   dpoSubstitutoEmail?: string;
   dpoSubstitutoTelefone?: string;
-}) {
+}): Promise<{ ok: true } | { ok: false; motivo: "preview" }> {
   await ensureColunaDpoJustificativa();
+  await ensureColunasEncarregado();
   const session = await requireSession();
   if (!["DPO", "ADMIN"].includes(session.user.role)) {
     throw new Error("Apenas o DPO ou facilitador pode editar a identidade do Encarregado");
   }
-  const { companyId } = await requireCompany();
+  // Facilitador (ADMIN) em modo visualização: está sem grupo (companyId), logo
+  // não há empresa pra salvar. Em vez de crashar (requireCompany lançava erro
+  // genérico de produção), devolve um sinal pro form mostrar aviso amigável.
+  if (!session.user.companyId) {
+    return { ok: false, motivo: "preview" };
+  }
+  const companyId = session.user.companyId;
 
-  const result = await prisma.company.update({
+  await prisma.company.update({
     where: { id: companyId },
     data: {
       dpoName: input.dpoName?.trim() || null,
@@ -66,6 +75,6 @@ export async function saveEncarregado(input: {
   revalidatePath("/dashboard/fase-1");
   revalidatePath("/dashboard/ripd");
   revalidatePath("/dashboard/aviso");
-  return result;
+  return { ok: true };
 }
 
