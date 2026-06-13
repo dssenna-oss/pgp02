@@ -16,15 +16,26 @@ export const dynamic = "force-dynamic";
 export default async function AtividadesHubPage() {
   const session = await getSession();
   const userId = session?.user?.id;
+  const companyId = session?.user?.companyId;
+  const ehAdmin = session?.user?.role === "ADMIN";
+  // Só o Encarregado(a) registra; o membro acompanha. A contagem
+  // "respondidas" reflete o GRUPO (as respostas do DPO), não o indivíduo.
+  const ehDpo = session?.user?.role === "DPO";
 
   let respondidas = new Set<string>();
-  if (userId) {
-    await ensureTabelaAtividadesC();
+  await ensureTabelaAtividadesC();
+  if (ehDpo && userId) {
     const minhas = await prisma.cursoAtividadeResposta.findMany({
       where: { userId },
       select: { atividadeId: true },
     });
     respondidas = new Set(minhas.map((m) => m.atividadeId));
+  } else if (!ehAdmin && companyId) {
+    const doGrupo = await prisma.cursoAtividadeResposta.findMany({
+      where: { companyId, papel: "DPO" },
+      select: { atividadeId: true },
+    });
+    respondidas = new Set(doGrupo.map((m) => m.atividadeId));
   }
 
   const feitas = ATIVIDADES_C.filter((a) => respondidas.has(a.id)).length;
@@ -46,12 +57,17 @@ export default async function AtividadesHubPage() {
           <h1 className="text-2xl font-bold text-gray-900">Atividades ao vivo</h1>
         </div>
         <p className="mt-2 text-gray-600 leading-relaxed">
-          Toques rápidos no celular durante o curso. Você vota, classifica ou ordena, e o
-          resultado do grupo aparece no telão na hora. A produção completa continua nos{" "}
+          Toques rápidos no celular durante o curso. O grupo decide junto e o
+          resultado aparece no telão na hora. A produção completa continua nos{" "}
           <strong>cards da mesa</strong> — aqui é só a decisão rápida.
         </p>
+        {!ehDpo && !ehAdmin && companyId && (
+          <p className="mt-2 rounded-lg border-l-4 border-l-indigo-400 border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
+            👤 <strong>Quem registra é o(a) Encarregado(a) do grupo.</strong> Discutam juntos e ele(a) envia pelo celular dele(a) — aqui você acompanha.
+          </p>
+        )}
         <p className="mt-2 text-sm text-gray-500">
-          {feitas} de {ATIVIDADES_C.length} respondidas
+          {feitas} de {ATIVIDADES_C.length} respondidas{!ehDpo && !ehAdmin && companyId ? " pelo grupo" : ""}
         </p>
       </header>
 

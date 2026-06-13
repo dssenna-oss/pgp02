@@ -24,6 +24,15 @@ export async function POST(req: NextRequest) {
   if (session.user.role === "ADMIN") {
     return NextResponse.json({ error: "Facilitador não participa das atividades" }, { status: 400 });
   }
+  // Atividade ao vivo é decisão de GRUPO (1 card/decisão por grupo): só o
+  // Encarregado(a) registra pela equipe — evita N envios iguais e agiliza.
+  // O crachá de DPO sempre tem role="DPO" (lib/seeds/processos-vegas.ts).
+  if (session.user.role !== "DPO") {
+    return NextResponse.json(
+      { error: "Só o(a) Encarregado(a) do grupo registra as atividades. Combinem a resposta e o DPO envia." },
+      { status: 403 },
+    );
+  }
 
   const body = (await req.json()) as { atividadeId?: string; resposta?: any };
   const at = body.atividadeId ? getAtividadeC(body.atividadeId) : undefined;
