@@ -164,7 +164,10 @@ const GRUPOS_FACILITADOR: Array<{ titulo: string; itens: AdminItem[] }> = [
     itens: [
       { href: "/api/curso/modalidade-c/docx?doc=guia",    label: "Guia de Decisão (A/B/C)", icon: Flag, externalNewTab: true },
       { href: "/api/curso/modalidade-c/docx?doc=roteiro", label: "Roteiro do Facilitador", icon: BookOpen, externalNewTab: true },
-      { href: "/api/curso/modalidade-c/docx?doc=cards",   label: "Kit de Cards",           icon: LayoutGrid, externalNewTab: true },
+      // Kit de Cards: PDF diagramado estático (public/modalidade-c-kit-cards.pdf,
+      // print-ready). A rota geradora ?doc=cards segue existindo; o Word
+      // diagramado está em public/modalidade-c-kit-cards.docx.
+      { href: "/modalidade-c-kit-cards.pdf",              label: "Kit de Cards",           icon: LayoutGrid, externalNewTab: true },
       { href: "/facilitador/cards-trilha",                label: "Cards da Trilha (imprimir)", icon: Printer },
       { href: "/api/curso/modalidade-c/docx?doc=colas",   label: "Colas de Referência",    icon: FileText, externalNewTab: true },
     ],

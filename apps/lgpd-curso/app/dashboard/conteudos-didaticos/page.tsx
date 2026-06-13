@@ -43,7 +43,7 @@ export default function ConteudosDidaticosPage() {
               Guia de Implementação da LGPD em Instituições Públicas
             </p>
             <p className="text-sm text-gray-700 mt-2">
-              Documento institucional (PDF, 31 páginas) com tudo o que você precisa pra implementar a LGPD na sua
+              Documento institucional (PDF, 15 páginas) com tudo o que você precisa pra implementar a LGPD na sua
               Instituição: conteúdo das 8 etapas do Programa de Governança em Privacidade, glossário, modelos de
               documentos (Política do PGP, Cláusulas LGPD pra contratos, Política de Retenção, Termo de Consentimento,
               Comunicação à ANPD), explicação das armadilhas comuns no setor público, adaptação por porte do órgão,
@@ -54,9 +54,9 @@ export default function ConteudosDidaticosPage() {
             </p>
             <div className="mt-4">
               {/* PDF estático (public/cartilha-pgp.pdf) — versão diagramada
-                  fornecida pelo facilitador (2026-06-12). Substituiu o DOCX
-                  gerado (/api/curso/caderno/docx?modo=cartilha — rota segue
-                  existindo pro facilitador). Pra atualizar: trocar o arquivo. */}
+                  fornecida pelo facilitador (2026-06-13, 15 págs). A rota
+                  geradora /api/curso/caderno/docx?modo=cartilha segue existindo
+                  pro facilitador. Pra atualizar: trocar o arquivo em public/. */}
               <Link
                 href="/cartilha-pgp.pdf"
                 target="_blank"
@@ -65,12 +65,14 @@ export default function ConteudosDidaticosPage() {
                 <Download className="h-4 w-4" />
                 Baixar Cartilha do PGP (PDF)
               </Link>
-              {/* Versão Word — mesmo conteúdo, sem a diagramação, pra adaptar
-                  ao órgão. Rota geradora (DOCX) acessível a participantes. */}
+              {/* Versão Word DIAGRAMADA (public/cartilha-pgp.docx) — mesma arte
+                  do PDF, pra adaptar ao órgão. Estático. A rota geradora
+                  /api/curso/caderno/docx?modo=cartilha segue existindo pro
+                  facilitador. Pra atualizar: trocar o arquivo em public/. */}
               <p className="mt-2 text-xs text-gray-500">
                 Prefere adaptar ao seu órgão?{" "}
                 <Link
-                  href="/api/curso/caderno/docx?modo=cartilha"
+                  href="/cartilha-pgp.docx"
                   target="_blank"
                   className="font-medium text-purple-700 underline underline-offset-2 hover:text-purple-800"
                 >
