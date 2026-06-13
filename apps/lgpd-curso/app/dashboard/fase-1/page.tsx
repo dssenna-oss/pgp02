@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserCheck, ArrowRight } from "lucide-react";
+import { UserCheck, Users, ArrowRight } from "lucide-react";
 import { VisualizadorSlides } from "@/components/visualizador-slides";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getFaseSlides } from "@/lib/slides-fases";
@@ -64,6 +64,37 @@ export default async function Fase1Page() {
               <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 group-hover:text-emerald-800">
                 {status.cadastrado ? "Revisar e gerar Ato" : "Começar designação"}{" "}
                 <ArrowRight className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* Conheça o modelo — Comitê Gestor de Privacidade. NÃO é prática
+            (sem digitar): é o documento-modelo da Portaria, projetável no
+            telão e disponível no Pacote de Modelos pra levar. Fecha o sentido
+            de "Formação das equipes": a Fase 1 institui o comitê + designa o
+            encarregado, não só uma pessoa. */}
+        <Link
+          href="/dashboard/modelo/portaria-comite"
+          className="group mt-3 block rounded-lg border-l-4 border-l-indigo-500 border border-indigo-100 bg-white p-4 hover:bg-indigo-50/50 transition-colors"
+        >
+          <div className="flex items-start gap-3">
+            <Users className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-sm font-bold text-gray-900">Comitê Gestor de Privacidade</h3>
+                <span className="text-[10px] font-semibold bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded">
+                  modelo
+                </span>
+              </div>
+              <p className="text-xs text-gray-600 mt-1">
+                Formar as <strong>equipes de trabalho</strong> é mais que designar uma pessoa: o
+                órgão institui um <strong>Comitê Gestor de Privacidade</strong> — o grupo é o comitê,
+                cada área com seu papel. Conheça o <strong>modelo da Portaria de instituição</strong>{" "}
+                (art. 50 da LGPD); a versão editável vai no <strong>Pacote de Modelos</strong> pra levar.
+              </p>
+              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-indigo-700 group-hover:text-indigo-800">
+                Conhecer o modelo da Portaria <ArrowRight className="h-3 w-3" />
               </span>
             </div>
           </div>
