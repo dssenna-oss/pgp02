@@ -66,6 +66,34 @@ export default async function Fase2Page() {
         </Link>
       </div>
 
+      {/* Aprofundamento — Avaliação de Alto Risco (regra "1+1" da ANPD).
+          Vem ANTES das práticas: entender o conceito (incl. alto risco) antes
+          de pôr a mão na massa. Infográfico + PDF + liga priorização ao RIPD. */}
+      <div className="mt-6">
+        <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          📖 Aprofundamento
+        </h2>
+        <Link
+          href="/dashboard/fase-2/alto-risco"
+          className="group block rounded-lg border-l-4 border-l-amber-500 border border-amber-100 bg-white p-4 hover:bg-amber-50/50 transition-colors"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold text-gray-900">O tratamento é de Alto Risco?</h3>
+              <p className="text-xs text-gray-600 mt-1">
+                A regra <strong>“1 + 1”</strong> da ANPD (1 critério geral + 1 específico),
+                infográfico e a referência completa em PDF. Alto risco = prioridade máxima + RIPD
+                obrigatório (Art. 38).
+              </p>
+              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:text-amber-800">
+                Abrir o guia <ArrowRight className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* Coloque em prática — 3 atividades pedagógicas da Fase 2:
           (2A) Setores que tratam dados · (2B) Matriz de Priorização ·
           (2C) Roadmap 90 dias auto-gerado. */}
@@ -150,34 +178,6 @@ export default async function Fase2Page() {
             </div>
           </Link>
         </div>
-      </div>
-
-      {/* Aprofundamento — Avaliação de Alto Risco (regra "1+1" da ANPD).
-          Infográfico + explicação detalhada + PDF de referência. Liga a
-          priorização ao RIPD (Art. 38). */}
-      <div className="mt-6">
-        <h2 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          📖 Aprofundamento
-        </h2>
-        <Link
-          href="/dashboard/fase-2/alto-risco"
-          className="group block rounded-lg border-l-4 border-l-amber-500 border border-amber-100 bg-white p-4 hover:bg-amber-50/50 transition-colors"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-gray-900">O tratamento é de Alto Risco?</h3>
-              <p className="text-xs text-gray-600 mt-1">
-                A regra <strong>“1 + 1”</strong> da ANPD (1 critério geral + 1 específico),
-                infográfico e a referência completa em PDF. Alto risco = prioridade máxima + RIPD
-                obrigatório (Art. 38).
-              </p>
-              <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-amber-700 group-hover:text-amber-800">
-                Abrir o guia <ArrowRight className="h-3 w-3" />
-              </span>
-            </div>
-          </div>
-        </Link>
       </div>
 
       {fase.faseKey && (
