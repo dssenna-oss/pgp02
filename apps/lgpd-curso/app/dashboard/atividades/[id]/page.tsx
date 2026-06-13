@@ -20,13 +20,25 @@ export default async function AtividadePage({ params }: { params: { id: string }
 
   const session = await getSession();
   const userId = session?.user?.id;
+  const companyId = session?.user?.companyId;
   const ehAdmin = session?.user?.role === "ADMIN";
+  // Só o Encarregado(a) (role="DPO") registra a atividade do grupo. Membros
+  // veem em modo leitura a resposta que o DPO enviou (acompanham no celular).
+  const ehDpo = session?.user?.role === "DPO";
 
+  await ensureTabelaAtividadesC();
   let respostaSalva: any = null;
-  if (userId) {
-    await ensureTabelaAtividadesC();
+  if (ehDpo && userId) {
+    // DPO: a própria resposta (que ele edita/reenvia).
     const linha = await prisma.cursoAtividadeResposta.findUnique({
       where: { userId_atividadeId: { userId, atividadeId: at.id } },
+      select: { resposta: true },
+    });
+    respostaSalva = linha?.resposta ?? null;
+  } else if (!ehAdmin && companyId) {
+    // Membro do grupo: a resposta do DPO do grupo (leitura).
+    const linha = await prisma.cursoAtividadeResposta.findFirst({
+      where: { companyId, atividadeId: at.id, papel: "DPO" },
       select: { resposta: true },
     });
     respostaSalva = linha?.resposta ?? null;
@@ -43,7 +55,14 @@ export default async function AtividadePage({ params }: { params: { id: string }
         <ArrowLeft className="h-4 w-4" /> Todas as atividades
       </Link>
 
-      <AtividadeRunner atividade={at} respostaSalva={respostaSalva} somenteLeitura={ehAdmin} />
+      {/* Membro (não-DPO, não-facilitador): explica que o DPO registra. */}
+      {!ehDpo && !ehAdmin && companyId && (
+        <div className="mb-4 rounded-lg border-l-4 border-l-indigo-400 border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900">
+          👤 <strong>O(A) Encarregado(a) do grupo responde por todos.</strong> Discutam juntos — ele(a) registra no celular dele(a). Aqui você acompanha a resposta do grupo.
+        </div>
+      )}
+
+      <AtividadeRunner atividade={at} respostaSalva={respostaSalva} somenteLeitura={!ehDpo} />
     </div>
   );
 }
