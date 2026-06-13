@@ -371,7 +371,7 @@ export const ROTEIRO: MomentoRoteiro[] = [
   },
   {
     dia: 1, numero: 6, titulo: "Fase 1 — Formação das equipes de trabalho", duracao: "30 min", meio: "🃏 cards",
-    oQueFacilitadorFaz: "Apresenta o art. 41 no telão. Distribui o deck da Fase 1. Conduz a discussão sobre o perfil do DPO.",
+    oQueFacilitadorFaz: "Apresenta o art. 41 no telão. Distribui o deck da Fase 1. Conduz a discussão sobre o perfil do DPO. Depois projeta no telão os MODELOS (Ato de Designação + Portaria do Comitê Gestor): a Fase 1 forma as EQUIPES — comitê + encarregado, não só uma pessoa. A versão editável vai no Pacote de Modelos pra levar.",
     oQueParticipantesFazem: "Ordenam os 8 blocos do Ato de Designação. Discutem os critérios do Perfil do Encarregado e justificam quem será o DPO (o crachá já define quem opera o app; aqui decidem o porquê da escolha).",
     material: "Deck Fase 1 · cola (nenhuma)",
   },

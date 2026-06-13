@@ -1,4 +1,4 @@
-// Pacote de Modelos do PGP — 20 templates editáveis em DOCX único.
+// Pacote de Modelos do PGP — 21 templates editáveis em DOCX único.
 //
 // Diferente da Cartilha (que é guia descritivo), este pacote contém
 // MODELOS PRONTOS PRA EDITAR. Cada modelo tem:
@@ -6,7 +6,7 @@
 //   - Template editável com placeholders [NOME DA INSTITUIÇÃO] etc.
 //   - Caixa amarela "💡 Exemplo preenchido" com versão de referência
 //
-// O DOCX único agrupa os 20 modelos em sequência (page break entre cada).
+// O DOCX único agrupa os 21 modelos em sequência (page break entre cada).
 // O sumário no início permite navegação rápida.
 //
 // Endpoint: /api/curso/pacote-modelos/docx (admin + participantes).
@@ -32,6 +32,7 @@ import {
   type DimensaoTermometro,
   type FaixaTermometro,
 } from "./termometro-perguntas";
+import { COMPETENCIAS_COMITE } from "./comite-lgpd";
 
 const COR_TITULO = "0F766E"; // teal escuro — distingue dos outros 3 documentos
 const COR_ACCENT = "0D9488";
@@ -355,10 +356,11 @@ function sumarioPacote(): (Paragraph | Table)[] {
       children: [new TextRun({ text: "Sumário dos Modelos", bold: true, size: 36, color: COR_TITULO })],
     }),
   );
-  out.push(p("Os 20 modelos estão organizados em 3 grupos:", { spacingAfter: 160 }));
+  out.push(p("Os 21 modelos estão organizados em 3 grupos:", { spacingAfter: 160 }));
 
-  out.push(h2("Grupo 1 — Documentos Formais (5)"));
+  out.push(h2("Grupo 1 — Documentos Formais (6)"));
   out.push(bullet("Modelo 01 — Ato de Designação do Encarregado"));
+  out.push(bullet("Modelo 21 — Portaria de Instituição do Comitê Gestor de Privacidade (companheiro do Modelo 01, Fase 1)"));
   out.push(bullet("Modelo 02 — Carta para a Alta Gestão"));
   out.push(bullet("Modelo 03 — Roadmap de 90 dias"));
   out.push(bullet("Modelo 04 — Aviso de Privacidade público"));
@@ -472,6 +474,67 @@ function modelo01_AtoDesignacao(): (Paragraph | Table)[] {
       "Designa Maria Silva Santos como Encarregada pelo Tratamento de Dados Pessoais da Prefeitura Municipal de Vegas, em cumprimento ao art. 41 da Lei nº 13.709/2018 — LGPD.",
       "Justificativa: Servidora efetiva de carreira jurídica, com pós-graduação em Direito Digital, autonomia funcional e acesso direto ao gabinete.",
       "Contatos: dpo@vegas.gov.br · (00) 0000-0000 · Av. Principal, 100 — Centro.",
+    ]),
+  );
+  return out;
+}
+
+// ===== MODELO 21 — Portaria de Instituição do Comitê Gestor de Privacidade =====
+function modelo21_PortariaComite(): (Paragraph | Table)[] {
+  const out: (Paragraph | Table)[] = [];
+  out.push(h1Modelo(21, "Portaria de Instituição do Comitê Gestor de Privacidade"));
+  out.push(
+    ...caixaInstrucao(
+      "Quando usar",
+      "Na Fase 1 do PGP, junto com o Ato de Designação (Modelo 01). Enquanto o Ato nomeia a PESSOA (o Encarregado), esta Portaria institui a EQUIPE de governança — o Comitê Gestor de Privacidade, instância multidisciplinar que dá sustentação coletiva ao programa (art. 50 da LGPD). Publique no diário oficial ou veículo institucional equivalente.",
+    ),
+  );
+
+  out.push(h2("Template"));
+  out.push(pComPlaceholder("PORTARIA Nº <[NÚMERO/AAAA]>", { align: AlignmentType.CENTER }));
+  out.push(p("(Institui o Comitê Gestor de Privacidade e Proteção de Dados Pessoais)", { align: AlignmentType.CENTER, italics: true, spacingAfter: 240 }));
+  out.push(
+    pComPlaceholder(
+      "Institui o Comitê Gestor de Privacidade e Proteção de Dados Pessoais de <[NOME DA INSTITUIÇÃO]> e define sua composição e competências, em consonância com a Lei nº 13.709/2018 (LGPD).",
+      { spacingAfter: 240 },
+    ),
+  );
+  out.push(
+    pComPlaceholder(
+      "<[A AUTORIDADE MÁXIMA — ex: O(A) PREFEITO(A) MUNICIPAL DE CIDADE]>, no uso de suas atribuições legais e regimentais,",
+    ),
+  );
+  out.push(p("CONSIDERANDO o art. 50 da Lei nº 13.709/2018 (LGPD), que dispõe sobre a adoção de Programa de Governança em Privacidade pelos agentes de tratamento;"));
+  out.push(p("CONSIDERANDO que a proteção de dados pessoais é tema transversal, exigindo atuação coordenada das áreas que tratam dados no órgão;"));
+  out.push(p("CONSIDERANDO o art. 41 da LGPD e a necessidade de apoio institucional ao Encarregado pelo Tratamento de Dados Pessoais;", { spacingAfter: 240 }));
+  out.push(p("RESOLVE:", { bold: true, align: AlignmentType.CENTER, spacingAfter: 200 }));
+  out.push(
+    pComPlaceholder(
+      "Art. 1º Fica instituído o Comitê Gestor de Privacidade e Proteção de Dados Pessoais de <[NOME DA INSTITUIÇÃO]>, com a finalidade de coordenar a implementação da LGPD e do Programa de Governança em Privacidade.",
+    ),
+  );
+  out.push(p("Art. 2º O Comitê é composto pelos seguintes membros, representando as áreas que tratam dados pessoais no órgão:"));
+  out.push(pComPlaceholder("I — <[NOME]>, Encarregado(a) pelo Tratamento de Dados Pessoais — Coordenador(a) do Comitê;"));
+  out.push(pComPlaceholder("II — <[NOME]>, representante da Tecnologia da Informação (TI);"));
+  out.push(pComPlaceholder("III — <[NOME]>, representante da área Jurídica / Procuradoria;"));
+  out.push(pComPlaceholder("IV — <[NOME]>, representante da Gestão de Pessoas (RH);"));
+  out.push(pComPlaceholder("V — <[NOME]>, representante da Comunicação;"));
+  out.push(pComPlaceholder("VI — <[NOME]>, representante das áreas donas dos processos críticos (ex: Saúde, Tributário, Assistência Social).", { spacingAfter: 120 }));
+  out.push(p("Art. 3º Compete ao Comitê Gestor de Privacidade:"));
+  COMPETENCIAS_COMITE.forEach((c) => out.push(p(c)));
+  out.push(pComPlaceholder("Art. 4º O Comitê reunir-se-á <[PERIODICIDADE — ex: trimestralmente]> e, extraordinariamente, sempre que convocado por seu Coordenador."));
+  out.push(p("Art. 5º Esta portaria entra em vigor na data de sua publicação."));
+  out.push(pComPlaceholder("<[CIDADE]>, <[DATA POR EXTENSO]>.", { align: AlignmentType.RIGHT, spacingAfter: 400 }));
+  out.push(p("_______________________________________", { align: AlignmentType.CENTER }));
+  out.push(pComPlaceholder("<[NOME DA AUTORIDADE]>", { align: AlignmentType.CENTER }));
+  out.push(p("(Autoridade máxima do órgão)", { align: AlignmentType.CENTER, italics: true, size: 18, spacingAfter: 400 }));
+
+  out.push(
+    ...caixaExemplo([
+      "PORTARIA Nº 12/2026",
+      "Institui o Comitê Gestor de Privacidade e Proteção de Dados Pessoais da Prefeitura Municipal de Vegas.",
+      "Composição: Maria Silva (Encarregada, Coordenadora) · João Lima (TI) · Ana Costa (Procuradoria) · Pedro Réis (RH) · Lúcia Dias (Comunicação) · Carla Souza (Saúde — processo crítico).",
+      "Reuniões trimestrais, com pauta conduzida pela Coordenadora.",
     ]),
   );
   return out;
@@ -805,6 +868,7 @@ function modelo05_DocumentoPRI(): (Paragraph | Table)[] {
 export function modelosDocumentosFormais(): (Paragraph | Table)[] {
   return [
     ...modelo01_AtoDesignacao(),
+    ...modelo21_PortariaComite(),
     ...modelo02_CartaAltaGestao(),
     ...modelo03_Roadmap90Dias(),
     ...modelo04_AvisoPrivacidade(),
