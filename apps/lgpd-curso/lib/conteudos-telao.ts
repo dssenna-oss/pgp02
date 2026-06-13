@@ -39,6 +39,10 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
   soTelao("guia-art-1-11", "📘", "Guia LGPD — Artigos 1 a 11", "/estrutura-lgpd/artigos-1-11.html"),
   ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
   ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
+  // Documentos-modelo da Fase 1, projetáveis na sala (demonstração — dados de
+  // exemplo entre [colchetes]; versão editável no Pacote de Modelos pra levar).
+  ambos("modelo-ato-designacao", "📜", "Ato de Designação (modelo)", "/dashboard/modelo/ato-designacao"),
+  ambos("modelo-portaria-comite", "🏛️", "Portaria do Comitê Gestor (modelo)", "/dashboard/modelo/portaria-comite"),
   ambos("fase-2", "🚩", "Fase 2 — Diagnóstico inicial", "/dashboard/fase-2"),
   soTelao("fase-3", "🚩", "Fase 3 — Mapeamento e Riscos", "/facilitador/conteudo-fase/fase-3"),
   soTelao("fase-4", "🚩", "Fase 4 — GAP Analysis", "/facilitador/conteudo-fase/fase-4"),
