@@ -1,6 +1,6 @@
 // Modelo demonstrativo da Carta para a Alta Gestão (Fase Preliminar).
 // Projetável no Telão Comandado (conteudo:modelo-carta-alta-gestao). Espelha o
-// Modelo 02 do Pacote, com [colchetes] no lugar dos dados do órgão — é exemplo
+// Modelo 03 do Pacote, com [colchetes] no lugar dos dados do órgão — é exemplo
 // pra mostrar a estrutura na sala. A versão editável (form) fica em
 // /dashboard/fase-preliminar/carta-alta-gestao (Modalidade A) e no Pacote.
 
