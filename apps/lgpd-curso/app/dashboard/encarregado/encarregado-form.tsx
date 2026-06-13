@@ -50,10 +50,14 @@ export function EncarregadoForm({ company }: { company: Company }) {
   function salvar() {
     startTransition(async () => {
       try {
-        await saveEncarregado({
+        const r = await saveEncarregado({
           dpoName, dpoEmail, dpoTelefone, dpoEndereco, dpoJustificativaEscolha,
           dpoSubstitutoNome: subNome, dpoSubstitutoEmail: subEmail, dpoSubstitutoTelefone: subTelefone,
         });
+        if (r && r.ok === false) {
+          toast("Modo facilitador (visualização) — entre como DPO do grupo pra salvar.", { icon: "👁️" });
+          return;
+        }
         toast.success("Identidade do Encarregado salva — agora será reutilizada nos documentos");
       } catch (e: any) {
         toast.error(e.message || "Erro");
