@@ -382,7 +382,7 @@ export const ROTEIRO: MomentoRoteiro[] = [
     material: "Deck Fase 2 · cola de Priorização · App (votação)",
   },
   {
-    dia: 1, numero: 8, titulo: "Fase 3 — Inventário + Riscos (almoço no meio)", duracao: "120 min", meio: "🃏 cards + 📱 + fichas",
+    dia: 1, numero: 8, titulo: "Fase 3 — Mapeamento e Análise de Riscos", duracao: "120 min", meio: "🃏 cards + 📱 + fichas",
     oQueFacilitadorFaz: "Apresenta o Inventário no telão. Distribui o deck da Fase 3, o tabuleiro da matriz P×I e as fichas de encaminhamento. Conduz o fluxo Contribuidor→DPO→TI.",
     oQueParticipantesFazem: "Donos de processo montam a ficha de Inventário e SUBMETEM ao DPO (ficha 📤). DPO revisa, pede apoio (🆘), aprova (✅). Posicionam os riscos na matriz P×I. Classificam base legal e 'é sensível?' no celular.",
     material: "Deck Fase 3 · fichas de encaminhamento · tabuleiro P×I · colas (Bases Legais, Matriz) · App",
