@@ -81,6 +81,16 @@ export default async function FasePreliminarPage() {
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-gray-900">{p.emoji} {p.titulo}</span>
                   <span className="block text-xs text-gray-600 mt-0.5">{p.desc}</span>
+                  {/* O Termômetro (passo 1) é feito logo na abertura do curso,
+                      antes do conteúdo. Quando a página é projetada/revisada
+                      depois (ex.: Fase Preliminar 2/2), o passo já está feito —
+                      a nota deixa claro que aqui ele só faz parte do mapa, não
+                      é pra refazer. */}
+                  {p.n === "1" && status.termometroInicio && (
+                    <span className="block text-[11px] font-medium text-emerald-700 mt-1">
+                      ✓ Feito na abertura do curso — aqui é só o mapa da fase.
+                    </span>
+                  )}
                 </span>
               </Link>
             </li>
@@ -114,6 +124,11 @@ export default async function FasePreliminarPage() {
                   10 perguntas em 2 blocos (sobre você + sobre a sua instituição) → 2 scores 0-100.
                   Você repete no fim do curso pra ver o salto. ~4min.
                 </p>
+                {status.termometroInicio && (
+                  <p className="text-[11px] font-medium text-emerald-700 mt-1">
+                    ✓ Já respondido na abertura — aqui é só pra revisar (você repete no fim).
+                  </p>
+                )}
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 group-hover:text-emerald-800">
                   {status.termometroInicio ? "Revisar" : "Começar"} <ArrowRight className="h-3 w-3" />
                 </span>
