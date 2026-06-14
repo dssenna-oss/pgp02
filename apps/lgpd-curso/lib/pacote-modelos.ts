@@ -1397,37 +1397,44 @@ function modelo13_MatrizPriorizacao(): (Paragraph | Table)[] {
   out.push(
     ...caixaInstrucao(
       "Quando usar",
-      "Na Fase 2 do PGP, pra priorizar quais processos entram primeiro no Inventário detalhado da Fase 3. Aplicar a cada processo identificado. Score 0-18 (1-3 pontos por critério × 6 critérios).",
+      "Na Fase 2 do PGP, pra identificar quais processos são de ALTO RISCO — esses entram primeiro no Inventário (Fase 3) e exigem RIPD (Art. 38). Aplique a regra '1+1' da Resolução a cada processo: é alto risco quando atende a pelo menos UM critério GERAL E a pelo menos UM ESPECÍFICO.",
     ),
   );
 
   out.push(h2("Formulário pra preencher por processo"));
   out.push(pComPlaceholder("Processo avaliado: <[NOME DO PROCESSO]>", { bold: true, spacingAfter: 240 }));
 
+  out.push(h3("1) Critério GERAL — larga escala (atende se marcar ao menos um)"));
   out.push(
     tabelaCampos([
-      ["👥 Volume de titulares", "<[Baixo 1 = até 100 / Médio 2 = 100-1.000 / Alto 3 = +1.000]>"],
-      ["🔒 Sensibilidade dos dados", "<[Baixo 1 = cadastrais / Médio 2 = financeiros, comportamentais / Alto 3 = sensíveis Art. 5º II]>"],
-      ["👶 Vulnerabilidade dos titulares", "<[Baixo 1 = apenas adultos / Médio 2 = eventualmente vulneráveis / Alto 3 = sistematicamente menores/idosos]>"],
-      ["📣 Exposição pública", "<[Baixo 1 = restrito / Médio 2 = compartilhamento limitado / Alto 3 = publicação ampla]>"],
-      ["🤖 Tecnologias inovadoras", "<[Baixo 1 = planilhas / Médio 2 = sistemas convencionais / Alto 3 = IA, biometria, decisões automatizadas]>"],
-      ["🤝 Compartilhamentos com terceiros", "<[Baixo 1 = nenhum/interno / Médio 2 = 1-2 operadores / Alto 3 = múltiplos ou transferência internacional]>"],
+      ["a) Número significativo de titulares", "(  ) Aplica       (  ) Não aplica"],
+      ["b) Volume de dados envolvidos", "(  ) Aplica       (  ) Não aplica"],
+      ["c) Duração, frequência e extensão geográfica", "(  ) Aplica       (  ) Não aplica"],
     ]),
   );
 
-  out.push(pComPlaceholder("Score total do processo: <[SOMA 0-18]>"));
-  out.push(p("Faixas: 0-6 BAIXA prioridade · 7-12 MÉDIA · 13-18 ALTA"));
-  out.push(pComPlaceholder("Justificativa: <[Comentário curto explicando a pontuação — opcional mas recomendado]>"));
+  out.push(h3("2) Critério ESPECÍFICO (atende se marcar ao menos um)"));
+  out.push(
+    tabelaCampos([
+      ["a) Tecnologias emergentes ou inovadoras", "(  ) Aplica       (  ) Não aplica"],
+      ["b) Vigilância de zonas acessíveis ao público", "(  ) Aplica       (  ) Não aplica"],
+      ["c) Decisões unicamente automatizadas / profiling", "(  ) Aplica       (  ) Não aplica"],
+      ["d) Dados sensíveis ou de crianças, adolescentes e idosos", "(  ) Aplica       (  ) Não aplica"],
+    ]),
+  );
 
-  out.push(h3("Ranking dos processos"));
-  out.push(p("Após pontuar todos os processos, ordenar do maior score pro menor. Os 5-10 primeiros entram no Inventário detalhado da Fase 3."));
+  out.push(pComPlaceholder("Veredito (regra 1+1): <[ALTO RISCO se marcou ≥1 Geral E ≥1 Específico — senão, risco padrão]>", { bold: true }));
+  out.push(pComPlaceholder("Justificativa: <[Comentário curto — opcional mas recomendado]>"));
+
+  out.push(h3("Como ordenar"));
+  out.push(p("Liste primeiro os processos de ALTO RISCO; entre eles, os com mais critérios marcados. Esses entram no Inventário detalhado da Fase 3 e exigem RIPD."));
 
   out.push(
     ...caixaExemplo([
       "Processo: Atendimento no Posto de Saúde Dr. Joaquim Bento",
-      "Volume 3 (Alto · ~24mil/ano) · Sensibilidade 3 (Alto · dados de saúde) · Vulneráveis 2 (Médio · idosos eventualmente) · Exposição 1 (Baixo · restrito) · Tecnologias 2 (Médio · sistema convencional) · Compartilhamentos 2 (Médio · ESUS-DAB federal)",
-      "Score: 13/18 = ALTA prioridade.",
-      "Justificativa: alto volume + dados de saúde sensíveis. Entra como prioridade nº 1 no Inventário.",
+      "GERAL: número de titulares (Aplica) · volume de dados (Aplica) · duração/extensão (Não aplica).",
+      "ESPECÍFICO: tecnologias (Não aplica) · vigilância (Não aplica) · decisões automatizadas (Não aplica) · dados sensíveis ou vulneráveis (Aplica — saúde + idosos).",
+      "Veredito: ALTO RISCO (tem ≥1 geral E ≥1 específico). Entra como prioridade nº 1 no Inventário e exige RIPD.",
     ]),
   );
   return out;
