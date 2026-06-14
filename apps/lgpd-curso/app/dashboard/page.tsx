@@ -7,6 +7,7 @@ import {
 import Link from "next/link";
 import { getMissoesProgresso, type MissoesProgresso } from "@/lib/missoes-progresso";
 import { MapaPgp, type FaseAtual } from "@/components/mapa-pgp";
+import { SigaTelaoHero } from "@/components/siga-telao-hero";
 import { turmaDoGrupo } from "@/lib/curso-permissoes";
 
 export const dynamic = "force-dynamic";
@@ -85,11 +86,7 @@ export default async function DashboardPage() {
           Na Modalidade A, o mapa original com progresso continua valendo. */}
       {modoCards ? (
         <>
-          <HeroSigaTelao
-            turmaSlug={turmaSlug}
-            quizLiberado={quizLiberado}
-            termometroLiberado={termometroLiberado}
-          />
+          <SigaTelaoHero acoes={{ turmaSlug, quizLiberado, termometroLiberado }} />
           <JornadaCurso />
         </>
       ) : (
@@ -147,90 +144,6 @@ export default async function DashboardPage() {
           </p>
         )}
       </section>
-    </div>
-  );
-}
-
-// Hero da home em Modo Cards (Modalidade C): tela de orientação/espera com a
-// MESMA identidade visual da tela de espera do telão (fundo LGPD + selo +
-// frase da jornada). Mata a confusão de "o que eu perdi?" logo na entrada.
-// O botão do Quiz evita o gargalo de 50+ pessoas escaneando o QR do telão de
-// longe: quem já logou pelo crachá só toca aqui quando o facilitador pedir.
-function HeroSigaTelao({
-  turmaSlug,
-  quizLiberado,
-  termometroLiberado,
-}: {
-  turmaSlug: string | null;
-  quizLiberado: boolean;
-  termometroLiberado: boolean;
-}) {
-  // Estilo dos botões-pílula. Quando liberado: branco clicável. Quando travado
-  // (estado inicial da turma): grafado em "🔒", esmaecido e sem clique — o
-  // facilitador libera no momento certo (Quiz no início; Termômetro M3/M14).
-  const pillLiberado =
-    "inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50";
-  const pillTravado =
-    "inline-flex items-center gap-2 rounded-full bg-white/25 px-5 py-2.5 text-sm font-bold text-white/60 ring-1 ring-white/30 cursor-not-allowed";
-  const algumTravado = !quizLiberado || !termometroLiberado;
-  return (
-    <div
-      className="relative mb-4 overflow-hidden rounded-2xl bg-slate-900 bg-cover bg-center text-center text-white"
-      style={{ backgroundImage: "url('/telao-espera-fundo.webp')" }}
-    >
-      <div className="absolute inset-0 bg-slate-900/60" />
-      <div className="relative z-10 px-5 py-7">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/lgpd-badge-transparente.png" alt="LGPD" className="mx-auto h-16 w-auto drop-shadow-lg" />
-        <p className="mt-2.5 text-2xl font-extrabold">👀 Siga o telão</p>
-        <p className="mx-auto mt-2 max-w-md text-[15px] leading-relaxed text-white/90">
-          Aguarde o facilitador. Abra cada atividade no celular{" "}
-          <strong>só quando ele pedir</strong> — a produção do seu grupo é nos{" "}
-          <strong>cards da mesa</strong> 🃏.
-        </p>
-        {/* Hub do curso: os botões da vez. O aluno nunca navega pela árvore de
-            fases durante o curso — volta sempre pra cá e toca o que o
-            facilitador anunciar. O Termômetro mora na Fase Preliminar (mapa da
-            metodologia), mas é USADO no M3 (início) e M14 (final) — este
-            atalho serve aos dois momentos. */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          {turmaSlug &&
-            (quizLiberado ? (
-              <Link href={`/quiz/${turmaSlug}`} className={pillLiberado}>
-                📱 Quiz Diagnóstico
-              </Link>
-            ) : (
-              <span
-                aria-disabled="true"
-                title="O facilitador ainda não liberou o Quiz"
-                className={pillTravado}
-              >
-                🔒 Quiz Diagnóstico
-              </span>
-            ))}
-          {termometroLiberado ? (
-            <Link href="/dashboard/fase-preliminar/termometro" className={pillLiberado}>
-              🌡️ Termômetro
-            </Link>
-          ) : (
-            <span
-              aria-disabled="true"
-              title="O facilitador ainda não liberou o Termômetro"
-              className={pillTravado}
-            >
-              🔒 Termômetro
-            </span>
-          )}
-        </div>
-        <p className="mt-1.5 text-xs text-white/60">
-          {algumTravado
-            ? "🔒 abre quando o facilitador liberar"
-            : "(toque só quando o facilitador pedir)"}
-        </p>
-        <p className="mt-3.5 text-[13px] italic text-white/75">
-          Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
-        </p>
-      </div>
     </div>
   );
 }
