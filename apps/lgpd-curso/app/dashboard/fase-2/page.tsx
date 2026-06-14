@@ -116,8 +116,8 @@ export default async function Fase2Page() {
                   )}
                 </div>
                 <p className="text-xs text-gray-600 mt-1">
-                  Matriz com 6 critérios da Resolução CD/ANPD nº 2/2022. Score automático +
-                  ranking. ~10min.
+                  Aplique os critérios da Res. CD/ANPD nº 2/2022 (3 gerais + 4 específicos).
+                  Veredito de alto risco pela regra “1+1” + ranking ao vivo. ~10min.
                 </p>
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 group-hover:text-blue-800">
                   Abrir <ArrowRight className="h-3 w-3" />
