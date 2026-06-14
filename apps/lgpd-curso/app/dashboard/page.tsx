@@ -240,14 +240,14 @@ function HeroSigaTelao({
 // ao vivo no curso (momentos 5-7 do roteiro); marcar como "feito" faria o
 // aluno achar que perdeu algo. Recolhida por padrão (<details> nativo).
 const JORNADA_ETAPAS = [
-  { num: "·", rotulo: "Preliminar", nome: "Sensibilização e engajamento" },
-  { num: "1", rotulo: "Fase 1", nome: "Formação das equipes" },
-  { num: "2", rotulo: "Fase 2", nome: "Diagnóstico inicial" },
-  { num: "3", rotulo: "Fase 3", nome: "Mapeamento e Análise de Riscos" },
-  { num: "4", rotulo: "Fase 4", nome: "GAP Analysis" },
-  { num: "5", rotulo: "Fase 5", nome: "Plano de Ação" },
-  { num: "6", rotulo: "Fase 6", nome: "Execução" },
-  { num: "7", rotulo: "Fase 7", nome: "Monitoramento" },
+  { num: "·", rotulo: "Preliminar", nome: "Sensibilização e engajamento", resumo: "Entender por que a LGPD importa e trazer a alta gestão junto." },
+  { num: "1", rotulo: "Fase 1", nome: "Formação das equipes", resumo: "Designar o Encarregado (DPO) e formar o comitê de governança." },
+  { num: "2", rotulo: "Fase 2", nome: "Diagnóstico inicial", resumo: "Listar os processos que usam dados e priorizar os mais críticos." },
+  { num: "3", rotulo: "Fase 3", nome: "Mapeamento e Análise de Riscos", resumo: "Inventariar os dados de cada processo e mapear os riscos." },
+  { num: "4", rotulo: "Fase 4", nome: "GAP Analysis", resumo: "Comparar a prática atual com a lei e achar as lacunas." },
+  { num: "5", rotulo: "Fase 5", nome: "Plano de Ação", resumo: "Virar riscos e lacunas em ações com responsável e prazo." },
+  { num: "6", rotulo: "Fase 6", nome: "Execução", resumo: "Pôr em prática: RIPD, terceiros, direitos do cidadão e aviso de privacidade." },
+  { num: "7", rotulo: "Fase 7", nome: "Monitoramento", resumo: "Acompanhar sempre e saber responder a incidentes (prazo de 72h)." },
 ];
 
 function JornadaCurso() {
@@ -263,13 +263,14 @@ function JornadaCurso() {
           agora — é só o mapa do caminho.
         </p>
         {JORNADA_ETAPAS.map((e) => (
-          <div key={e.rotulo} className="flex items-center gap-2.5 border-t border-gray-100 py-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">
+          <div key={e.rotulo} className="flex items-start gap-2.5 border-t border-gray-100 py-2">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">
               {e.num}
             </span>
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{e.rotulo}</div>
               <div className="text-sm font-medium text-gray-700">{e.nome}</div>
+              <div className="mt-0.5 text-xs leading-snug text-gray-500">{e.resumo}</div>
             </div>
           </div>
         ))}
