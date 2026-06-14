@@ -21,6 +21,8 @@ export function podeEditarFaseAvancada(role: string | null | undefined): boolean
 // nunca bloqueia o curso por causa disso).
 import { prisma } from "@/lib/prisma";
 import { ensureColunaModoCards } from "@/lib/coluna-modo-cards";
+import { ensureColunaQuizLiberado } from "@/lib/coluna-quiz-liberado";
+import { ensureColunaTermometroLiberado } from "@/lib/coluna-termometro-liberado";
 
 export async function turmaEmModoCards(companyId: string | null | undefined): Promise<boolean> {
   const { modoCards } = await turmaDoGrupo(companyId);
@@ -30,22 +32,39 @@ export async function turmaEmModoCards(companyId: string | null | undefined): Pr
 // Variante que devolve também o slug da turma — a home do aluno usa pra montar
 // o link direto do Quiz Diagnóstico (/quiz/<slug>), evitando que 50+ pessoas
 // precisem escanear o QR do telão de longe. Mesma tolerância a falha.
+// Também devolve as travas de largada (quizLiberado/termometroLiberado) pra
+// home desabilitar os botões enquanto o facilitador não liberar — ambas nascem
+// false (travado), então no 1º acesso via QR do crachá os 2 saem desabilitados.
 export async function turmaDoGrupo(
   companyId: string | null | undefined,
-): Promise<{ modoCards: boolean; turmaSlug: string | null }> {
-  if (!companyId) return { modoCards: false, turmaSlug: null };
+): Promise<{
+  modoCards: boolean;
+  turmaSlug: string | null;
+  quizLiberado: boolean;
+  termometroLiberado: boolean;
+}> {
+  const vazio = { modoCards: false, turmaSlug: null, quizLiberado: false, termometroLiberado: false };
+  if (!companyId) return vazio;
   try {
     await ensureColunaModoCards();
+    await ensureColunaQuizLiberado();
+    await ensureColunaTermometroLiberado();
     const grupo = await prisma.cursoGrupo.findUnique({
       where: { companyId },
-      select: { turma: { select: { modoCards: true, slug: true } } },
+      select: {
+        turma: {
+          select: { modoCards: true, slug: true, quizLiberado: true, termometroLiberado: true },
+        },
+      },
     });
     return {
       modoCards: grupo?.turma?.modoCards === true,
       turmaSlug: grupo?.turma?.slug || null,
+      quizLiberado: grupo?.turma?.quizLiberado === true,
+      termometroLiberado: grupo?.turma?.termometroLiberado === true,
     };
   } catch {
-    return { modoCards: false, turmaSlug: null };
+    return vazio;
   }
 }
 
