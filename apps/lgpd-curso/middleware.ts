@@ -46,6 +46,10 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // Documentos-modelo da Fase 1 (Ato de Designação e Portaria do Comitê),
   // projetáveis no Telão Comandado. startsWith cobre as duas sub-rotas.
   "/dashboard/modelo",
+  // Guia LGPD arts. 1-11 — wrapper no app que embute o HTML estático pro
+  // celular do participante (hrefAluno de "guia-art-1-11"). Liberado pro ADMIN
+  // poder testar/visualizar no próprio aparelho.
+  "/dashboard/guia-art-1-11",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {
