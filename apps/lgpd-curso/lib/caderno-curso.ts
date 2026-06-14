@@ -46,7 +46,7 @@ import {
   SELO_MODELO,
 } from "./caderno-modelo";
 import { DIMENSOES_TERMOMETRO, DIMENSOES_PESSOAIS, DIMENSOES_INSTITUICAO, faixaQualitativa, faixaPessoal, montarTurmaTermometro, type TurmaTermometro } from "./termometro-perguntas";
-import { CRITERIOS_PRIORIZACAO, faixaPriorizacao } from "./criterios-priorizacao";
+import { CRITERIOS_PRIORIZACAO, ehAltoRisco, faixaPriorizacao, PONTOS_MAXIMO_POR_PROCESSO } from "./criterios-priorizacao";
 import { getControleById } from "./gap-catalogo";
 import { gerarRoadmap90Dias } from "./roadmap-gerador";
 import { gerarCartaAutoPreenchida } from "./carta-alta-gestao";
@@ -903,7 +903,7 @@ function renderFase2(data: GrupoCadernoData): (Paragraph | Table)[] {
     );
     for (const proc of pri.processos) {
       out.push(h3(`Processo: ${proc.processoId || "(sem identificador)"}`));
-      out.push(pComBold(`Score: **${proc.score}/18** — ${faixaPriorizacao(proc.score).label}`));
+      out.push(pComBold(`Critérios marcados: **${proc.score}/${PONTOS_MAXIMO_POR_PROCESSO}** — ${ehAltoRisco(proc.criterios) ? "ALTO RISCO (regra 1+1)" : "risco padrão"}`));
       const linhas: Array<[string, string]> = [];
       for (const c of CRITERIOS_PRIORIZACAO) {
         const escolhido = proc.criterios?.[c.id];
@@ -920,7 +920,7 @@ function renderFase2(data: GrupoCadernoData): (Paragraph | Table)[] {
     out.push(seloModelo());
     out.push(
       p(
-        "A Matriz aplica 6 critérios da Res. CD/ANPD nº 2/2022 (volume, sensibilidade, vulneráveis, exposição, tecnologias, compartilhamentos) — 3 níveis cada — pontuando 1-3. Score final 0-18: 0-6 BAIXA, 7-12 MÉDIA, 13-18 ALTA prioridade. Os processos com maior score entram primeiro no Inventário detalhado da Fase 3.",
+        "A Matriz aplica os critérios da Res. CD/ANPD nº 2/2022 na estrutura oficial: 1 critério GERAL (larga escala — número de titulares, volume de dados, duração/frequência/extensão geográfica) e 1 critério ESPECÍFICO (tecnologias emergentes, vigilância de zonas públicas, decisões automatizadas/profiling, dados sensíveis ou de crianças/adolescentes/idosos). Marca-se o que se aplica a cada processo. Pela regra '1+1', o tratamento é de ALTO RISCO quando há ao menos 1 geral E 1 específico — e esses entram primeiro no Inventário detalhado da Fase 3.",
       ),
     );
   }
@@ -1973,7 +1973,7 @@ function statusFase2(data: GrupoCadernoData): (Paragraph | Table)[] {
     const topProcessos = [...pri.processos].sort((a: any, b: any) => (b.score || 0) - (a.score || 0)).slice(0, 3);
     out.push(pExec("Top processos prioritários:", { bold: true }));
     for (const p of topProcessos) {
-      out.push(bullet(`${p.processoId || "(processo)"} — score ${p.score}/18 (${faixaPriorizacao(p.score).label})`));
+      out.push(bullet(`${p.processoId || "(processo)"} — ${p.score}/${PONTOS_MAXIMO_POR_PROCESSO} critérios (${faixaPriorizacao(p.score).label})`));
     }
   } else {
     out.push(statusBadge("pendente", "Matriz de Priorização não aplicada"));
