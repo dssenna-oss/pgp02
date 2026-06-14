@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   Info,
   ExternalLink,
-  ArrowRight,
 } from "lucide-react";
 import { BibliotecaFlipbook } from "@/components/biblioteca-flipbook";
 import type {
@@ -374,16 +373,19 @@ function PraticaBlock({ card, sz }: { card: PraticaCard; sz: any }) {
             </div>
           )}
           {card.href && (
-            <a
-              href={card.href}
-              className={`mt-3 inline-flex items-center gap-1.5 rounded-md ${
-                destaque
-                  ? "bg-yellow-600 hover:bg-yellow-700"
-                  : "bg-brand-600 hover:bg-brand-700"
-              } text-white text-sm font-medium px-3 py-2`}
-            >
-              Abrir página <ArrowRight className="h-3.5 w-3.5" />
-            </a>
+            // Esta view é EXCLUSIVA do facilitador (/facilitador/conteudo-fase).
+            // O card aponta pra uma tela do PARTICIPANTE (escopo de grupo, ex.
+            // /dashboard/gap) que o ADMIN não abre — o middleware o joga pro
+            // Painel e o requireCompany quebraria. Em vez de um "Abrir página"
+            // que caía no Painel, orienta o facilitador a demonstrar via Demo
+            // Perfis (login como DPO em aba anônima).
+            <p className={`mt-3 flex items-start gap-1.5 rounded-md bg-gray-100 px-3 py-2 ${sz.body} text-gray-600`}>
+              <span aria-hidden>🎭</span>
+              <span>
+                Tela do <strong>DPO do grupo</strong>. Pra demonstrar no telão, abra o{" "}
+                <strong>Demo Perfis</strong> (no Painel do Facilitador) e entre como DPO.
+              </span>
+            </p>
           )}
         </div>
       </div>
