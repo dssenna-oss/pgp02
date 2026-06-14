@@ -61,7 +61,9 @@ export default async function DashboardPage() {
   const companyName = session?.user?.company?.name ?? "—";
   const role = session?.user?.role;
   const isDpoOuAdmin = role === "DPO" || role === "ADMIN";
-  const { modoCards, turmaSlug } = await turmaDoGrupo(session?.user?.companyId);
+  const { modoCards, turmaSlug, quizLiberado, termometroLiberado } = await turmaDoGrupo(
+    session?.user?.companyId,
+  );
 
   const progresso = await getMissoesProgresso();
   const proxima = getProximaMissao(progresso, isDpoOuAdmin);
@@ -83,7 +85,11 @@ export default async function DashboardPage() {
           Na Modalidade A, o mapa original com progresso continua valendo. */}
       {modoCards ? (
         <>
-          <HeroSigaTelao turmaSlug={turmaSlug} />
+          <HeroSigaTelao
+            turmaSlug={turmaSlug}
+            quizLiberado={quizLiberado}
+            termometroLiberado={termometroLiberado}
+          />
           <JornadaCurso />
         </>
       ) : (
@@ -150,7 +156,23 @@ export default async function DashboardPage() {
 // frase da jornada). Mata a confusão de "o que eu perdi?" logo na entrada.
 // O botão do Quiz evita o gargalo de 50+ pessoas escaneando o QR do telão de
 // longe: quem já logou pelo crachá só toca aqui quando o facilitador pedir.
-function HeroSigaTelao({ turmaSlug }: { turmaSlug: string | null }) {
+function HeroSigaTelao({
+  turmaSlug,
+  quizLiberado,
+  termometroLiberado,
+}: {
+  turmaSlug: string | null;
+  quizLiberado: boolean;
+  termometroLiberado: boolean;
+}) {
+  // Estilo dos botões-pílula. Quando liberado: branco clicável. Quando travado
+  // (estado inicial da turma): grafado em "🔒", esmaecido e sem clique — o
+  // facilitador libera no momento certo (Quiz no início; Termômetro M3/M14).
+  const pillLiberado =
+    "inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50";
+  const pillTravado =
+    "inline-flex items-center gap-2 rounded-full bg-white/25 px-5 py-2.5 text-sm font-bold text-white/60 ring-1 ring-white/30 cursor-not-allowed";
+  const algumTravado = !quizLiberado || !termometroLiberado;
   return (
     <div
       className="relative mb-4 overflow-hidden rounded-2xl bg-slate-900 bg-cover bg-center text-center text-white"
@@ -172,22 +194,39 @@ function HeroSigaTelao({ turmaSlug }: { turmaSlug: string | null }) {
             metodologia), mas é USADO no M3 (início) e M14 (final) — este
             atalho serve aos dois momentos. */}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          {turmaSlug && (
-            <Link
-              href={`/quiz/${turmaSlug}`}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
-            >
-              📱 Quiz Diagnóstico
+          {turmaSlug &&
+            (quizLiberado ? (
+              <Link href={`/quiz/${turmaSlug}`} className={pillLiberado}>
+                📱 Quiz Diagnóstico
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                title="O facilitador ainda não liberou o Quiz"
+                className={pillTravado}
+              >
+                🔒 Quiz Diagnóstico
+              </span>
+            ))}
+          {termometroLiberado ? (
+            <Link href="/dashboard/fase-preliminar/termometro" className={pillLiberado}>
+              🌡️ Termômetro
             </Link>
+          ) : (
+            <span
+              aria-disabled="true"
+              title="O facilitador ainda não liberou o Termômetro"
+              className={pillTravado}
+            >
+              🔒 Termômetro
+            </span>
           )}
-          <Link
-            href="/dashboard/fase-preliminar/termometro"
-            className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-indigo-700 shadow-lg hover:bg-indigo-50"
-          >
-            🌡️ Termômetro
-          </Link>
         </div>
-        <p className="mt-1.5 text-xs text-white/60">(toque só quando o facilitador pedir)</p>
+        <p className="mt-1.5 text-xs text-white/60">
+          {algumTravado
+            ? "🔒 abre quando o facilitador liberar"
+            : "(toque só quando o facilitador pedir)"}
+        </p>
         <p className="mt-3.5 text-[13px] italic text-white/75">
           Adequação à LGPD é uma <span className="text-[#F0997B]">jornada</span>, não um destino.
         </p>
