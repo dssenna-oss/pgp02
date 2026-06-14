@@ -53,14 +53,14 @@ type CrachaData = {
 
 function renderCracha(c: CrachaData): string {
   if (c.tipo === "COMITE") {
-    // Comitê Executivo (PM ou CM) — 5 membros: 1 Coordenador + 4 Auxiliares.
-    // Coord tem badge dourada; Aux tem badge cinza. Diferença é SÓ visual —
-    // funcionalmente acessam a mesma página (QR aponta pra mesma URL).
-    // QR Code aponta pra /comite/<slug>?orgao=PM|CM (rota pública).
+    // Comitê Executivo (PM ou CM) — 2 membros: 1 Coordenador + 1 Controle Interno.
+    // Coord tem badge dourada; Controle Interno cinza. Diferença é SÓ visual —
+    // acessam a mesma página (QR aponta pra mesma URL), que pede a SENHA da turma.
+    // QR Code aponta pra /comite/<slug>?orgao=PM|CM (read-only, gate por senha).
     const orgaoComite = c.comiteOrgao === "PM" ? "Prefeitura" : "Câmara";
     const orgaoComiteClass = c.comiteOrgao === "PM" ? "comite-pm" : "comite-cm";
     const ehCoord = c.comiteFuncao === "COORD";
-    const funcaoLabel = ehCoord ? "COORDENADOR(A)" : `AUXILIAR #${(c.comiteIdx || 0) - 1}`;
+    const funcaoLabel = ehCoord ? "COORDENADOR(A)" : "CONTROLE INTERNO";
     const funcaoBadgeClass = ehCoord ? "func-coord" : "func-aux";
     return `
       <div class="cracha">
@@ -80,8 +80,9 @@ function renderCracha(c: CrachaData): string {
           <img src="${qrUrl(c.comiteUrl || "")}" alt="QR" class="qr-img" />
           <div class="qr-label">📷 painel do comitê</div>
           <div class="qr-login-obs">read-only · grupos do(a) ${orgaoComite}</div>
+          <div class="qr-login-obs">🔑 senha da turma (com o facilitador)</div>
         </div>
-        <div class="comite-badge ${funcaoBadgeClass}">${ehCoord ? "lidera · organiza · apresenta no debrief" : "apoia o Coordenador · anota · circula"}</div>
+        <div class="comite-badge ${funcaoBadgeClass}">${ehCoord ? "lidera · organiza · apresenta no debrief" : "controle interno · acompanha · anota"}</div>
         <div class="nome-bloco">
           <div class="nome-label">NOME</div>
           <div class="nome-linha"></div>
@@ -171,11 +172,11 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 10 crachás do Comitê Executivo: 2 Comitês × 5 membros cada
-  //   - Comitê PM: 1 Coordenador + 4 Auxiliares (acompanha grupos PM)
-  //   - Comitê CM: 1 Coordenador + 4 Auxiliares (acompanha grupos CM)
-  // QR aponta pra /comite/<slug>?orgao=PM|CM (público, read-only).
-  // Diferença Coord/Aux é SÓ visual — mesma URL, mesma view.
+  // 4 crachás do Comitê: 2 Comitês × 2 membros cada
+  //   - Comitê PM: 1 Coordenador + 1 Controle Interno (acompanha grupos PM)
+  //   - Comitê CM: 1 Coordenador + 1 Controle Interno (acompanha grupos CM)
+  // QR aponta pra /comite/<slug>?orgao=PM|CM — read-only, mas EXIGE a senha
+  // da turma (gate Caminho A). Diferença Coord/Controle Interno é só visual.
   const baseComiteUrl = `${url}/comite/${turma.slug || ""}`;
   for (const orgaoComite of ["PM", "CM"] as const) {
     const comiteUrl = `${baseComiteUrl}?orgao=${orgaoComite}`;
@@ -187,16 +188,14 @@ export async function GET(req: NextRequest) {
       comiteIdx: 1,
       comiteUrl,
     });
-    // 2º a 5º são Auxiliares
-    for (let aux = 1; aux <= 4; aux++) {
-      crachas.push({
-        tipo: "COMITE",
-        comiteOrgao: orgaoComite,
-        comiteFuncao: "AUX",
-        comiteIdx: aux + 1,
-        comiteUrl,
-      });
-    }
+    // 2º crachá é o Controle Interno (antes eram 4 Auxiliares)
+    crachas.push({
+      tipo: "COMITE",
+      comiteOrgao: orgaoComite,
+      comiteFuncao: "AUX",
+      comiteIdx: 2,
+      comiteUrl,
+    });
   }
 
   const cards = crachas.map(renderCracha).join("");

@@ -20,14 +20,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calcularMaturidade, KpisGrupo } from "@/lib/maturidade";
 import { montarTimeline } from "@/lib/timeline";
+import { ensureColunaSenhaExibicao } from "@/lib/coluna-senha-turma";
 
 // Polling 5s do cliente; primeira chamada pós-suspend pode esperar Neon acordar.
 export const maxDuration = 30;
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureColunaSenhaExibicao();
     const turmaSlug = req.nextUrl.searchParams.get("turmaSlug");
     const orgaoFiltro = req.nextUrl.searchParams.get("orgao"); // "PM" | "CM" | null
+    const senha = req.nextUrl.searchParams.get("senha"); // gate Caminho A
     if (!turmaSlug) {
       return NextResponse.json({ error: "turmaSlug obrigatório" }, { status: 400 });
     }
@@ -39,6 +42,7 @@ export async function GET(req: NextRequest) {
         nome: true,
         cidade: true,
         status: true,
+        senhaExibicao: true,
         grupos: {
           orderBy: { numero: "asc" },
           where: orgaoFiltro === "PM" || orgaoFiltro === "CM"
@@ -53,6 +57,12 @@ export async function GET(req: NextRequest) {
     }
     if (turma.status !== "ATIVA") {
       return NextResponse.json({ error: "Turma encerrada" }, { status: 403 });
+    }
+    // Gate por senha da turma (Caminho A): o Comitê (Coordenador / Controle
+    // Interno) precisa digitar a senha da turma — a mesma dos participantes —
+    // antes de ver o painel. Continua read-only; não é login de usuário.
+    if (!senha || senha !== turma.senhaExibicao) {
+      return NextResponse.json({ error: "Senha incorreta" }, { status: 401 });
     }
 
     const result = [];
