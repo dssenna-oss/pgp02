@@ -4,11 +4,12 @@
 // pelo celular. Polling 5s — mesmo padrão do Painel do Facilitador.
 // Sem detalhes pedagógicos sensíveis (SOS, erros plantados, phaseSkips).
 //
-// Pensado pra ser lido enquanto os 5 membros do Comitê (1 Coordenador +
-// 4 Auxiliares) circulam pela sala apoiando os grupos do próprio órgão.
-// Layout mobile-first, tipografia generosa.
+// Pensado pra ser lido enquanto os 2 membros do Comitê (1 Coordenador +
+// 1 Controle Interno) circulam pela sala acompanhando os grupos do órgão.
+// Acesso read-only com gate de SENHA da turma (Caminho A) — não é login de
+// usuário. Layout mobile-first, tipografia generosa.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Eye, Loader2, AlertTriangle, RefreshCw, Award, Clock,
   Building2, CheckCircle2, Circle, AlertCircle,
@@ -72,14 +73,42 @@ export function ComiteView({
   const [erro, setErro] = useState<string | null>(null);
   const [carregandoInicial, setCarregandoInicial] = useState(true);
 
+  // Gate Caminho A: senha da turma (a mesma dos participantes). NÃO é login de
+  // usuário — só libera a visualização read-only. Guardada na sessionStorage
+  // pra não pedir de novo a cada refresh do polling.
+  const [senha, setSenha] = useState("");
+  const [autenticado, setAutenticado] = useState(false);
+  const [verificando, setVerificando] = useState(false);
+  const [erroSenha, setErroSenha] = useState<string | null>(null);
+
+  const urlPainel = (s: string) =>
+    `/api/comite/painel?turmaSlug=${turmaSlug}${orgao ? `&orgao=${orgao}` : ""}&senha=${encodeURIComponent(s)}`;
+
+  // Restaura senha já validada nesta sessão do navegador.
   useEffect(() => {
+    const s = sessionStorage.getItem("comite-senha");
+    if (s) {
+      setSenha(s);
+      setAutenticado(true);
+    }
+  }, []);
+
+  // Polling 5s — só depois de autenticado.
+  useEffect(() => {
+    if (!autenticado) return;
     let cancelado = false;
     async function load() {
       try {
-        const url = orgao
-          ? `/api/comite/painel?turmaSlug=${turmaSlug}&orgao=${orgao}`
-          : `/api/comite/painel?turmaSlug=${turmaSlug}`;
-        const res = await fetch(url, { cache: "no-store" });
+        const res = await fetch(urlPainel(senha), { cache: "no-store" });
+        if (res.status === 401) {
+          // senha deixou de valer (ex.: facilitador trocou) → volta pro form
+          if (!cancelado) {
+            sessionStorage.removeItem("comite-senha");
+            setAutenticado(false);
+            setErroSenha("A senha mudou. Peça a senha atual ao facilitador.");
+          }
+          return;
+        }
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data?.error || `Erro ${res.status}`);
@@ -101,7 +130,44 @@ export function ComiteView({
       cancelado = true;
       clearInterval(id);
     };
-  }, [turmaSlug, orgao]);
+  }, [turmaSlug, orgao, autenticado, senha]);
+
+  async function tentarEntrar(e: FormEvent) {
+    e.preventDefault();
+    if (!senha.trim()) return;
+    setVerificando(true);
+    setErroSenha(null);
+    try {
+      const res = await fetch(urlPainel(senha), { cache: "no-store" });
+      if (res.status === 401) {
+        setErroSenha("Senha incorreta. Peça a senha da turma ao facilitador.");
+        return;
+      }
+      if (!res.ok) {
+        setErroSenha("Não consegui validar agora. Tente de novo em instantes.");
+        return;
+      }
+      sessionStorage.setItem("comite-senha", senha);
+      setAutenticado(true);
+    } catch {
+      setErroSenha("Sem conexão. Tente de novo.");
+    } finally {
+      setVerificando(false);
+    }
+  }
+
+  // Enquanto não digitar a senha certa, só mostra a tela de senha.
+  if (!autenticado) {
+    return (
+      <TelaSenha
+        senha={senha}
+        setSenha={setSenha}
+        onSubmit={tentarEntrar}
+        verificando={verificando}
+        erro={erroSenha}
+      />
+    );
+  }
 
   if (carregandoInicial) {
     return (
@@ -188,13 +254,9 @@ export function ComiteView({
       <div className="rounded-lg border-l-4 border-l-slate-400 bg-white p-4">
         <p className="text-xs leading-relaxed text-gray-600">
           Você é membro do <strong className="text-gray-800">Comitê Executivo</strong> ({orgaoFiltro === "PM" ? "Prefeitura" : orgaoFiltro === "CM" ? "Câmara" : "turma"}):
-          5 pessoas (1 Coordenador + 4 Auxiliares) que acompanham os grupos do órgão durante o curso. Anotem dúvidas recorrentes
+          2 pessoas (1 Coordenador + 1 Controle Interno) que acompanham os grupos do órgão durante o curso. Anotem dúvidas recorrentes
           na <strong>Folha do Comitê Executivo</strong> (papel) e entreguem ao facilitador na Reflexão Final.
           Esta página atualiza sozinha a cada 5 segundos.
-        </p>
-        <p className="mt-2 text-[11px] italic text-gray-500">
-          ⚠️ Não confundir com o <strong>Comitê de Governança</strong> da Fase 1 do PGP — aquele é um órgão interno permanente
-          que cada Instituição forma pra gerir privacidade no dia a dia. Este Comitê Executivo é o papel de vocês neste curso.
         </p>
       </div>
 
@@ -210,6 +272,59 @@ export function ComiteView({
         <RefreshCw className="h-3 w-3" />
         Atualiza a cada 5s · {new Date(dados.geradoEm).toLocaleTimeString("pt-BR")}
       </div>
+    </div>
+  );
+}
+
+// Tela de senha (gate Caminho A) — pede a senha da turma antes de mostrar o
+// painel read-only. A senha é a MESMA dos participantes (informada pelo
+// facilitador). Não cria sessão de usuário; só guarda na sessionStorage.
+function TelaSenha({
+  senha,
+  setSenha,
+  onSubmit,
+  verificando,
+  erro,
+}: {
+  senha: string;
+  setSenha: (s: string) => void;
+  onSubmit: (e: FormEvent) => void;
+  verificando: boolean;
+  erro: string | null;
+}) {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-2">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-sm rounded-2xl border bg-white p-6 text-center shadow-sm"
+      >
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
+          🔑
+        </div>
+        <h1 className="text-lg font-bold text-gray-900">Painel do Comitê</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Digite a <strong>senha da turma</strong> (informada pelo facilitador) para acompanhar.
+        </p>
+        <input
+          type="password"
+          value={senha}
+          onChange={(e) => setSenha(e.target.value)}
+          placeholder="senha da turma"
+          autoFocus
+          className="mt-4 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+        />
+        {erro && <p className="mt-2 text-xs font-medium text-red-600">{erro}</p>}
+        <button
+          type="submit"
+          disabled={verificando || !senha.trim()}
+          className="mt-4 w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
+        >
+          {verificando ? "Verificando…" : "Entrar"}
+        </button>
+        <p className="mt-3 text-[11px] text-gray-400">
+          👁 Modo leitura — você acompanha sem interferir
+        </p>
+      </form>
     </div>
   );
 }
