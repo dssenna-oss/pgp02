@@ -1,130 +1,170 @@
-// Critérios de Priorização de Processos pra Fase 2 do PGP.
+// Critérios de Priorização — Resolução CD/ANPD nº 2, de 27/01/2022.
 //
-// Base: Resolução CD/ANPD nº 2, de 27/01/2022 (alto risco / agentes de
-// pequeno porte) + boas práticas de privacy-by-design.
+// A Resolução estrutura o ALTO RISCO em 2 critérios que se combinam (regra
+// "1+1"): o tratamento é de alto risco quando atende a pelo menos UM critério
+// GERAL **E** a pelo menos UM critério ESPECÍFICO.
 //
-// 6 critérios × 3 níveis (Baixo/Médio/Alto = 1/2/3 pts).
-// Score máximo: 6 × 3 = 18. Faixas: 0-6 BAIXA · 7-12 MÉDIA · 13-18 ALTA.
+//   • Critério GERAL (larga escala) — 3 fatores; atendido se ≥1 marcado:
+//       a) número significativo de titulares · b) volume de dados ·
+//       c) duração, frequência e extensão geográfica.
+//   • Critério ESPECÍFICO — 4 hipóteses; atendido se ≥1 marcada:
+//       a) tecnologias emergentes/inovadoras · b) vigilância de zonas públicas ·
+//       c) decisões unicamente automatizadas/profiling · d) dados sensíveis ou
+//       de crianças, adolescentes e idosos.
+//
+// Aqui o participante MARCA a presença de cada fator (Aplica / Não aplica) em
+// cada processo — não há gradação. A prioridade vem do veredito de alto risco
+// + do número de critérios marcados.
 
-export type NivelCriterio = "baixo" | "medio" | "alto";
+export type NivelCriterio = "sim" | "nao"; // presença: "sim" = aplica
+export type GrupoCriterio = "geral" | "especifico";
 
 export type OpcaoCriterio = {
   id: NivelCriterio;
   rotulo: string;
   pontos: number;
-  descricao: string;
 };
 
 export type CriterioPriorizacao = {
   id: string;
+  grupo: GrupoCriterio;
   emoji: string;
   titulo: string;
-  hint: string;
+  hint: string; // redação do fator conforme a Resolução
   opcoes: OpcaoCriterio[];
 };
 
 function crit(
   id: string,
+  grupo: GrupoCriterio,
   emoji: string,
   titulo: string,
   hint: string,
-  desc: [string, string, string],
 ): CriterioPriorizacao {
   return {
     id,
+    grupo,
     emoji,
     titulo,
     hint,
     opcoes: [
-      { id: "baixo", rotulo: "Baixo", pontos: 1, descricao: desc[0] },
-      { id: "medio", rotulo: "Médio", pontos: 2, descricao: desc[1] },
-      { id: "alto",  rotulo: "Alto",  pontos: 3, descricao: desc[2] },
+      { id: "sim", rotulo: "Aplica", pontos: 1 },
+      { id: "nao", rotulo: "Não aplica", pontos: 0 },
     ],
   };
 }
 
 export const CRITERIOS_PRIORIZACAO: CriterioPriorizacao[] = [
+  // ── Critério GERAL — larga escala (atendido se ≥1 fator marcado) ──────────
   crit(
-    "volume",
+    "g-titulares",
+    "geral",
     "👥",
-    "Volume de titulares afetados",
-    "Quantas pessoas têm dados tratados por este processo?",
-    [
-      "Até 100 titulares — alcance pontual",
-      "De 100 a 1.000 titulares — alcance considerável",
-      "Mais de 1.000 titulares — grande volume",
-    ],
+    "Número significativo de titulares",
+    "O tratamento abrange um número significativo de titulares de dados.",
   ),
   crit(
-    "sensibilidade",
-    "🔒",
-    "Sensibilidade dos dados",
-    "Os dados tratados se enquadram no Art. 5º II da LGPD (sensíveis)?",
-    [
-      "Dados cadastrais comuns (nome, CPF, endereço)",
-      "Dados pessoais que podem expor a privacidade ou intimidade",
-      "Dados sensíveis: saúde, opinião política, religiosa, biométricos, sexuais",
-    ],
+    "g-volume",
+    "geral",
+    "🗂️",
+    "Volume de dados envolvidos",
+    "O tratamento envolve volume significativo de dados pessoais.",
   ),
   crit(
-    "vulneraveis",
-    "👶",
-    "Vulnerabilidade dos titulares",
-    "Há tratamento de dados de crianças, adolescentes, idosos ou outros vulneráveis?",
-    [
-      "Apenas adultos plenamente capazes",
-      "Eventualmente menores, idosos ou vulneráveis",
-      "Tratamento sistemático de dados de vulneráveis (crianças, adolescentes, idosos)",
-    ],
+    "g-extensao",
+    "geral",
+    "🌍",
+    "Duração, frequência e extensão geográfica",
+    "Considera a duração, a frequência e a extensão geográfica do tratamento realizado.",
   ),
+  // ── Critério ESPECÍFICO — hipóteses de risco (atendido se ≥1 marcada) ─────
   crit(
-    "exposicao",
-    "📣",
-    "Exposição pública dos dados",
-    "Os dados são publicizados ou compartilhados com público amplo?",
-    [
-      "Dados restritos à área que coleta",
-      "Compartilhamento limitado entre setores ou parceiros",
-      "Publicação ampla (portal, transmissão pública, redes sociais)",
-    ],
-  ),
-  crit(
-    "tecnologias",
+    "e-tecnologias",
+    "especifico",
     "🤖",
-    "Uso de tecnologias inovadoras",
-    "Há IA, decisões automatizadas, biometria ou tecnologias emergentes?",
-    [
-      "Apenas registros/planilhas tradicionais",
-      "Sistemas digitais convencionais (formulários, BD relacional)",
-      "Tecnologias inovadoras: IA, biometria, decisões automatizadas com efeitos jurídicos",
-    ],
+    "Tecnologias emergentes ou inovadoras",
+    "Uso de tecnologias emergentes ou inovadoras.",
   ),
   crit(
-    "compartilhamentos",
-    "🤝",
-    "Compartilhamentos com terceiros",
-    "O processo envolve compartilhamento de dados com operadores ou outros controladores?",
-    [
-      "Sem compartilhamento ou apenas interno",
-      "Compartilhamento pontual com 1-2 operadores/órgãos",
-      "Múltiplos compartilhamentos ou transferência internacional",
-    ],
+    "e-vigilancia",
+    "especifico",
+    "📹",
+    "Vigilância de zonas acessíveis ao público",
+    "Vigilância ou controle de zonas acessíveis ao público.",
+  ),
+  crit(
+    "e-automatizadas",
+    "especifico",
+    "⚙️",
+    "Decisões unicamente automatizadas / profiling",
+    "Decisões tomadas unicamente com base em tratamento automatizado de dados pessoais, inclusive aquelas destinadas a definir o perfil pessoal, profissional, de saúde, de consumo e de crédito ou os aspectos da personalidade do titular.",
+  ),
+  crit(
+    "e-sensiveis",
+    "especifico",
+    "🔒",
+    "Dados sensíveis ou de vulneráveis",
+    "Utilização de dados pessoais sensíveis ou de dados pessoais de crianças, de adolescentes e de idosos.",
   ),
 ];
 
-export const PONTOS_MAXIMO_POR_PROCESSO = CRITERIOS_PRIORIZACAO.length * 3; // 18
+export const CRITERIOS_GERAIS = CRITERIOS_PRIORIZACAO.filter((c) => c.grupo === "geral");
+export const CRITERIOS_ESPECIFICOS = CRITERIOS_PRIORIZACAO.filter((c) => c.grupo === "especifico");
 
+// Cada critério marcado vale 1 ponto; "score" = nº de critérios que se aplicam.
+export const PONTOS_MAXIMO_POR_PROCESSO = CRITERIOS_PRIORIZACAO.length; // 7
+
+function marcado(criterios: Record<string, NivelCriterio>, id: string): boolean {
+  return criterios?.[id] === "sim";
+}
+
+export function geralAtendido(criterios: Record<string, NivelCriterio>): boolean {
+  return CRITERIOS_GERAIS.some((c) => marcado(criterios, c.id));
+}
+export function especificoAtendido(criterios: Record<string, NivelCriterio>): boolean {
+  return CRITERIOS_ESPECIFICOS.some((c) => marcado(criterios, c.id));
+}
+
+// Regra "1+1": alto risco quando há ≥1 critério geral E ≥1 específico marcados.
+export function ehAltoRisco(criterios: Record<string, NivelCriterio>): boolean {
+  return geralAtendido(criterios) && especificoAtendido(criterios);
+}
+
+export function calcularScorePriorizacao(criterios: Record<string, NivelCriterio>): number {
+  return CRITERIOS_PRIORIZACAO.filter((c) => marcado(criterios, c.id)).length;
+}
+
+// Faixa por CONTAGEM de critérios marcados (0-7) — usada na agregação do
+// telão (Modo Cards). O veredito de alto risco em si vem de ehAltoRisco; esta
+// faixa é só um resumo visual de "quantos critérios se aplicam".
 export function faixaPriorizacao(score: number): { label: string; cor: string } {
-  if (score >= 13) return { label: "Alta prioridade", cor: "red" };
-  if (score >= 7)  return { label: "Média prioridade", cor: "amber" };
-  return { label: "Baixa prioridade", cor: "emerald" };
+  if (score >= 5) return { label: "Muitos critérios", cor: "red" };
+  if (score >= 2) return { label: "Alguns critérios", cor: "amber" };
+  return { label: "Poucos critérios", cor: "emerald" };
+}
+
+// Veredito do processo, a partir das marcações.
+export function vereditoPriorizacao(criterios: Record<string, NivelCriterio>): {
+  altoRisco: boolean;
+  marcados: number;
+  label: string;
+  cor: "red" | "gray";
+} {
+  const altoRisco = ehAltoRisco(criterios);
+  return {
+    altoRisco,
+    marcados: calcularScorePriorizacao(criterios),
+    label: altoRisco ? "Alto risco" : "Risco padrão",
+    cor: altoRisco ? "red" : "gray",
+  };
 }
 
 // Tipos pro JSON salvo
 export type PriorizacaoProcessoSalva = {
   processoId: string;
   criterios: Record<string, NivelCriterio>;
-  score: number;
+  score: number; // nº de critérios marcados
+  altoRisco: boolean;
   justificativa: string;
 };
 
@@ -132,14 +172,3 @@ export type PriorizacaoSalva = {
   processos: PriorizacaoProcessoSalva[];
   atualizadoEm: string;
 };
-
-export function calcularScorePriorizacao(criterios: Record<string, NivelCriterio>): number {
-  let s = 0;
-  for (const c of CRITERIOS_PRIORIZACAO) {
-    const escolhido = criterios[c.id];
-    if (!escolhido) continue;
-    const op = c.opcoes.find((o) => o.id === escolhido);
-    if (op) s += op.pontos;
-  }
-  return s;
-}

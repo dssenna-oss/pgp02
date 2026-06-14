@@ -6,6 +6,7 @@ import { ensureColunasFase2 } from "@/lib/coluna-fase-2";
 import { processosPorOrgao } from "@/lib/seeds/processos-vegas";
 import {
   calcularScorePriorizacao,
+  ehAltoRisco,
   type NivelCriterio,
   type PriorizacaoSalva,
 } from "@/lib/criterios-priorizacao";
@@ -68,6 +69,7 @@ export async function salvarPriorizacao(input: {
         processoId: p.processoId,
         criterios: p.criterios,
         score: calcularScorePriorizacao(p.criterios),
+        altoRisco: ehAltoRisco(p.criterios),
         justificativa: p.justificativa,
       })),
       atualizadoEm: new Date().toISOString(),

@@ -297,46 +297,44 @@ function addSetores(wb: ExcelJS.Workbook) {
 // =============================================================================
 function addPriorizacao(wb: ExcelJS.Workbook) {
   const ws = wb.addWorksheet(ABA.priorizacao, { properties: { tabColor: { argb: COR_HEADER } } });
-  [34, 11, 13, 12, 12, 13, 16, 9, 14].forEach((w, i) => (ws.getColumn(i + 1).width = w));
-  setTituloAba(ws, "3 · Matriz de Priorização de Processos", "Critérios da Resolução CD/ANPD nº 2/2022. Pontue 1 (baixo) a 3 (alto). Score e prioridade são automáticos.");
-  caixaInstrucao(ws, 3, 9, "Pra cada processo, escolha 1, 2 ou 3 em cada critério. Score (soma) e Prioridade (ALTA/MÉDIA/BAIXA) são calculados sozinhos. Processos de maior score entram primeiro no Inventário.");
+  [34, 13, 13, 17, 14, 15, 16, 18, 11, 14].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  setTituloAba(ws, "3 · Matriz de Priorização de Processos", "Critérios da Resolução CD/ANPD nº 2/2022. Marque Sim/Não em cada critério. Alto risco e nº de critérios são automáticos.");
+  caixaInstrucao(ws, 3, 10, "Pra cada processo, marque Sim ou Não em cada critério. Regra '1+1': é ALTO RISCO quando há ≥1 critério GERAL E ≥1 ESPECÍFICO. Os de alto risco entram primeiro no Inventário (Fase 3) e exigem RIPD.");
 
   const headerRow = 5;
   setHeaderRow(ws, headerRow, [
     "Processo",
-    "Volume (1-3)",
-    "Sensibilidade (1-3)",
-    "Vulneráveis (1-3)",
-    "Exposição (1-3)",
-    "Tecnologias (1-3)",
-    "Compartilham. (1-3)",
-    "Score",
-    "Prioridade",
+    "G: Nº de titulares",
+    "G: Volume de dados",
+    "G: Duração/freq./extensão",
+    "E: Tecnologias emergentes",
+    "E: Vigilância zonas públicas",
+    "E: Decisões automatizadas",
+    "E: Sensíveis ou vulneráveis",
+    "Critérios marcados",
+    "Alto Risco?",
   ]);
   ws.views = [{ state: "frozen", ySplit: headerRow }];
   const ini = headerRow + 1;
   const fim = headerRow + NUM_LINHAS;
-  marcarInput(ws, 1, 7, ini, fim); // Processo + 6 critérios
-  marcarFormula(ws, 8, 9, ini, fim); // Score + Prioridade
+  marcarInput(ws, 1, 8, ini, fim); // Processo + 7 critérios
+  marcarFormula(ws, 9, 10, ini, fim); // Marcados + Alto Risco?
 
   for (let r = ini; r <= fim; r++) {
-    dropdown(ws, `B${r}:G${r}`, ["1", "2", "3"]);
-    // Score = soma dos 6 critérios (só se todos preenchidos)
-    ws.getCell(r, 8).value = {
-      formula: `IF(COUNT(B${r}:G${r})=6,SUM(B${r}:G${r}),"")`,
-    };
-    // Prioridade
-    ws.getCell(r, 9).value = {
-      formula: `IF(H${r}="","",IF(H${r}>=13,"ALTA",IF(H${r}>=7,"MÉDIA","BAIXA")))`,
+    dropdown(ws, `B${r}:H${r}`, ["Sim", "Não"]);
+    // Nº de critérios marcados como "Sim"
+    ws.getCell(r, 9).value = { formula: `COUNTIF(B${r}:H${r},"Sim")` };
+    // Regra 1+1: alto risco se ≥1 Geral (B:D) E ≥1 Específico (E:H) = "Sim"
+    ws.getCell(r, 10).value = {
+      formula: `IF(AND(COUNTIF(B${r}:D${r},"Sim")>=1,COUNTIF(E${r}:H${r},"Sim")>=1),"ALTO RISCO","Risco padrão")`,
     };
   }
-  // Formatação condicional na coluna Prioridade
+  // Formatação condicional na coluna Alto Risco
   ws.addConditionalFormatting({
-    ref: `I${ini}:I${fim}`,
+    ref: `J${ini}:J${fim}`,
     rules: [
-      { type: "containsText", operator: "containsText", text: "ALTA", priority: 1, style: { fill: fill("FFFEE2E2"), font: { color: { argb: "FF991B1B" }, bold: true } } },
-      { type: "containsText", operator: "containsText", text: "MÉDIA", priority: 2, style: { fill: fill("FFFEF9C3"), font: { color: { argb: "FF854D0E" }, bold: true } } },
-      { type: "containsText", operator: "containsText", text: "BAIXA", priority: 3, style: { fill: fill("FFDCFCE7"), font: { color: { argb: "FF166534" }, bold: true } } },
+      { type: "containsText", operator: "containsText", text: "ALTO RISCO", priority: 1, style: { fill: fill("FFFEE2E2"), font: { color: { argb: "FF991B1B" }, bold: true } } },
+      { type: "containsText", operator: "containsText", text: "Risco padrão", priority: 2, style: { fill: fill("FFF3F4F6"), font: { color: { argb: "FF4B5563" } } } },
     ],
   });
   protegerAba(ws);

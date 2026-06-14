@@ -1407,26 +1407,26 @@ function modelo13_MatrizPriorizacao(): (Paragraph | Table)[] {
   out.push(h3("1) Critério GERAL — larga escala (atende se marcar ao menos um)"));
   out.push(
     tabelaCampos([
-      ["a) Número significativo de titulares", "(  ) Aplica       (  ) Não aplica"],
-      ["b) Volume de dados envolvidos", "(  ) Aplica       (  ) Não aplica"],
-      ["c) Duração, frequência e extensão geográfica", "(  ) Aplica       (  ) Não aplica"],
+      ["a) Número significativo de titulares", "<[ (  ) Aplica   (  ) Não aplica ]>"],
+      ["b) Volume de dados envolvidos", "<[ (  ) Aplica   (  ) Não aplica ]>"],
+      ["c) Duração, frequência e extensão geográfica", "<[ (  ) Aplica   (  ) Não aplica ]>"],
     ]),
   );
 
   out.push(h3("2) Critério ESPECÍFICO (atende se marcar ao menos um)"));
   out.push(
     tabelaCampos([
-      ["a) Tecnologias emergentes ou inovadoras", "(  ) Aplica       (  ) Não aplica"],
-      ["b) Vigilância de zonas acessíveis ao público", "(  ) Aplica       (  ) Não aplica"],
-      ["c) Decisões unicamente automatizadas / profiling", "(  ) Aplica       (  ) Não aplica"],
-      ["d) Dados sensíveis ou de crianças, adolescentes e idosos", "(  ) Aplica       (  ) Não aplica"],
+      ["a) Tecnologias emergentes ou inovadoras", "<[ (  ) Aplica   (  ) Não aplica ]>"],
+      ["b) Vigilância de zonas acessíveis ao público", "<[ (  ) Aplica   (  ) Não aplica ]>"],
+      ["c) Decisões unicamente automatizadas / profiling", "<[ (  ) Aplica   (  ) Não aplica ]>"],
+      ["d) Dados sensíveis ou de crianças, adolescentes e idosos", "<[ (  ) Aplica   (  ) Não aplica ]>"],
     ]),
   );
 
   out.push(pComPlaceholder("Veredito (regra 1+1): <[ALTO RISCO se marcou ≥1 Geral E ≥1 Específico — senão, risco padrão]>", { bold: true }));
   out.push(pComPlaceholder("Justificativa: <[Comentário curto — opcional mas recomendado]>"));
 
-  out.push(h3("Como ordenar"));
+  out.push(h3("Ranking dos processos"));
   out.push(p("Liste primeiro os processos de ALTO RISCO; entre eles, os com mais critérios marcados. Esses entram no Inventário detalhado da Fase 3 e exigem RIPD."));
 
   out.push(

@@ -294,17 +294,18 @@ const TRILHA_51_65: AtividadeOpcoes = {
 };
 
 // ─── Fase 2 — Priorização (escala) ──────────────────────────────────────────
-// Reaproveita os 6 critérios da Res. CD/ANPD nº 2/2022. Processo-exemplo único
+// Reaproveita os 7 critérios da Res. CD/ANPD nº 2/2022 (3 gerais + 4 específicos,
+// presença Aplica/Não aplica). Processo-exemplo único
 // (o trabalho por processo real é nos cards físicos) pra ser um toque rápido.
 const PRIORIZACAO_F2: AtividadeOpcoes = {
   id: "priorizacao-f2",
   fase: "Fase 2 — Diagnóstico Inicial",
   faseCor: COR_F2,
   emoji: "📊",
-  titulo: "Priorização — vote o risco de cada critério",
+  titulo: "Priorização — marque os critérios da Res. 2/2022 que se aplicam",
   contexto: "Processo-exemplo: Atendimento no Posto de Saúde (UBS)",
   instrucao:
-    "Pensando no Atendimento no Posto de Saúde, toque o nível (Baixo / Médio / Alto) em cada um dos 6 critérios. O resultado da turma aparece no telão — quanto maior o score, mais prioritário o processo.",
+    "Pensando no Atendimento no Posto de Saúde, marque Aplica / Não aplica em cada um dos 7 critérios da Resolução CD/ANPD nº 2/2022 — 3 Gerais (larga escala) + 4 Específicos. No telão aparece quantos critérios a turma marcou. Lembre da regra 1+1: é alto risco quando há ≥1 geral E ≥1 específico.",
   tipo: "opcoes",
   modo: "escala",
   itens: CRITERIOS_PRIORIZACAO.map((c) => ({

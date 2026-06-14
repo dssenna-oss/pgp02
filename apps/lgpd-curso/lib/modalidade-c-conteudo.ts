@@ -314,12 +314,12 @@ export const COLA_MATRIZ_PXI = {
 };
 
 export const COLA_PRIORIZACAO = {
-  titulo: "Cola — Faixas de Priorização (Res. CD/ANPD nº 2/2022)",
+  titulo: "Cola — Critérios de Priorização (Res. CD/ANPD nº 2/2022)",
   linhas: [
-    "6 critérios, 1 a 3 pontos cada (Volume · Sensibilidade · Vulneráveis · Exposição · Tecnologias · Compartilhamentos). Score 0-18.",
-    "0-6 pontos = prioridade BAIXA.",
-    "7-12 pontos = prioridade MÉDIA.",
-    "13-18 pontos = prioridade ALTA (entra primeiro no Inventário).",
+    "Regra '1+1': é ALTO RISCO quando há ≥1 critério GERAL E ≥1 ESPECÍFICO.",
+    "GERAL (larga escala — basta 1): a) número significativo de titulares · b) volume de dados · c) duração, frequência e extensão geográfica.",
+    "ESPECÍFICO (basta 1): a) tecnologias emergentes/inovadoras · b) vigilância de zonas acessíveis ao público · c) decisões unicamente automatizadas/profiling · d) dados sensíveis ou de crianças, adolescentes e idosos.",
+    "Processos de ALTO RISCO entram primeiro no Inventário (Fase 3) e exigem RIPD (Art. 38).",
   ],
 };
 
