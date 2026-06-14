@@ -10,8 +10,10 @@
 //   • autoSeguir = false → comportamento clássico (Modalidade A): só mostra a
 //     faixa e o participante DECIDE tocar pra abrir. Nunca arranca a tela de
 //     quem está digitando.
-// Comandos sem página própria no celular (`href` null: Guia estático,
-// Fases 3-7 só-telão) nunca navegam — a faixa diz "acompanhe pelo telão".
+// Comandos sem página própria no celular (`href` null: Fases 3-7 só-telão)
+// mandam o celular pra landing LIMPA /dashboard/siga-telao (hero "Siga o
+// telão" sem botões) — assim nenhuma atividade clicável fica competindo com
+// a faixa "acompanhe pelo telão".
 // Polling leve do /api/curso/telao-aviso (a turma é derivada da sessão no
 // servidor). Mesmo padrão do DsrAlertBanner.
 
@@ -60,12 +62,17 @@ export function TelaoAvisoBanner() {
         const av: Aviso | null = data?.aviso ?? null;
         setAviso(av);
 
-        // Espelho do telão (Modo Cards): navega sozinho quando o comando MUDA
-        // e a tela tem página própria. Só dispara na troca (não a cada poll),
-        // pra não prender o participante numa só tela entre comandos.
-        if (data?.autoSeguir && av?.href && av.comando !== ultimoComandoNavegado.current) {
+        // Espelho do telão (Modo Cards): navega sozinho quando o comando MUDA.
+        // Só dispara na troca (não a cada poll), pra não prender o participante
+        // numa só tela entre comandos.
+        //  - conteúdo COM página própria (href) → vai pra ela.
+        //  - conteúdo SÓ-TELÃO (href null) → vai pra landing limpa "Siga o
+        //    telão" (sem botões), pra não deixar uma atividade clicável
+        //    competindo com a faixa "acompanhe pelo telão".
+        if (data?.autoSeguir && av && av.comando !== ultimoComandoNavegado.current) {
           ultimoComandoNavegado.current = av.comando;
-          if (pathnameRef.current !== av.href) router.push(av.href);
+          const destino = av.href ?? "/dashboard/siga-telao";
+          if (pathnameRef.current !== destino) router.push(destino);
         } else {
           ultimoComandoNavegado.current = av?.comando ?? null;
         }
