@@ -14,7 +14,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard, Database, ShieldAlert, ClipboardCheck,
   FileSearch, Building2, UserCheck, FileText, AlertTriangle, LogOut, Settings, Menu, X, CheckCircle2,
-  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Compass, KeyRound, Printer,
+  ChevronDown, ChevronRight, Flag, Target, Library, BookOpen, Shield, BarChart3, Mic2, Eye, Projector, Trophy, ExternalLink, Scale, Search, LayoutGrid, MessagesSquare, History, Compass, KeyRound, Printer, FileStack,
 } from "lucide-react";
 import { Brand } from "./brand";
 import { SosBotao } from "./sos-botao";
@@ -347,6 +347,25 @@ export function Sidebar() {
                 >
                   <LayoutGrid className="h-4 w-4 shrink-0 text-indigo-500" />
                   <span className="flex-1 text-[13px] leading-tight">🃏 Atividades ao vivo</span>
+                </Link>
+              )}
+
+              {/* Montador Guiado de Documentos — simulação INDIVIDUAL no celular
+                  (cada participante monta o seu; nada grava no banco). Também
+                  gated por Modo Cards: é ferramenta do curso híbrido. */}
+              {progresso?.modoCards && (
+                <Link
+                  href="/dashboard/montador"
+                  onClick={closeMobile}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors min-h-[40px] border-l-4 border-l-indigo-400",
+                    pathname.startsWith("/dashboard/montador")
+                      ? "bg-brand-50 text-brand-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-100",
+                  )}
+                >
+                  <FileStack className="h-4 w-4 shrink-0 text-indigo-500" />
+                  <span className="flex-1 text-[13px] leading-tight">📄 Monte seu documento</span>
                 </Link>
               )}
 

@@ -50,6 +50,9 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // celular do participante (hrefAluno de "guia-art-1-11"). Liberado pro ADMIN
   // poder testar/visualizar no próprio aparelho.
   "/dashboard/guia-art-1-11",
+  // Montador Guiado de Documentos — individual, sem banco (nada depende de
+  // companyId). ADMIN visualiza/projeta e testa no próprio aparelho.
+  "/dashboard/montador",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {
