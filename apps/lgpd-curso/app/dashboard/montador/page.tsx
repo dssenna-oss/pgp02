@@ -4,9 +4,10 @@
 // Nada é gravado no banco — o valor é a simulação + o placar pedagógico.
 
 import Link from "next/link";
-import { ArrowLeft, FileStack } from "lucide-react";
+import { ArrowLeft, FileStack, BookOpen } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
+import { getSaibaMais } from "@/lib/montador-saiba-mais";
 import { atividadesDoDoc, hrefAtividade, CapaDoc } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
@@ -57,7 +58,15 @@ export default function MontadorHubPage() {
                       <p className="text-sm text-gray-500">{d.subtitulo}</p>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  {getSaibaMais(d.id) && (
+                    <Link
+                      href={`/dashboard/montador/${d.id}/saiba-mais`}
+                      className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      <BookOpen className="h-4 w-4" /> Saiba mais — comece por aqui
+                    </Link>
+                  )}
+                  <div className="mt-2 grid grid-cols-2 gap-2">
                     {atividadesDoDoc(d).map((a) => (
                       <Link
                         key={a.slug || "montar"}

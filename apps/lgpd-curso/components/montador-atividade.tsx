@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { MontadorDoc, FormatoAtividade } from "@/lib/montador-docs";
 import { formatosDoDoc } from "@/lib/montador-docs";
+import { getSaibaMais } from "@/lib/montador-saiba-mais";
 import { BlocosRunner } from "@/components/blocos-runner";
 import { CacaErroRunner } from "@/components/caca-erro-runner";
 import { OrdenarRunner } from "@/components/ordenar-runner";
@@ -41,13 +42,22 @@ export function AtividadesDocLinks({
   atual: AtividadeSlug;
 }) {
   const outras = atividadesDoDoc(doc).filter((a) => a.slug !== atual);
-  if (outras.length === 0) return null;
+  const temSaibaMais = !!getSaibaMais(doc.id);
+  if (outras.length === 0 && !temSaibaMais) return null;
   return (
     <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
         Outras atividades deste documento
       </p>
       <div className="flex flex-wrap gap-2">
+        {temSaibaMais && (
+          <Link
+            href={`${base}/${doc.id}/saiba-mais`}
+            className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 transition hover:border-indigo-400"
+          >
+            📖 Saiba mais
+          </Link>
+        )}
         {outras.map((a) => (
           <Link
             key={a.slug || "montar"}
