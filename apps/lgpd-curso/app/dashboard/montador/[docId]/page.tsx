@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getMontadorDoc } from "@/lib/montador-docs";
-import { MontadorRunner } from "./montador-runner";
+import { MontadorRunner } from "@/components/montador-runner";
 
 export const dynamic = "force-dynamic";
 
