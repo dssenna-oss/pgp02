@@ -13,6 +13,8 @@ export function CacaErroRunner({ doc }: { doc: MontadorDoc }) {
   const [marcadas, setMarcadas] = useState<Set<number>>(new Set());
   const [conferido, setConferido] = useState(false);
 
+  if (!doc.cacaErro) return null; // formato não disponível neste documento
+  const { contexto, instrucao } = doc.cacaErro;
   const secoes = doc.cacaErro.secoes;
   const totalErros = secoes.filter((s) => s.erro).length;
 
@@ -37,9 +39,9 @@ export function CacaErroRunner({ doc }: { doc: MontadorDoc }) {
   return (
     <div>
       <p className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        {doc.cacaErro.contexto}
+        {contexto}
       </p>
-      <p className="mb-4 text-sm text-gray-600">{doc.cacaErro.instrucao}</p>
+      <p className="mb-4 text-sm text-gray-600">{instrucao}</p>
 
       <ol className="space-y-3">
         {secoes.map((s) => {

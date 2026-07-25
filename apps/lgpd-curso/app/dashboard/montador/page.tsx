@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, FileStack } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
-import { ATIVIDADES_DOC, hrefAtividade } from "@/components/montador-atividade";
+import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +46,7 @@ export default function MontadorHubPage() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {ATIVIDADES_DOC.map((a) => (
+              {atividadesDoDoc(d).map((a) => (
                 <Link
                   key={a.slug || "montar"}
                   href={hrefAtividade("/dashboard/montador", d.id, a.slug)}

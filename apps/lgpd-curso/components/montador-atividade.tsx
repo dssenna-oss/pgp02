@@ -3,12 +3,13 @@
 // atividades do documento. Usado pelos 2 contextos (público e dashboard).
 
 import Link from "next/link";
-import type { MontadorDoc } from "@/lib/montador-docs";
+import type { MontadorDoc, FormatoAtividade } from "@/lib/montador-docs";
+import { formatosDoDoc } from "@/lib/montador-docs";
 import { BlocosRunner } from "@/components/blocos-runner";
 import { CacaErroRunner } from "@/components/caca-erro-runner";
 import { OrdenarRunner } from "@/components/ordenar-runner";
 
-export type AtividadeSlug = "" | "blocos" | "erros" | "ordem";
+export type AtividadeSlug = FormatoAtividade;
 
 export const ATIVIDADES_DOC: { slug: AtividadeSlug; emoji: string; rotulo: string }[] = [
   { slug: "", emoji: "🧭", rotulo: "Montar decidindo" },
@@ -21,26 +22,34 @@ export function hrefAtividade(base: string, docId: string, slug: AtividadeSlug):
   return `${base}/${docId}${slug ? `/${slug}` : ""}`;
 }
 
+// Atividades que ESTE documento oferece (formatos são opcionais por doc).
+export function atividadesDoDoc(doc: MontadorDoc) {
+  const disponiveis = new Set(formatosDoDoc(doc));
+  return ATIVIDADES_DOC.filter((a) => disponiveis.has(a.slug));
+}
+
 // Chips de navegação pras demais atividades do mesmo documento.
 export function AtividadesDocLinks({
   base,
-  docId,
+  doc,
   atual,
 }: {
   base: string;
-  docId: string;
+  doc: MontadorDoc;
   atual: AtividadeSlug;
 }) {
+  const outras = atividadesDoDoc(doc).filter((a) => a.slug !== atual);
+  if (outras.length === 0) return null;
   return (
     <div className="mt-8 rounded-xl border border-gray-200 bg-white p-4">
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
         Outras atividades deste documento
       </p>
       <div className="flex flex-wrap gap-2">
-        {ATIVIDADES_DOC.filter((a) => a.slug !== atual).map((a) => (
+        {outras.map((a) => (
           <Link
             key={a.slug || "montar"}
-            href={hrefAtividade(base, docId, a.slug)}
+            href={hrefAtividade(base, doc.id, a.slug)}
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition hover:border-indigo-300 hover:text-indigo-700"
           >
             {a.emoji} {a.rotulo}
@@ -77,7 +86,7 @@ export function MontadorAtividade({
       {atividade === "erros" && <CacaErroRunner doc={doc} />}
       {atividade === "ordem" && <OrdenarRunner doc={doc} />}
 
-      <AtividadesDocLinks base={base} docId={doc.id} atual={atividade} />
+      <AtividadesDocLinks base={base} doc={doc} atual={atividade} />
     </>
   );
 }

@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 
 export default function MontadorDocPage({ params }: { params: { docId: string } }) {
   const doc = getMontadorDoc(params.docId);
-  if (!doc || !doc.disponivel) notFound();
+  // O wizard só existe pra documentos com decisões (formatos são opcionais).
+  if (!doc || !doc.disponivel || doc.decisoes.length === 0) notFound();
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -35,7 +36,7 @@ export default function MontadorDocPage({ params }: { params: { docId: string } 
 
       <MontadorRunner doc={doc} />
 
-      <AtividadesDocLinks base="/dashboard/montador" docId={doc.id} atual="" />
+      <AtividadesDocLinks base="/dashboard/montador" doc={doc} atual="" />
     </div>
   );
 }

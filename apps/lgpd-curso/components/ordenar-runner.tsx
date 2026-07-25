@@ -11,9 +11,12 @@ import { ArrowUp, ArrowDown, CheckCircle2, XCircle, RotateCcw, ListChecks } from
 import type { MontadorDoc } from "@/lib/montador-docs";
 
 export function OrdenarRunner({ doc }: { doc: MontadorDoc }) {
-  const { itens, ordemInicial, logica, instrucao } = doc.ordenar;
-  const [ordem, setOrdem] = useState<string[]>(ordemInicial);
+  // Hooks primeiro (regra do React); doc sem o formato não renderiza.
+  const dados = doc.ordenar;
+  const [ordem, setOrdem] = useState<string[]>(dados ? dados.ordemInicial : []);
   const [conferido, setConferido] = useState(false);
+  if (!dados) return null;
+  const { itens, ordemInicial, logica, instrucao } = dados;
 
   const ordemCorreta = itens.map((i) => i.id);
 

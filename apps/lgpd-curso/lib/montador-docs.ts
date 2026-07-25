@@ -77,6 +77,9 @@ export type ItemOrdem = {
   detalhe?: string;
 };
 
+// Formatos OPCIONAIS por documento (decisão pedagógica: cada documento ganha
+// só os formatos onde aprende de verdade — nada de atividade-enchimento).
+// Wizard ("montar decidindo") existe quando `decisoes` não está vazio.
 export type MontadorDoc = {
   id: string;
   emoji: string;
@@ -84,12 +87,25 @@ export type MontadorDoc = {
   subtitulo: string;
   intro: string;
   esqueleto: SecaoEsqueleto[];
-  decisoes: Decisao[];
+  decisoes: Decisao[]; // vazio = documento sem o formato "montar decidindo"
   disponivel: boolean; // false = aparece no hub como "em breve"
-  blocos: { instrucao: string; cartas: CartaBloco[] };
-  cacaErro: { contexto: string; instrucao: string; secoes: SecaoCaca[] };
-  ordenar: { instrucao: string; itens: ItemOrdem[]; ordemInicial: string[]; logica: string };
+  blocos?: { instrucao: string; cartas: CartaBloco[] };
+  cacaErro?: { contexto: string; instrucao: string; secoes: SecaoCaca[] };
+  ordenar?: { instrucao: string; itens: ItemOrdem[]; ordemInicial: string[]; logica: string };
 };
+
+// Slugs de atividade ("" = o wizard "montar decidindo", na raiz do doc).
+export type FormatoAtividade = "" | "blocos" | "erros" | "ordem";
+
+// Quais formatos este documento oferece (na ordem canônica do cardápio).
+export function formatosDoDoc(doc: MontadorDoc): FormatoAtividade[] {
+  const f: FormatoAtividade[] = [];
+  if (doc.decisoes.length > 0) f.push("");
+  if (doc.blocos) f.push("blocos");
+  if (doc.cacaErro) f.push("erros");
+  if (doc.ordenar) f.push("ordem");
+  return f;
+}
 
 // -----------------------------------------------------------------------------
 // AVISO DE PRIVACIDADE
@@ -1202,10 +1218,1577 @@ const POLITICA: MontadorDoc = {
 };
 
 // -----------------------------------------------------------------------------
+// RIPD — Relatório de Impacto (decidir + caça ao erro)
+// -----------------------------------------------------------------------------
+// Seções = as 8 oficiais do módulo RIPD do curso (lib/ripd-secoes.ts).
+// "Ordenar as 8 seções" já existe no Modo Atividade — aqui não duplica.
+
+const RIPD: MontadorDoc = {
+  id: "ripd",
+  emoji: "📋",
+  titulo: "RIPD — Relatório de Impacto",
+  subtitulo: "O documento que a ANPD pede no alto risco",
+  intro:
+    "Quando o tratamento é de ALTO RISCO (lembra da regra 1+1? um critério " +
+    "geral + um específico), nasce a obrigação de fazer o RIPD — sem esperar a " +
+    "ANPD pedir. Monte um RIPD de verdade decidindo as seções críticas: a " +
+    "diferença entre um relatório útil e um 'RIPD de fachada'.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "descricao",
+      secaoNumero: 2,
+      contexto:
+        "O RIPD é do prontuário eletrônico do Posto de Saúde — dados sensíveis de milhares de pacientes.",
+      pergunta: "Como descrever o tratamento?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Fluxo completo: o que coleta, onde guarda, quem acessa, quando descarta",
+          textoDoc:
+            "O sistema coleta **identificação, contato e dados de saúde** dos " +
+            "pacientes no atendimento; armazena em servidor [local/nuvem]; " +
+            "acessam profissionais de saúde autorizados; envia ao e-SUS " +
+            "(Ministério da Saúde); descarta conforme prazo de guarda de " +
+            "prontuário (20 anos).",
+          correta: true,
+          porque:
+            "Sem descrever o fluxo real (coleta → uso → guarda → compartilhamento " +
+            "→ descarte), não dá pra enxergar onde mora o risco. Descrição boa é " +
+            "mapa, não resumo.",
+          artigo: "Art. 38, § único",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Descrição resumida — 'diversos dados para finalidades administrativas'",
+          textoDoc:
+            "O sistema trata diversos dados pessoais para finalidades " +
+            "administrativas e de gestão da unidade de saúde.",
+          correta: false,
+          porque:
+            "Descrição genérica esconde exatamente o que o RIPD existe pra " +
+            "mostrar. 'Diversos dados' num posto de saúde = dados sensíveis — e " +
+            "isso precisa estar dito.",
+          artigo: "Art. 38, § único (descumprido)",
+        },
+      ],
+    },
+    {
+      id: "necessidade",
+      secaoNumero: 3,
+      pergunta: "Como justificar a necessidade e proporcionalidade?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Justificar POR QUE cada categoria de dado é necessária à finalidade",
+          textoDoc:
+            "Cada categoria de dado se justifica pela finalidade assistencial: " +
+            "identificação (vincular o prontuário ao paciente certo), dados " +
+            "clínicos (continuidade do cuidado), contato (resultados e " +
+            "remarcações). **Dados sem vínculo com a finalidade não são coletados.**",
+          correta: true,
+          porque:
+            "Proporcionalidade se demonstra dado a dado. Se alguma categoria não " +
+            "se justifica, o RIPD é o momento de cortá-la.",
+          artigo: "Art. 6º, III",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Todos os dados coletados podem ser úteis no futuro'",
+          textoDoc:
+            "A coleta ampla se justifica pela possibilidade de uso futuro dos " +
+            "dados em novas políticas de saúde e projetos da gestão.",
+          correta: false,
+          porque:
+            "'Pode ser útil no futuro' é o oposto de necessidade — finalidade tem " +
+            "que ser determinada ANTES da coleta, não descoberta depois.",
+          artigo: "Art. 6º, I e III",
+        },
+      ],
+    },
+    {
+      id: "riscos",
+      secaoNumero: 4,
+      contexto: "A parte mais importante — e a mais maquiada nos RIPDs de fachada.",
+      pergunta: "Como registrar a análise de riscos?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Riscos CONCRETOS, com probabilidade × impacto",
+          textoDoc:
+            "Riscos identificados: **acesso indevido ao prontuário** por servidor " +
+            "sem atribuição (probabilidade média × impacto alto = ALTO); " +
+            "**vazamento em compartilhamento** com sistemas externos (média × " +
+            "alto = ALTO); **perda de disponibilidade** em falha do servidor " +
+            "(baixa × médio = MÉDIO). Cada risco liga a uma medida da seção 5.",
+          correta: true,
+          porque:
+            "Risco de verdade tem nome, cenário e severidade (a matriz 3×3 que " +
+            "você já usou na Fase 3). É isso que a seção 4 existe pra mostrar.",
+          artigo: "Art. 38 · matriz P×I da Fase 3",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Não foram identificados riscos relevantes'",
+          textoDoc:
+            "Após análise criteriosa, não foram identificados riscos relevantes " +
+            "aos direitos e liberdades dos titulares.",
+          correta: false,
+          porque:
+            "Prontuário de milhares de pacientes SEM risco relevante? Isso é o " +
+            "atestado do RIPD de fachada — feito pra constar, não pra proteger. " +
+            "Alto risco foi justamente o motivo de o RIPD existir.",
+          artigo: "Art. 38 (esvaziado)",
+        },
+      ],
+    },
+    {
+      id: "medidas",
+      secaoNumero: 5,
+      pergunta: "Como registrar as medidas e salvaguardas?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Uma medida específica PRA CADA risco, com responsável",
+          textoDoc:
+            "Para o acesso indevido: **perfis por função + trilha de auditoria** " +
+            "(responsável: TI, prazo 60 dias). Para o vazamento em " +
+            "compartilhamento: **cláusulas LGPD e criptografia no envio** " +
+            "(responsável: TI + Jurídico). Para a indisponibilidade: **backup " +
+            "diário testado** (responsável: TI).",
+          correta: true,
+          porque:
+            "Medida boa espelha o risco da seção 4, com dono e prazo. Sem isso, o " +
+            "RIPD não vira plano — vira promessa.",
+          artigo: "Art. 46 · Art. 38",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Adotamos as melhores práticas de mercado'",
+          textoDoc:
+            "A instituição adota as melhores práticas de mercado em segurança da " +
+            "informação, garantindo a proteção integral dos dados.",
+          correta: false,
+          porque:
+            "Frase que serve pra qualquer órgão do país = frase que não diz nada. " +
+            "'Melhores práticas' sem dizer QUAIS, pra QUAL risco e de QUEM é a " +
+            "tarefa não protege ninguém.",
+          artigo: "Art. 46 (vago)",
+        },
+      ],
+    },
+    {
+      id: "conclusao",
+      secaoNumero: 8,
+      pergunta: "Como fechar a conclusão do RIPD?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Veredito honesto do risco residual + o que ainda falta",
+          textoDoc:
+            "Com as medidas implantadas, o risco residual é **MÉDIO e aceitável " +
+            "temporariamente**, condicionado ao cumprimento do plano (60-90 " +
+            "dias). Reavaliação após a implantação e a cada mudança relevante no " +
+            "tratamento.",
+          correta: true,
+          porque:
+            "A conclusão honesta admite o que falta e agenda a reavaliação. RIPD " +
+            "é fotografia + compromisso, não certificado de perfeição.",
+          artigo: "Art. 38",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Conclui-se que o tratamento está plenamente em conformidade'",
+          textoDoc:
+            "Conclui-se que o tratamento encontra-se plenamente em conformidade " +
+            "com a LGPD, nada havendo a providenciar.",
+          correta: false,
+          porque:
+            "Conclusão-carimbo. Se nada há a providenciar, por que o tratamento é " +
+            "de alto risco? Fiscalização lê essa frase como confissão de que o " +
+            "RIPD foi feito pra constar.",
+          artigo: "Art. 38 (esvaziado)",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    {
+      numero: 1,
+      titulo: "Identificação do agente de tratamento e Encarregado",
+      textoFixo:
+        "Controlador: [NOME DA INSTITUIÇÃO], CNPJ [nº]. Encarregado(a): [nome], " +
+        "[e-mail e telefone]. Elaborado com participação do Encarregado e das " +
+        "áreas envolvidas.",
+    },
+    { numero: 2, titulo: "Descrição do tratamento", decisaoId: "descricao" },
+    { numero: 3, titulo: "Necessidade e proporcionalidade", decisaoId: "necessidade" },
+    {
+      numero: 4,
+      titulo: "Análise de riscos aos direitos e liberdades dos titulares",
+      decisaoId: "riscos",
+    },
+    { numero: 5, titulo: "Medidas e salvaguardas", decisaoId: "medidas" },
+    {
+      numero: 6,
+      titulo: "Direitos dos titulares — exercício efetivo",
+      textoFixo:
+        "O titular exerce seus direitos pelo canal do Encarregado ([e-mail/" +
+        "formulário]), com resposta no prazo legal. Este tratamento não impõe " +
+        "barreiras ao exercício de direitos.",
+    },
+    {
+      numero: 7,
+      titulo: "Compartilhamentos e transferências internacionais",
+      textoFixo:
+        "Compartilhamentos: [listar — ex.: e-SUS/Ministério da Saúde, por " +
+        "obrigação legal]. Transferência internacional: verificada junto aos " +
+        "operadores; havendo, observa o art. 33.",
+    },
+    { numero: 8, titulo: "Conclusão — risco residual aceitável?", decisaoId: "conclusao" },
+  ],
+  cacaErro: {
+    contexto:
+      "A Prefeitura de Vegas 'concluiu' o RIPD do prontuário eletrônico do " +
+      "Posto de Saúde. Cheiro de RIPD de fachada no ar: 4 erros escondidos.",
+    instrucao:
+      "Leia cada seção e toque nas que estão ERRADAS (🚩). Dica: procure " +
+      "contradições entre as seções.",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "Identificação",
+        texto:
+          "Controlador: Prefeitura Municipal de Vegas. Encarregada: Ana Prado " +
+          "(encarregado@vegas.gov.br). Elaborado pela Secretaria de Saúde com " +
+          "participação da Encarregada.",
+        notaLimpa: "Identificação completa, com o Encarregado participando — correto.",
+      },
+      {
+        numero: 2,
+        titulo: "Descrição do tratamento",
+        texto:
+          "O sistema de prontuário eletrônico trata diversos dados pessoais " +
+          "para finalidades administrativas e de gestão da unidade.",
+        erro: {
+          porque:
+            "Descrição genérica que esconde o essencial: são dados SENSÍVEIS de " +
+            "saúde, de milhares de pacientes, com envio ao e-SUS. O RIPD existe " +
+            "pra mostrar o fluxo — não pra resumi-lo até sumir.",
+          artigo: "Art. 38, § único",
+        },
+      },
+      {
+        numero: 3,
+        titulo: "Necessidade e proporcionalidade",
+        texto:
+          "Cada categoria se justifica pela finalidade assistencial: " +
+          "identificação (prontuário correto), dados clínicos (continuidade do " +
+          "cuidado), contato (remarcações). O envio ao e-SUS decorre de " +
+          "obrigação legal.",
+        notaLimpa: "Justificativa dado a dado, com base legal do envio — correto.",
+      },
+      {
+        numero: 4,
+        titulo: "Análise de riscos",
+        texto:
+          "Após análise criteriosa, não foram identificados riscos relevantes " +
+          "aos direitos e liberdades dos titulares.",
+        erro: {
+          porque:
+            "Prontuário de milhares de pacientes 'sem riscos relevantes' é o " +
+            "selo do RIPD de fachada. Se não houvesse risco, não haveria RIPD — " +
+            "alto risco é o pressuposto do documento.",
+          artigo: "Art. 38",
+        },
+      },
+      {
+        numero: 5,
+        titulo: "Medidas e salvaguardas",
+        texto:
+          "A instituição adota as melhores práticas de mercado em segurança da " +
+          "informação, garantindo proteção integral aos dados tratados.",
+        erro: {
+          porque:
+            "'Melhores práticas de mercado' sem dizer quais, pra qual risco e " +
+            "com que responsável é frase de encher página. Medida sem dono e " +
+            "sem prazo não sai do papel.",
+          artigo: "Art. 46 (vago)",
+        },
+      },
+      {
+        numero: 6,
+        titulo: "Direitos dos titulares",
+        texto:
+          "O paciente exerce seus direitos pelo canal da Encarregada " +
+          "(encarregado@vegas.gov.br), com resposta em até 15 dias úteis.",
+        notaLimpa: "Canal real + prazo — exercício efetivo garantido. Correto.",
+      },
+      {
+        numero: 7,
+        titulo: "Compartilhamentos e transferências",
+        texto:
+          "O tratamento não envolve compartilhamento de dados com nenhum " +
+          "órgão ou entidade externa.",
+        erro: {
+          porque:
+            "Contradição interna: a seção 3 diz que há envio ao e-SUS " +
+            "(Ministério da Saúde)! Negar compartilhamento sem checar — ou pra " +
+            "'simplificar' — torna o RIPD todo suspeito.",
+          artigo: "Art. 38 · Art. 33 (não verificado)",
+        },
+      },
+      {
+        numero: 8,
+        titulo: "Conclusão",
+        texto:
+          "O risco residual é MÉDIO e aceitável temporariamente, condicionado " +
+          "ao plano de medidas (60-90 dias), com reavaliação após a implantação.",
+        notaLimpa:
+          "Conclusão honesta: admite risco residual e agenda reavaliação — é " +
+          "assim que se fecha um RIPD de verdade.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// PRI — Plano de Resposta a Incidentes (decidir + ordenar)
+// -----------------------------------------------------------------------------
+// Seções = as 8 oficiais do módulo PRI do curso (lib/pri-secoes.ts).
+
+const PRI: MontadorDoc = {
+  id: "pri",
+  emoji: "🚨",
+  titulo: "PRI — Plano de Resposta a Incidentes",
+  subtitulo: "O plano pro dia em que dá errado",
+  intro:
+    "Incidente com dados pessoais não é 'se' — é 'quando'. O PRI é o plano que " +
+    "a instituição segue no dia do caos: quem faz o quê, em que ordem, e os " +
+    "prazos que não podem estourar. Monte o seu decidindo as seções críticas.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "severidade",
+      secaoNumero: 3,
+      pergunta: "Como classificar a severidade dos incidentes?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Por dados afetados, volume e impacto ao titular",
+          textoDoc:
+            "Incidentes são classificados por **tipo de dado** (sensível pesa " +
+            "mais), **volume de titulares** e **impacto potencial** (dano " +
+            "material, discriminação, fraude). Faixas: BAIXA · MÉDIA · ALTA · " +
+            "CRÍTICA — a faixa define quem aciona e os prazos.",
+          correta: true,
+          porque:
+            "É a severidade que decide se a ANPD e os titulares serão " +
+            "comunicados. Sem régua clara, na hora do sufoco cada um mede de um " +
+            "jeito.",
+          artigo: "Art. 48, §1º · Res. CD/ANPD nº 15/2024",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Tratar todo incidente do mesmo jeito, por precaução",
+          textoDoc:
+            "Todo incidente, independentemente de natureza ou volume, seguirá o " +
+            "mesmo fluxo completo de resposta.",
+          correta: false,
+          porque:
+            "Parece prudente, mas trava a resposta: o pendrive com 3 cadastros e " +
+            "o vazamento de 50 mil prontuários não podem disputar a mesma fila. " +
+            "Sem triagem, o grave espera o trivial.",
+          artigo: "Res. CD/ANPD nº 15/2024 (risco relevante)",
+        },
+      ],
+    },
+    {
+      id: "deteccao",
+      secaoNumero: 4,
+      contexto: "Um servidor percebeu algo estranho. E agora?",
+      pergunta: "Como funciona a detecção e notificação interna?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Qualquer servidor comunica o Encarregado IMEDIATAMENTE, por canal direto",
+          textoDoc:
+            "**Qualquer servidor** que identificar ou suspeitar de incidente " +
+            "comunica **imediatamente o Encarregado** pelo canal direto " +
+            "[telefone/e-mail do plantão]. Comunicar não é confissão de culpa — " +
+            "o relógio dos prazos legais começa a correr na ciência do fato.",
+          correta: true,
+          porque:
+            "O prazo de 3 dias úteis pra ANPD só é cumprível se o DPO souber NA " +
+            "HORA. Canal direto e cultura de 'comunicar sem medo' são o coração " +
+            "do plano.",
+          artigo: "Art. 48 · Res. CD/ANPD nº 15/2024",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Abrir chamado comum de TI e aguardar a triagem",
+          textoDoc:
+            "Suspeitas de incidente devem ser registradas no sistema de chamados " +
+            "de TI, que fará a triagem conforme a fila de atendimento semanal.",
+          correta: false,
+          porque:
+            "Na fila semanal de chamados, o prazo da ANPD morre antes da " +
+            "triagem. Incidente de dados não é impressora quebrada.",
+          artigo: "Art. 48 (prazo inviabilizado)",
+        },
+      ],
+    },
+    {
+      id: "contencao",
+      secaoNumero: 5,
+      contexto: "O vazamento está acontecendo AGORA.",
+      pergunta: "Qual a regra de contenção?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Conter isolando e revogando acessos — PRESERVANDO evidências",
+          textoDoc:
+            "Contenção imediata: **isolar** o sistema afetado, **revogar** " +
+            "credenciais comprometidas, **bloquear** o canal de vazamento — " +
+            "sempre **preservando evidências** (logs, imagens de disco) pra " +
+            "investigação e prestação de contas.",
+          correta: true,
+          porque:
+            "Conter sem destruir evidência. Os logs são a prova do que houve, do " +
+            "alcance e da diligência da instituição — a ANPD vai perguntar.",
+          artigo: "Art. 48, §2º · Art. 46",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Desligar e formatar tudo imediatamente",
+          textoDoc:
+            "Constatado o incidente, os equipamentos envolvidos devem ser " +
+            "imediatamente desligados e formatados, eliminando o vetor de ataque.",
+          correta: false,
+          porque:
+            "Formatar = destruir a prova. Sem logs não dá pra saber o que vazou, " +
+            "de quem, nem demonstrar diligência à ANPD — o remédio vira segundo " +
+            "incidente.",
+          artigo: "Art. 48, §2º (prestação de contas impossível)",
+        },
+      ],
+    },
+    {
+      id: "comunicacao",
+      secaoNumero: 6,
+      pergunta: "Quando comunicar a ANPD e os titulares?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Risco relevante → ANPD em 3 dias úteis + titulares em linguagem clara",
+          textoDoc:
+            "Incidente com **risco ou dano relevante** aos titulares: comunicar " +
+            "a **ANPD em até 3 dias úteis** da ciência (Res. CD/ANPD nº 15/2024) " +
+            "e os **titulares afetados** em linguagem clara — o que houve, quais " +
+            "dados, o que a instituição está fazendo e o que o titular pode fazer.",
+          correta: true,
+          porque:
+            "O prazo corre da CIÊNCIA do incidente, não da conclusão da " +
+            "investigação. Comunica-se o que se sabe, complementa-se depois.",
+          artigo: "Art. 48 · Res. CD/ANPD nº 15/2024",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Comunicar apenas se o caso chegar à imprensa",
+          textoDoc:
+            "A comunicação externa será avaliada caso o incidente ganhe " +
+            "repercussão pública, preservando-se a imagem institucional.",
+          correta: false,
+          porque:
+            "Esconder até a imprensa descobrir transforma infração sanável em " +
+            "agravante. A obrigação nasce do risco ao TITULAR, não da manchete.",
+          artigo: "Art. 48 (descumprido)",
+        },
+      ],
+    },
+    {
+      id: "registro",
+      secaoNumero: 7,
+      pergunta: "O que registrar?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "TODOS os incidentes — até os que não exigem comunicação",
+          textoDoc:
+            "**Todo incidente é registrado** (data, natureza, dados afetados, " +
+            "medidas, desfecho), inclusive os de baixa severidade que não exigem " +
+            "comunicação à ANPD. O registro fica com o Encarregado por, no " +
+            "mínimo, 5 anos.",
+          correta: true,
+          porque:
+            "O registro interno é obrigatório MESMO quando a comunicação não é. " +
+            "É ele que mostra padrões (o mesmo erro 3 vezes = problema " +
+            "sistêmico) e prova diligência.",
+          artigo: "Res. CD/ANPD nº 15/2024, art. 5º · Art. 37",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Registrar só os incidentes graves",
+          textoDoc:
+            "Serão documentados os incidentes classificados como graves; os " +
+            "demais serão tratados informalmente pelas áreas.",
+          correta: false,
+          porque:
+            "Os 'pequenos' incidentes informais são o ensaio geral do grande. " +
+            "Sem registro, ninguém vê o padrão — e a ANPD pode pedir o registro " +
+            "de QUALQUER incidente.",
+          artigo: "Res. CD/ANPD nº 15/2024 (registro obrigatório)",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    {
+      numero: 1,
+      titulo: "Objetivo, escopo e base legal",
+      textoFixo:
+        "Este Plano define a resposta de [NOME DA INSTITUIÇÃO] a incidentes de " +
+        "segurança com dados pessoais, em cumprimento aos arts. 46 a 48 da LGPD " +
+        "e à Resolução CD/ANPD nº 15/2024.",
+    },
+    {
+      numero: 2,
+      titulo: "Equipe de Resposta a Incidentes (ETIR)",
+      textoFixo:
+        "Composição: Encarregado (coordenação) + TI + Jurídico/Procuradoria + " +
+        "Comunicação + gestor da área afetada. Acionamento em até 4 horas da " +
+        "notificação interna. Contatos no Anexo [X].",
+    },
+    { numero: 3, titulo: "Classificação de severidade", decisaoId: "severidade" },
+    { numero: 4, titulo: "Detecção e notificação interna", decisaoId: "deteccao" },
+    { numero: 5, titulo: "Contenção, erradicação e recuperação", decisaoId: "contencao" },
+    { numero: 6, titulo: "Comunicação à ANPD e aos titulares", decisaoId: "comunicacao" },
+    { numero: 7, titulo: "Registro e documentação do incidente", decisaoId: "registro" },
+    {
+      numero: 8,
+      titulo: "Lições aprendidas e melhoria contínua",
+      textoFixo:
+        "Após cada incidente ALTA/CRÍTICA: reunião de lições aprendidas em até " +
+        "15 dias, revisão das medidas e atualização deste Plano. Revisão geral " +
+        "anual.",
+    },
+  ],
+  ordenar: {
+    instrucao:
+      "O vazamento aconteceu. Coloque os 8 passos da resposta na ordem certa — " +
+      "na crise, a ordem é metade do plano.",
+    itens: [
+      { id: "pr-detectar", rotulo: "Detectar a suspeita", detalhe: "algo estranho aconteceu" },
+      { id: "pr-dpo", rotulo: "Comunicar imediatamente o Encarregado", detalhe: "o relógio legal começa a correr" },
+      { id: "pr-conter", rotulo: "Conter o dano", detalhe: "isolar, revogar acessos — preservando evidências" },
+      { id: "pr-avaliar", rotulo: "Avaliar severidade e afetados", detalhe: "quais dados, quantos titulares" },
+      { id: "pr-anpd", rotulo: "Comunicar a ANPD em até 3 dias úteis", detalhe: "se houver risco relevante" },
+      { id: "pr-titulares", rotulo: "Comunicar os titulares afetados", detalhe: "linguagem clara, sem juridiquês" },
+      { id: "pr-erradicar", rotulo: "Erradicar a causa e recuperar", detalhe: "corrigir, restaurar do backup" },
+      { id: "pr-registrar", rotulo: "Registrar tudo e extrair lições", detalhe: "relatório + melhoria do plano" },
+    ],
+    ordemInicial: [
+      "pr-anpd", "pr-titulares", "pr-detectar", "pr-registrar",
+      "pr-conter", "pr-avaliar", "pr-dpo", "pr-erradicar",
+    ],
+    logica:
+      "Primeiro ESTANCAR (DPO avisado + contenção), depois MEDIR (severidade), " +
+      "depois COMUNICAR quem precisa saber dentro do prazo — e só então " +
+      "reconstruir e aprender. Repare: a comunicação NÃO espera a solução " +
+      "completa; o prazo da ANPD corre desde a ciência do incidente.",
+  },
+};
+
+// -----------------------------------------------------------------------------
+// CLÁUSULAS LGPD COM OPERADORES (blocos + caça ao erro)
+// -----------------------------------------------------------------------------
+
+const CLAUSULAS: MontadorDoc = {
+  id: "clausulas-operadores",
+  emoji: "🤝",
+  titulo: "Cláusulas LGPD com Operadores",
+  subtitulo: "O contrato com quem trata dados em seu nome",
+  intro: "",
+  disponivel: true,
+  decisoes: [],
+  esqueleto: [],
+  blocos: {
+    instrucao:
+      "A Prefeitura vai contratar uma empresa que tratará dados pessoais em " +
+      "nome dela (um operador). Toque nas cláusulas que DEVEM entrar no " +
+      "contrato — e deixe as intrusas de fora.",
+    cartas: [
+      {
+        id: "cl-uso-proprio",
+        texto:
+          "A contratada poderá utilizar os dados para aprimorar seus próprios " +
+          "produtos e serviços.",
+        pertence: false,
+        porque:
+          "Operador trata dados SÓ conforme as instruções do controlador. Usar " +
+          "pra fim próprio é desvio — nesse momento a empresa vira controladora " +
+          "irregular.",
+        artigo: "Art. 39 · Art. 42",
+      },
+      {
+        id: "cl-instrucoes",
+        texto:
+          "A contratada tratará os dados exclusivamente conforme as instruções " +
+          "e finalidades definidas pelo órgão contratante.",
+        pertence: true,
+        porque: "A cláusula-mãe da relação controlador × operador.",
+        artigo: "Art. 39",
+      },
+      {
+        id: "cl-incidente-prazo",
+        texto:
+          "A contratada comunicará ao órgão qualquer incidente com dados em até " +
+          "24 horas da ciência.",
+        pertence: true,
+        porque:
+          "O prazo da ANPD (3 dias úteis) é do CONTROLADOR — se o operador " +
+          "demorar a avisar, o órgão estoura o prazo sem nem saber do incidente.",
+        artigo: "Art. 48 · Res. CD/ANPD nº 15/2024",
+      },
+      {
+        id: "cl-isencao",
+        texto:
+          "O órgão contratante fica isento de qualquer responsabilidade por " +
+          "incidentes causados pela contratada.",
+        pertence: false,
+        porque:
+          "Cláusula de enfeite: perante a LGPD e o titular, a responsabilidade " +
+          "não se transfere por contrato. O controlador responde — o contrato " +
+          "regula o regresso, não apaga o dever.",
+        artigo: "Art. 42",
+      },
+      {
+        id: "cl-seguranca",
+        texto:
+          "A contratada manterá medidas de segurança técnicas e administrativas " +
+          "compatíveis com o art. 46 da LGPD, detalhadas no anexo técnico.",
+        pertence: true,
+        porque: "Segurança com referência concreta (anexo), não promessa genérica.",
+        artigo: "Art. 46 · Art. 47",
+      },
+      {
+        id: "cl-subcontratar",
+        texto:
+          "A contratada poderá subcontratar terceiros para o tratamento, sem " +
+          "necessidade de comunicação ao órgão.",
+        pertence: false,
+        porque:
+          "Subcontratação às cegas: o dado do cidadão passa de mão em mão sem o " +
+          "controlador saber quem trata. Suboperador exige anuência e as mesmas " +
+          "obrigações.",
+        artigo: "Art. 39 (cadeia de tratamento)",
+      },
+      {
+        id: "cl-confidencialidade",
+        texto:
+          "A equipe da contratada com acesso aos dados assinará termo de " +
+          "confidencialidade e será treinada em proteção de dados.",
+        pertence: true,
+        porque: "Pessoas, não só sistemas: quem toca no dado assume o dever.",
+        artigo: "Art. 46",
+      },
+      {
+        id: "cl-retencao-eterna",
+        texto:
+          "Encerrado o contrato, a contratada poderá manter cópia dos dados por " +
+          "prazo indeterminado, para fins de backup.",
+        pertence: false,
+        porque:
+          "'Backup eterno' = tratamento sem fim após o término. Fim de contrato " +
+          "= devolver e eliminar, com comprovação. Exceção só por obrigação " +
+          "legal, com prazo.",
+        artigo: "Art. 15 · Art. 16",
+      },
+      {
+        id: "cl-devolucao",
+        texto:
+          "Ao término do contrato, a contratada devolverá os dados e eliminará " +
+          "as cópias, comprovando a eliminação por escrito.",
+        pertence: true,
+        porque: "O ciclo fecha com comprovação — não com confiança.",
+        artigo: "Art. 16",
+      },
+      {
+        id: "cl-auditoria",
+        texto:
+          "O órgão poderá auditar o cumprimento destas cláusulas, mediante " +
+          "aviso prévio razoável.",
+        pertence: true,
+        porque: "Confiar é bom; poder verificar é cláusula.",
+        artigo: "Art. 39 (instruções verificáveis)",
+      },
+    ],
+  },
+  cacaErro: {
+    contexto:
+      "Chegou a minuta do contrato do OuviTech (sistema de ouvidoria em nuvem) " +
+      "pra Prefeitura de Vegas assinar. O jurídico do fornecedor caprichou… nos " +
+      "interesses do fornecedor. 4 cláusulas erradas.",
+    instrucao: "Toque nas cláusulas que NÃO podem ser assinadas como estão (🚩).",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "Cláusula 1ª — Objeto e instruções",
+        texto:
+          "O OuviTech tratará os dados pessoais exclusivamente para operar a " +
+          "ouvidoria municipal, conforme as instruções documentadas da " +
+          "Prefeitura.",
+        notaLimpa: "Operador seguindo instruções do controlador — a base certa.",
+      },
+      {
+        numero: 2,
+        titulo: "Cláusula 2ª — Finalidades",
+        texto:
+          "O OuviTech poderá ajustar as finalidades de tratamento conforme sua " +
+          "conveniência técnica e evolução do produto.",
+        erro: {
+          porque:
+            "Quem define finalidade é o CONTROLADOR (a Prefeitura). Operador que " +
+            "'ajusta finalidades' virou controlador sem mandato — e o dado do " +
+            "cidadão foi junto.",
+          artigo: "Art. 39 · Art. 5º, VI e VII",
+        },
+      },
+      {
+        numero: 3,
+        titulo: "Cláusula 3ª — Segurança",
+        texto:
+          "O OuviTech manterá criptografia em trânsito e em repouso, controle " +
+          "de acesso por perfil e registro de logs, conforme anexo técnico.",
+        notaLimpa: "Medidas concretas e verificáveis — cláusula boa.",
+      },
+      {
+        numero: 4,
+        titulo: "Cláusula 4ª — Incidentes",
+        texto:
+          "Eventuais incidentes de segurança serão comunicados à Prefeitura em " +
+          "até 30 dias, após conclusão da apuração interna do OuviTech.",
+        erro: {
+          porque:
+            "Em 30 dias o prazo da Prefeitura com a ANPD (3 dias úteis!) morreu " +
+            "dez vezes. O operador avisa PRIMEIRO (24-48h), apura-se junto — " +
+            "comunicação não espera a apuração terminar.",
+          artigo: "Art. 48 · Res. CD/ANPD nº 15/2024",
+        },
+      },
+      {
+        numero: 5,
+        titulo: "Cláusula 5ª — Subcontratação",
+        texto:
+          "O OuviTech poderá contratar terceiros de sua confiança para etapas " +
+          "do processamento, dispensada comunicação à Prefeitura.",
+        erro: {
+          porque:
+            "Suboperador sem anuência = a Prefeitura não sabe QUEM trata o dado " +
+            "do cidadão, nem ONDE (cloud de quem?). Cadeia de tratamento exige " +
+            "transparência e as mesmas obrigações contratuais.",
+          artigo: "Art. 39",
+        },
+      },
+      {
+        numero: 6,
+        titulo: "Cláusula 6ª — Confidencialidade",
+        texto:
+          "A equipe do OuviTech com acesso aos dados firma termo de " +
+          "confidencialidade, mantido mesmo após o desligamento do empregado.",
+        notaLimpa: "Confidencialidade que sobrevive ao vínculo — correto.",
+      },
+      {
+        numero: 7,
+        titulo: "Cláusula 7ª — Término do contrato",
+        texto:
+          "Encerrado o contrato, o OuviTech manterá os dados arquivados por " +
+          "prazo indeterminado, como cortesia de backup à Administração.",
+        erro: {
+          porque:
+            "'Cortesia' que é tratamento sem base legal após o fim do contrato. " +
+            "Término = devolução + eliminação comprovada; guarda além disso só " +
+            "por obrigação legal, com prazo determinado.",
+          artigo: "Art. 15 · Art. 16",
+        },
+      },
+      {
+        numero: 8,
+        titulo: "Cláusula 8ª — Auditoria",
+        texto:
+          "A Prefeitura poderá verificar o cumprimento das obrigações de " +
+          "proteção de dados, mediante aviso prévio de 10 dias.",
+        notaLimpa: "Direito de auditar preservado — correto.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// TERMO DE CONSENTIMENTO (decidir + caça ao erro)
+// -----------------------------------------------------------------------------
+
+const CONSENTIMENTO: MontadorDoc = {
+  id: "termo-consentimento",
+  emoji: "✍️",
+  titulo: "Termo de Consentimento",
+  subtitulo: "Quando (e como) pedir o sim do titular",
+  intro:
+    "O documento mais usado ERRADO do Brasil. No setor público, consentimento " +
+    "é a exceção — a maior lição deste termo é saber QUANDO ele cabe. E quando " +
+    "cabe, precisa ser livre, informado, específico e revogável. Monte um " +
+    "termo válido decidindo cada ponto.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "quando",
+      secaoNumero: 1,
+      contexto:
+        "A escola municipal quer divulgar fotos dos alunos nas redes sociais oficiais.",
+      pergunta: "Cabe consentimento aqui?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Sim — divulgação de fotos é opcional, há escolha REAL",
+          textoDoc:
+            "Este termo aplica-se **exclusivamente à divulgação de imagens** do " +
+            "aluno nas redes oficiais da escola — atividade **opcional**, sem " +
+            "qualquer efeito sobre a matrícula ou o acesso ao ensino. Para os " +
+            "serviços essenciais, a base legal é a execução de políticas " +
+            "públicas (art. 7º, III), que não depende de consentimento.",
+          correta: true,
+          porque:
+            "Consentimento cabe quando o titular pode dizer NÃO sem perder o " +
+            "serviço. Divulgar foto é opcional; matricular e ensinar, não — cada " +
+            "coisa com sua base.",
+          artigo: "Art. 5º, XII · Art. 7º, I e III",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Pedir consentimento pra TUDO, por segurança jurídica",
+          textoDoc:
+            "Este termo autoriza o tratamento de todos os dados do aluno para " +
+            "matrícula, ensino, merenda, transporte e divulgação institucional.",
+          correta: false,
+          porque:
+            "Consentimento desnecessário é fragilidade, não segurança: se a base " +
+            "da matrícula fosse consentimento, o pai poderia revogar — e aí? " +
+            "Cancela a matrícula? Base errada quebra o serviço.",
+          artigo: "Art. 7º, III (base correta ignorada)",
+        },
+      ],
+    },
+    {
+      id: "finalidade",
+      secaoNumero: 3,
+      pergunta: "Como descrever a finalidade?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Específica: o quê, onde e até quando",
+          textoDoc:
+            "Finalidade: divulgação de **fotos de eventos escolares** (festas, " +
+            "feiras, formaturas) **nas redes oficiais da escola** [@perfis], " +
+            "durante o ano letivo de [ano]. Qualquer outro uso exigirá novo " +
+            "consentimento.",
+          correta: true,
+          porque:
+            "Consentimento vale pra finalidade DETERMINADA. 'Pra este fim, neste " +
+            "canal, até esta data' — fora disso, pede-se de novo.",
+          artigo: "Art. 8º, §4º",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Ampla: 'finalidades institucionais presentes e futuras'",
+          textoDoc:
+            "As imagens poderão ser utilizadas para quaisquer finalidades " +
+            "institucionais, presentes e futuras, a critério da administração.",
+          correta: false,
+          porque:
+            "Autorização genérica é NULA por definição legal — o §4º do art. 8º " +
+            "diz isso com todas as letras.",
+          artigo: "Art. 8º, §4º (nulidade)",
+        },
+      ],
+    },
+    {
+      id: "forma",
+      secaoNumero: 4,
+      pergunta: "Como colher a manifestação?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Ato ATIVO e destacado — assinatura própria só pra isso",
+          textoDoc:
+            "A autorização é colhida em **campo próprio e destacado**, com " +
+            "assinatura específica — **separada** dos documentos de matrícula. A " +
+            "ausência de assinatura significa NÃO, sem qualquer prejuízo ao aluno.",
+          correta: true,
+          porque:
+            "Manifestação livre e INEQUÍVOCA: o sim precisa ser um ato, não um " +
+            "silêncio nem uma carona na matrícula. Cláusula destacada é " +
+            "exigência literal da lei.",
+          artigo: "Art. 8º, §1º · Art. 5º, XII",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Embutir na matrícula: 'ao assinar, o responsável já autoriza'",
+          textoDoc:
+            "Ao assinar o requerimento de matrícula, o responsável autoriza " +
+            "automaticamente o uso das imagens do aluno.",
+          correta: false,
+          porque:
+            "O 'casadinho': pra matricular (obrigatório) o pai 'aceita' a foto " +
+            "(opcional). Consentimento pego no embrulho não é livre — é pedágio.",
+          artigo: "Art. 8º, §3º (vício de consentimento)",
+        },
+      ],
+    },
+    {
+      id: "revogacao",
+      secaoNumero: 5,
+      pergunta: "E se o responsável mudar de ideia?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Revogável a qualquer tempo, por procedimento gratuito e simples",
+          textoDoc:
+            "O responsável pode **revogar esta autorização a qualquer tempo**, " +
+            "por pedido simples e gratuito na secretaria ou pelo e-mail " +
+            "[contato]. Revogada, a escola deixa de publicar novas imagens e " +
+            "remove as publicações indicadas, no prazo de [X] dias.",
+          correta: true,
+          porque:
+            "Revogação é direito expresso — e precisa ser tão fácil quanto foi " +
+            "consentir. Termo sem porta de saída não é consentimento, é armadilha.",
+          artigo: "Art. 8º, §5º · Art. 18, IX",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Irrevogável durante o ano letivo",
+          textoDoc:
+            "Esta autorização é válida e irrevogável durante todo o ano letivo, " +
+            "dada a natureza do planejamento pedagógico.",
+          correta: false,
+          porque:
+            "Consentimento irrevogável não existe na LGPD — a revogação 'a " +
+            "qualquer momento' é da essência do instituto.",
+          artigo: "Art. 8º, §5º (violado)",
+        },
+      ],
+    },
+    {
+      id: "crianca",
+      secaoNumero: 6,
+      contexto: "Os titulares das fotos são crianças e adolescentes.",
+      pergunta: "Quem consente?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Pelo menos UM dos pais ou o responsável legal, de forma específica",
+          textoDoc:
+            "Tratando-se de criança, o consentimento é dado de forma " +
+            "**específica e em destaque por pelo menos um dos pais ou " +
+            "responsável legal** (art. 14, §1º). O melhor interesse da criança " +
+            "prevalece sobre qualquer conveniência de divulgação.",
+          correta: true,
+          porque:
+            "Dado de criança tem regime reforçado: consentimento específico e " +
+            "destacado do responsável, sempre no melhor interesse dela.",
+          artigo: "Art. 14, §1º",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "O próprio aluno, se tiver mais de 12 anos",
+          textoDoc:
+            "Alunos maiores de 12 anos poderão autorizar diretamente o uso de " +
+            "sua imagem, dispensada a manifestação dos pais.",
+          correta: false,
+          porque:
+            "A LGPD exige consentimento do responsável pra CRIANÇA (até 12). Pra " +
+            "adolescente, o regime segue protetivo — 'dispensar os pais' por " +
+            "regra da escola não se sustenta; o melhor interesse rege tudo.",
+          artigo: "Art. 14, caput e §1º",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    { numero: 1, titulo: "Quando este termo se aplica", decisaoId: "quando" },
+    {
+      numero: 2,
+      titulo: "Identificação",
+      textoFixo:
+        "Instituição: [ESCOLA/ÓRGÃO], CNPJ [nº]. Atividade: divulgação de " +
+        "imagens em [canais]. Responsável legal: [nome], pelo(a) aluno(a) [nome].",
+    },
+    { numero: 3, titulo: "Finalidade", decisaoId: "finalidade" },
+    { numero: 4, titulo: "Forma da manifestação", decisaoId: "forma" },
+    { numero: 5, titulo: "Revogação", decisaoId: "revogacao" },
+    { numero: 6, titulo: "Crianças e adolescentes", decisaoId: "crianca" },
+  ],
+  cacaErro: {
+    contexto:
+      "A Escola Municipal de Vegas mandou este termo de autorização de imagem " +
+      "pros pais assinarem. Tem 4 vícios clássicos de consentimento.",
+    instrucao: "Toque nas cláusulas viciadas (🚩) — as que invalidam o consentimento.",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "Identificação",
+        texto:
+          "Escola Municipal de Vegas. Autorização de uso de imagem do(a) " +
+          "aluno(a) [nome], firmada pelo responsável legal [nome].",
+        notaLimpa: "Identifica atividade, aluno e responsável legal — correto.",
+      },
+      {
+        numero: 2,
+        titulo: "Vinculação à matrícula",
+        texto:
+          "A assinatura desta autorização é condição para a efetivação da " +
+          "matrícula do aluno no ano letivo.",
+        erro: {
+          porque:
+            "O 'casadinho': condicionar a MATRÍCULA (serviço essencial, direito " +
+            "da criança) à autorização de FOTO (opcional) elimina a liberdade do " +
+            "consentimento. Quem não pode dizer não, não consente.",
+          artigo: "Art. 8º, §3º · Art. 5º, XII",
+        },
+      },
+      {
+        numero: 3,
+        titulo: "Finalidade",
+        texto:
+          "As imagens poderão ser utilizadas para quaisquer finalidades " +
+          "institucionais presentes e futuras, a critério da direção.",
+        erro: {
+          porque:
+            "Autorização genérica ('quaisquer finalidades futuras') é NULA — " +
+            "art. 8º, §4º, com todas as letras. Finalidade tem que ser " +
+            "específica: quais fotos, onde, até quando.",
+          artigo: "Art. 8º, §4º",
+        },
+      },
+      {
+        numero: 4,
+        titulo: "Canais de divulgação",
+        texto:
+          "A divulgação ocorrerá exclusivamente nos perfis oficiais da escola " +
+          "(@escolavegas) e no mural interno, durante o ano letivo de 2026.",
+        notaLimpa: "Canais e período determinados — especificidade correta.",
+      },
+      {
+        numero: 5,
+        titulo: "Revogação",
+        texto:
+          "Dada a natureza do planejamento pedagógico, esta autorização é " +
+          "irrevogável durante o ano letivo.",
+        erro: {
+          porque:
+            "Consentimento irrevogável não existe: a revogação a qualquer " +
+            "momento é da essência (art. 8º, §5º). O planejamento da escola não " +
+            "revoga a lei.",
+          artigo: "Art. 8º, §5º · Art. 18, IX",
+        },
+      },
+      {
+        numero: 6,
+        titulo: "Silêncio",
+        texto:
+          "Caso o responsável não se manifeste em 5 dias úteis, a autorização " +
+          "será considerada concedida.",
+        erro: {
+          porque:
+            "Silêncio NÃO é consentimento. A manifestação precisa ser ativa e " +
+            "inequívoca — 'quem cala consente' morreu com a LGPD.",
+          artigo: "Art. 5º, XII · Art. 8º",
+        },
+      },
+      {
+        numero: 7,
+        titulo: "Responsável legal",
+        texto:
+          "A autorização é firmada de forma específica e destacada por pelo " +
+          "menos um dos pais ou responsável legal (art. 14, §1º da LGPD).",
+        notaLimpa: "Regime da criança respeitado — consentimento parental específico.",
+      },
+      {
+        numero: 8,
+        titulo: "Sem prejuízo",
+        texto:
+          "A não autorização não acarreta qualquer prejuízo ao aluno, que " +
+          "participará normalmente de todas as atividades (apenas sem aparecer " +
+          "nas publicações).",
+        notaLimpa:
+          "A prova da liberdade: dizer não custa nada. É isso que torna o sim " +
+          "válido.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// POLÍTICA DE COOKIES (blocos + caça ao erro)
+// -----------------------------------------------------------------------------
+
+const COOKIES: MontadorDoc = {
+  id: "politica-cookies",
+  emoji: "🍪",
+  titulo: "Política de Cookies",
+  subtitulo: "O aviso do portal sobre rastreamento",
+  intro: "",
+  disponivel: true,
+  decisoes: [],
+  esqueleto: [],
+  blocos: {
+    instrucao:
+      "Monte a Política de Cookies do portal tocando nas cláusulas que DEVEM " +
+      "entrar. O Guia da ANPD sobre cookies é a régua — cuidado com as intrusas.",
+    cartas: [
+      {
+        id: "ck-navegando",
+        texto:
+          "Ao continuar navegando neste portal, você concorda com o uso de " +
+          "todos os cookies.",
+        pertence: false,
+        porque:
+          "A pegadinha nº 1 da internet brasileira: continuar navegando NÃO é " +
+          "manifestação inequívoca. Cookies não-essenciais exigem consentimento " +
+          "ATIVO — clique, não inércia.",
+        artigo: "Art. 5º, XII · Guia ANPD Cookies (2023)",
+      },
+      {
+        id: "ck-oque",
+        texto:
+          "Cookies são pequenos arquivos gravados no seu dispositivo pra " +
+          "lembrar preferências e medir o uso do portal.",
+        pertence: true,
+        porque: "Explicar o que é, em português — transparência começa aqui.",
+        artigo: "Art. 6º, VI · Art. 9º",
+      },
+      {
+        id: "ck-categorias",
+        texto:
+          "Usamos três categorias: necessários (funcionamento), estatísticos " +
+          "(medição de audiência) e de terceiros (mapas e vídeos incorporados).",
+        pertence: true,
+        porque: "Categorizar é o que permite consentir por tipo, não no atacado.",
+        artigo: "Guia ANPD Cookies",
+      },
+      {
+        id: "ck-essenciais",
+        texto:
+          "Cookies estritamente necessários ao funcionamento dispensam " +
+          "consentimento — sem eles o portal não opera.",
+        pertence: true,
+        porque:
+          "Os essenciais se apoiam em outra base legal (legítimo interesse/" +
+          "execução do serviço) — informar sim, pedir permissão não.",
+        artigo: "Guia ANPD Cookies",
+      },
+      {
+        id: "ck-preativado",
+        texto:
+          "Os cookies de estatística e publicidade vêm ativados por padrão, " +
+          "para melhorar sua experiência desde o primeiro acesso.",
+        pertence: false,
+        porque:
+          "Pré-ativado = consentiu por você. Não-essenciais só DEPOIS do sim — " +
+          "opt-in, nunca opt-out.",
+        artigo: "Art. 8º · Guia ANPD Cookies",
+      },
+      {
+        id: "ck-painel",
+        texto:
+          "Você pode revisar e mudar suas escolhas a qualquer momento no painel " +
+          "'Preferências de Cookies', no rodapé do portal.",
+        pertence: true,
+        porque: "Revogar precisa ser tão fácil quanto aceitar — painel sempre à mão.",
+        artigo: "Art. 8º, §5º · Art. 18, IX",
+      },
+      {
+        id: "ck-vender",
+        texto:
+          "Os dados de navegação poderão ser comercializados com parceiros para " +
+          "ofertas personalizadas.",
+        pertence: false,
+        porque:
+          "Órgão público vendendo dado de navegação do cidadão? Desvio de " +
+          "finalidade e quebra de confiança — não entra nem com consentimento.",
+        artigo: "Art. 6º, I · Art. 7º, §5º",
+      },
+      {
+        id: "ck-prazos",
+        texto:
+          "Cada cookie tem prazo de expiração informado na tabela desta " +
+          "política (sessão · 30 dias · 12 meses).",
+        pertence: true,
+        porque: "Retenção declarada vale também pros cookies — prazo é transparência.",
+        artigo: "Art. 6º, VI · Art. 16",
+      },
+      {
+        id: "ck-firewall",
+        texto:
+          "O firewall do servidor web deve ser atualizado trimestralmente pela " +
+          "equipe de infraestrutura.",
+        pertence: false,
+        porque:
+          "Regra interna de TI — não é comunicação ao cidadão. Pertence às " +
+          "normas de segurança da instituição, não à Política de Cookies.",
+      },
+      {
+        id: "ck-terceiros",
+        texto:
+          "Serviços incorporados (mapas, vídeos) podem gravar cookies próprios " +
+          "— listamos quais são e pra que servem.",
+        pertence: true,
+        porque:
+          "Cookies de terceiros são os mais invisíveis — listar é o mínimo de " +
+          "transparência.",
+        artigo: "Art. 6º, VI · Guia ANPD Cookies",
+      },
+    ],
+  },
+  cacaErro: {
+    contexto:
+      "O portal da Prefeitura de Vegas estreou banner e política de cookies. O " +
+      "estagiário copiou de um site gringo de 2015 — 4 erros no ar.",
+    instrucao: "Toque nos trechos que violam a LGPD e o Guia da ANPD (🚩).",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "O banner",
+        texto:
+          "\"🍪 Este portal usa cookies. AO CONTINUAR NAVEGANDO, VOCÊ CONCORDA " +
+          "com todos os cookies. [Entendi]\"",
+        erro: {
+          porque:
+            "Dose dupla: 'continuar navegando = concordar' (inércia não é " +
+            "consentimento) e botão único 'Entendi' (sem opção de recusar ou " +
+            "escolher). O banner correto oferece aceitar, recusar e preferências " +
+            "— com o mesmo destaque.",
+          artigo: "Art. 5º, XII · Guia ANPD Cookies",
+        },
+      },
+      {
+        numero: 2,
+        titulo: "O que são cookies",
+        texto:
+          "Cookies são pequenos arquivos gravados no seu navegador pra lembrar " +
+          "preferências (como o tamanho da letra) e medir visitas às páginas.",
+        notaLimpa: "Explicação simples e honesta — correto.",
+      },
+      {
+        numero: 3,
+        titulo: "Categorias",
+        texto:
+          "Necessários (login e segurança) · Estatísticos (contagem de visitas) " +
+          "· Terceiros (mapa da cidade e vídeos incorporados).",
+        notaLimpa: "Categorias claras, permitindo escolha por tipo — correto.",
+      },
+      {
+        numero: 4,
+        titulo: "Ativação padrão",
+        texto:
+          "Para sua comodidade, todas as categorias vêm pré-ativadas no " +
+          "primeiro acesso.",
+        erro: {
+          porque:
+            "Não-essenciais pré-ativados = opt-out disfarçado de comodidade. A " +
+            "regra é opt-in: nada de estatística ou terceiros antes do clique " +
+            "no sim.",
+          artigo: "Art. 8º · Guia ANPD Cookies",
+        },
+      },
+      {
+        numero: 5,
+        titulo: "Essenciais",
+        texto:
+          "Os cookies estritamente necessários (sessão de login, segurança " +
+          "antifraude) permanecem ativos independentemente de consentimento, " +
+          "pois sem eles o portal não funciona.",
+        notaLimpa:
+          "Essenciais dispensam consentimento mesmo — a base é outra. Se você " +
+          "marcou, caiu no alarme falso clássico.",
+      },
+      {
+        numero: 6,
+        titulo: "Como recusar",
+        texto:
+          "Para desativar cookies, protocole ofício ao Setor de TI da " +
+          "Prefeitura, com resposta em até 10 dias úteis.",
+        erro: {
+          porque:
+            "Recusar tem que ser tão fácil quanto aceitar — um clique no " +
+            "painel, não um protocolo. Fricção deliberada na recusa é padrão " +
+            "manipulativo (dark pattern).",
+          artigo: "Art. 8º, §5º · Guia ANPD Cookies",
+        },
+      },
+      {
+        numero: 7,
+        titulo: "Ferramentas de medição",
+        texto:
+          "Não utilizamos cookies de rastreamento. As visitas são medidas pelo " +
+          "Google Analytics, que grava identificadores no seu navegador.",
+        erro: {
+          porque:
+            "Contradição na mesma frase: 'não rastreamos' + Google Analytics " +
+            "gravando identificador É cookie de rastreamento (e de terceiro, " +
+            "com dados podendo sair do país). Negar o que se faz é a pior " +
+            "violação de transparência.",
+          artigo: "Art. 6º, VI · Art. 33",
+        },
+      },
+      {
+        numero: 8,
+        titulo: "Prazos",
+        texto:
+          "Tabela de expiração: sessão (ao fechar o navegador) · preferências " +
+          "(30 dias) · estatísticos (12 meses).",
+        notaLimpa: "Prazos declarados por cookie — retenção transparente.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// RESPOSTA AO TITULAR — DSR (decidir + ordenar)
+// -----------------------------------------------------------------------------
+
+const DSR: MontadorDoc = {
+  id: "resposta-titular",
+  emoji: "📨",
+  titulo: "Resposta ao Titular (DSR)",
+  subtitulo: "A carta-resposta a quem pede seus dados",
+  intro:
+    "Um cidadão escreveu: 'quero saber quais dados vocês têm sobre mim'. A " +
+    "resposta a esse pedido é um documento — com prazo, forma e pegadinhas " +
+    "próprias. Monte a resposta certa decidindo cada ponto.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "identidade",
+      secaoNumero: 2,
+      contexto: "E se quem pediu não for quem diz ser?",
+      pergunta: "O que fazer ANTES de responder?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Validar a identidade do solicitante por meio proporcional",
+          textoDoc:
+            "Antes de qualquer entrega, a identidade do solicitante é " +
+            "confirmada por meio **proporcional** (documento com foto no balcão, " +
+            "login gov.br, ou confirmação por dados de contato já cadastrados). " +
+            "Pedido por terceiro exige procuração específica.",
+          correta: true,
+          porque:
+            "Entregar os dados ao solicitante errado é INCIDENTE — o pedido de " +
+            "acesso é o golpe favorito do estelionatário. Validar primeiro " +
+            "protege o próprio titular.",
+          artigo: "Art. 18 · Art. 46",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Responder rápido, sem burocratizar",
+          textoDoc:
+            "Em atenção à celeridade, os dados serão enviados ao e-mail " +
+            "informado no próprio pedido, dispensadas conferências adicionais.",
+          correta: false,
+          porque:
+            "O e-mail 'informado no pedido' pode ser de qualquer um. " +
+            "Agilidade que entrega o CPF do cidadão pro golpista não é " +
+            "eficiência — é vazamento com protocolo.",
+          artigo: "Art. 46 (segurança ignorada)",
+        },
+      ],
+    },
+    {
+      id: "conteudo",
+      secaoNumero: 3,
+      pergunta: "O que entregar na resposta?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "O que foi pedido, em linguagem clara e organizada",
+          textoDoc:
+            "A resposta traz **exatamente o que foi solicitado** (ex.: quais " +
+            "dados o órgão trata, finalidades e compartilhamentos), em " +
+            "**linguagem clara**, organizada por sistema/finalidade — não um " +
+            "despejo técnico de banco de dados.",
+          correta: true,
+          porque:
+            "Responder é comunicar, não descarregar. O relatório críptico do " +
+            "sistema, sem tradução, descumpre o direito na prática.",
+          artigo: "Art. 18 · Art. 19 · Art. 9º",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Exportar o dump bruto do sistema — completo e técnico",
+          textoDoc:
+            "Segue anexa a exportação integral das tabelas do sistema " +
+            "(usr_tbl_2019.csv, 47 colunas), conforme solicitado.",
+          correta: false,
+          porque:
+            "47 colunas com nomes de sistema não informam nada ao cidadão comum " +
+            "— e ainda podem vazar dados de TERCEIROS misturados nas tabelas.",
+          artigo: "Art. 9º (clareza) · Art. 46",
+        },
+      ],
+    },
+    {
+      id: "prazo",
+      secaoNumero: 4,
+      pergunta: "Qual o prazo e formato da resposta?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Imediato simplificado OU completo em até 15 dias úteis",
+          textoDoc:
+            "Confirmação de tratamento e acesso: em **formato simplificado, " +
+            "imediatamente**, ou por **declaração completa em até 15 dias " +
+            "úteis** do requerimento (art. 19, II) — o prazo que este órgão " +
+            "adota e monitora.",
+          correta: true,
+          porque:
+            "É o prazo que o curso crava: 15 dias úteis pra resposta completa. " +
+            "Registre a data do pedido — o relógio corre dela.",
+          artigo: "Art. 19, II",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "20 dias prorrogáveis por mais 10, como na LAI",
+          textoDoc:
+            "A resposta será fornecida em até 20 dias, prorrogáveis por mais 10 " +
+            "mediante justificativa, nos termos da Lei de Acesso à Informação.",
+          correta: false,
+          porque:
+            "Misturou as leis! 20+10 é LAI (informação pública). Pedido de " +
+            "DADOS PESSOAIS é LGPD: 15 dias úteis. Usar o rito errado atrasa e " +
+            "descumpre.",
+          artigo: "Art. 19, II (LGPD ≠ LAI)",
+        },
+      ],
+    },
+    {
+      id: "custo",
+      secaoNumero: 5,
+      pergunta: "Quanto custa pro titular?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Nada — o exercício de direitos é gratuito",
+          textoDoc:
+            "O exercício dos direitos do titular é **gratuito** — inclusive a " +
+            "emissão de cópia eletrônica dos dados.",
+          correta: true,
+          porque: "Gratuidade expressa na lei. Cobrar é barreira ilegal ao direito.",
+          artigo: "Art. 18, §5º",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Taxa administrativa de emissão (R$ 50)",
+          textoDoc:
+            "A emissão do relatório de dados está sujeita à taxa administrativa " +
+            "de R$ 50,00, recolhida por guia própria.",
+          correta: false,
+          porque:
+            "Taxa pra exercer direito da LGPD é cobrança sem amparo — a " +
+            "gratuidade é expressa.",
+          artigo: "Art. 18, §5º (violado)",
+        },
+      ],
+    },
+    {
+      id: "negativa",
+      secaoNumero: 6,
+      contexto: "Nem todo pedido pode ser atendido (ex.: eliminação de dado que o órgão é obrigado a guardar).",
+      pergunta: "E quando NÃO for possível atender?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Responder MESMO ASSIM: as razões, a base legal e os caminhos",
+          textoDoc:
+            "Quando o pedido não puder ser atendido (ex.: eliminação de dados " +
+            "sob **obrigação legal de guarda**, art. 16, I), o órgão responde no " +
+            "prazo **indicando as razões de fato e de direito**, o que É " +
+            "possível fazer, e que o titular pode se dirigir à ANPD.",
+          correta: true,
+          porque:
+            "Negar sem responder é a pior resposta. A lei manda explicar a " +
+            "razão da recusa — silêncio administrativo aqui é infração.",
+          artigo: "Art. 18, §4º · Art. 16, I",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Arquivar sem resposta — o silêncio já comunica",
+          textoDoc:
+            "Pedidos juridicamente inviáveis serão arquivados, dispensada " +
+            "resposta formal ao requerente.",
+          correta: false,
+          porque:
+            "O cidadão fica no vácuo e vai reclamar direto na ANPD — com razão. " +
+            "Toda negativa merece resposta fundamentada no prazo.",
+          artigo: "Art. 18, §4º (descumprido)",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    {
+      numero: 1,
+      titulo: "Registro do pedido",
+      textoFixo:
+        "Pedido nº [protocolo], recebido em [data] pelo canal [balcão/e-mail/" +
+        "formulário]. Titular: [nome]. Direito exercido: [acesso/correção/" +
+        "eliminação/portabilidade].",
+    },
+    { numero: 2, titulo: "Verificação de identidade", decisaoId: "identidade" },
+    { numero: 3, titulo: "Conteúdo da resposta", decisaoId: "conteudo" },
+    { numero: 4, titulo: "Prazo e formato", decisaoId: "prazo" },
+    { numero: 5, titulo: "Custo", decisaoId: "custo" },
+    { numero: 6, titulo: "Quando não for possível atender", decisaoId: "negativa" },
+  ],
+  ordenar: {
+    instrucao:
+      "Chegou um pedido de acesso aos dados. Coloque os 7 passos do " +
+      "atendimento na ordem certa.",
+    itens: [
+      { id: "ds-receber", rotulo: "Receber e protocolar o pedido", detalhe: "canal oficial, data registrada" },
+      { id: "ds-validar", rotulo: "Validar a identidade do solicitante", detalhe: "antes de qualquer entrega" },
+      { id: "ds-confirmar", rotulo: "Confirmar se o órgão trata dados dele", detalhe: "existe tratamento?" },
+      { id: "ds-localizar", rotulo: "Localizar os dados nos sistemas e setores", detalhe: "com apoio do Inventário" },
+      { id: "ds-preparar", rotulo: "Preparar a resposta em linguagem clara", detalhe: "traduzir, não despejar" },
+      { id: "ds-responder", rotulo: "Responder dentro do prazo", detalhe: "15 dias úteis (art. 19, II)" },
+      { id: "ds-registrar", rotulo: "Registrar o atendimento no histórico", detalhe: "protocolo fechado" },
+    ],
+    ordemInicial: [
+      "ds-preparar", "ds-localizar", "ds-registrar", "ds-receber",
+      "ds-responder", "ds-validar", "ds-confirmar",
+    ],
+    logica:
+      "O fluxo protege os dois lados: protocolo e IDENTIDADE antes de tudo " +
+      "(entregar dados à pessoa errada é incidente!), depois localizar com o " +
+      "Inventário como mapa, traduzir pra linguagem de gente e responder com o " +
+      "relógio dos 15 dias úteis correndo desde o protocolo. O registro final " +
+      "é o que prova o atendimento.",
+  },
+};
+
+// -----------------------------------------------------------------------------
 // CATÁLOGO + HELPERS
 // -----------------------------------------------------------------------------
 
-export const MONTADOR_DOCS: MontadorDoc[] = [AVISO, POLITICA];
+export const MONTADOR_DOCS: MontadorDoc[] = [
+  AVISO,
+  POLITICA,
+  RIPD,
+  PRI,
+  CLAUSULAS,
+  CONSENTIMENTO,
+  COOKIES,
+  DSR,
+];
 
 export function getMontadorDoc(id: string): MontadorDoc | undefined {
   return MONTADOR_DOCS.find((d) => d.id === id);
