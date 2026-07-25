@@ -60,6 +60,18 @@ export function AtividadesDocLinks({
   );
 }
 
+// Capa do documento (imagens em public/montador-capas/<docId>.webp).
+export function CapaDoc({ docId, className }: { docId: string; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/montador-capas/${docId}.webp`}
+      alt=""
+      className={className ?? "mb-4 h-28 w-full rounded-xl border border-indigo-100 object-cover"}
+    />
+  );
+}
+
 // Cabeçalho + runner do formato pedido + navegação.
 export function MontadorAtividade({
   doc,
@@ -73,6 +85,7 @@ export function MontadorAtividade({
   const meta = ATIVIDADES_DOC.find((a) => a.slug === atividade)!;
   return (
     <>
+      <CapaDoc docId={doc.id} />
       <header className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
           {doc.emoji} {doc.titulo}
