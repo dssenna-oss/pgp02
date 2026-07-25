@@ -5,8 +5,9 @@
 // (regra em globals.css) — dentro de um slide, cada pixel conta.
 
 import Link from "next/link";
-import { FileStack } from "lucide-react";
+import { FileStack, BookOpen } from "lucide-react";
 import { MONTADOR_DOCS, type MontadorDoc } from "@/lib/montador-docs";
+import { getSaibaMais } from "@/lib/montador-saiba-mais";
 import { atividadesDoDoc, hrefAtividade, CapaDoc } from "@/components/montador-atividade";
 
 function CardDoc({ d, base }: { d: MontadorDoc; base: string }) {
@@ -20,7 +21,15 @@ function CardDoc({ d, base }: { d: MontadorDoc; base: string }) {
           <p className="text-sm text-gray-500">{d.subtitulo}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      {getSaibaMais(d.id) && (
+        <Link
+          href={`${base}/${d.id}/saiba-mais`}
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-2.5 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+        >
+          <BookOpen className="h-4 w-4" /> Saiba mais — comece por aqui
+        </Link>
+      )}
+      <div className="mt-2 grid grid-cols-2 gap-2">
         {atividadesDoDoc(d).map((a) => (
           <Link
             key={a.slug || "montar"}
