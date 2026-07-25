@@ -57,19 +57,19 @@ export default function MontadorPublicoHubPage() {
         </header>
 
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          📄 Documentos da LGPD
+          🎯 Práticas das Fases 3 e 4
         </h2>
         <ul className="space-y-4">
-          {documentos.map((d) => (
+          {praticas.map((d) => (
             <CardDoc key={d.id} d={d} base="/montador" />
           ))}
         </ul>
 
         <h2 className="mb-3 mt-8 text-xs font-semibold uppercase tracking-wider text-gray-500">
-          🎯 Práticas das Fases 3 e 4
+          📄 Documentos da LGPD
         </h2>
         <ul className="space-y-4">
-          {praticas.map((d) => (
+          {documentos.map((d) => (
             <CardDoc key={d.id} d={d} base="/montador" />
           ))}
         </ul>

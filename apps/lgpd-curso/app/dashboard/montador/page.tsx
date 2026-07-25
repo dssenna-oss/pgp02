@@ -38,8 +38,8 @@ export default function MontadorHubPage() {
       {(() => {
         const docs = MONTADOR_DOCS.filter((d) => d.disponivel);
         const secoes = [
-          { titulo: "📄 Documentos da LGPD", itens: docs.filter((d) => d.grupo !== "praticas") },
           { titulo: "🎯 Práticas das Fases 3 e 4", itens: docs.filter((d) => d.grupo === "praticas") },
+          { titulo: "📄 Documentos da LGPD", itens: docs.filter((d) => d.grupo !== "praticas") },
         ];
         return secoes.map((s) => (
           <div key={s.titulo}>
