@@ -21,19 +21,9 @@ export type JogoMeta = {
   subtitulo: string;
 };
 
+// Ordem = a sequência didática do curso (aprovada pelo facilitador):
+// abertura → fundamentos (Dia 1) → Fase 6 → Fase 7.
 export const JOGOS: JogoMeta[] = [
-  {
-    id: "dia-d",
-    emoji: "🚒",
-    titulo: "Dia D — O Vazamento",
-    subtitulo: "7 decisões com o relógio da ANPD correndo",
-  },
-  {
-    id: "chat-titular",
-    emoji: "💬",
-    titulo: "Chat do Titular",
-    subtitulo: "Acalme a Dona Marta e atenda direito",
-  },
   {
     id: "detetive",
     emoji: "🕵️",
@@ -51,6 +41,18 @@ export const JOGOS: JogoMeta[] = [
     emoji: "⚡",
     titulo: "Sprint 60 segundos",
     subtitulo: "Sensível ou comum? Contra o relógio",
+  },
+  {
+    id: "chat-titular",
+    emoji: "💬",
+    titulo: "Chat do Titular",
+    subtitulo: "Acalme a Dona Marta e atenda direito",
+  },
+  {
+    id: "dia-d",
+    emoji: "🚒",
+    titulo: "Dia D — O Vazamento",
+    subtitulo: "7 decisões com o relógio da ANPD correndo",
   },
 ];
 
