@@ -5,8 +5,9 @@
 // (regra em globals.css) — dentro de um slide, cada pixel conta.
 
 import Link from "next/link";
-import { FileStack, ChevronRight } from "lucide-react";
+import { FileStack } from "lucide-react";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
+import { ATIVIDADES_DOC, hrefAtividade } from "@/components/montador-atividade";
 
 export default function MontadorPublicoHubPage() {
   return (
@@ -24,20 +25,27 @@ export default function MontadorPublicoHubPage() {
           </p>
         </header>
 
-        <ul className="space-y-3">
+        <ul className="space-y-4">
           {MONTADOR_DOCS.filter((d) => d.disponivel).map((d) => (
-            <li key={d.id}>
-              <Link
-                href={`/montador/${d.id}`}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 hover:border-indigo-300 hover:shadow-sm transition"
-              >
+            <li key={d.id} className="rounded-xl border border-gray-200 bg-white p-4">
+              <div className="flex items-center gap-3">
                 <span className="text-2xl leading-none">{d.emoji}</span>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <h2 className="font-semibold text-gray-900">{d.titulo}</h2>
                   <p className="text-sm text-gray-500">{d.subtitulo}</p>
                 </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-gray-400" />
-              </Link>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {ATIVIDADES_DOC.map((a) => (
+                  <Link
+                    key={a.slug || "montar"}
+                    href={hrefAtividade("/montador", d.id, a.slug)}
+                    className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                  >
+                    {a.emoji} {a.rotulo}
+                  </Link>
+                ))}
+              </div>
             </li>
           ))}
         </ul>

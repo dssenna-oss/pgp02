@@ -4,9 +4,10 @@
 // Nada é gravado no banco — o valor é a simulação + o placar pedagógico.
 
 import Link from "next/link";
-import { ArrowLeft, FileStack, ChevronRight } from "lucide-react";
+import { ArrowLeft, FileStack } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
+import { ATIVIDADES_DOC, hrefAtividade } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
 
@@ -34,33 +35,27 @@ export default function MontadorHubPage() {
         </p>
       </header>
 
-      <ul className="space-y-3">
-        {MONTADOR_DOCS.map((d) => (
-          <li key={d.id}>
-            {d.disponivel ? (
-              <Link
-                href={`/dashboard/montador/${d.id}`}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 hover:border-indigo-300 hover:shadow-sm transition"
-              >
-                <span className="text-2xl leading-none">{d.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-gray-900">{d.titulo}</h2>
-                  <p className="text-sm text-gray-500">{d.subtitulo}</p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-gray-400" />
-              </Link>
-            ) : (
-              <div className="flex items-center gap-3 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 opacity-70">
-                <span className="text-2xl leading-none grayscale">{d.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-gray-600">{d.titulo}</h2>
-                  <p className="text-sm text-gray-400">{d.subtitulo}</p>
-                </div>
-                <span className="shrink-0 rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-500">
-                  em breve
-                </span>
+      <ul className="space-y-4">
+        {MONTADOR_DOCS.filter((d) => d.disponivel).map((d) => (
+          <li key={d.id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl leading-none">{d.emoji}</span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold text-gray-900">{d.titulo}</h2>
+                <p className="text-sm text-gray-500">{d.subtitulo}</p>
               </div>
-            )}
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {ATIVIDADES_DOC.map((a) => (
+                <Link
+                  key={a.slug || "montar"}
+                  href={hrefAtividade("/dashboard/montador", d.id, a.slug)}
+                  className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                >
+                  {a.emoji} {a.rotulo}
+                </Link>
+              ))}
+            </div>
           </li>
         ))}
       </ul>

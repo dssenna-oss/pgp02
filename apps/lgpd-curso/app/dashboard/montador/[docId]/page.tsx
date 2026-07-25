@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getMontadorDoc } from "@/lib/montador-docs";
 import { MontadorRunner } from "@/components/montador-runner";
+import { AtividadesDocLinks } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,8 @@ export default function MontadorDocPage({ params }: { params: { docId: string } 
       </header>
 
       <MontadorRunner doc={doc} />
+
+      <AtividadesDocLinks base="/dashboard/montador" docId={doc.id} atual="" />
     </div>
   );
 }

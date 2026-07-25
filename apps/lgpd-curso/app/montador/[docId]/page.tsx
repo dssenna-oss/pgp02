@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getMontadorDoc } from "@/lib/montador-docs";
 import { MontadorRunner } from "@/components/montador-runner";
+import { AtividadesDocLinks } from "@/components/montador-atividade";
 
 export default function MontadorPublicoDocPage({
   params,
@@ -34,6 +35,8 @@ export default function MontadorPublicoDocPage({
         </header>
 
         <MontadorRunner doc={doc} hubHref="/montador" />
+
+        <AtividadesDocLinks base="/montador" docId={doc.id} atual="" />
 
         <footer className="mt-8 text-center text-[11px] text-gray-400">
           Atividade de simulação — nenhum dado é coletado ou armazenado.
