@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getMontadorDoc } from "@/lib/montador-docs";
 import { MontadorRunner } from "@/components/montador-runner";
-import { AtividadesDocLinks } from "@/components/montador-atividade";
+import { AtividadesDocLinks, CapaDoc } from "@/components/montador-atividade";
 
 export default function MontadorPublicoDocPage({
   params,
@@ -27,6 +27,8 @@ export default function MontadorPublicoDocPage({
         >
           <ArrowLeft className="h-4 w-4" /> Todos os documentos
         </Link>
+
+        <CapaDoc docId={doc.id} />
 
         <header className="mb-5">
           <h1 className="text-2xl font-bold text-gray-900">

@@ -186,7 +186,7 @@ export function MontadorRunner({
           {doc.esqueleto.find((s) => s.numero === decisao.secaoNumero)?.titulo}
         </p>
         {decisao.contexto && (
-          <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-600">
+          <p className="mt-2 rounded-lg border-l-4 border-l-indigo-300 bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-800">
             {decisao.contexto}
           </p>
         )}

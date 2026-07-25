@@ -7,12 +7,14 @@
 import Link from "next/link";
 import { FileStack } from "lucide-react";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
-import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
+import { atividadesDoDoc, hrefAtividade, CapaDoc } from "@/components/montador-atividade";
 
 export default function MontadorPublicoHubPage() {
   return (
     <div className="pagina-embed min-h-screen bg-gray-50 px-4 py-6">
       <div className="mx-auto max-w-2xl">
+        <CapaDoc docId="hub" className="mb-5 h-36 w-full rounded-2xl border border-indigo-100 object-cover" />
+
         <header className="mb-6">
           <div className="flex items-center gap-2.5">
             <FileStack className="h-7 w-7 text-indigo-600" />
@@ -27,7 +29,8 @@ export default function MontadorPublicoHubPage() {
 
         <ul className="space-y-4">
           {MONTADOR_DOCS.filter((d) => d.disponivel).map((d) => (
-            <li key={d.id} className="rounded-xl border border-gray-200 bg-white p-4">
+            <li key={d.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
+              <CapaDoc docId={d.id} className="mb-3 h-24 w-full rounded-lg object-cover" />
               <div className="flex items-center gap-3">
                 <span className="text-2xl leading-none">{d.emoji}</span>
                 <div className="min-w-0 flex-1">

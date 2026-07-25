@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, FileStack } from "lucide-react";
 import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
-import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
+import { atividadesDoDoc, hrefAtividade, CapaDoc } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +37,8 @@ export default function MontadorHubPage() {
 
       <ul className="space-y-4">
         {MONTADOR_DOCS.filter((d) => d.disponivel).map((d) => (
-          <li key={d.id} className="rounded-xl border border-gray-200 bg-white p-4">
+          <li key={d.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
+            <CapaDoc docId={d.id} className="mb-3 h-24 w-full rounded-lg object-cover" />
             <div className="flex items-center gap-3">
               <span className="text-2xl leading-none">{d.emoji}</span>
               <div className="min-w-0 flex-1">
