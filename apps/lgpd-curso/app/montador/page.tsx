@@ -7,7 +7,7 @@
 import Link from "next/link";
 import { FileStack } from "lucide-react";
 import { MONTADOR_DOCS } from "@/lib/montador-docs";
-import { ATIVIDADES_DOC, hrefAtividade } from "@/components/montador-atividade";
+import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
 
 export default function MontadorPublicoHubPage() {
   return (
@@ -36,7 +36,7 @@ export default function MontadorPublicoHubPage() {
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {ATIVIDADES_DOC.map((a) => (
+                {atividadesDoDoc(d).map((a) => (
                   <Link
                     key={a.slug || "montar"}
                     href={hrefAtividade("/montador", d.id, a.slug)}

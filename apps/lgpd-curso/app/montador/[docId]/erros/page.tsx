@@ -8,7 +8,7 @@ import { MontadorAtividade } from "@/components/montador-atividade";
 
 export default function ErrosPublicoPage({ params }: { params: { docId: string } }) {
   const doc = getMontadorDoc(params.docId);
-  if (!doc || !doc.disponivel) notFound();
+  if (!doc || !doc.disponivel || !doc.cacaErro) notFound();
   return (
     <div className="pagina-embed min-h-screen bg-gray-50 px-4 py-6">
       <div className="mx-auto max-w-2xl">

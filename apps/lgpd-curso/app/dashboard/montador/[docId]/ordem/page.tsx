@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default function OrdemDashboardPage({ params }: { params: { docId: string } }) {
   const doc = getMontadorDoc(params.docId);
-  if (!doc || !doc.disponivel) notFound();
+  if (!doc || !doc.disponivel || !doc.ordenar) notFound();
   return (
     <div className="max-w-3xl mx-auto p-6">
       <AdminPreviewBanner />

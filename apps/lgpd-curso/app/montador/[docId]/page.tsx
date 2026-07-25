@@ -15,7 +15,8 @@ export default function MontadorPublicoDocPage({
   params: { docId: string };
 }) {
   const doc = getMontadorDoc(params.docId);
-  if (!doc || !doc.disponivel) notFound();
+  // O wizard só existe pra documentos com decisões (formatos são opcionais).
+  if (!doc || !doc.disponivel || doc.decisoes.length === 0) notFound();
 
   return (
     <div className="pagina-embed min-h-screen bg-gray-50 px-4 py-6">
@@ -36,7 +37,7 @@ export default function MontadorPublicoDocPage({
 
         <MontadorRunner doc={doc} hubHref="/montador" />
 
-        <AtividadesDocLinks base="/montador" docId={doc.id} atual="" />
+        <AtividadesDocLinks base="/montador" doc={doc} atual="" />
 
         <footer className="mt-8 text-center text-[11px] text-gray-400">
           Atividade de simulação — nenhum dado é coletado ou armazenado.

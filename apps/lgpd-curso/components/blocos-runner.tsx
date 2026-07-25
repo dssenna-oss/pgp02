@@ -13,6 +13,7 @@ export function BlocosRunner({ doc }: { doc: MontadorDoc }) {
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
   const [conferido, setConferido] = useState(false);
 
+  if (!doc.blocos) return null; // formato não disponível neste documento
   const cartas = doc.blocos.cartas;
 
   function alternar(id: string) {
