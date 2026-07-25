@@ -74,6 +74,14 @@ export default function MontadorPublicoHubPage() {
           ))}
         </ul>
 
+        <p className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+          🎮 Quer treinar jogando? Visite os{" "}
+          <Link href="/jogos" className="font-semibold text-indigo-700 hover:underline">
+            Jogos da LGPD
+          </Link>{" "}
+          — crise com relógio, chat do titular, detetive e mais.
+        </p>
+
         <footer className="mt-8 text-center text-[11px] text-gray-400">
           Atividade de simulação — nenhum dado é coletado ou armazenado.
         </footer>
