@@ -3,6 +3,11 @@
 // Montador Guiado — runner (celular do participante).
 // Uma decisão por tela → o documento vai se montando → placar final.
 // Sem envio ao servidor: produção pessoal (a versão editável fica no Pacote).
+//
+// Usado em 2 contextos:
+//   /dashboard/montador/[docId] — logado (Modo Cards)
+//   /montador/[docId]           — PÚBLICO/standalone (embed em apresentação)
+// `hubHref` aponta o "Outros documentos" pro hub do contexto certo.
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -23,7 +28,13 @@ function ordemOpcoes(op: OpcaoDecisao[], seed: number): OpcaoDecisao[] {
   return seed % 2 === 0 ? op : [...op].reverse();
 }
 
-export function MontadorRunner({ doc }: { doc: MontadorDoc }) {
+export function MontadorRunner({
+  doc,
+  hubHref = "/dashboard/montador",
+}: {
+  doc: MontadorDoc;
+  hubHref?: string;
+}) {
   const [passo, setPasso] = useState(0); // índice da decisão atual
   const [escolhas, setEscolhas] = useState<Record<string, string>>({});
   const [revelado, setRevelado] = useState<Record<string, boolean>>({});
@@ -134,7 +145,7 @@ export function MontadorRunner({ doc }: { doc: MontadorDoc }) {
             <RotateCcw className="h-4 w-4" /> Refazer
           </button>
           <Link
-            href="/dashboard/montador"
+            href={hubHref}
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white hover:bg-indigo-700"
           >
             Outros documentos <ArrowRight className="h-4 w-4" />
