@@ -405,3 +405,19 @@ export const SAIBA_MAIS: Record<string, SaibaMais> = {
 export function getSaibaMais(id: string): SaibaMais | undefined {
   return SAIBA_MAIS[id];
 }
+
+// Correspondência com o Pacote de Modelos oficial (21 modelos diagramados,
+// públicos em /pacote-modelos-pgp.pdf e .docx). Ausente = sem modelo no Pacote
+// (ex.: Cookies) — o modelo gerado do gabarito cobre a lacuna.
+export const MODELO_NO_PACOTE: Record<string, string> = {
+  "aviso-privacidade": "Modelo 05 — Aviso de Privacidade público",
+  "politica-protecao-dados": "Modelo 07 — Política do PGP (documento mater)",
+  ripd: "Modelo 19 — RIPD (8 seções)",
+  pri: "Modelo 06 — Documento do PRI (+ Modelos 11 e 12, as comunicações de incidente)",
+  "clausulas-operadores": "Modelo 08 — Cláusulas LGPD pra contratos",
+  "termo-consentimento": "Modelo 10 — Termo de Consentimento do Titular",
+  "resposta-titular": "Modelo 21 — Registro de Solicitação DSR",
+  "inventario-ropa": "Modelo 15 — Ficha de Processo (Inventário)",
+  "analise-risco": "Modelo 16 — Ficha de Risco com matriz P × I",
+  "checklist-gap": "Modelo 17 — GAP — Planilha de Avaliação de Controles",
+};
