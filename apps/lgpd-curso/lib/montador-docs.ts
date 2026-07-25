@@ -77,6 +77,28 @@ export type ItemOrdem = {
   detalhe?: string;
 };
 
+// ── Formato 5: Matriz 3×3 (Análise de Riscos) ────────────────────────────────
+// Pra cada cenário, o participante TOCA a célula Probabilidade × Impacto.
+// A severidade usa a MESMA régua do app (app/dashboard/riscos/actions.ts):
+// score = P × I · ≥6 ALTO · ≥3 MÉDIO · senão BAIXO.
+export type CenarioMatriz = {
+  id: string;
+  texto: string;
+  prob: 1 | 2 | 3; // gabarito (1=Baixa 2=Média 3=Alta)
+  impacto: 1 | 2 | 3; // gabarito (1=Baixo 2=Médio 3=Alto)
+  porque: string;
+  artigo?: string;
+};
+
+export type Severidade = "BAIXO" | "MEDIO" | "ALTO";
+
+export function severidadeMatriz(p: number, i: number): Severidade {
+  const score = p * i;
+  if (score >= 6) return "ALTO";
+  if (score >= 3) return "MEDIO";
+  return "BAIXO";
+}
+
 // Formatos OPCIONAIS por documento (decisão pedagógica: cada documento ganha
 // só os formatos onde aprende de verdade — nada de atividade-enchimento).
 // Wizard ("montar decidindo") existe quando `decisoes` não está vazio.
@@ -86,16 +108,19 @@ export type MontadorDoc = {
   titulo: string;
   subtitulo: string;
   intro: string;
+  // "documentos" (default) ou "praticas" (Fases 3-4) — agrupa o hub em seções.
+  grupo?: "documentos" | "praticas";
   esqueleto: SecaoEsqueleto[];
   decisoes: Decisao[]; // vazio = documento sem o formato "montar decidindo"
   disponivel: boolean; // false = aparece no hub como "em breve"
   blocos?: { instrucao: string; cartas: CartaBloco[] };
   cacaErro?: { contexto: string; instrucao: string; secoes: SecaoCaca[] };
   ordenar?: { instrucao: string; itens: ItemOrdem[]; ordemInicial: string[]; logica: string };
+  matriz?: { instrucao: string; cenarios: CenarioMatriz[] };
 };
 
 // Slugs de atividade ("" = o wizard "montar decidindo", na raiz do doc).
-export type FormatoAtividade = "" | "blocos" | "erros" | "ordem";
+export type FormatoAtividade = "" | "blocos" | "erros" | "ordem" | "matriz";
 
 // Quais formatos este documento oferece (na ordem canônica do cardápio).
 export function formatosDoDoc(doc: MontadorDoc): FormatoAtividade[] {
@@ -104,6 +129,7 @@ export function formatosDoDoc(doc: MontadorDoc): FormatoAtividade[] {
   if (doc.blocos) f.push("blocos");
   if (doc.cacaErro) f.push("erros");
   if (doc.ordenar) f.push("ordem");
+  if (doc.matriz) f.push("matriz");
   return f;
 }
 
@@ -2775,6 +2801,1152 @@ const DSR: MontadorDoc = {
   },
 };
 
+// =============================================================================
+// PRÁTICAS DAS FASES 3-4 (grupo "praticas" no hub)
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// FICHA DE INVENTÁRIO / ROPA (decidir + blocos + caça ao erro)
+// -----------------------------------------------------------------------------
+// Casos REAIS do curso: Posto de Saúde de Vegas (com a pegadinha do marketing,
+// de lib/processos-pegadinhas.ts) e a matrícula na creche (minimização).
+
+const INVENTARIO: MontadorDoc = {
+  id: "inventario-ropa",
+  emoji: "📇",
+  titulo: "Ficha de Inventário (ROPA)",
+  subtitulo: "Mapear um processo, campo a campo",
+  grupo: "praticas",
+  intro:
+    "O Inventário (ROPA, art. 37) é a fundação de tudo — e cada campo tem sua " +
+    "pegadinha. Monte a ficha do Posto de Saúde de Vegas decidindo os campos " +
+    "críticos.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "dados",
+      secaoNumero: 3,
+      contexto:
+        "O formulário de cadastro do Posto está sendo revisado. A equipe sugere aproveitar e 'conhecer melhor o paciente'.",
+      pergunta: "Quais dados entram na ficha do paciente?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Só o necessário à finalidade assistencial",
+          textoDoc:
+            "Dados tratados: **identificação** (nome, CPF, cartão SUS, data de " +
+            "nascimento), **contato** (endereço, telefone) e **dados clínicos** " +
+            "(histórico, prescrições, exames) — o necessário pra atender e dar " +
+            "continuidade ao cuidado.",
+          correta: true,
+          porque:
+            "Minimização: cada dado precisa se justificar pela finalidade. " +
+            "'Conhecer melhor o paciente' não é finalidade — é curiosidade " +
+            "institucional.",
+          artigo: "Art. 6º, III",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Ficha completa: religião, renda familiar e profissão dos pais",
+          textoDoc:
+            "Dados tratados: identificação, contato, dados clínicos, religião, " +
+            "renda familiar detalhada e profissão dos familiares — cadastro " +
+            "completo para conhecer o perfil socioeconômico do paciente.",
+          correta: false,
+          porque:
+            "Religião num cadastro de atendimento é dado sensível SEM finalidade " +
+            "— coleta ilegal, não zelo. Dado a mais é risco a mais guardado.",
+          artigo: "Art. 6º, III · Art. 11 (violados)",
+        },
+      ],
+    },
+    {
+      id: "sensiveis",
+      secaoNumero: 4,
+      pergunta: "Como classificar os dados desse processo?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Há dados SENSÍVEIS — prontuário é dado de saúde",
+          textoDoc:
+            "Classificação: o processo trata **dados pessoais sensíveis** " +
+            "(saúde — art. 5º, II). Isso eleva o cuidado: acesso restrito, " +
+            "proteção reforçada e prioridade na análise de riscos.",
+          correta: true,
+          porque:
+            "Marcar 'sensível' não é burocracia: é o campo que puxa o regime " +
+            "reforçado do art. 11 e prioriza o processo nas Fases 3 e 4.",
+          artigo: "Art. 5º, II · Art. 11",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Dados comuns de cadastro — igual a qualquer sistema",
+          textoDoc:
+            "Classificação: dados cadastrais comuns, sem particularidades.",
+          correta: false,
+          porque:
+            "Prontuário é o exemplo CLÁSSICO de dado sensível. Classificar " +
+            "errado aqui contamina tudo que vem depois: risco subestimado, " +
+            "RIPD que nunca nasce, aviso que silencia.",
+          artigo: "Art. 5º, II (ignorado)",
+        },
+      ],
+    },
+    {
+      id: "base",
+      secaoNumero: 5,
+      pergunta: "Qual base legal registrar?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Tutela da saúde + execução de políticas públicas",
+          textoDoc:
+            "Base legal: **tutela da saúde** (art. 11, II, 'a' — pros dados " +
+            "sensíveis) e **execução de políticas públicas** (art. 7º, III / " +
+            "art. 23 — pros demais). Consentimento NÃO é a base deste processo.",
+          correta: true,
+          porque:
+            "O paciente não tem como 'recusar' o prontuário e ainda ser " +
+            "atendido — não há liberdade, logo não há consentimento válido. As " +
+            "bases do serviço público são outras.",
+          artigo: "Art. 11, II 'a' · Art. 7º, III · Art. 23",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Consentimento — colher assinatura na recepção",
+          textoDoc:
+            "Base legal: consentimento do titular, colhido em formulário na " +
+            "recepção no primeiro atendimento.",
+          correta: false,
+          porque:
+            "A pegadinha nº 1 de todo inventário público. Consentimento como " +
+            "base do SUS cria um castelo de cartas: o dia que alguém 'revogar', " +
+            "o atendimento vira ilegal?",
+          artigo: "Art. 7º, I (indevido)",
+        },
+      ],
+    },
+    {
+      id: "retencao",
+      secaoNumero: 6,
+      pergunta: "O que registrar na retenção?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Prazo específico com fundamento (prontuário: 20 anos)",
+          textoDoc:
+            "Retenção: **prontuários por 20 anos** após o último registro " +
+            "(legislação sanitária); dados de agendamento por [X anos]. Após o " +
+            "prazo: eliminação segura ou anonimização.",
+          correta: true,
+          porque:
+            "Cada linha do inventário precisa do SEU prazo com o SEU fundamento. " +
+            "É esse campo que alimenta a seção de retenção do Aviso — lembra da " +
+            "pegadinha de lá?",
+          artigo: "Art. 15 · Art. 16",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Enquanto o sistema existir'",
+          textoDoc: "Retenção: os dados permanecem no sistema por tempo indeterminado.",
+          correta: false,
+          porque:
+            "'Pra sempre' não é prazo — é ausência de gestão. Tratamento tem " +
+            "ciclo de vida; guardar sem fim é tratar sem base.",
+          artigo: "Art. 15 (violado)",
+        },
+      ],
+    },
+    {
+      id: "compartilhamento",
+      secaoNumero: 7,
+      contexto:
+        "Uma empresa de marketing ofereceu parceria: em troca da lista do programa de hipertensos, ofertaria 'produtos de saúde com desconto' — e uma verba pro município.",
+      pergunta: "O que registrar em compartilhamentos?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Só o e-SUS (obrigação legal) — e registrar a NEGATIVA ao marketing",
+          textoDoc:
+            "Compartilhamentos: **e-SUS / Ministério da Saúde** (obrigação " +
+            "legal). O pedido da empresa de marketing foi **negado e registrado** " +
+            "— dado de saúde coletado pra cuidar não vira mailing comercial.",
+          correta: true,
+          porque:
+            "É a pegadinha plantada do curso! Compartilhar a lista de " +
+            "hipertensos com marketing é desvio de finalidade com dado sensível " +
+            "— a tripla infração (art. 6º I, art. 11, art. 39).",
+          artigo: "Art. 6º, I · Art. 11 · Art. 39",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "e-SUS + a parceria (gera receita e beneficia o paciente)",
+          textoDoc:
+            "Compartilhamentos: e-SUS/Ministério da Saúde e empresa parceira de " +
+            "produtos de saúde (convênio de cooperação com contrapartida " +
+            "financeira ao município).",
+          correta: false,
+          porque:
+            "'Beneficia o paciente' é o verniz de todo desvio de finalidade. O " +
+            "cidadão entregou o dado pro SUS cuidar dele — não pra virar alvo " +
+            "de oferta. Verba não é base legal.",
+          artigo: "Art. 6º, I · Art. 11 (violados)",
+        },
+      ],
+    },
+    {
+      id: "aprovacao",
+      secaoNumero: 9,
+      pergunta: "Quem preenche e quem aprova esta ficha?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "O dono do processo preenche; o Encarregado revisa e APROVA",
+          textoDoc:
+            "Fluxo: preenchida pelo **dono do processo** (Secretaria de Saúde), " +
+            "**revisada e aprovada pelo Encarregado (DPO)**. Atualização: anual " +
+            "ou a cada mudança relevante no tratamento.",
+          correta: true,
+          porque:
+            "Quem vive o processo descreve; quem enxerga o todo aprova. É o " +
+            "workflow Contribuidor → DPO — o caminho mais comum no setor " +
+            "público.",
+          artigo: "Art. 37 · Art. 41",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "O estagiário de TI preenche tudo de uma vez e publica",
+          textoDoc:
+            "Fluxo: preenchimento centralizado pela TI (estagiário designado), " +
+            "publicação imediata, sem etapa de revisão.",
+          correta: false,
+          porque:
+            "A TI não conhece a rotina da Saúde — inventário de gabinete nasce " +
+            "errado. E sem a revisão do DPO, o erro vira oficial.",
+          artigo: "Art. 37 (registro fiel) · Art. 41",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    {
+      numero: 1,
+      titulo: "Processo e setor",
+      textoFixo:
+        "Processo: **Atendimento ambulatorial no Posto de Saúde Municipal** " +
+        "(sistema Saúde+Municipal, ~80 cidadãos/dia). Setor responsável: " +
+        "Secretaria Municipal de Saúde. Inclui o programa de hipertensos e " +
+        "diabéticos.",
+    },
+    {
+      numero: 2,
+      titulo: "Titulares",
+      textoFixo:
+        "Pacientes do município — incluindo **crianças, adolescentes e idosos** " +
+        "(grupos que pesam na análise de risco e no critério de alto risco da " +
+        "ANPD).",
+    },
+    { numero: 3, titulo: "Dados tratados", decisaoId: "dados" },
+    { numero: 4, titulo: "Categorias (há dados sensíveis?)", decisaoId: "sensiveis" },
+    { numero: 5, titulo: "Base legal", decisaoId: "base" },
+    { numero: 6, titulo: "Retenção", decisaoId: "retencao" },
+    { numero: 7, titulo: "Compartilhamentos", decisaoId: "compartilhamento" },
+    {
+      numero: 8,
+      titulo: "Medidas de segurança",
+      textoFixo:
+        "Acesso por perfil profissional, trilha de auditoria no sistema, backup " +
+        "diário e termo de confidencialidade da equipe (art. 46).",
+    },
+    { numero: 9, titulo: "Preenchimento e aprovação", decisaoId: "aprovacao" },
+  ],
+  blocos: {
+    instrucao:
+      "Outro caso: a MATRÍCULA NA CRECHE municipal. Toque nos dados que DEVEM " +
+      "ser coletados no formulário — minimização na prática: só entra o que a " +
+      "finalidade justifica.",
+    cartas: [
+      {
+        id: "iv-religiao",
+        texto: "Religião da família — pra planejar as festividades da creche.",
+        pertence: false,
+        porque:
+          "Dado sensível sem necessidade real. Festividade se planeja " +
+          "perguntando restrições no cardápio/atividade, não catalogando a fé " +
+          "das famílias.",
+        artigo: "Art. 11 · Art. 6º, III",
+      },
+      {
+        id: "iv-crianca",
+        texto: "Nome e data de nascimento da criança.",
+        pertence: true,
+        porque: "Identificação básica — sem isso não há matrícula.",
+        artigo: "Art. 6º, III (necessário)",
+      },
+      {
+        id: "iv-responsaveis",
+        texto: "Nome, documento e contato dos responsáveis legais.",
+        pertence: true,
+        porque: "Quem responde pela criança e quem buscar numa emergência.",
+        artigo: "Art. 14 (responsável legal)",
+      },
+      {
+        id: "iv-alergias",
+        texto: "Alergias e restrições alimentares da criança.",
+        pertence: true,
+        porque:
+          "É dado SENSÍVEL (saúde) — e mesmo assim ENTRA: a finalidade de " +
+          "cuidado exige. Minimização não é 'nunca coletar sensível'; é coletar " +
+          "só o necessário.",
+        artigo: "Art. 11, II 'a' (tutela da saúde)",
+      },
+      {
+        id: "iv-foto-rede",
+        texto: "Autorização de uso da foto da criança nas redes da creche, embutida na matrícula.",
+        pertence: false,
+        porque:
+          "Finalidade DIVERSA da matrícula — exige consentimento específico e " +
+          "destacado, em termo próprio (lembra do Termo de Consentimento?). " +
+          "Embutir é o 'casadinho'.",
+        artigo: "Art. 8º, §§3º-4º · Art. 14, §1º",
+      },
+      {
+        id: "iv-vacina",
+        texto: "Carteira de vacinação atualizada.",
+        pertence: true,
+        porque: "Exigência sanitária pra matrícula em creche — obrigação legal.",
+        artigo: "Art. 7º, II",
+      },
+      {
+        id: "iv-avos",
+        texto: "Profissão e local de trabalho dos avós.",
+        pertence: false,
+        porque:
+          "Excessivo: nenhuma etapa da matrícula usa esse dado. 'Pode ser útil " +
+          "um dia' não é finalidade.",
+        artigo: "Art. 6º, III",
+      },
+      {
+        id: "iv-guarda",
+        texto: "Documento de guarda judicial, quando os pais não forem os responsáveis.",
+        pertence: true,
+        porque: "Necessário exatamente nos casos em que se aplica — coleta condicional.",
+        artigo: "Art. 6º, III",
+      },
+      {
+        id: "iv-renda",
+        texto: "Comprovante de renda familiar — critério legal de prioridade de vaga.",
+        pertence: true,
+        porque:
+          "Quando o edital/lei usa renda como critério de vaga, a coleta tem " +
+          "finalidade e base. O segredo é coletar SÓ o comprovante exigido, não " +
+          "a vida financeira da família.",
+        artigo: "Art. 7º, II e III",
+      },
+      {
+        id: "iv-cpf-irmaos",
+        texto: "CPF de todos os irmãos da criança.",
+        pertence: false,
+        porque:
+          "Se o critério de prioridade considera irmão já matriculado, basta o " +
+          "NOME/matrícula do irmão na unidade — o CPF de todos é excesso.",
+        artigo: "Art. 6º, III",
+      },
+    ],
+  },
+  cacaErro: {
+    contexto:
+      "A ficha de inventário do Posto de Saúde foi preenchida às pressas pra " +
+      "'fechar o prazo'. Tem 4 erros clássicos de inventário.",
+    instrucao: "Toque nos campos ERRADOS (🚩) — compare com o que você aprendeu montando a ficha.",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "Processo e setor",
+        texto:
+          "Atendimento ambulatorial no Posto de Saúde Municipal — Secretaria de " +
+          "Saúde. Sistema Saúde+Municipal, ~80 atendimentos/dia, programa de " +
+          "hipertensos e diabéticos.",
+        notaLimpa: "Processo bem identificado, com volume e sistema — correto.",
+      },
+      {
+        numero: 2,
+        titulo: "Titulares",
+        texto: "Pacientes do município, incluindo crianças e idosos.",
+        notaLimpa: "Titulares descritos com os grupos vulneráveis à vista — correto.",
+      },
+      {
+        numero: 3,
+        titulo: "Categorias de dados",
+        texto:
+          "Dados cadastrais comuns (nome, CPF, endereço, histórico de consultas " +
+          "e prescrições). Nada de especial a destacar.",
+        erro: {
+          porque:
+            "'Histórico de consultas e prescrições' É dado de saúde — sensível " +
+            "por definição. Classificar como 'comum' derruba todo o regime de " +
+            "proteção reforçada que deveria se aplicar.",
+          artigo: "Art. 5º, II · Art. 11",
+        },
+      },
+      {
+        numero: 4,
+        titulo: "Base legal",
+        texto:
+          "Consentimento do titular, colhido mediante assinatura de formulário " +
+          "padrão na recepção do Posto.",
+        erro: {
+          porque:
+            "Serviço essencial de saúde não opera por consentimento — o " +
+            "paciente não pode recusar e continuar atendido. Bases corretas: " +
+            "tutela da saúde e políticas públicas.",
+          artigo: "Art. 11, II 'a' · Art. 7º, III",
+        },
+      },
+      {
+        numero: 5,
+        titulo: "Retenção",
+        texto: "Os dados permanecem no sistema enquanto ele estiver em operação.",
+        erro: {
+          porque:
+            "'Enquanto o sistema existir' não é prazo. Prontuário tem prazo " +
+            "próprio (20 anos, legislação sanitária); o resto também precisa do " +
+            "seu.",
+          artigo: "Art. 15 · Art. 16",
+        },
+      },
+      {
+        numero: 6,
+        titulo: "Compartilhamentos",
+        texto:
+          "e-SUS/Ministério da Saúde (obrigação legal) e Vida Leve Produtos de " +
+          "Saúde Ltda. (convênio de cooperação — ofertas exclusivas ao programa " +
+          "de hipertensos).",
+        erro: {
+          porque:
+            "A pegadinha plantada do curso, agora 'oficializada' na ficha: " +
+            "lista de hipertensos pra empresa de ofertas = desvio de finalidade " +
+            "com dado sensível. Convênio não transforma infração em parceria.",
+          artigo: "Art. 6º, I · Art. 11 · Art. 39",
+        },
+      },
+      {
+        numero: 7,
+        titulo: "Medidas de segurança",
+        texto:
+          "Acesso por perfil profissional, trilha de auditoria, backup diário " +
+          "testado e termos de confidencialidade assinados pela equipe.",
+        notaLimpa: "Medidas concretas e verificáveis — correto.",
+      },
+      {
+        numero: 8,
+        titulo: "Aprovação",
+        texto:
+          "Preenchida pela Secretaria de Saúde (dona do processo) e aprovada " +
+          "pela Encarregada em 12/05/2026. Próxima revisão: 12/05/2027.",
+        notaLimpa: "Workflow dono → DPO com data e ciclo de revisão — correto.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// FICHA DE ANÁLISE DE RISCO (decidir + matriz 3×3)
+// -----------------------------------------------------------------------------
+// Régua de severidade IDÊNTICA ao app (P×I: ≥6 ALTO · ≥3 MÉDIO · senão BAIXO).
+
+const RISCO: MontadorDoc = {
+  id: "analise-risco",
+  emoji: "🎯",
+  titulo: "Ficha de Análise de Risco",
+  subtitulo: "Do risco abstrato ao concreto — com a matriz 3×3",
+  grupo: "praticas",
+  intro:
+    "Risco de verdade tem nome, cenário e severidade. Monte a ficha de UM " +
+    "risco do Posto de Saúde — o famoso caso do pendrive — decidindo cada " +
+    "campo como a metodologia manda.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "descricao-risco",
+      secaoNumero: 2,
+      contexto:
+        "Toda semana, os exames coletados nas unidades de bairro viajam num pendrive até o Posto central.",
+      pergunta: "Como DESCREVER esse risco?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Concreto: o quê, como, quem é atingido, qual o dano",
+          textoDoc:
+            "Risco: **perda ou furto do pendrive** com resultados de exames de " +
+            "~2.300 pacientes durante o transporte semanal entre unidades — " +
+            "expondo dados de saúde a uso indevido, chantagem e discriminação.",
+          correta: true,
+          porque:
+            "Risco concreto aponta o cenário (transporte semanal), o ativo (o " +
+            "pendrive), os atingidos (2.300 pacientes) e o dano (chantagem/" +
+            "discriminação). É isso que dá pra medir e mitigar.",
+          artigo: "Metodologia Fase 3 (risco concreto)",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "'Pode haver vazamento de dados'",
+          textoDoc: "Risco: possibilidade de vazamento de dados do Posto de Saúde.",
+          correta: false,
+          porque:
+            "Risco abstrato é inanalisável: não diz por onde, de quem, nem qual " +
+            "dano. 'Pode haver vazamento' vale pra qualquer órgão do planeta — " +
+            "logo, não orienta nenhuma decisão.",
+          artigo: "Metodologia Fase 3 (anti-abstrato)",
+        },
+      ],
+    },
+    {
+      id: "probabilidade",
+      secaoNumero: 3,
+      pergunta: "Qual PROBABILIDADE registrar?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "MÉDIA — com os fatos que sustentam",
+          textoDoc:
+            "Probabilidade: **MÉDIA (2)** — o transporte é semanal (exposição " +
+            "recorrente), o pendrive não tem criptografia e já houve um " +
+            "quase-extravio registrado neste ano.",
+          correta: true,
+          porque:
+            "Probabilidade se estima por FATOS: frequência da exposição, " +
+            "fragilidade do controle, histórico. Três fatos aqui sustentam o " +
+            "'média'.",
+          artigo: "Matriz P×I da Fase 3",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "BAIXA — nunca aconteceu até hoje",
+          textoDoc:
+            "Probabilidade: BAIXA — não há registro de perda de pendrive até o " +
+            "momento.",
+          correta: false,
+          porque:
+            "'Nunca aconteceu' é retrovisor, não análise. Todo incidente " +
+            "inédito tinha probabilidade 'baixa' na véspera — o que conta é a " +
+            "exposição recorrente sem proteção.",
+          artigo: "Matriz P×I (viés do otimismo)",
+        },
+      ],
+    },
+    {
+      id: "impacto",
+      secaoNumero: 4,
+      pergunta: "Qual IMPACTO registrar?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "ALTO — dado sensível de milhares, com dano real ao titular",
+          textoDoc:
+            "Impacto: **ALTO (3)** — dados de SAÚDE de ~2.300 pessoas " +
+            "(incluindo crianças e idosos); o vazamento permite discriminação, " +
+            "constrangimento e golpes direcionados. Dano irreversível: não dá " +
+            "pra 'trocar' o histórico de saúde como se troca uma senha.",
+          correta: true,
+          porque:
+            "Impacto se mede pelo DANO AO TITULAR (não pelo constrangimento do " +
+            "órgão): natureza do dado × quantidade × reversibilidade.",
+          artigo: "Art. 5º, II · matriz P×I",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "MÉDIO — o pendrive fica numa pasta com senha do Windows",
+          textoDoc:
+            "Impacto: MÉDIO — os arquivos ficam em computador cuja conta tem " +
+            "senha, o que reduz o dano em caso de perda.",
+          correta: false,
+          porque:
+            "Senha de LOGIN não protege o arquivo no pendrive — quem pluga o " +
+            "pendrive em outra máquina lê tudo. Controle ilusório não desconta " +
+            "impacto.",
+          artigo: "Art. 46 (medida inócua)",
+        },
+      ],
+    },
+    {
+      id: "severidade",
+      secaoNumero: 5,
+      pergunta: "Probabilidade MÉDIA (2) × Impacto ALTO (3). Qual a severidade?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "ALTO — a régua multiplica: 2 × 3 = 6",
+          textoDoc:
+            "Severidade: **ALTO** (P 2 × I 3 = 6; na régua do curso, score ≥ 6 " +
+            "= ALTO). Entra no topo da fila de tratamento.",
+          correta: true,
+          porque:
+            "A régua MULTIPLICA — não faz média. 'Média com alto' parece " +
+            "meio-termo, mas 2×3=6 cruza a linha do ALTO. É por isso que " +
+            "impacto alto pesa tanto.",
+          artigo: "Régua do app: ≥6 ALTO · ≥3 MÉDIO",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "MÉDIO — média entre médio e alto",
+          textoDoc: "Severidade: MÉDIO (média aritmética entre os dois níveis).",
+          correta: false,
+          porque:
+            "Fazer média dilui exatamente os riscos que mais importam. A " +
+            "multiplicação existe pra dado grave com chance real nunca sair " +
+            "'morno'.",
+          artigo: "Régua do app (multiplicação, não média)",
+        },
+      ],
+    },
+    {
+      id: "medida",
+      secaoNumero: 6,
+      pergunta: "Qual medida de mitigação registrar?",
+      opcoes: [
+        {
+          id: "correta",
+          rotulo: "Atacar a causa: eliminar o pendrive do fluxo",
+          textoDoc:
+            "Medida: **substituir o transporte físico por envio criptografado** " +
+            "entre as unidades (VPN do município); enquanto não implanta, " +
+            "pendrive criptografado com termo de custódia. Responsável: TI. " +
+            "Prazo: 60 dias. → Vira ação na Fase 5.",
+          correta: true,
+          porque:
+            "A melhor medida elimina o risco na origem (o pendrive some do " +
+            "fluxo), tem dono, prazo e plano de transição. E repare: risco ALTO " +
+            "→ ação no Plano — é a ponte Fase 3 → Fase 5.",
+          artigo: "Art. 46 · metodologia Fase 5",
+        },
+        {
+          id: "pegadinha",
+          rotulo: "Orientar verbalmente a equipe a ter mais cuidado",
+          textoDoc:
+            "Medida: reforçar a orientação verbal à equipe sobre os cuidados no " +
+            "transporte do pendrive.",
+          correta: false,
+          porque:
+            "'Tomar cuidado' não é controle — é torcida. Medida sem mudança de " +
+            "processo, sem dono e sem prazo mantém o risco intacto (e agora com " +
+            "álibi).",
+          artigo: "Art. 46 (medida inócua)",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    {
+      numero: 1,
+      titulo: "Processo vinculado",
+      textoFixo:
+        "Processo do Inventário: **Atendimento no Posto de Saúde Municipal** " +
+        "(ficha aprovada pelo DPO). Todo risco nasce apontando pra um processo " +
+        "mapeado — sem inventário, não há o que analisar.",
+    },
+    { numero: 2, titulo: "Descrição do risco", decisaoId: "descricao-risco" },
+    { numero: 3, titulo: "Probabilidade", decisaoId: "probabilidade" },
+    { numero: 4, titulo: "Impacto", decisaoId: "impacto" },
+    { numero: 5, titulo: "Severidade (P × I)", decisaoId: "severidade" },
+    { numero: 6, titulo: "Medida de mitigação", decisaoId: "medida" },
+    {
+      numero: 7,
+      titulo: "Encaminhamento",
+      textoFixo:
+        "Risco ALTO → entra no **Plano de Ação (Fase 5)** com a medida, o " +
+        "responsável e o prazo. Reavaliar a severidade após a implantação — o " +
+        "risco residual é a nova fotografia.",
+    },
+  ],
+  matriz: {
+    instrucao:
+      "Agora sem ajuda: pra cada cenário, toque na célula certa da matriz " +
+      "Probabilidade × Impacto. A severidade sai na régua do curso (P×I: ≥6 " +
+      "ALTO · ≥3 MÉDIO · senão BAIXO).",
+    cenarios: [
+      {
+        id: "mx-pendrive",
+        texto:
+          "Pendrive SEM criptografia com exames de 2.300 pacientes viaja toda " +
+          "semana entre as unidades de saúde.",
+        prob: 2,
+        impacto: 3,
+        porque:
+          "Exposição semanal sem proteção = probabilidade média; dado sensível " +
+          "de milhares, dano irreversível = impacto alto. 2×3 = 6 → ALTO.",
+      },
+      {
+        id: "mx-postit",
+        texto:
+          "A senha do sistema de atendimento está num post-it colado no monitor " +
+          "da recepção, à vista do balcão.",
+        prob: 3,
+        impacto: 3,
+        porque:
+          "Qualquer pessoa no balcão vê a senha todos os dias (probabilidade " +
+          "alta) e ela abre TODO o sistema (impacto alto). 3×3 = 9 → ALTO " +
+          "máximo.",
+      },
+      {
+        id: "mx-aniversario",
+        texto:
+          "O mural do refeitório exibe a lista de aniversariantes do mês " +
+          "(nome completo e dia).",
+        prob: 3,
+        impacto: 1,
+        porque:
+          "A exposição é certa — está no mural (alta). Mas o dano de nome+dia " +
+          "de aniversário é pequeno (baixo). 3×1 = 3 → MÉDIO. Nem todo risco é " +
+          "incêndio; alguns são hábito a ajustar.",
+      },
+      {
+        id: "mx-backup",
+        texto:
+          "O backup do servidor é criptografado, testado mensalmente e guardado " +
+          "em sala com acesso controlado.",
+        prob: 1,
+        impacto: 2,
+        porque:
+          "Controles em camadas derrubam a probabilidade (baixa); se ainda " +
+          "assim falhar, o dano existe mas é contido (médio). 1×2 = 2 → BAIXO. " +
+          "É assim que um risco tratado se parece.",
+      },
+      {
+        id: "mx-ouvidoria",
+        texto:
+          "O formulário web da Ouvidoria recebe denúncias IDENTIFICADAS — e a " +
+          "página não tem cadeado (sem HTTPS).",
+        prob: 2,
+        impacto: 3,
+        porque:
+          "Tráfego sem criptografia pode ser interceptado (média); denúncia " +
+          "identificada vazada expõe o denunciante a retaliação (alto). 2×3 = 6 " +
+          "→ ALTO.",
+      },
+      {
+        id: "mx-ramal",
+        texto:
+          "A lista de ramais e e-mails FUNCIONAIS dos servidores está publicada " +
+          "na intranet do órgão.",
+        prob: 3,
+        impacto: 1,
+        porque:
+          "Todo mundo do órgão vê (alta) — mas ramal e e-mail funcional são " +
+          "dados profissionais de baixíssimo dano (baixo). 3×1 = 3 → MÉDIO por " +
+          "pouco; contexto de trabalho ameniza.",
+      },
+    ],
+  },
+};
+
+// -----------------------------------------------------------------------------
+// CHECKLIST GAP (decidir com 3 opções + caça ao erro)
+// -----------------------------------------------------------------------------
+// Controles derivados do catálogo real do curso (lib/gap-catalogo.ts).
+// Lição-mestra: evidência ≠ intenção; score baixo honesto > score alto maquiado.
+
+const GAP: MontadorDoc = {
+  id: "checklist-gap",
+  emoji: "✅",
+  titulo: "Checklist GAP",
+  subtitulo: "Aderente, parcial ou não? Evidência manda",
+  grupo: "praticas",
+  intro:
+    "No GAP você é o avaliador: leia a EVIDÊNCIA de cada controle e classifique " +
+    "— Aderente, Parcial ou Não aderente. A regra de ouro: intenção não " +
+    "pontua; evidência sim. E score baixo honesto vale mais que score alto de " +
+    "mentira.",
+  disponivel: true,
+  decisoes: [
+    {
+      id: "g-treinamento",
+      secaoNumero: 1,
+      contexto:
+        "Controle: 'Equipe treinada em LGPD nos últimos 12 meses.' Evidência encontrada: uma palestra geral em 2023; a chefia diz que 'pretende treinar todo mundo ainda este ano'.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — já houve treinamento e há intenção de repetir",
+          textoDoc: "1. Equipe treinada (12 meses): ADERENTE.",
+          correta: false,
+          porque:
+            "Intenção não pontua. A palestra foi há 3 anos — fora da janela de " +
+            "12 meses — e 'pretender' não é evidência de nada.",
+          artigo: "Evidência ≠ intenção",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — a palestra antiga conta alguma coisa",
+          textoDoc: "1. Equipe treinada (12 meses): PARCIAL.",
+          correta: false,
+          porque:
+            "Tentador, mas o controle pede treinamento NOS ÚLTIMOS 12 MESES — " +
+            "e não há nada na janela. Parcial é pra cumprimento REAL porém " +
+            "incompleto, não pra lembrança de 2023.",
+          artigo: "Critério temporal do controle",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — nada dentro da janela de 12 meses",
+          textoDoc:
+            "1. Equipe treinada (12 meses): **NÃO ADERENTE** — última " +
+            "capacitação em 2023; nenhuma evidência no período. → Vira ação na " +
+            "Fase 5.",
+          correta: true,
+          porque:
+            "É a resposta honesta — e útil: cada NÃO vira uma ação com dono e " +
+            "prazo no Plano. O GAP não é prova, é diagnóstico.",
+          artigo: "Metodologia Fase 4",
+        },
+      ],
+    },
+    {
+      id: "g-dpo",
+      secaoNumero: 2,
+      contexto:
+        "Controle: 'Encarregado formalmente designado, com ato publicado.' Evidência: a servidora Ana exerce a função há 1 ano, atende titulares, todo mundo a conhece como DPO — mas o ato de designação nunca foi publicado.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — na prática, a função existe e funciona",
+          textoDoc: "2. Encarregado designado com ato publicado: ADERENTE.",
+          correta: false,
+          porque:
+            "A LGPD pede identidade e contato DIVULGADOS de forma clara — e o " +
+            "ato formal é o que sustenta a função (e protege a própria Ana). " +
+            "Função de fato sem ato é conformidade pela metade.",
+          artigo: "Art. 41, §1º",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — função exercida de fato, falta a formalização",
+          textoDoc:
+            "2. Encarregado designado com ato publicado: **PARCIAL** — função " +
+            "exercida há 1 ano (evidência real), pendente a publicação do ato. " +
+            "→ Ação simples e rápida na Fase 5: publicar o ato.",
+          correta: true,
+          porque:
+            "Parcial é exatamente isto: metade REAL cumprida (a função opera), " +
+            "metade pendente (a formalização). E repare que a ação corretiva é " +
+            "baratíssima — GAP também revela vitórias fáceis.",
+          artigo: "Art. 41",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — sem ato publicado, não vale nada",
+          textoDoc: "2. Encarregado designado com ato publicado: NÃO ADERENTE.",
+          correta: false,
+          porque:
+            "Rigor demais também distorce o diagnóstico: há evidência real de " +
+            "1 ano de função exercida. Zerar isso esconde que a lacuna é só a " +
+            "publicação — uma ação de uma semana.",
+          artigo: "Metodologia Fase 4 (proporcionalidade)",
+        },
+      ],
+    },
+    {
+      id: "g-inventario",
+      secaoNumero: 3,
+      contexto:
+        "Controle: 'Inventário de dados atualizado nos últimos 12 meses.' Evidência: inventário completo dos processos prioritários, aprovado pelo DPO há 8 meses, com revisão anual agendada no calendário do Comitê.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — completo, aprovado e dentro da janela",
+          textoDoc:
+            "3. Inventário atualizado (12 meses): **ADERENTE** — aprovado pelo " +
+            "DPO há 8 meses; revisão anual agendada.",
+          correta: true,
+          porque:
+            "Evidência completa: existe, foi aprovado, está na janela e tem " +
+            "ciclo de revisão. É assim que um ADERENTE de verdade se parece — " +
+            "note como é mais raro do que parece.",
+          artigo: "Art. 37",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — só cobre os processos prioritários",
+          textoDoc: "3. Inventário atualizado (12 meses): PARCIAL.",
+          correta: false,
+          porque:
+            "Pegadinha do perfeccionismo: a metodologia MANDA começar pelos " +
+            "prioritários (Fase 2 existe pra isso). Cobertura por prioridade " +
+            "com ciclo de revisão é o padrão certo, não um déficit.",
+          artigo: "Metodologia Fases 2-3",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — inventário nunca está 'pronto'",
+          textoDoc: "3. Inventário atualizado (12 meses): NÃO ADERENTE.",
+          correta: false,
+          porque:
+            "Zelo filosófico que zera um trabalho real e evidenciado. O GAP " +
+            "mede o controle como definido — não o ideal platônico.",
+          artigo: "Critério do controle",
+        },
+      ],
+    },
+    {
+      id: "g-canal",
+      secaoNumero: 4,
+      contexto:
+        "Controle: 'Canal de direitos do titular divulgado e FUNCIONAL.' Evidência: o e-mail dpo@orgao.gov.br está publicado no portal — mas a caixa acumula 12 pedidos sem resposta; a última resposta enviada foi há 7 meses.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — o canal existe e está divulgado no portal",
+          textoDoc: "4. Canal DSR divulgado e funcional: ADERENTE.",
+          correta: false,
+          porque:
+            "Canal que não responde é fachada — pior que não ter, porque " +
+            "engana o titular. 'Existir' não é o controle; FUNCIONAR é.",
+          artigo: "Art. 18, §6º",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — divulgado sim, funcional não; meio a meio",
+          textoDoc: "4. Canal DSR divulgado e funcional: PARCIAL.",
+          correta: false,
+          porque:
+            "A metade que falta é o CORAÇÃO do controle. 12 titulares no vácuo " +
+            "há meses não é 'meio cumprido' — é o dever descumprido com " +
+            "vitrine bonita.",
+          artigo: "Art. 18 · Art. 19",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — canal de fachada; 12 titulares sem resposta",
+          textoDoc:
+            "4. Canal DSR divulgado e funcional: **NÃO ADERENTE** — caixa sem " +
+            "monitoramento, 12 pedidos pendentes. → Ação URGENTE na Fase 5 " +
+            "(inclui responder o passivo).",
+          correta: true,
+          porque:
+            "Quando a parte descumprida é a essência do controle, não há " +
+            "'parcial'. E este NÃO é urgente: cada pedido parado é uma " +
+            "reclamação a caminho da ANPD.",
+          artigo: "Art. 18, §6º · Art. 19",
+        },
+      ],
+    },
+    {
+      id: "g-contratos",
+      secaoNumero: 5,
+      contexto:
+        "Controle: 'Contratos com operadores contêm cláusulas de proteção de dados.' Evidência: dos 5 contratos vigentes, os 2 renovados este ano têm as cláusulas; os 3 antigos ainda não — há cronograma de aditamento aprovado.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — os contratos novos já saem certos",
+          textoDoc: "5. Cláusulas LGPD nos contratos: ADERENTE.",
+          correta: false,
+          porque:
+            "3 de 5 contratos seguem tratando dados sem salvaguarda — mais da " +
+            "metade da exposição continua aberta.",
+          artigo: "Art. 39",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — 2 de 5 com cláusulas + cronograma pros demais",
+          textoDoc:
+            "5. Cláusulas LGPD nos contratos: **PARCIAL** — 2/5 adequados; " +
+            "aditamento dos 3 restantes em cronograma aprovado. → Fase 5 " +
+            "acompanha o cronograma.",
+          correta: true,
+          porque:
+            "O retrato fiel: avanço real (2 contratos + processo novo corrigido " +
+            "na origem) com pendência mapeada e cronogramada. Parcial honesto " +
+            "orienta o plano.",
+          artigo: "Art. 39 · metodologia Fase 4",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — enquanto houver 1 contrato sem cláusula",
+          textoDoc: "5. Cláusulas LGPD nos contratos: NÃO ADERENTE.",
+          correta: false,
+          porque:
+            "Tudo-ou-nada desanima quem está no caminho certo e iguala quem " +
+            "fez 40% a quem fez zero. O GAP existe pra medir gradiente.",
+          artigo: "Metodologia Fase 4",
+        },
+      ],
+    },
+    {
+      id: "g-backup",
+      secaoNumero: 6,
+      contexto:
+        "Controle: 'Backups periódicos e TESTADOS.' Evidência: rotina diária automática configurada e monitorada — mas nunca foi feito um teste de restauração.",
+      pergunta: "Como classificar?",
+      opcoes: [
+        {
+          id: "aderente",
+          rotulo: "Aderente — backup diário rodando é o que importa",
+          textoDoc: "6. Backups periódicos e testados: ADERENTE.",
+          correta: false,
+          porque:
+            "Backup nunca testado é uma promessa, não um controle. O mundo " +
+            "está cheio de backups que 'rodavam perfeitamente' até o dia de " +
+            "restaurar.",
+          artigo: "Art. 46",
+        },
+        {
+          id: "parcial",
+          rotulo: "Parcial — a rotina existe e roda; falta o teste que prova",
+          textoDoc:
+            "6. Backups periódicos e testados: **PARCIAL** — rotina diária real " +
+            "e monitorada; teste de restauração nunca realizado. → Fase 5: " +
+            "agendar teste trimestral.",
+          correta: true,
+          porque:
+            "Metade sólida (rotina evidenciada) + metade pendente (o teste). " +
+            "Diferente do canal DSR: aqui a parte que falta complementa o " +
+            "controle — não é a essência dele sozinha.",
+          artigo: "Art. 46",
+        },
+        {
+          id: "nao",
+          rotulo: "Não aderente — sem teste, é como se não houvesse backup",
+          textoDoc: "6. Backups periódicos e testados: NÃO ADERENTE.",
+          correta: false,
+          porque:
+            "Exagero: a rotina diária monitorada é evidência real de proteção " +
+            "(imperfeita). Zerar não descreve a realidade — e o GAP é um " +
+            "retrato, não uma sentença.",
+          artigo: "Metodologia Fase 4",
+        },
+      ],
+    },
+  ],
+  esqueleto: [
+    { numero: 1, titulo: "Capacitação — equipe treinada (12 meses)", decisaoId: "g-treinamento" },
+    { numero: 2, titulo: "Governança — Encarregado com ato publicado", decisaoId: "g-dpo" },
+    { numero: 3, titulo: "Inventário — atualizado (12 meses)", decisaoId: "g-inventario" },
+    { numero: 4, titulo: "Direitos — canal DSR divulgado e funcional", decisaoId: "g-canal" },
+    { numero: 5, titulo: "Terceiros — cláusulas LGPD nos contratos", decisaoId: "g-contratos" },
+    { numero: 6, titulo: "Segurança — backups periódicos e testados", decisaoId: "g-backup" },
+    {
+      numero: 7,
+      titulo: "Leitura do resultado",
+      textoFixo:
+        "Placar honesto deste checklist: **1 Aderente · 3 Parciais · 2 Não " +
+        "aderentes**. E está ÓTIMO assim: o GAP não é prova final — é o mapa " +
+        "do trabalho. Cada NÃO e cada PARCIAL vira ação com dono e prazo na " +
+        "Fase 5. Score alto de mentira esconde o caminho; score baixo honesto " +
+        "o revela.",
+    },
+  ],
+  cacaErro: {
+    contexto:
+      "Uma secretaria de Vegas respondeu o GAP sozinha, 'pra ficar bem na " +
+      "foto'. Resultado: autoavaliação maquiada. Ache as 4 respostas infladas — " +
+      "e cuidado: resposta NEGATIVA honesta não é erro.",
+    instrucao: "Toque nas classificações ERRADAS (🚩) — as que a evidência não sustenta.",
+    secoes: [
+      {
+        numero: 1,
+        titulo: "Treinamento — 'ADERENTE'",
+        texto:
+          "\"Equipe treinada em LGPD: ADERENTE. A chefia assistiu a um webinar " +
+          "sobre o tema em 2019.\"",
+        erro: {
+          porque:
+            "Um webinar, uma pessoa, cinco anos atrás — três desqualificações " +
+            "na mesma evidência. Controle pede equipe treinada nos últimos 12 " +
+            "meses.",
+          artigo: "Evidência ≠ intenção",
+        },
+      },
+      {
+        numero: 2,
+        titulo: "Encarregado — 'ADERENTE'",
+        texto:
+          "\"Encarregado designado: ADERENTE. A função está prevista para ser " +
+          "criada no próximo concurso público.\"",
+        erro: {
+          porque:
+            "'Está previsto' é futuro; o GAP mede o presente. Não existe " +
+            "aderência por intenção — nem por edital que ainda não saiu.",
+          artigo: "Art. 41 (descumprido no presente)",
+        },
+      },
+      {
+        numero: 3,
+        titulo: "Ato do Encarregado — 'ADERENTE'",
+        texto:
+          "\"Ato de designação publicado: ADERENTE. Portaria nº 48/2026, " +
+          "publicada no Diário Oficial de 12/03/2026, com nome e contato da " +
+          "Encarregada.\"",
+        notaLimpa:
+          "Evidência concreta e verificável (número, data, diário) — ADERENTE " +
+          "de verdade tem cara de citação, não de promessa.",
+      },
+      {
+        numero: 4,
+        titulo: "Inventário — 'ADERENTE'",
+        texto:
+          "\"Inventário de dados: ADERENTE. Foi iniciado numa planilha em 2022; " +
+          "cerca de metade dos processos está preenchida.\"",
+        erro: {
+          porque:
+            "Metade preenchida, parado desde 2022, sem aprovação do DPO = no " +
+            "MÁXIMO parcial (e discutível). Chamar de aderente é maquiagem " +
+            "clássica.",
+          artigo: "Art. 37 (registro incompleto)",
+        },
+      },
+      {
+        numero: 5,
+        titulo: "Canal do titular — 'ADERENTE'",
+        texto:
+          "\"Canal de direitos do titular: ADERENTE. O telefone geral da " +
+          "prefeitura atende a população para todos os assuntos.\"",
+        erro: {
+          porque:
+            "Telefone geral não é canal de DSR: quem atende não sabe o que é " +
+            "um pedido de titular, não registra, não conta prazo. Canal " +
+            "genérico = pedido perdido.",
+          artigo: "Art. 18, §6º",
+        },
+      },
+      {
+        numero: 6,
+        titulo: "PRI — 'NÃO ADERENTE'",
+        texto:
+          "\"Plano de Resposta a Incidentes: NÃO ADERENTE. Ainda não temos; " +
+          "previsto no plano de ação para o próximo trimestre.\"",
+        notaLimpa:
+          "Se você marcou esta, caiu na pegadinha reversa: admitir a lacuna " +
+          "com plano de correção é o GAP funcionando — honestidade não é erro.",
+      },
+      {
+        numero: 7,
+        titulo: "Contratos — 'PARCIAL'",
+        texto:
+          "\"Cláusulas LGPD com operadores: PARCIAL. Presentes nos 2 contratos " +
+          "renovados em 2026; os 3 anteriores aguardam aditamento (cronograma " +
+          "aprovado).\"",
+        notaLimpa: "Gradiente descrito com números e plano — parcial honesto, correto.",
+      },
+      {
+        numero: 8,
+        titulo: "Backup — 'ADERENTE'",
+        texto:
+          "\"Backups periódicos e testados: ADERENTE. Rotina diária automática " +
+          "e teste de restauração mensal, com registro dos últimos 6 testes.\"",
+        notaLimpa:
+          "Rotina + teste + registro = evidência completa. É o padrão-ouro do " +
+          "controle de backup.",
+      },
+    ],
+  },
+};
+
 // -----------------------------------------------------------------------------
 // CATÁLOGO + HELPERS
 // -----------------------------------------------------------------------------
@@ -2788,6 +3960,9 @@ export const MONTADOR_DOCS: MontadorDoc[] = [
   CONSENTIMENTO,
   COOKIES,
   DSR,
+  INVENTARIO,
+  RISCO,
+  GAP,
 ];
 
 export function getMontadorDoc(id: string): MontadorDoc | undefined {

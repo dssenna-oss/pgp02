@@ -8,6 +8,7 @@ import { formatosDoDoc } from "@/lib/montador-docs";
 import { BlocosRunner } from "@/components/blocos-runner";
 import { CacaErroRunner } from "@/components/caca-erro-runner";
 import { OrdenarRunner } from "@/components/ordenar-runner";
+import { MatrizRunner } from "@/components/matriz-runner";
 
 export type AtividadeSlug = FormatoAtividade;
 
@@ -16,6 +17,7 @@ export const ATIVIDADES_DOC: { slug: AtividadeSlug; emoji: string; rotulo: strin
   { slug: "blocos", emoji: "🧩", rotulo: "Montar por blocos" },
   { slug: "erros", emoji: "🔍", rotulo: "Caça ao erro" },
   { slug: "ordem", emoji: "🔢", rotulo: "Ordenar as seções" },
+  { slug: "matriz", emoji: "🎲", rotulo: "Matriz de risco" },
 ];
 
 export function hrefAtividade(base: string, docId: string, slug: AtividadeSlug): string {
@@ -98,6 +100,7 @@ export function MontadorAtividade({
       {atividade === "blocos" && <BlocosRunner doc={doc} />}
       {atividade === "erros" && <CacaErroRunner doc={doc} />}
       {atividade === "ordem" && <OrdenarRunner doc={doc} />}
+      {atividade === "matriz" && <MatrizRunner doc={doc} />}
 
       <AtividadesDocLinks base={base} doc={doc} atual={atividade} />
     </>
