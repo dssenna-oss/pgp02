@@ -35,31 +35,45 @@ export default function MontadorHubPage() {
         </p>
       </header>
 
-      <ul className="space-y-4">
-        {MONTADOR_DOCS.filter((d) => d.disponivel).map((d) => (
-          <li key={d.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
-            <CapaDoc docId={d.id} className="mb-3 h-24 w-full rounded-lg object-cover" />
-            <div className="flex items-center gap-3">
-              <span className="text-2xl leading-none">{d.emoji}</span>
-              <div className="min-w-0 flex-1">
-                <h2 className="font-semibold text-gray-900">{d.titulo}</h2>
-                <p className="text-sm text-gray-500">{d.subtitulo}</p>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {atividadesDoDoc(d).map((a) => (
-                <Link
-                  key={a.slug || "montar"}
-                  href={hrefAtividade("/dashboard/montador", d.id, a.slug)}
-                  className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
-                >
-                  {a.emoji} {a.rotulo}
-                </Link>
+      {(() => {
+        const docs = MONTADOR_DOCS.filter((d) => d.disponivel);
+        const secoes = [
+          { titulo: "📄 Documentos da LGPD", itens: docs.filter((d) => d.grupo !== "praticas") },
+          { titulo: "🎯 Práticas das Fases 3 e 4", itens: docs.filter((d) => d.grupo === "praticas") },
+        ];
+        return secoes.map((s) => (
+          <div key={s.titulo}>
+            <h2 className="mb-3 mt-6 text-xs font-semibold uppercase tracking-wider text-gray-500 first:mt-0">
+              {s.titulo}
+            </h2>
+            <ul className="space-y-4">
+              {s.itens.map((d) => (
+                <li key={d.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white p-4">
+                  <CapaDoc docId={d.id} className="mb-3 h-24 w-full rounded-lg object-cover" />
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl leading-none">{d.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-gray-900">{d.titulo}</h3>
+                      <p className="text-sm text-gray-500">{d.subtitulo}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {atividadesDoDoc(d).map((a) => (
+                      <Link
+                        key={a.slug || "montar"}
+                        href={hrefAtividade("/dashboard/montador", d.id, a.slug)}
+                        className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-700"
+                      >
+                        {a.emoji} {a.rotulo}
+                      </Link>
+                    ))}
+                  </div>
+                </li>
               ))}
-            </div>
-          </li>
-        ))}
-      </ul>
+            </ul>
+          </div>
+        ));
+      })()}
 
       <p className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
         💡 Aqui você <strong>treina as decisões</strong>. A versão editável de
