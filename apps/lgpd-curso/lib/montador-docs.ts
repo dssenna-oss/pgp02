@@ -4004,3 +4004,31 @@ export function pontuar(
   }
   return { acertos, total: doc.decisoes.length };
 }
+
+// ── Modelo pronto ────────────────────────────────────────────────────────────
+// O documento-GABARITO: o texto completo com todas as cláusulas corretas e os
+// placeholders [entre colchetes]. É o "modelo pra levar" exibido no Saiba mais
+// — gerado do próprio catálogo, então sempre coerente com as atividades.
+//   · docs com wizard: esqueleto + a opção CORRETA de cada decisão;
+//   · docs só-blocos (Cláusulas, Cookies): as cartas que PERTENCEM, na ordem
+//     em que foram escritas (a ordem relativa do array é a lógica do documento).
+export function modeloPronto(doc: MontadorDoc): string {
+  if (doc.decisoes.length > 0) {
+    const corretas: Record<string, string> = {};
+    for (const d of doc.decisoes) {
+      const certa = d.opcoes.find((o) => o.correta);
+      if (certa) corretas[d.id] = certa.id;
+    }
+    return montarDocumento(doc, corretas);
+  }
+  if (doc.blocos) {
+    const linhas: string[] = [`# ${doc.titulo}`, ""];
+    doc.blocos.cartas
+      .filter((c) => c.pertence)
+      .forEach((c, i) => {
+        linhas.push(`**${i + 1}.** ${c.texto}`, "");
+      });
+    return linhas.join("\n");
+  }
+  return `# ${doc.titulo}`;
+}

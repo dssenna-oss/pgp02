@@ -5,8 +5,10 @@
 import Link from "next/link";
 import { BookOpen, Wrench, AlertTriangle, Scale, Target, ArrowRight } from "lucide-react";
 import type { MontadorDoc } from "@/lib/montador-docs";
-import { getSaibaMais } from "@/lib/montador-saiba-mais";
+import { modeloPronto } from "@/lib/montador-docs";
+import { getSaibaMais, MODELO_NO_PACOTE } from "@/lib/montador-saiba-mais";
 import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
+import { ModeloProntoBox } from "@/components/modelo-pronto-box";
 
 export function SaibaMaisView({ doc, base }: { doc: MontadorDoc; base: string }) {
   const sm = getSaibaMais(doc.id);
@@ -87,6 +89,9 @@ export function SaibaMaisView({ doc, base }: { doc: MontadorDoc; base: string })
           💡 {sm.dica}
         </p>
       )}
+
+      {/* 6 · Modelo pronto (gabarito) + Pacote oficial */}
+      <ModeloProntoBox md={modeloPronto(doc)} modeloNoPacote={MODELO_NO_PACOTE[doc.id]} />
 
       {/* Agora pratique → */}
       {atividades.length > 0 && (
