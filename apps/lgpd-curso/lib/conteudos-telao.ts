@@ -8,6 +8,8 @@
 // telão agora…"). null = conteúdo sem página própria pro participante (Fases
 // 3-7 vivem só em /facilitador/conteudo-fase) — o banner aparece sem botão.
 
+import { MODULOS_LGPD } from "@/lib/estrutura-lgpd";
+
 export type ConteudoTelao = {
   id: string;
   emoji: string;
@@ -46,6 +48,25 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
     hrefTelao: "/estrutura-lgpd/artigos-1-11.html",
     hrefAluno: "/dashboard/guia-art-1-11",
   },
+  // Mini app "A LGPD, artigo por artigo" (/lgpd) — os DEMAIS módulos da
+  // jornada, no mesmo padrão do guia-art-1-11: hrefTelao = HTML estático
+  // (projeta fullscreen) e hrefAluno = wrapper /dashboard/lgpd/<slug> (dentro
+  // do app; em Modo Cards o celular espelha e segue sozinho). O 1-11 fica de
+  // fora da lista (já coberto pelo guia-art-1-11 acima, usado no Momento 4).
+  ...MODULOS_LGPD.filter((m) => m.slug !== "artigos-1-11").map(
+    (m): ConteudoTelao => ({
+      id: `lgpd-${m.slug}`,
+      emoji: m.slug === "historico" ? "📜" : m.slug === "simulado-15-questoes" ? "🎯" : "📘",
+      titulo:
+        m.slug === "historico"
+          ? "Histórico — Como o mundo chegou à LGPD"
+          : m.slug === "simulado-15-questoes"
+            ? "Simulado LGPD — 15 questões"
+            : `LGPD — ${m.intervalo}: ${m.titulo}`,
+      hrefTelao: m.arquivo,
+      hrefAluno: `/dashboard/lgpd/${m.slug}`,
+    }),
+  ),
   ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
   ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
   // Documentos-modelo da Fase 1, projetáveis na sala (demonstração — dados de
@@ -70,7 +91,16 @@ export function getConteudoTelao(id: string): ConteudoTelao | null {
 // FORA do dropdown — cada uma já tem botão pronto em "Ação certa deste
 // momento" do Momento correspondente (M5-M12). O catálogo completo continua
 // valendo pros botões dos momentos e pro controle local do telão (plano B).
-const IDS_BIBLIOTECA = ["conteudos-didaticos", "entendendo-pgp", "historico-lgpd", "estrutura-lgpd"];
+// Os módulos do mini app /lgpd (guia 1-11 incluso) entram na biblioteca:
+// são os Fundamentos, projetáveis a qualquer momento.
+const IDS_BIBLIOTECA = [
+  "conteudos-didaticos",
+  "entendendo-pgp",
+  "historico-lgpd",
+  "estrutura-lgpd",
+  "guia-art-1-11",
+  ...MODULOS_LGPD.filter((m) => m.slug !== "artigos-1-11").map((m) => `lgpd-${m.slug}`),
+];
 export const CONTEUDOS_TELAO_BIBLIOTECA = CONTEUDOS_TELAO.filter((c) =>
   IDS_BIBLIOTECA.includes(c.id),
 );

@@ -53,6 +53,11 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // Montador Guiado de Documentos — individual, sem banco (nada depende de
   // companyId). ADMIN visualiza/projeta e testa no próprio aparelho.
   "/dashboard/montador",
+  // Módulos do mini app "A LGPD, artigo por artigo" embutidos no app — são o
+  // hrefAluno dos conteúdos lgpd-* do Telão Comandado (startsWith cobre os
+  // /dashboard/lgpd/<slug>). Sem isso o telão (sessão ADMIN) seria
+  // redirecionado ao projetar.
+  "/dashboard/lgpd",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {
