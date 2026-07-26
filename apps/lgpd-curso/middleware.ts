@@ -58,6 +58,9 @@ const ADMIN_DASHBOARD_PERMITIDO = [
   // /dashboard/lgpd/<slug>). Sem isso o telão (sessão ADMIN) seria
   // redirecionado ao projetar.
   "/dashboard/lgpd",
+  // Mini app do Pacote de Modelos embutido no app (hrefAluno do conteúdo
+  // "pacote-modelos" do Telão Comandado; startsWith cobre /dashboard/modelos/<slug>).
+  "/dashboard/modelos",
 ];
 
 function adminPodeAcessarDashboard(pathname: string): boolean {

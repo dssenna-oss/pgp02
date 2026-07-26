@@ -67,6 +67,16 @@ export const CONTEUDOS_TELAO: ConteudoTelao[] = [
       hrefAluno: `/dashboard/lgpd/${m.slug}`,
     }),
   ),
+  // Mini app do Pacote de Modelos (/modelos) — o hub projeta no telão (os 21
+  // navegáveis por clique dentro do próprio iframe); no celular logado em Modo
+  // Cards, espelha pro hub embutido no app.
+  {
+    id: "pacote-modelos",
+    emoji: "📦",
+    titulo: "Pacote de Modelos (21 modelos)",
+    hrefTelao: "/modelos",
+    hrefAluno: "/dashboard/modelos",
+  },
   ambos("fase-preliminar", "🚩", "Fase Preliminar", "/dashboard/fase-preliminar"),
   ambos("fase-1", "🚩", "Fase 1 — Formação das equipes", "/dashboard/fase-1"),
   // Documentos-modelo da Fase 1, projetáveis na sala (demonstração — dados de
@@ -100,6 +110,7 @@ const IDS_BIBLIOTECA = [
   "estrutura-lgpd",
   "guia-art-1-11",
   ...MODULOS_LGPD.filter((m) => m.slug !== "artigos-1-11").map((m) => `lgpd-${m.slug}`),
+  "pacote-modelos",
 ];
 export const CONTEUDOS_TELAO_BIBLIOTECA = CONTEUDOS_TELAO.filter((c) =>
   IDS_BIBLIOTECA.includes(c.id),
