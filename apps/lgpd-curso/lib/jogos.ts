@@ -19,6 +19,8 @@ export type JogoMeta = {
   emoji: string;
   titulo: string;
   subtitulo: string;
+  // Momento do curso em que o jogo entra (chip nos cartões e páginas).
+  fase: string;
 };
 
 // Ordem = a sequência didática do curso (aprovada pelo facilitador):
@@ -29,30 +31,35 @@ export const JOGOS: JogoMeta[] = [
     emoji: "🕵️",
     titulo: "Detetive na Repartição",
     subtitulo: "Ache os vazamentos escondidos na cena",
+    fase: "Abertura",
   },
   {
     id: "pares",
     emoji: "🔗",
     titulo: "Ligue os Pares",
     subtitulo: "Cenário ↔ base legal · dado ↔ categoria · quem é quem",
+    fase: "Fundamentos · Dia 1",
   },
   {
     id: "sprint",
     emoji: "⚡",
     titulo: "Sprint 60 segundos",
     subtitulo: "Sensível ou comum? Contra o relógio",
+    fase: "Fundamentos · Dia 1",
   },
   {
     id: "chat-titular",
     emoji: "💬",
     titulo: "Chat do Titular",
     subtitulo: "Acalme a Dona Marta e atenda direito",
+    fase: "Fase 6",
   },
   {
     id: "dia-d",
     emoji: "🚒",
     titulo: "Dia D — O Vazamento",
     subtitulo: "7 decisões com o relógio da ANPD correndo",
+    fase: "Fase 7",
   },
 ];
 

@@ -110,6 +110,9 @@ export type MontadorDoc = {
   intro: string;
   // "documentos" (default) ou "praticas" (Fases 3-4) — agrupa o hub em seções.
   grupo?: "documentos" | "praticas";
+  // Rótulo curto da fase da jornada em que o instrumento entra em campo
+  // ("Fase 3"…"Fase 7") — vira o chip nos cartões e páginas.
+  fase?: string;
   esqueleto: SecaoEsqueleto[];
   decisoes: Decisao[]; // vazio = documento sem o formato "montar decidindo"
   disponivel: boolean; // false = aparece no hub como "em breve"
@@ -355,6 +358,7 @@ const AVISO: MontadorDoc = {
   emoji: "📄",
   titulo: "Aviso de Privacidade",
   subtitulo: "A síntese pública que o cidadão lê",
+  fase: "Fase 6",
   intro:
     "Você vai montar o Aviso de Privacidade da instituição decidindo cada seção " +
     "importante. Em cada tela, escolha a opção correta — cuidado com as pegadinhas " +
@@ -924,6 +928,7 @@ const POLITICA: MontadorDoc = {
   emoji: "🛡️",
   titulo: "Política de Proteção de Dados",
   subtitulo: "As regras internas pro servidor seguir",
+  fase: "Fase 6",
   intro:
     "Agora o documento é INTERNO: as regras que valem pra todo servidor da " +
     "instituição. Em cada tela, escolha a regra certa — as pegadinhas aqui são " +
@@ -1254,6 +1259,7 @@ const RIPD: MontadorDoc = {
   emoji: "📋",
   titulo: "RIPD — Relatório de Impacto",
   subtitulo: "O documento que a ANPD pede no alto risco",
+  fase: "Fase 6",
   intro:
     "Quando o tratamento é de ALTO RISCO (lembra da regra 1+1? um critério " +
     "geral + um específico), nasce a obrigação de fazer o RIPD — sem esperar a " +
@@ -1588,6 +1594,7 @@ const PRI: MontadorDoc = {
   emoji: "🚨",
   titulo: "PRI — Plano de Resposta a Incidentes",
   subtitulo: "O plano pro dia em que dá errado",
+  fase: "Fase 7",
   intro:
     "Incidente com dados pessoais não é 'se' — é 'quando'. O PRI é o plano que " +
     "a instituição segue no dia do caos: quem faz o quê, em que ordem, e os " +
@@ -1834,6 +1841,7 @@ const CLAUSULAS: MontadorDoc = {
   emoji: "🤝",
   titulo: "Cláusulas LGPD com Operadores",
   subtitulo: "O contrato com quem trata dados em seu nome",
+  fase: "Fase 6",
   intro: "",
   disponivel: true,
   decisoes: [],
@@ -2059,6 +2067,7 @@ const CONSENTIMENTO: MontadorDoc = {
   emoji: "✍️",
   titulo: "Termo de Consentimento",
   subtitulo: "Quando (e como) pedir o sim do titular",
+  fase: "Fase 6",
   intro:
     "O documento mais usado ERRADO do Brasil. No setor público, consentimento " +
     "é a exceção — a maior lição deste termo é saber QUANDO ele cabe. E quando " +
@@ -2362,6 +2371,7 @@ const COOKIES: MontadorDoc = {
   emoji: "🍪",
   titulo: "Política de Cookies",
   subtitulo: "O aviso do portal sobre rastreamento",
+  fase: "Fase 6",
   intro: "",
   disponivel: true,
   decisoes: [],
@@ -2587,6 +2597,7 @@ const DSR: MontadorDoc = {
   emoji: "📨",
   titulo: "Resposta ao Titular (DSR)",
   subtitulo: "A carta-resposta a quem pede seus dados",
+  fase: "Fase 6",
   intro:
     "Um cidadão escreveu: 'quero saber quais dados vocês têm sobre mim'. A " +
     "resposta a esse pedido é um documento — com prazo, forma e pegadinhas " +
@@ -2817,6 +2828,7 @@ const INVENTARIO: MontadorDoc = {
   titulo: "Ficha de Inventário (ROPA)",
   subtitulo: "Mapear um processo, campo a campo",
   grupo: "praticas",
+  fase: "Fase 3",
   intro:
     "O Inventário (ROPA, art. 37) é a fundação de tudo — e cada campo tem sua " +
     "pegadinha. Monte a ficha do Posto de Saúde de Vegas decidindo os campos " +
@@ -3261,6 +3273,7 @@ const RISCO: MontadorDoc = {
   titulo: "Ficha de Análise de Risco",
   subtitulo: "Do risco abstrato ao concreto — com a matriz 3×3",
   grupo: "praticas",
+  fase: "Fase 3",
   intro:
     "Risco de verdade tem nome, cenário e severidade. Monte a ficha de UM " +
     "risco do Posto de Saúde — o famoso caso do pendrive — decidindo cada " +
@@ -3552,6 +3565,7 @@ const GAP: MontadorDoc = {
   titulo: "Checklist GAP",
   subtitulo: "Aderente, parcial ou não? Evidência manda",
   grupo: "praticas",
+  fase: "Fase 4",
   intro:
     "No GAP você é o avaliador: leia a EVIDÊNCIA de cada controle e classifique " +
     "— Aderente, Parcial ou Não aderente. A regra de ouro: intenção não " +
@@ -3948,6 +3962,27 @@ const GAP: MontadorDoc = {
 };
 
 // -----------------------------------------------------------------------------
+// PLANO DE AÇÃO (Fase 5) — ILUSTRATIVO: só Saiba mais + modelo exemplo
+// -----------------------------------------------------------------------------
+// Sem atividades por decisão pedagógica (o simulador completo está na fila).
+// O valor está no Saiba mais: o modelo exemplo é um plano REAL derivado dos
+// achados que o participante viu nas práticas F3-F4 (GAP, risco do pendrive,
+// base legal do Posto) — o ciclo diagnóstico → ação fechando na frente dele.
+
+const PLANO: MontadorDoc = {
+  id: "plano-acao",
+  emoji: "🗺️",
+  titulo: "Plano de Ação (exemplo)",
+  subtitulo: "Do diagnóstico à ação — ilustrativo",
+  grupo: "praticas",
+  fase: "Fase 5",
+  intro: "",
+  disponivel: true,
+  decisoes: [],
+  esqueleto: [],
+};
+
+// -----------------------------------------------------------------------------
 // CATÁLOGO + HELPERS
 // -----------------------------------------------------------------------------
 
@@ -3963,6 +3998,7 @@ export const MONTADOR_DOCS: MontadorDoc[] = [
   INVENTARIO,
   RISCO,
   GAP,
+  PLANO,
 ];
 
 export function getMontadorDoc(id: string): MontadorDoc | undefined {

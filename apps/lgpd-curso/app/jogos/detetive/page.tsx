@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { JogoDetetive } from "@/components/jogo-detetive";
+import { getJogo } from "@/lib/jogos";
 
 export default function DetetivePage() {
+  const jogo = getJogo("detetive")!;
   return (
     <div className="pagina-embed min-h-screen bg-gray-50 px-4 py-6">
       <div className="mx-auto max-w-2xl">
@@ -12,7 +14,12 @@ export default function DetetivePage() {
           <ArrowLeft className="h-4 w-4" /> Todos os jogos
         </Link>
         <header className="mb-5">
-          <h1 className="text-2xl font-bold text-gray-900">🕵️ Detetive na Repartição</h1>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-gray-900">
+            🕵️ Detetive na Repartição
+            <span className="inline-flex shrink-0 items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+              {jogo.fase}
+            </span>
+          </h1>
           <p className="mt-2 text-gray-600 leading-relaxed">
             O vazamento nem sempre é hacker — às vezes é o post-it. Investigue a
             cena e toque em cada dado exposto que encontrar.

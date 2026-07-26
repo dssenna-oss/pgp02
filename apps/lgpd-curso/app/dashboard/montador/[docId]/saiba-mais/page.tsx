@@ -7,6 +7,7 @@ import { AdminPreviewBanner } from "@/components/admin-preview-banner";
 import { getMontadorDoc } from "@/lib/montador-docs";
 import { getSaibaMais } from "@/lib/montador-saiba-mais";
 import { SaibaMaisView } from "@/components/saiba-mais-view";
+import { FaseChip } from "@/components/montador-atividade";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +25,8 @@ export default function SaibaMaisDashboardPage({ params }: { params: { docId: st
       </Link>
       <header className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">📖 Saiba mais</p>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">
-          {doc.emoji} {doc.titulo}
+        <h1 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-bold text-gray-900">
+          {doc.emoji} {doc.titulo} <FaseChip fase={doc.fase} />
         </h1>
         <p className="mt-1 text-sm text-gray-500">{doc.subtitulo}</p>
       </header>

@@ -90,8 +90,11 @@ export function SaibaMaisView({ doc, base }: { doc: MontadorDoc; base: string })
         </p>
       )}
 
-      {/* 6 · Modelo pronto (gabarito) + Pacote oficial */}
-      <ModeloProntoBox md={modeloPronto(doc)} modeloNoPacote={MODELO_NO_PACOTE[doc.id]} />
+      {/* 6 · Modelo pronto (gabarito — ou custom, quando não há atividades) */}
+      <ModeloProntoBox
+        md={sm.modeloProntoCustom ?? modeloPronto(doc)}
+        modeloNoPacote={MODELO_NO_PACOTE[doc.id]}
+      />
 
       {/* Agora pratique → */}
       {atividades.length > 0 && (

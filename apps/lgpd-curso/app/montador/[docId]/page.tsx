@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getMontadorDoc } from "@/lib/montador-docs";
 import { MontadorRunner } from "@/components/montador-runner";
-import { AtividadesDocLinks, CapaDoc } from "@/components/montador-atividade";
+import { AtividadesDocLinks, CapaDoc, FaseChip } from "@/components/montador-atividade";
 
 export default function MontadorPublicoDocPage({
   params,
@@ -31,8 +31,8 @@ export default function MontadorPublicoDocPage({
         <CapaDoc docId={doc.id} />
 
         <header className="mb-5">
-          <h1 className="text-2xl font-bold text-gray-900">
-            {doc.emoji} {doc.titulo}
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-gray-900">
+            {doc.emoji} {doc.titulo} <FaseChip fase={doc.fase} />
           </h1>
           <p className="mt-2 text-gray-600 leading-relaxed">{doc.intro}</p>
         </header>
