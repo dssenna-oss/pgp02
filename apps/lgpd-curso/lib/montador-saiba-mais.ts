@@ -443,40 +443,8 @@ SAIBA_MAIS["plano-acao"] = {
   dica:
     "Teste do plano vivo: se o Comitê não falou dele na última reunião, ele " +
     "já está virando gaveta.",
-  modeloProntoCustom: [
-    "# Plano de Ação — [NOME DA INSTITUIÇÃO]",
-    "",
-    "_Exemplo ilustrativo — as 7 ações abaixo nascem EXATAMENTE dos achados " +
-      "das práticas das Fases 3 e 4 deste curso (inventário do Posto, risco do " +
-      "pendrive e checklist GAP). Compare com o que você encontrou lá._",
-    "",
-    "## Ação 1 — Reativar o canal de direitos do titular (URGENTE)",
-    "**Origem:** GAP — canal DSR de fachada (12 pedidos sem resposta). **O quê:** designar responsável pela caixa, responder o passivo e definir rotina diária. **Dono:** [nome], Gabinete. **Prazo:** 15 dias. **Indicador:** zero pedidos sem resposta há mais de 15 dias úteis.",
-    "",
-    "## Ação 2 — Publicar o ato de designação do Encarregado (vitória rápida)",
-    "**Origem:** GAP — função exercida sem formalização. **O quê:** publicar a portaria no Diário Oficial com identidade e contato. **Dono:** [nome], Secretaria de Governo. **Prazo:** 1 semana. **Indicador:** portaria publicada (nº e data).",
-    "",
-    "## Ação 3 — Eliminar o transporte de exames em pendrive",
-    "**Origem:** Análise de Riscos — risco ALTO (P média × I alto = 6). **O quê:** implantar envio criptografado entre unidades; no interim, pendrive criptografado com termo de custódia. **Dono:** [nome], TI. **Prazo:** 60 dias. **Indicador:** zero mídias físicas no fluxo de exames.",
-    "",
-    "## Ação 4 — Corrigir a base legal do processo do Posto no inventário",
-    "**Origem:** Inventário — ficha registrava 'consentimento' pra serviço essencial. **O quê:** ajustar pra tutela da saúde (art. 11, II, 'a') e políticas públicas (art. 7º, III), com revisão do DPO. **Dono:** [nome], Secretaria de Saúde + Encarregado. **Prazo:** 2 semanas. **Indicador:** ficha reaprovada pelo DPO.",
-    "",
-    "## Ação 5 — Capacitar a equipe em LGPD",
-    "**Origem:** GAP — última capacitação em 2023 (fora da janela de 12 meses). **O quê:** treinamento com lista de presença e avaliação, priorizando as áreas de dados sensíveis. **Dono:** [nome], Escola de Governo/RH. **Prazo:** 90 dias. **Indicador:** ≥80% do quadro treinado, com registro.",
-    "",
-    "## Ação 6 — Aditar os 3 contratos sem cláusulas LGPD",
-    "**Origem:** GAP — 2 de 5 contratos adequados; 3 pendentes. **O quê:** executar o cronograma de aditamento com as cláusulas do Modelo 08. **Dono:** [nome], Procuradoria. **Prazo:** conforme cronograma (até 120 dias). **Indicador:** 5 de 5 contratos com cláusulas vigentes.",
-    "",
-    "## Ação 7 — Testar a restauração do backup",
-    "**Origem:** GAP — rotina diária sem teste de restauração. **O quê:** teste trimestral documentado, com simulação de perda. **Dono:** [nome], TI. **Prazo:** 30 dias (1º teste). **Indicador:** relatório trimestral de restauração bem-sucedida.",
-    "",
-    "## Leitura do plano",
-    "Repare: **cada NÃO do GAP e cada risco ALTO virou exatamente uma linha " +
-      "deste plano** — com verbo, dono, prazo e indicador. É assim que o " +
-      "diagnóstico sai da gaveta. Na próxima reunião do Comitê, a primeira " +
-      "pauta é o status destas 7 linhas.",
-  ].join("\n"),
+  // O modelo-exemplo deste (e dos demais) vive em lib/modelos-vegas.ts —
+  // documentos preenchidos da Prefeitura de Vegas, com prioridade no render.
 };
 
 export function getSaibaMais(id: string): SaibaMais | undefined {

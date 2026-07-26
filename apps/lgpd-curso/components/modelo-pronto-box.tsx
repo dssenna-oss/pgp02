@@ -45,17 +45,18 @@ export function ModeloProntoBox({
   return (
     <section className="rounded-2xl border border-green-200 bg-green-50 p-5">
       <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-green-800">
-        📄 Modelo pronto pra levar
+        📄 Exemplo pronto — Prefeitura de Vegas
       </h2>
       <p className="mt-1 text-sm text-gray-700">
-        O documento completo com as cláusulas corretas — é o gabarito das
-        atividades. Troque os campos <strong>[entre colchetes]</strong> pelos
-        dados da sua instituição.
+        Veja <strong>como o documento fica de verdade</strong>: o exemplo
+        completo e preenchido da Prefeitura de Vegas (a cidade fictícia do
+        curso), com nomes, datas e prazos. Use como referência e adapte à sua
+        instituição.
       </p>
 
       <details className="mt-3 rounded-xl border border-green-200 bg-white">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-green-800">
-          Ver o modelo completo
+          Ver o exemplo completo
         </summary>
         <div className="space-y-1.5 border-t border-green-100 px-4 py-3 text-sm leading-relaxed">
           {md.split("\n").map((linha, i) => {
@@ -100,17 +101,22 @@ export function ModeloProntoBox({
         </button>
       </div>
 
+      <p className="mt-2 text-[11px] leading-snug text-gray-500">
+        Exemplo fictício e simplificado, para fins didáticos — adapte ao
+        contexto e às normas da sua instituição.
+      </p>
+
       <p className="mt-3 border-t border-green-200 pt-3 text-sm text-gray-700">
         📦 {modeloNoPacote ? (
           <>
-            No <strong>Pacote de Modelos</strong> oficial, este é o{" "}
-            <strong>{modeloNoPacote}</strong> — junto de mais 20 modelos
-            diagramados, prontos pra editar:
+            Pra editar a partir do zero: no <strong>Pacote de Modelos</strong>{" "}
+            oficial, este é o <strong>{modeloNoPacote}</strong> — junto de mais
+            20 modelos em branco, prontos pra preencher:
           </>
         ) : (
           <>
-            Quer mais? O <strong>Pacote de Modelos</strong> oficial traz 21
-            modelos diagramados, prontos pra editar:
+            Pra editar a partir do zero: o <strong>Pacote de Modelos</strong>{" "}
+            oficial traz 21 modelos em branco, prontos pra preencher:
           </>
         )}{" "}
         <a

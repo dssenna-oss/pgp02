@@ -7,6 +7,7 @@ import { BookOpen, Wrench, AlertTriangle, Scale, Target, ArrowRight } from "luci
 import type { MontadorDoc } from "@/lib/montador-docs";
 import { modeloPronto } from "@/lib/montador-docs";
 import { getSaibaMais, MODELO_NO_PACOTE } from "@/lib/montador-saiba-mais";
+import { getModeloVegas } from "@/lib/modelos-vegas";
 import { atividadesDoDoc, hrefAtividade } from "@/components/montador-atividade";
 import { ModeloProntoBox } from "@/components/modelo-pronto-box";
 
@@ -90,9 +91,10 @@ export function SaibaMaisView({ doc, base }: { doc: MontadorDoc; base: string })
         </p>
       )}
 
-      {/* 6 · Modelo pronto (gabarito — ou custom, quando não há atividades) */}
+      {/* 6 · Modelo-exemplo da Prefeitura de Vegas (documento preenchido de
+          verdade). Fallbacks: custom do guia → gabarito auto-gerado. */}
       <ModeloProntoBox
-        md={sm.modeloProntoCustom ?? modeloPronto(doc)}
+        md={getModeloVegas(doc.id) ?? sm.modeloProntoCustom ?? modeloPronto(doc)}
         modeloNoPacote={MODELO_NO_PACOTE[doc.id]}
       />
 
