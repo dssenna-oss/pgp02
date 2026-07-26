@@ -3986,15 +3986,19 @@ const PLANO: MontadorDoc = {
 // CATÁLOGO + HELPERS
 // -----------------------------------------------------------------------------
 
+// Ordem dos DOCUMENTOS = lógica de dependência da Fase 6 (cadeia da Missão 4:
+// "o Aviso é alimentado pelas fichas — transparência só vale se o prometido
+// existe"): arruma a casa → amarra terceiros → estrutura a relação com o
+// titular → então DECLARA ao público → e fecha com o plano de crise (F7).
 export const MONTADOR_DOCS: MontadorDoc[] = [
-  AVISO,
   POLITICA,
   RIPD,
-  PRI,
   CLAUSULAS,
-  CONSENTIMENTO,
-  COOKIES,
   DSR,
+  CONSENTIMENTO,
+  AVISO,
+  COOKIES,
+  PRI,
   INVENTARIO,
   RISCO,
   GAP,
