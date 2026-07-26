@@ -10,6 +10,12 @@ import { useEffect, useState } from "react";
 
 const CHAVE = "voltar-apresentacao";
 
+// Apresentação da turma ATUAL: a barra aparece SEMPRE nas páginas públicas,
+// mesmo pra quem digitou a URL curta na mão (sem ?voltar=). O parâmetro,
+// quando presente, tem prioridade — e serve pra apontar outra apresentação.
+// ⚠️ Trocar a cada turma (ou esvaziar "" pra barra só aparecer com ?voltar=).
+const APRESENTACAO_PADRAO = "https://ahaslides.com/CVHY9";
+
 function urlPermitida(valor: string): string | null {
   try {
     const u = new URL(valor);
@@ -31,7 +37,10 @@ export function VoltarAhaSlides() {
       const param = new URLSearchParams(window.location.search).get("voltar");
       const daUrl = param ? urlPermitida(param) : null;
       if (daUrl) sessionStorage.setItem(CHAVE, daUrl);
-      const salvo = daUrl ?? urlPermitida(sessionStorage.getItem(CHAVE) ?? "");
+      const salvo =
+        daUrl ??
+        urlPermitida(sessionStorage.getItem(CHAVE) ?? "") ??
+        urlPermitida(APRESENTACAO_PADRAO);
       if (salvo) setDestino(salvo);
     } catch {
       /* sessionStorage indisponível — segue sem a barra */
