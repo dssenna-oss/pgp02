@@ -19,6 +19,9 @@ export type SaibaMais = {
   errosComuns: string[];
   baseLegal: RefLegal[];
   dica?: string;
+  // Substitui o modelo auto-gerado do gabarito (modeloPronto) quando o
+  // documento não tem atividades pra derivar — ex.: o Plano de Ação exemplo.
+  modeloProntoCustom?: string;
 };
 
 export const SAIBA_MAIS: Record<string, SaibaMais> = {
@@ -402,6 +405,80 @@ export const SAIBA_MAIS: Record<string, SaibaMais> = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// PLANO DE AÇÃO (Fase 5) — guia + modelo exemplo derivado das práticas F3-F4
+SAIBA_MAIS["plano-acao"] = {
+  oQueE:
+    "É o documento que transforma o diagnóstico em TRABALHO: cada lacuna do " +
+    "GAP, cada risco alto e cada pendência do inventário vira uma ação com " +
+    "dono, prazo e indicador. Sem ele, o diagnóstico é só um retrato triste " +
+    "na gaveta.",
+  quandoQuem:
+    "Nasce logo depois das Fases 3 e 4 (inventário, riscos e GAP prontos). O " +
+    "Encarregado consolida, o Comitê prioriza e a alta gestão aprova — porque " +
+    "ação sem patrocínio é desejo. É documento VIVO: revisado a cada reunião " +
+    "do Comitê, não emoldurado.",
+  comoConstruir: [
+    { titulo: "Importar do diagnóstico", texto: "Cada GAP não-aderente/parcial, cada risco ALTO e cada pendência do inventário entra como candidata a ação — nada nasce de palpite." },
+    { titulo: "Escrever a ação com verbo", texto: "'Contratar', 'publicar', 'corrigir', 'implantar' — ação sem verbo concreto é intenção." },
+    { titulo: "Dar um dono com nome", texto: "'A TI' e 'todos' não entregam nada. Dono é pessoa nomeada." },
+    { titulo: "Definir prazo e indicador", texto: "Quando termina e COMO se prova que terminou (a evidência de conclusão)." },
+    { titulo: "Priorizar", texto: "Urgência legal e risco alto primeiro; vitórias rápidas junto (moral importa); o estrutural em cronograma." },
+    { titulo: "Acompanhar", texto: "Status revisado em cada reunião do Comitê — plano vivo, não relatório." },
+  ],
+  errosComuns: [
+    "Plano de gaveta: aprovado com pompa, nunca mais aberto.",
+    "Ação vaga ('melhorar a cultura de proteção de dados') sem verbo, dono nem indicador.",
+    "Responsável coletivo ('todos os setores') — órfã desde o batismo.",
+    "Tudo com o mesmo prazo ('dezembro') — sinal de que ninguém planejou de verdade.",
+    "Ação-fantasma sem origem no diagnóstico (o firewall que o vendedor ofereceu com desconto).",
+    "Não voltar ao GAP depois: o plano executa e o score nunca é remedido.",
+  ],
+  baseLegal: [
+    { ref: "Art. 50", oque: "Programa de governança: o plano é a engrenagem que o move." },
+    { ref: "Art. 6º, X", oque: "Responsabilização e prestação de contas — demonstrar as medidas adotadas." },
+    { ref: "Art. 46", oque: "As medidas de segurança que o plano implanta." },
+    { ref: "Art. 5º, XIX e art. 41", oque: "O Encarregado como articulador das providências." },
+  ],
+  dica:
+    "Teste do plano vivo: se o Comitê não falou dele na última reunião, ele " +
+    "já está virando gaveta.",
+  modeloProntoCustom: [
+    "# Plano de Ação — [NOME DA INSTITUIÇÃO]",
+    "",
+    "_Exemplo ilustrativo — as 7 ações abaixo nascem EXATAMENTE dos achados " +
+      "das práticas das Fases 3 e 4 deste curso (inventário do Posto, risco do " +
+      "pendrive e checklist GAP). Compare com o que você encontrou lá._",
+    "",
+    "## Ação 1 — Reativar o canal de direitos do titular (URGENTE)",
+    "**Origem:** GAP — canal DSR de fachada (12 pedidos sem resposta). **O quê:** designar responsável pela caixa, responder o passivo e definir rotina diária. **Dono:** [nome], Gabinete. **Prazo:** 15 dias. **Indicador:** zero pedidos sem resposta há mais de 15 dias úteis.",
+    "",
+    "## Ação 2 — Publicar o ato de designação do Encarregado (vitória rápida)",
+    "**Origem:** GAP — função exercida sem formalização. **O quê:** publicar a portaria no Diário Oficial com identidade e contato. **Dono:** [nome], Secretaria de Governo. **Prazo:** 1 semana. **Indicador:** portaria publicada (nº e data).",
+    "",
+    "## Ação 3 — Eliminar o transporte de exames em pendrive",
+    "**Origem:** Análise de Riscos — risco ALTO (P média × I alto = 6). **O quê:** implantar envio criptografado entre unidades; no interim, pendrive criptografado com termo de custódia. **Dono:** [nome], TI. **Prazo:** 60 dias. **Indicador:** zero mídias físicas no fluxo de exames.",
+    "",
+    "## Ação 4 — Corrigir a base legal do processo do Posto no inventário",
+    "**Origem:** Inventário — ficha registrava 'consentimento' pra serviço essencial. **O quê:** ajustar pra tutela da saúde (art. 11, II, 'a') e políticas públicas (art. 7º, III), com revisão do DPO. **Dono:** [nome], Secretaria de Saúde + Encarregado. **Prazo:** 2 semanas. **Indicador:** ficha reaprovada pelo DPO.",
+    "",
+    "## Ação 5 — Capacitar a equipe em LGPD",
+    "**Origem:** GAP — última capacitação em 2023 (fora da janela de 12 meses). **O quê:** treinamento com lista de presença e avaliação, priorizando as áreas de dados sensíveis. **Dono:** [nome], Escola de Governo/RH. **Prazo:** 90 dias. **Indicador:** ≥80% do quadro treinado, com registro.",
+    "",
+    "## Ação 6 — Aditar os 3 contratos sem cláusulas LGPD",
+    "**Origem:** GAP — 2 de 5 contratos adequados; 3 pendentes. **O quê:** executar o cronograma de aditamento com as cláusulas do Modelo 08. **Dono:** [nome], Procuradoria. **Prazo:** conforme cronograma (até 120 dias). **Indicador:** 5 de 5 contratos com cláusulas vigentes.",
+    "",
+    "## Ação 7 — Testar a restauração do backup",
+    "**Origem:** GAP — rotina diária sem teste de restauração. **O quê:** teste trimestral documentado, com simulação de perda. **Dono:** [nome], TI. **Prazo:** 30 dias (1º teste). **Indicador:** relatório trimestral de restauração bem-sucedida.",
+    "",
+    "## Leitura do plano",
+    "Repare: **cada NÃO do GAP e cada risco ALTO virou exatamente uma linha " +
+      "deste plano** — com verbo, dono, prazo e indicador. É assim que o " +
+      "diagnóstico sai da gaveta. Na próxima reunião do Comitê, a primeira " +
+      "pauta é o status destas 7 linhas.",
+  ].join("\n"),
+};
+
 export function getSaibaMais(id: string): SaibaMais | undefined {
   return SAIBA_MAIS[id];
 }
@@ -417,6 +494,7 @@ export const MODELO_NO_PACOTE: Record<string, string> = {
   "clausulas-operadores": "Modelo 08 — Cláusulas LGPD pra contratos",
   "termo-consentimento": "Modelo 10 — Termo de Consentimento do Titular",
   "resposta-titular": "Modelo 21 — Registro de Solicitação DSR",
+  "plano-acao": "Modelo 18 — Plano de Ação",
   "inventario-ropa": "Modelo 15 — Ficha de Processo (Inventário)",
   "analise-risco": "Modelo 16 — Ficha de Risco com matriz P × I",
   "checklist-gap": "Modelo 17 — GAP — Planilha de Avaliação de Controles",

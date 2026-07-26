@@ -72,6 +72,17 @@ export function AtividadesDocLinks({
   );
 }
 
+// Chip da fase da jornada ("Fase 3"… "Fase 7") — contexto em qualquer porta
+// de entrada, inclusive no embed.
+export function FaseChip({ fase }: { fase?: string }) {
+  if (!fase) return null;
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+      {fase}
+    </span>
+  );
+}
+
 // Capa do documento (imagens em public/montador-capas/<docId>.webp).
 export function CapaDoc({ docId, className }: { docId: string; className?: string }) {
   return (
@@ -99,8 +110,9 @@ export function MontadorAtividade({
     <>
       <CapaDoc docId={doc.id} />
       <header className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">
-          {doc.emoji} {doc.titulo}
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-600">
+          <span>{doc.emoji} {doc.titulo}</span>
+          <FaseChip fase={doc.fase} />
         </p>
         <h1 className="mt-1 text-2xl font-bold text-gray-900">
           {meta.emoji} {meta.rotulo}

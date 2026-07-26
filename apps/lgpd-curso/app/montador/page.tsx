@@ -8,7 +8,7 @@ import Link from "next/link";
 import { FileStack, BookOpen } from "lucide-react";
 import { MONTADOR_DOCS, type MontadorDoc } from "@/lib/montador-docs";
 import { getSaibaMais } from "@/lib/montador-saiba-mais";
-import { atividadesDoDoc, hrefAtividade, CapaDoc } from "@/components/montador-atividade";
+import { atividadesDoDoc, hrefAtividade, CapaDoc, FaseChip } from "@/components/montador-atividade";
 
 function CardDoc({ d, base }: { d: MontadorDoc; base: string }) {
   return (
@@ -17,7 +17,9 @@ function CardDoc({ d, base }: { d: MontadorDoc; base: string }) {
       <div className="flex items-center gap-3">
         <span className="text-2xl leading-none">{d.emoji}</span>
         <div className="min-w-0 flex-1">
-          <h2 className="font-semibold text-gray-900">{d.titulo}</h2>
+          <h2 className="flex flex-wrap items-center gap-2 font-semibold text-gray-900">
+            {d.titulo} <FaseChip fase={d.fase} />
+          </h2>
           <p className="text-sm text-gray-500">{d.subtitulo}</p>
         </div>
       </div>

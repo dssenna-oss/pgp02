@@ -40,7 +40,12 @@ export default function JogosHubPage() {
                 <div className="flex items-center gap-3 p-4">
                   <span className="text-2xl leading-none">{j.emoji}</span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-semibold text-gray-900">{j.titulo}</h2>
+                    <h2 className="flex flex-wrap items-center gap-2 font-semibold text-gray-900">
+                      {j.titulo}
+                      <span className="inline-flex shrink-0 items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">
+                        {j.fase}
+                      </span>
+                    </h2>
                     <p className="text-sm text-gray-500">{j.subtitulo}</p>
                   </div>
                   <ChevronRight className="h-5 w-5 shrink-0 text-gray-400" />
