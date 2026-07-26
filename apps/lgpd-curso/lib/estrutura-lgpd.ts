@@ -83,3 +83,28 @@ export const MODULOS_ESTRUTURA: ModuloEstrutura[] = [
     arquivo: "/estrutura-lgpd/simulado-15-questoes.html",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Mini app público "A LGPD, artigo por artigo" (/lgpd) — a jornada completa:
+// Histórico → 6 faixas de artigos → Simulado. O Histórico standalone NÃO entra
+// em MODULOS_ESTRUTURA (o dashboard já tem a página nativa historico-lgpd);
+// ele abre e fecha a jornada só no hub público e no Telão Comandado.
+// ---------------------------------------------------------------------------
+
+export const MODULO_HISTORICO: ModuloEstrutura = {
+  slug: "historico",
+  titulo: "Como o mundo chegou à LGPD",
+  intervalo: "Histórico",
+  descricao:
+    "A proteção de dados não nasceu em 2018: são 134 anos de história, da primeira ideia de " +
+    "privacidade (1890) ao direito fundamental na Constituição (2022) — no mundo, no Brasil e " +
+    "nas leis que conversam com a LGPD.",
+  arquivo: "/estrutura-lgpd/historico.html",
+};
+
+// Ordem = a sequência didática do mini app (QR nos slides da apresentação).
+export const MODULOS_LGPD: ModuloEstrutura[] = [MODULO_HISTORICO, ...MODULOS_ESTRUTURA];
+
+export function getModuloLgpd(slug: string): ModuloEstrutura | null {
+  return MODULOS_LGPD.find((m) => m.slug === slug) ?? null;
+}
