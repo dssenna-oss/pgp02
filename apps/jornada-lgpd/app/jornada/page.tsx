@@ -22,11 +22,25 @@ export default async function JornadaPage() {
 
   const { feitos, total } = completudePerfil(inst);
   const perfilCompleto = feitos === total;
+  const prontos = respostas.filter((r) => r.status === "pronto").length;
 
   return (
     <div>
-      <h1 className="text-xl font-extrabold text-gray-900">{inst.nome}</h1>
-      <p className="mt-0.5 text-sm text-gray-500">Sua jornada de implementação da LGPD.</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-xl font-extrabold text-gray-900">{inst.nome}</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Sua jornada de implementação da LGPD ·{" "}
+            <strong className="text-teal-700">{prontos} de 21 documentos prontos</strong>
+          </p>
+        </div>
+        <a
+          href="/api/pacote/zip"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-teal-300 bg-teal-50 px-4 py-2 text-sm font-bold text-teal-800 hover:bg-teal-100"
+        >
+          ⬇️ Baixar pacote completo (21 Word)
+        </a>
+      </div>
 
       <Link
         href="/perfil"

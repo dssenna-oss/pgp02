@@ -55,8 +55,10 @@ function regrasPerfil(inst: Instituicao): { prefixo: string; valor: string | nul
     { prefixo: "NOME DA AUTORIDADE MÁXIMA", valor: limpo(inst.autoridadeNome) },
     { prefixo: "NOME DA AUTORIDADE", valor: limpo(inst.autoridadeNome) },
     { prefixo: "A AUTORIDADE MÁXIMA", valor: autoridadeMaxima },
+    // "CARGO DA AUTORIDADE..." é inequívoco; o [CARGO] solto NÃO entra aqui de
+    // propósito — em docs como a Comunicação à ANPD ele é o cargo de quem
+    // assina (nem sempre a autoridade máxima). Melhor âmbar do que errado.
     { prefixo: "CARGO DA AUTORIDADE MÁXIMA", valor: limpo(inst.autoridadeCargo) },
-    { prefixo: "CARGO", valor: limpo(inst.autoridadeCargo) },
     { prefixo: "DESTINATÁRIO", valor: destinatario },
     { prefixo: "CIDADE", valor: limpo(inst.cidade) },
     { prefixo: "UF", valor: limpo(inst.uf) },

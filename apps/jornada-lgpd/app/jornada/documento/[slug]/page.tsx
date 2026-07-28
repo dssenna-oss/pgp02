@@ -72,6 +72,13 @@ export default async function DocumentoPage({
         </p>
       )}
 
+      {/* Nota de uso (fichas de trabalho e docs de hora-do-incidente) */}
+      {config?.nota && (
+        <p className="mt-4 rounded-xl border-l-4 border-l-sky-400 border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-relaxed text-sky-900">
+          💡 <strong>Como usar:</strong> {config.nota}
+        </p>
+      )}
+
       {/* Perguntas específicas */}
       {config && config.perguntas.length > 0 ? (
         <section className="mt-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -111,11 +118,6 @@ export default async function DocumentoPage({
             </button>
           </form>
         </section>
-      ) : !config ? (
-        <p className="mt-4 rounded-xl border-l-4 border-l-amber-400 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          ⚙️ As perguntas específicas deste documento chegam na próxima etapa da construção — o
-          seu Perfil já preenche o que dá, e o Word já sai abaixo.
-        </p>
       ) : null}
 
       {/* Prévia preenchida */}
