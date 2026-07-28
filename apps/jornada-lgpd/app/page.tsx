@@ -1,13 +1,17 @@
 // Landing pública — o que é a Jornada, em 30 segundos.
 
 import Link from "next/link";
-import { FileText, MapPinned, Download } from "lucide-react";
+import { FileText, MapPinned, Download, Mail } from "lucide-react";
+
+// Pra quem quer habilitar a instituição: e-mail do Clube (mesmo remetente dos convites).
+const EMAIL_CONTATO = "contato@clubedoservidor.com.br";
+const ASSUNTO_CONTATO = "Quero a Jornada LGPD para minha instituição";
 
 export default function LandingPage() {
   return (
     <div className="py-6">
       <p className="text-xs font-semibold uppercase tracking-widest text-teal-700">
-        Implementação da LGPD sem sofrimento
+        Implementação da LGPD sem começar do zero
       </p>
       <h1 className="mt-2 text-3xl font-extrabold leading-tight text-gray-900">
         Preencha o perfil da sua instituição <span className="text-teal-700">uma vez</span> — e
@@ -16,7 +20,7 @@ export default function LandingPage() {
       <p className="mt-3 max-w-xl leading-relaxed text-gray-600">
         Ato de designação, portaria do comitê, aviso de privacidade, plano de resposta a
         incidentes e todos os demais documentos da implementação — personalizados com os dados
-        da sua instituição, em Word, na ordem das 7 Fases do PGP.
+        da sua instituição, em Word, na ordem das 7 Fases da implementação.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -33,14 +37,23 @@ export default function LandingPage() {
         ))}
       </div>
 
-      <Link
-        href="/entrar"
-        className="mt-7 inline-flex items-center gap-2 rounded-xl bg-teal-700 px-6 py-3 text-base font-bold text-white shadow hover:bg-teal-800"
-      >
-        Entrar na Jornada →
-      </Link>
-      <p className="mt-2 text-xs text-gray-400">
-        Acesso por convite — fale com o Clube do Servidor pra habilitar sua instituição.
+      <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Link
+          href="/entrar"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-3 text-base font-bold text-white shadow hover:bg-teal-800"
+        >
+          Entrar na Jornada →
+        </Link>
+        <a
+          href={`mailto:${EMAIL_CONTATO}?subject=${encodeURIComponent(ASSUNTO_CONTATO)}`}
+          className="inline-flex items-center justify-center gap-2 rounded-xl border-2 border-teal-700 px-6 py-3 text-base font-bold text-teal-800 hover:bg-teal-50"
+        >
+          <Mail className="h-4 w-4" /> Quero pra minha instituição
+        </a>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-gray-500">
+        Já recebeu o convite? É só entrar. Ainda não tem acesso? Fale com o Clube do Servidor
+        pelo botão acima — a gente habilita sua instituição.
       </p>
     </div>
   );
