@@ -1,7 +1,8 @@
 "use server";
 
 // Server actions do admin (Clube do Servidor): criar instituição + gestor
-// (com convite por e-mail) e reenviar convite com senha nova.
+// (convite por e-mail com link de DEFINIR senha) e reenviar o link de acesso.
+// O e-mail nunca carrega senha; o token vale 7 dias e morre ao ser usado.
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -11,6 +12,16 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { enviarConvite } from "@/lib/email";
 
+const URL_APP = "https://jornada-lgpd.vercel.app";
+const VALIDADE_DIAS = 7;
+
+function novoToken() {
+  return {
+    tokenAcesso: randomBytes(24).toString("base64url"),
+    tokenExpira: new Date(Date.now() + VALIDADE_DIAS * 24 * 60 * 60 * 1000),
+  };
+}
+
 export async function criarInstituicao(formData: FormData) {
   await requireAdmin();
 
@@ -19,32 +30,34 @@ export async function criarInstituicao(formData: FormData) {
   const uf = String(formData.get("uf") ?? "").trim().toUpperCase() || null;
   const gestorNome = String(formData.get("gestorNome") ?? "").trim();
   const gestorEmail = String(formData.get("gestorEmail") ?? "").trim().toLowerCase();
-  const gestorSenha = String(formData.get("gestorSenha") ?? "").trim();
 
-  if (!nome || !gestorNome || !gestorEmail || gestorSenha.length < 8) {
+  if (!nome || !gestorNome || !gestorEmail) {
     redirect("/admin?erro=campos");
   }
   const jaExiste = await prisma.user.findUnique({ where: { email: gestorEmail } });
   if (jaExiste) redirect("/admin?erro=email");
 
   const inst = await prisma.instituicao.create({ data: { nome, cidade, uf } });
+  const { tokenAcesso, tokenExpira } = novoToken();
   await prisma.user.create({
     data: {
       email: gestorEmail,
       nome: gestorNome,
-      senha: await bcrypt.hash(gestorSenha, 10),
+      // Senha provisória impossível de adivinhar — o gestor define a dele
+      // pelo link; até lá, o login por senha não funciona (por desenho).
+      senha: await bcrypt.hash(randomBytes(32).toString("base64url"), 10),
       role: "GESTOR",
       instituicaoId: inst.id,
+      tokenAcesso,
+      tokenExpira,
     },
   });
 
-  // Convite por e-mail (Brevo). Se falhar, o cadastro FICA — o admin repassa
-  // o acesso manualmente (a tela avisa).
   const envio = await enviarConvite({
     paraEmail: gestorEmail,
     nomeGestor: gestorNome,
     nomeInstituicao: nome,
-    senhaInicial: gestorSenha,
+    linkDefinirSenha: `${URL_APP}/definir-senha?token=${tokenAcesso}`,
   });
 
   revalidatePath("/admin");
@@ -62,22 +75,18 @@ export async function reenviarConvite(formData: FormData) {
   const gestor = inst?.users[0];
   if (!inst || !gestor) redirect("/admin?erro=semgestor");
 
-  // Gera senha nova, mas SÓ grava se o e-mail sair — senão ninguém saberia a
-  // senha nova e o acesso antigo morreria junto.
-  const senhaNova = randomBytes(9).toString("base64url");
+  // Token novo (a senha atual, se existir, segue valendo — o link serve
+  // tanto pro primeiro acesso quanto pro "esqueci minha senha").
+  const { tokenAcesso, tokenExpira } = novoToken();
+  await prisma.user.update({ where: { id: gestor.id }, data: { tokenAcesso, tokenExpira } });
+
   const envio = await enviarConvite({
     paraEmail: gestor.email,
     nomeGestor: gestor.nome,
     nomeInstituicao: inst.nome,
-    senhaInicial: senhaNova,
-  });
-  if (!envio.ok) redirect("/admin?reenvio=falha");
-
-  await prisma.user.update({
-    where: { id: gestor.id },
-    data: { senha: await bcrypt.hash(senhaNova, 10) },
+    linkDefinirSenha: `${URL_APP}/definir-senha?token=${tokenAcesso}`,
   });
 
   revalidatePath("/admin");
-  redirect("/admin?reenvio=ok");
+  redirect(`/admin?reenvio=${envio.ok ? "ok" : "falha"}`);
 }

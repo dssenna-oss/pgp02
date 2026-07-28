@@ -3,7 +3,7 @@
 // Login por e-mail + senha. Depois de entrar, o middleware manda cada papel
 // pra sua casa (GESTOR → /jornada · ADMIN → /admin).
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
@@ -13,6 +13,11 @@ export default function EntrarPage() {
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [senhaDefinida, setSenhaDefinida] = useState(false);
+
+  useEffect(() => {
+    setSenhaDefinida(new URLSearchParams(window.location.search).has("definida"));
+  }, []);
 
   async function entrar(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +37,11 @@ export default function EntrarPage() {
     <div className="mx-auto max-w-sm py-8">
       <h1 className="text-2xl font-extrabold text-gray-900">Entrar</h1>
       <p className="mt-1 text-sm text-gray-500">Use o acesso enviado pelo Clube do Servidor.</p>
+      {senhaDefinida && (
+        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+          ✅ Senha criada com sucesso — entre com ela abaixo.
+        </p>
+      )}
       <form onSubmit={entrar} className="mt-5 space-y-3">
         <input
           type="email"
