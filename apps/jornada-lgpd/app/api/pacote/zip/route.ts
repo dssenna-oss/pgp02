@@ -11,7 +11,9 @@ import { montarDocumentoPreenchido } from "@/lib/preencher";
 import { gerarDocxDocumento } from "@/lib/docx-documento";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120; // 21 documentos num request só
+// 21 documentos num request só — gera em poucos segundos; 60 mantém o teto
+// compatível com qualquer plano da Vercel.
+export const maxDuration = 60;
 
 function slugify(s: string): string {
   return s
