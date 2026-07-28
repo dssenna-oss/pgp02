@@ -3,14 +3,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-server";
 import { completudePerfil } from "@/lib/perfil";
-import { criarInstituicao } from "./actions";
+import { criarInstituicao, reenviarConvite } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { ok?: string; erro?: string };
+  searchParams: { ok?: string; erro?: string; mail?: string; reenvio?: string };
 }) {
   await requireAdmin();
   const instituicoes = await prisma.instituicao.findMany({
@@ -28,9 +28,26 @@ export default async function AdminPage({
         Instituições habilitadas na Jornada LGPD e criação de novos acessos.
       </p>
 
-      {searchParams.ok && (
+      {searchParams.ok && searchParams.mail === "ok" && (
         <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-          ✅ Instituição criada — envie o e-mail e a senha combinada pro gestor.
+          ✅ Instituição criada — <strong>convite enviado por e-mail</strong> pro gestor, com o
+          acesso e a orientação de trocar a senha.
+        </p>
+      )}
+      {searchParams.ok && searchParams.mail !== "ok" && (
+        <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+          ✅ Instituição criada, mas <strong>o e-mail de convite falhou</strong> — repasse o
+          acesso (e-mail + senha digitada) manualmente, ou use "Reenviar convite" abaixo.
+        </p>
+      )}
+      {searchParams.reenvio === "ok" && (
+        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+          📧 Convite reenviado — uma <strong>senha nova</strong> foi gerada e enviada ao gestor.
+        </p>
+      )}
+      {searchParams.reenvio === "falha" && (
+        <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+          O reenvio falhou — a senha <strong>não foi alterada</strong>. Tente de novo em instantes.
         </p>
       )}
       {searchParams.erro && (
@@ -96,6 +113,15 @@ export default async function AdminPage({
                   Perfil {feitos}/{total} · {i._count.documentos} documento(s) iniciado(s) ·
                   gestores: {i.users.map((u) => u.email).join(", ") || "—"}
                 </p>
+                <form action={reenviarConvite} className="mt-2">
+                  <input type="hidden" name="instituicaoId" value={i.id} />
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-100"
+                  >
+                    📧 Reenviar convite (gera senha nova)
+                  </button>
+                </form>
               </div>
             );
           })}
