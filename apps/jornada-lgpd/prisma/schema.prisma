@@ -53,6 +53,11 @@ model User {
   instituicaoId String?
   instituicao   Instituicao? @relation(fields: [instituicaoId], references: [id], onDelete: SetNull)
   isActive      Boolean  @default(true)
+  // Link "Definir minha senha" do convite (e do reenviar/esqueci): token único
+  // com validade; ao definir a senha, o token é apagado. O e-mail NUNCA
+  // carrega senha — era o gatilho clássico de spam/phishing.
+  tokenAcesso   String?   @unique
+  tokenExpira   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

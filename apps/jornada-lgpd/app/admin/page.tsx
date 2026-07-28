@@ -30,24 +30,25 @@ export default async function AdminPage({
 
       {searchParams.ok && searchParams.mail === "ok" && (
         <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-          ✅ Instituição criada — <strong>convite enviado por e-mail</strong> pro gestor, com o
-          acesso e a orientação de trocar a senha.
+          ✅ Instituição criada — o gestor recebeu por e-mail o <strong>link pra criar a própria
+          senha</strong> (vale 7 dias).
         </p>
       )}
       {searchParams.ok && searchParams.mail !== "ok" && (
         <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
-          ✅ Instituição criada, mas <strong>o e-mail de convite falhou</strong> — repasse o
-          acesso (e-mail + senha digitada) manualmente, ou use "Reenviar convite" abaixo.
+          ✅ Instituição criada, mas <strong>o e-mail falhou</strong> — use "Reenviar link de
+          acesso" abaixo em instantes.
         </p>
       )}
       {searchParams.reenvio === "ok" && (
         <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
-          📧 Convite reenviado — uma <strong>senha nova</strong> foi gerada e enviada ao gestor.
+          📧 Link de acesso enviado — serve pro primeiro acesso e também como "esqueci minha
+          senha".
         </p>
       )}
       {searchParams.reenvio === "falha" && (
         <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
-          O reenvio falhou — a senha <strong>não foi alterada</strong>. Tente de novo em instantes.
+          O envio falhou — nada foi alterado. Tente de novo em instantes.
         </p>
       )}
       {searchParams.erro && (
@@ -83,10 +84,10 @@ export default async function AdminPage({
             <span className="text-xs font-semibold text-gray-700">Gestor — e-mail *</span>
             <input name="gestorEmail" type="email" required className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm" />
           </label>
-          <label className="block sm:col-span-2">
-            <span className="text-xs font-semibold text-gray-700">Senha inicial (mín. 8) *</span>
-            <input name="gestorSenha" required minLength={8} className="mt-1 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm" />
-          </label>
+          <p className="text-xs text-gray-500 sm:col-span-2">
+            O gestor recebe por e-mail um <strong>link pra criar a própria senha</strong> (vale 7
+            dias) — nada de senha viajando por e-mail.
+          </p>
           <button
             type="submit"
             className="rounded-xl bg-teal-700 px-6 py-2.5 text-sm font-bold text-white hover:bg-teal-800 sm:col-span-2 sm:w-auto"
@@ -119,7 +120,7 @@ export default async function AdminPage({
                     type="submit"
                     className="rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800 hover:bg-teal-100"
                   >
-                    📧 Reenviar convite (gera senha nova)
+                    📧 Reenviar link de acesso (1º acesso / esqueci a senha)
                   </button>
                 </form>
               </div>

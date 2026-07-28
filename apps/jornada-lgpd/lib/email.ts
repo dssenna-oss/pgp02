@@ -2,11 +2,21 @@
 // Remetente: contato@clubedoservidor.com.br (validado na Brevo, DMARC ok —
 // o mesmo usado nos e-mails do curso). Falha de e-mail NUNCA derruba a
 // operação que o disparou: devolvemos { ok:false } e a tela avisa o admin.
+//
+// ⚠️ O convite NÃO carrega senha (senha em e-mail = gatilho clássico de
+// spam/phishing — aprendido no primeiro teste): vai um link único e
+// temporário de DEFINIR a senha. Enviamos também a versão texto-plano
+// (textContent) — melhora a pontuação anti-spam.
 
 const REMETENTE = { name: "Jornada LGPD · Clube do Servidor", email: "contato@clubedoservidor.com.br" };
 const URL_APP = "https://jornada-lgpd.vercel.app";
 
-async function enviarBrevo(opts: { para: { email: string; name?: string }; assunto: string; html: string }): Promise<{ ok: boolean; erro?: string }> {
+async function enviarBrevo(opts: {
+  para: { email: string; name?: string };
+  assunto: string;
+  html: string;
+  texto: string;
+}): Promise<{ ok: boolean; erro?: string }> {
   const chave = process.env.BREVO_API_KEY;
   if (!chave) return { ok: false, erro: "BREVO_API_KEY ausente" };
   try {
@@ -19,6 +29,7 @@ async function enviarBrevo(opts: { para: { email: string; name?: string }; assun
         to: [opts.para],
         subject: opts.assunto,
         htmlContent: opts.html,
+        textContent: opts.texto,
       }),
     });
     if (!r.ok) {
@@ -35,7 +46,7 @@ export async function enviarConvite(opts: {
   paraEmail: string;
   nomeGestor: string;
   nomeInstituicao: string;
-  senhaInicial: string;
+  linkDefinirSenha: string;
 }): Promise<{ ok: boolean; erro?: string }> {
   const html = `
   <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;color:#1f2937">
@@ -51,26 +62,37 @@ export async function enviarConvite(opts: {
         <strong>uma única vez</strong> e gera os <strong>21 documentos da implementação da
         LGPD prontos em Word</strong>, na ordem das 7 Fases.
       </p>
-      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:14px 18px;margin:18px 0">
-        <p style="margin:0 0 6px;font-size:13px;color:#134e4a"><strong>Seu acesso:</strong></p>
-        <p style="margin:0;font-size:14px">E-mail: <strong>${opts.paraEmail}</strong></p>
-        <p style="margin:4px 0 0;font-size:14px">Senha inicial: <strong>${opts.senhaInicial}</strong></p>
-      </div>
-      <p style="margin:0 0 18px">
-        <a href="${URL_APP}/entrar" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 26px;border-radius:10px">Entrar na Jornada →</a>
+      <p style="margin:0 0 6px;line-height:1.55">
+        Pra começar, crie sua senha de acesso (leva menos de um minuto):
+      </p>
+      <p style="margin:14px 0 18px">
+        <a href="${opts.linkDefinirSenha}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;font-weight:700;padding:12px 26px;border-radius:10px">Definir minha senha e entrar →</a>
       </p>
       <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5">
-        🔒 No primeiro acesso, troque sua senha no menu <strong>Senha</strong>, no topo da tela.
-        Dúvidas? É só responder este e-mail.
+        Seu usuário é este e-mail (${opts.paraEmail}). O link vale por <strong>7 dias</strong> —
+        se expirar, é só pedir um novo ao Clube do Servidor. Dúvidas? Responda este e-mail.
       </p>
     </div>
     <p style="text-align:center;font-size:11px;color:#9ca3af;margin-top:14px">
       Jornada LGPD · Clube do Servidor · ${URL_APP.replace("https://", "")}
     </p>
   </div>`;
+  const texto = [
+    `Olá, ${opts.nomeGestor}!`,
+    ``,
+    `A instituição ${opts.nomeInstituicao} foi habilitada na Jornada LGPD — o app onde você preenche o perfil da instituição uma única vez e gera os 21 documentos da implementação da LGPD prontos em Word, na ordem das 7 Fases.`,
+    ``,
+    `Pra começar, crie sua senha de acesso pelo link (vale por 7 dias):`,
+    opts.linkDefinirSenha,
+    ``,
+    `Seu usuário é este e-mail (${opts.paraEmail}). Se o link expirar, peça um novo ao Clube do Servidor.`,
+    ``,
+    `Jornada LGPD · Clube do Servidor · ${URL_APP.replace("https://", "")}`,
+  ].join("\n");
   return enviarBrevo({
     para: { email: opts.paraEmail, name: opts.nomeGestor },
     assunto: `Seu acesso à Jornada LGPD — ${opts.nomeInstituicao}`,
     html,
+    texto,
   });
 }
