@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-white text-gray-900;
+  }
+}
+
+/* Banner permanente de "AMBIENTE DE TREINAMENTO" — fixo no topo */
+.training-banner {
+  background: repeating-linear-gradient(
+    45deg,
+    #FBBF24,
+    #FBBF24 8px,
+    #F59E0B 8px,
+    #F59E0B 16px
+  );
+}
+
+/* ── Páginas públicas embutíveis (ex.: /montador em iframe de apresentação) ──
+ * A página marca a si mesma com `.pagina-embed`; escondemos o banner de
+ * treinamento e o rodapé globais do layout raiz — dentro de um slide, cada
+ * pixel conta. (Mesma técnica :has() do print do cartaz do quiz.) */
+body:has(.pagina-embed) .training-banner {
+  display: none;
+}
+body:has(.pagina-embed) > footer {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+ * MODO PROJEÇÃO — otimização visual pra telão de retroprojetor.
+ * Ativado por <ModoProjecao /> via classe `modo-projecao` no <html>.
+ * Tailwind usa `rem` por padrão; aumentar font-size do <html> escala
+ * automaticamente fontes, paddings e gaps que usam unidades relativas.
+ * ═══════════════════════════════════════════════════════════════════ */
+
+html.modo-projecao {
+  /* Default Tailwind: 16px. 130% = ~21px. Boa elasticidade pra projeção
+     sem quebrar layouts (35-40% quebraria muitos componentes). */
+  font-size: 130%;
+}
+
+/* Esconde a sidebar do AuthedLayout — conteúdo ocupa toda a largura. */
+html.modo-projecao aside {
+  display: none !important;
+}
+
+/* O drawer mobile da sidebar também tem botão hamburguer fixo — esconde. */
+html.modo-projecao .lg\:hidden[aria-label="Abrir menu"] {
+  display: none !important;
+}
+
+/* Rodapé global do app — não precisa em projeção, libera espaço vertical. */
+html.modo-projecao footer {
+  display: none !important;
+}
+
+/* Espaço pro banner verde fixo no topo — empurra conteúdo pra baixo. */
+html.modo-projecao body {
+  padding-top: 2rem;
+}
+
+/* Banner amarelo "AMBIENTE DE TREINAMENTO" — em projeção fica menor pra
+   liberar espaço vertical pro conteúdo principal. */
+html.modo-projecao .training-banner {
+  font-size: 70%;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Elementos marcados com classe `.esconder-em-projecao` somem.
+   Páginas individuais podem optar por esconder dicas/rodapés assim. */
+html.modo-projecao .esconder-em-projecao {
+  display: none !important;
+}

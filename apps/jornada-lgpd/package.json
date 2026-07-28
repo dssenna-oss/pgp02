@@ -1,0 +1,42 @@
+{
+  "name": "jornada-lgpd",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3400",
+    "build": "prisma generate && next build",
+    "start": "next start -p 3400",
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx --require dotenv/config prisma/seed.ts"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx --require dotenv/config prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "6.7.0",
+    "bcryptjs": "2.4.3",
+    "docx": "9.6.1",
+    "lucide-react": "0.446.0",
+    "next": "14.2.28",
+    "next-auth": "4.24.11",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "20.6.2",
+    "@types/react": "18.2.22",
+    "@types/react-dom": "18.2.7",
+    "autoprefixer": "10.4.15",
+    "dotenv": "16.5.0",
+    "postcss": "8.4.30",
+    "prisma": "6.7.0",
+    "tailwindcss": "3.3.3",
+    "tailwindcss-animate": "1.0.7",
+    "tsx": "4.20.3",
+    "typescript": "5.2.2"
+  }
+}

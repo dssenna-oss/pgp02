@@ -1,0 +1,78 @@
+// =============================================================================
+// Jornada LGPD (Clube do Servidor) — schema ENXUTO de propósito
+// =============================================================================
+// O app é uma fábrica de documentos: o miolo é (perfil da instituição +
+// respostas por documento) → 21 documentos preenchidos. Nada de fases com
+// dados próprios, inventário, riscos etc. — isso mora nos apps grandes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// A instituição carrega o PERFIL — os campos que os documentos repetem.
+// Tudo opcional de propósito: o app funciona incompleto e destaca o que falta.
+model Instituicao {
+  id        String   @id @default(cuid())
+  nome      String // ex.: "Prefeitura Municipal de Vegas"
+  tipo      String? // ex.: "Prefeitura", "Câmara", "Autarquia", "Tribunal"
+  cnpj      String?
+  endereco  String?
+  cidade    String?
+  uf        String?
+  site      String?
+  // Autoridade máxima (assina Ato/Portaria)
+  autoridadeNome  String?
+  autoridadeCargo String? // ex.: "Prefeito(a) Municipal"
+  // Encarregado (DPO) e contatos — aparecem em quase todos os documentos
+  dpoNome          String?
+  dpoEmail         String?
+  dpoTelefone      String?
+  dpoSubstituto    String?
+  canalTitularUrl  String? // formulário/canal de direitos do titular, se houver
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  documentos DocumentoResposta[]
+
+  @@map("instituicoes")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  nome          String
+  senha         String // hash bcrypt
+  role          String   @default("GESTOR") // ADMIN (Clube) | GESTOR (instituição)
+  instituicaoId String?
+  instituicao   Instituicao? @relation(fields: [instituicaoId], references: [id], onDelete: SetNull)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([instituicaoId])
+  @@map("users")
+}
+
+// 1 linha por instituição × modelo do Pacote (1..21): as respostas específicas
+// daquele documento + status na trilha. O conteúdo do modelo em si é código
+// (lib/modelos-pacote.ts) — aqui só o que a instituição respondeu.
+model DocumentoResposta {
+  id            String   @id @default(cuid())
+  instituicaoId String
+  instituicao   Instituicao @relation(fields: [instituicaoId], references: [id], onDelete: Cascade)
+  numeroModelo  Int // 1..21 (numero em MODELOS_PACOTE)
+  respostas     Json     @default("{}")
+  status        String   @default("rascunho") // rascunho | pronto
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([instituicaoId, numeroModelo])
+  @@map("documento_respostas")
+}
