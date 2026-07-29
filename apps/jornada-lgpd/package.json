@@ -16,6 +16,7 @@
     "seed": "tsx --require dotenv/config prisma/seed.ts"
   },
   "dependencies": {
+    "@google/genai": "^1.51.0",
     "@prisma/client": "6.7.0",
     "bcryptjs": "2.4.3",
     "docx": "9.6.1",

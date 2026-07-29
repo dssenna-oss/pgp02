@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requireInstituicao } from "@/lib/auth-server";
 import { CAMPOS_PERFIL, completudePerfil } from "@/lib/perfil";
-import { salvarPerfil } from "./actions";
+import { PerfilForm } from "@/components/perfil-form";
 
 export const dynamic = "force-dynamic";
 
@@ -41,28 +41,12 @@ export default async function PerfilPage({
         </p>
       )}
 
-      <form action={salvarPerfil} className="mt-5 space-y-3">
-        {CAMPOS_PERFIL.map((c) => (
-          <label key={c.campo} className="block">
-            <span className="text-xs font-semibold text-gray-700">
-              {c.label}
-              {c.essencial && <span className="text-teal-700"> *</span>}
-            </span>
-            <input
-              name={c.campo}
-              defaultValue={String((inst as any)[c.campo] ?? "")}
-              placeholder={c.placeholder}
-              className="mt-1 w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm"
-            />
-          </label>
-        ))}
-        <button
-          type="submit"
-          className="w-full rounded-xl bg-teal-700 px-4 py-3 text-base font-bold text-white hover:bg-teal-800 sm:w-auto sm:px-8"
-        >
-          Salvar perfil
-        </button>
-      </form>
+      <PerfilForm
+        campos={CAMPOS_PERFIL}
+        iniciais={Object.fromEntries(
+          CAMPOS_PERFIL.map((c) => [c.campo, String((inst as any)[c.campo] ?? "")]),
+        )}
+      />
     </div>
   );
 }
