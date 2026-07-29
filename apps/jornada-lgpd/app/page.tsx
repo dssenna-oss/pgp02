@@ -43,6 +43,11 @@ export default function LandingPage() {
           </div>
         ))}
       </div>
+      <p className="mt-3 text-xs leading-relaxed text-gray-500">
+        Falando honestamente: os documentos formais (ato, portaria, políticas, avisos) saem
+        preenchidos; as fichas de trabalho saem estruturadas, prontas pra usar no dia a dia do
+        mapeamento.
+      </p>
 
       <Link
         href="/entrar"
