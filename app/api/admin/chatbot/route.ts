@@ -2,15 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasSuperAdminAccess } from "@/lib/auth-helpers";
 
-const ADMIN_EMAILS = ["admin@pgp.com", "alexandrekassis@gmail.com"];
+/**
+ * 🐛 Havia aqui um `ADMIN_EMAILS` com dois endereços fixos que entraram no
+ * commit RAIZ do repositório ("chore: import PGP source from Abacus AI
+ * export", 29/04/2026) — vieram com o código importado, não são contas deste
+ * app. Nenhum dos dois tem usuário no banco, então esta rota respondia 403
+ * para todo mundo. Somado à mesma lista na tela e no menu lateral, o Painel
+ * do Chatbot existia sem ter como ser aberto por ninguém.
+ *
+ * Agora usa `hasSuperAdminAccess` (SUPER_ADMIN_EMAIL ou papel `admin`
+ * legado), a mesma regra do resto do sistema.
+ *
+ * ⚠️ Aqui, no servidor, a checagem é completa. Na TELA e no MENU ela só pode
+ * olhar o papel: `SUPER_ADMIN_EMAIL` é variável de servidor e não chega ao
+ * navegador. O efeito é falhar fechado — conta que valha só pelo e-mail não
+ * vê o item no menu, mas continua entrando pela URL. Ver
+ * `components/dashboard/dashboard-layout.tsx`.
+ */
 
 // Obter estatísticas do chatbot
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+    if (!hasSuperAdminAccess(session?.user)) {
       return NextResponse.json(
         { error: "Acesso negado" },
         { status: 403 }
@@ -203,7 +220,7 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session?.user?.email || !ADMIN_EMAILS.includes(session.user.email)) {
+    if (!hasSuperAdminAccess(session?.user)) {
       return NextResponse.json(
         { error: "Acesso negado" },
         { status: 403 }

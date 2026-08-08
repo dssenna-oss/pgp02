@@ -28,7 +28,21 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-const ADMIN_EMAILS = ["admin@pgp.com", "alexandrekassis@gmail.com"];
+/**
+ * 🐛 Havia aqui um `ADMIN_EMAILS` com dois endereços fixos que vieram no
+ * commit raiz do repositório (import do export do Abacus AI, 29/04/2026).
+ * Nenhum dos dois é conta deste app, então quem chegasse por URL era
+ * devolvido ao painel — e o menu lateral, com a mesma lista, escondia o
+ * item. O Painel do Chatbot existia sem ter como ser aberto.
+ *
+ * A checagem no cliente olha o PAPEL, seguindo o padrão já usado em
+ * `company-logo-uploader`, `conteudos-didaticos-content` e outras telas
+ * deste app. Não dá pra usar `hasSuperAdminAccess` aqui: ela depende de
+ * `SUPER_ADMIN_EMAIL`, que é variável de servidor e não chega ao navegador.
+ * A rota `/api/admin/chatbot` é que faz a checagem completa — esta aqui é
+ * conforto de navegação, não a tranca.
+ */
+const ADMIN_ROLE = "admin";
 
 interface Stats {
   totalConversations: number;
@@ -89,7 +103,7 @@ export default function AdminChatbotPage() {
   const [editingQuota, setEditingQuota] = useState<string | null>(null);
   const [quotaValues, setQuotaValues] = useState<Record<string, number>>({});
 
-  const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email);
+  const isAdmin = session?.user?.role === ADMIN_ROLE;
 
   useEffect(() => {
     if (status === "loading") return;

@@ -637,10 +637,21 @@ export default function DashboardLayout({ children, session }: DashboardLayoutPr
       >
         {navigation
           .filter((item) => {
-            // Filtrar itens admin (sistema CMS — só super admin antigo)
+            // Itens de administração do sistema (CMS, painel do chatbot).
+            //
+            // 🐛 Até 08/08/2026 isto comparava com dois endereços fixos que
+            // entraram no commit RAIZ do repositório (import do export do
+            // Abacus AI, 29/04/2026) — não são contas deste app, e nenhum
+            // tem usuário no banco. Resultado: o item nunca aparecia pra
+            // ninguém, e quem chegasse por URL era barrado pela tela e pela
+            // rota de API, que repetiam a mesma lista.
+            //
+            // ⚠️ Aqui só dá pra olhar o PAPEL: `SUPER_ADMIN_EMAIL` é
+            // variável de servidor e não chega ao navegador. Falha fechado —
+            // conta que valha só pelo e-mail não vê o item, mas entra pela
+            // URL, porque a tranca de verdade é `/api/admin/chatbot`.
             if ((item as any).adminOnly) {
-              const adminEmails = ["admin@pgp.com", "alexandrekassis@gmail.com"];
-              return adminEmails.includes(session?.user?.email || "");
+              return session?.user?.role === "admin";
             }
             // Itens dpoOnly: visíveis pra qualquer DPO da org
             if ((item as any).dpoOnly) {
